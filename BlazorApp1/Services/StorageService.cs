@@ -1,7 +1,5 @@
 // =====================================================================
 // StorageService.cs  —  JSON 기반 로컬 저장소 서비스
-// Blazor WASM에서는 브라우저의 localStorage를 사용합니다.
-// (파일 시스템 접근 불가 → localStorage가 WASM의 로컬 DB 역할)
 // =====================================================================
 using System;
 using System.Collections.Generic;
@@ -16,10 +14,10 @@ namespace KnitLog.Services
     {
         private readonly IJSRuntime _js;
 
-        // localStorage 키 이름
         private const string KEY_PROJECTS = "knittracker_projects";
         private const string KEY_YARNS    = "knittracker_yarns";
         private const string KEY_TOOLS    = "knittracker_tools";
+        private const string KEY_SWATCHES = "knittracker_swatches";
 
         private static readonly JsonSerializerOptions _jsonOpts = new()
         {
@@ -27,12 +25,7 @@ namespace KnitLog.Services
             PropertyNameCaseInsensitive = true
         };
 
-        public StorageService(IJSRuntime js)
-        {
-            _js = js;
-        }
-
-        // ── 공통 저장/불러오기 헬퍼 ──────────────────────────────────
+        public StorageService(IJSRuntime js) { _js = js; }
 
         private async Task SaveAsync<T>(string key, List<T> list)
         {
@@ -48,17 +41,14 @@ namespace KnitLog.Services
             catch { return new List<T>(); }
         }
 
-        // ── 프로젝트 (뜨케줄 / 완성작 / 위시리스트) ─────────────────
-
-        public Task<List<KnitProject>> GetProjectsAsync()
-            => LoadAsync<KnitProject>(KEY_PROJECTS);
+        // ── 프로젝트 ──────────────────────────────────────────────────
+        public Task<List<KnitProject>> GetProjectsAsync() => LoadAsync<KnitProject>(KEY_PROJECTS);
 
         public async Task SaveProjectAsync(KnitProject project)
         {
             var list = await GetProjectsAsync();
             var idx  = list.FindIndex(p => p.Id == project.Id);
-            if (idx >= 0) list[idx] = project;
-            else          list.Add(project);
+            if (idx >= 0) list[idx] = project; else list.Add(project);
             await SaveAsync(KEY_PROJECTS, list);
         }
 
@@ -69,7 +59,6 @@ namespace KnitLog.Services
             await SaveAsync(KEY_PROJECTS, list);
         }
 
-        // 뜨케줄 → 완성작 이동
         public async Task CompleteProjectAsync(Guid id)
         {
             var list = await GetProjectsAsync();
@@ -80,7 +69,6 @@ namespace KnitLog.Services
             await SaveAsync(KEY_PROJECTS, list);
         }
 
-        // 위시리스트 → 뜨케줄 이동
         public async Task StartProjectAsync(Guid id)
         {
             var list = await GetProjectsAsync();
@@ -92,16 +80,13 @@ namespace KnitLog.Services
         }
 
         // ── 실 장고 ──────────────────────────────────────────────────
-
-        public Task<List<Yarn>> GetYarnsAsync()
-            => LoadAsync<Yarn>(KEY_YARNS);
+        public Task<List<Yarn>> GetYarnsAsync() => LoadAsync<Yarn>(KEY_YARNS);
 
         public async Task SaveYarnAsync(Yarn yarn)
         {
             var list = await GetYarnsAsync();
             var idx  = list.FindIndex(y => y.Id == yarn.Id);
-            if (idx >= 0) list[idx] = yarn;
-            else          list.Add(yarn);
+            if (idx >= 0) list[idx] = yarn; else list.Add(yarn);
             await SaveAsync(KEY_YARNS, list);
         }
 
@@ -113,16 +98,13 @@ namespace KnitLog.Services
         }
 
         // ── 도구 ─────────────────────────────────────────────────────
-
-        public Task<List<KnitTool>> GetToolsAsync()
-            => LoadAsync<KnitTool>(KEY_TOOLS);
+        public Task<List<KnitTool>> GetToolsAsync() => LoadAsync<KnitTool>(KEY_TOOLS);
 
         public async Task SaveToolAsync(KnitTool tool)
         {
             var list = await GetToolsAsync();
             var idx  = list.FindIndex(t => t.Id == tool.Id);
-            if (idx >= 0) list[idx] = tool;
-            else          list.Add(tool);
+            if (idx >= 0) list[idx] = tool; else list.Add(tool);
             await SaveAsync(KEY_TOOLS, list);
         }
 
@@ -133,15 +115,33 @@ namespace KnitLog.Services
             await SaveAsync(KEY_TOOLS, list);
         }
 
-        // ── 내보내기 / 가져오기 (JSON 파일) ──────────────────────────
+        // ── 스와치 ───────────────────────────────────────────────────
+        public Task<List<Swatch>> GetSwatchesAsync() => LoadAsync<Swatch>(KEY_SWATCHES);
 
+        public async Task SaveSwatchAsync(Swatch swatch)
+        {
+            var list = await GetSwatchesAsync();
+            var idx  = list.FindIndex(s => s.Id == swatch.Id);
+            if (idx >= 0) list[idx] = swatch; else list.Add(swatch);
+            await SaveAsync(KEY_SWATCHES, list);
+        }
+
+        public async Task DeleteSwatchAsync(Guid id)
+        {
+            var list = await GetSwatchesAsync();
+            list.RemoveAll(s => s.Id == id);
+            await SaveAsync(KEY_SWATCHES, list);
+        }
+
+        // ── 내보내기 ─────────────────────────────────────────────────
         public async Task<string> ExportAllAsync()
         {
             var data = new
             {
-                Projects  = await GetProjectsAsync(),
-                Yarns     = await GetYarnsAsync(),
-                Tools     = await GetToolsAsync(),
+                Projects   = await GetProjectsAsync(),
+                Yarns      = await GetYarnsAsync(),
+                Tools      = await GetToolsAsync(),
+                Swatches   = await GetSwatchesAsync(),
                 ExportedAt = DateTime.Now
             };
             return JsonSerializer.Serialize(data, _jsonOpts);
