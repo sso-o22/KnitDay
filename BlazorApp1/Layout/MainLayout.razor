@@ -4,6 +4,7 @@
 @inherits LayoutComponentBase
 
 <div class="app-shell">
+    <!-- 사이드바 (태블릿/PC용) -->
     <nav class="sidebar">
         <div class="sidebar-brand">
             <span class="brand-icon">🧶</span>
@@ -14,37 +15,37 @@
             <li>
                 <NavLink href="" Match="NavLinkMatch.All" class="nav-item">
                     <span class="nav-icon">🏠</span>
-                    <span>홈</span>
+                    <span class="nav-label">홈</span>
                 </NavLink>
             </li>
             <li>
                 <NavLink href="schedule" class="nav-item">
                     <span class="nav-icon">📆</span>
-                    <span>뜨케줄</span>
+                    <span class="nav-label">뜨케줄</span>
                 </NavLink>
             </li>
             <li>
                 <NavLink href="finished" class="nav-item">
                     <span class="nav-icon">✅</span>
-                    <span>완성작</span>
+                    <span class="nav-label">완성작</span>
                 </NavLink>
             </li>
             <li>
                 <NavLink href="wishlist" class="nav-item">
                     <span class="nav-icon">💫</span>
-                    <span>위시리스트</span>
+                    <span class="nav-label">위시리스트</span>
                 </NavLink>
             </li>
             <li>
                 <NavLink href="yarns" class="nav-item">
                     <span class="nav-icon">🧵</span>
-                    <span>실 장고</span>
+                    <span class="nav-label">실 장고</span>
                 </NavLink>
             </li>
             <li>
                 <NavLink href="tools" class="nav-item">
                     <span class="nav-icon">⚒️</span>
-                    <span>도구</span>
+                    <span class="nav-label">도구</span>
                 </NavLink>
             </li>
         </ul>
@@ -54,7 +55,36 @@
         </div>
     </nav>
 
+    <!-- 메인 콘텐츠 -->
     <main class="main-content">
         @Body
     </main>
+
+    <!-- 하단 탭바 (모바일 전용) -->
+    <nav class="bottom-nav">
+        <NavLink href="" Match="NavLinkMatch.All" class="bottom-nav-item">
+            <span class="bottom-nav-icon">🏠</span>
+            <span class="bottom-nav-label">홈</span>
+        </NavLink>
+        <NavLink href="schedule" class="bottom-nav-item">
+            <span class="bottom-nav-icon">📆</span>
+            <span class="bottom-nav-label">뜨케줄</span>
+        </NavLink>
+        <NavLink href="finished" class="bottom-nav-item">
+            <span class="bottom-nav-icon">✅</span>
+            <span class="bottom-nav-label">완성작</span>
+        </NavLink>
+        <NavLink href="wishlist" class="bottom-nav-item">
+            <span class="bottom-nav-icon">💫</span>
+            <span class="bottom-nav-label">위시리스트</span>
+        </NavLink>
+        <NavLink href="yarns" class="bottom-nav-item">
+            <span class="bottom-nav-icon">🧵</span>
+            <span class="bottom-nav-label">실 장고</span>
+        </NavLink>
+        <NavLink href="tools" class="bottom-nav-item">
+            <span class="bottom-nav-icon">⚒️</span>
+            <span class="bottom-nav-label">도구</span>
+        </NavLink>
+    </nav>
 </div>
