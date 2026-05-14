@@ -6,6 +6,10 @@ window.patternViewer = (() => {
     let currentPath = null;
     let currentZoom = 1.0;
     let currentPageNum = 1;
+    let _color = '#000000';
+    let _size = 4;
+    let _isEraser = false;
+    let _tool = 'select';
 
     async function ensurePdfJs() {
         if (window.pdfjsLib) return;
@@ -26,76 +30,66 @@ window.patternViewer = (() => {
     function redrawPaths() {
         if (!annoCtx) return;
         annoCtx.clearRect(0, 0, annoCanvas.width, annoCanvas.height);
-        const pagePaths = paths.filter(p => p.page === currentPageNum);
-        pagePaths.forEach(p => {
+        paths.filter(p => p.page === currentPageNum).forEach(p => {
+            if (p.points.length === 0) return;
             annoCtx.beginPath();
             annoCtx.lineWidth = p.size * (currentZoom / p.originZoom);
             annoCtx.lineCap = 'round';
             annoCtx.lineJoin = 'round';
             annoCtx.strokeStyle = p.color;
             annoCtx.globalCompositeOperation = p.isEraser ? 'destination-out' : 'source-over';
-            if (p.points.length > 0) {
-                const first = p.points[0];
-                annoCtx.moveTo(first.x * currentZoom, first.y * currentZoom);
-                for (let i = 1; i < p.points.length; i++) {
-                    annoCtx.lineTo(p.points[i].x * currentZoom, p.points[i].y * currentZoom);
-                }
-                annoCtx.stroke();
-            }
+            annoCtx.moveTo(p.points[0].x * currentZoom, p.points[0].y * currentZoom);
+            for (let i = 1; i < p.points.length; i++)
+                annoCtx.lineTo(p.points[i].x * currentZoom, p.points[i].y * currentZoom);
+            annoCtx.stroke();
         });
         annoCtx.globalCompositeOperation = 'source-over';
     }
 
-    // 터치/마우스 공통 좌표 추출
-    function getPos(e) {
+    function getCanvasPos(e) {
         const rect = annoCanvas.getBoundingClientRect();
         const scaleX = annoCanvas.width / rect.width;
         const scaleY = annoCanvas.height / rect.height;
-        if (e.touches) {
-            const t = e.touches[0];
-            return {
-                x: (t.clientX - rect.left) * scaleX,
-                y: (t.clientY - rect.top) * scaleY
-            };
-        }
+        const src = e.touches ? e.touches[0] : e;
         return {
-            x: (e.clientX - rect.left) * scaleX,
-            y: (e.clientY - rect.top) * scaleY
+            x: (src.clientX - rect.left) * scaleX,
+            y: (src.clientY - rect.top) * scaleY
         };
     }
 
-    // Blazor에서 넘겨주는 현재 도구 상태
-    let _color = '#e74c3c';
-    let _size = 4;
-    let _isEraser = false;
-    let _tool = 'select';
-
-    function isDrawingTool() {
-        return _tool === 'pen' || _tool === 'eraser';
+    // ── 캔버스 이벤트 핸들러 ──────────────────────────────
+    function onDown(e) {
+        if (_tool !== 'pen' && _tool !== 'eraser') return;
+        if (e.touches) e.preventDefault();
+        const pos = getCanvasPos(e);
+        isDrawing = true;
+        currentPath = {
+            page: currentPageNum, color: _color, size: _size,
+            isEraser: _isEraser, originZoom: currentZoom,
+            points: [{ x: pos.x / currentZoom, y: pos.y / currentZoom }]
+        };
+        annoCtx.beginPath();
+        annoCtx.moveTo(pos.x, pos.y);
+        annoCtx.lineWidth = _size;
+        annoCtx.lineCap = 'round';
+        annoCtx.lineJoin = 'round';
+        annoCtx.strokeStyle = _isEraser ? 'rgba(0,0,0,1)' : _color;
+        annoCtx.globalCompositeOperation = _isEraser ? 'destination-out' : 'source-over';
     }
 
-    function onPointerDown(e) {
-        const pos = getPos(e);
-        if (isDrawingTool()) {
-            if (e.touches) e.preventDefault();
-            patternViewer.startDraw(pos.x, pos.y, _color, _size, _isEraser);
-        } else if (_tool === 'ruler' || _tool === 'select') {
-            // ruler/select는 Blazor에 위임
-            if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', pos.x, pos.y);
-        }
+    function onMove(e) {
+        if (!isDrawing) return;
+        if (e.touches) e.preventDefault();
+        const pos = getCanvasPos(e);
+        if (currentPath) currentPath.points.push({ x: pos.x / currentZoom, y: pos.y / currentZoom });
+        annoCtx.lineTo(pos.x, pos.y);
+        annoCtx.stroke();
     }
 
-    function onPointerMove(e) {
-        if (isDrawingTool()) {
-            if (e.touches) e.preventDefault();
-            if (!isDrawing) return;
-            const pos = getPos(e);
-            patternViewer.draw(pos.x, pos.y);
-        }
-    }
-
-    function onPointerUp(e) {
-        if (isDrawing) patternViewer.endDraw();
+    function onUp(e) {
+        if (!isDrawing) return;
+        isDrawing = false;
+        if (currentPath) { paths.push(currentPath); currentPath = null; }
     }
 
     return {
@@ -121,32 +115,30 @@ window.patternViewer = (() => {
             await page.render({ canvasContext: pdfCtx, viewport }).promise;
             redrawPaths();
 
-            // 터치 & 마우스 이벤트 등록 (중복 방지)
-            annoCanvas.removeEventListener('mousedown', onPointerDown);
-            annoCanvas.removeEventListener('mousemove', onPointerMove);
-            annoCanvas.removeEventListener('mouseup', onPointerUp);
-            annoCanvas.removeEventListener('touchstart', onPointerDown);
-            annoCanvas.removeEventListener('touchmove', onPointerMove);
-            annoCanvas.removeEventListener('touchend', onPointerUp);
+            // 이벤트 중복 방지
+            if (!annoCanvas._eventsRegistered) {
+                annoCanvas._eventsRegistered = true;
 
-            annoCanvas.addEventListener('mousedown', onPointerDown);
-            annoCanvas.addEventListener('mousemove', onPointerMove);
-            annoCanvas.addEventListener('mouseup', onPointerUp);
-            annoCanvas.addEventListener('touchstart', onPointerDown, { passive: false });
-            annoCanvas.addEventListener('touchmove', onPointerMove, { passive: false });
-            annoCanvas.addEventListener('touchend', onPointerUp);
+                // 마우스
+                annoCanvas.addEventListener('mousedown', onDown);
+                annoCanvas.addEventListener('mousemove', onMove);
+                annoCanvas.addEventListener('mouseup', onUp);
 
-            // 휠 이벤트로 페이지 이동 (한 번만 등록)
-            const container = annoCanvas.closest('div[style*="overflow:auto"], div[style*="overflow: auto"]')
-                || annoCanvas.parentElement?.parentElement;
-            if (container && !container._wheelRegistered) {
-                container._wheelRegistered = true;
-                container.addEventListener('wheel', (e) => {
-                    e.preventDefault();
-                    if (!dotNetRef) return;
-                    if (e.deltaY > 0) dotNetRef.invokeMethodAsync('NextPageFromJS');
-                    else dotNetRef.invokeMethodAsync('PrevPageFromJS');
-                }, { passive: false });
+                // 터치 — pen/eraser일 때만 preventDefault
+                annoCanvas.addEventListener('touchstart', onDown, { passive: false });
+                annoCanvas.addEventListener('touchmove', onMove, { passive: false });
+                annoCanvas.addEventListener('touchend', onUp);
+
+                // 휠로 페이지 이동
+                const scrollEl = annoCanvas.closest('[style*="overflow"]') || document.querySelector('[style*="overflow:auto"]');
+                if (scrollEl) {
+                    scrollEl.addEventListener('wheel', (e) => {
+                        e.preventDefault();
+                        if (!dotNetRef) return;
+                        if (e.deltaY > 0) dotNetRef.invokeMethodAsync('NextPageFromJS');
+                        else dotNetRef.invokeMethodAsync('PrevPageFromJS');
+                    }, { passive: false });
+                }
             }
         },
 
@@ -157,14 +149,12 @@ window.patternViewer = (() => {
             if (tool !== undefined) _tool = tool;
         },
 
+        // Blazor 마우스 이벤트용 (ruler, select 도구 지원)
         startDraw(x, y, color, size, isEraser) {
             getCanvases();
             isDrawing = true;
             currentPath = {
-                page: currentPageNum,
-                color: color,
-                size: size,
-                isEraser: isEraser,
+                page: currentPageNum, color, size, isEraser,
                 originZoom: currentZoom,
                 points: [{ x: x / currentZoom, y: y / currentZoom }]
             };
@@ -173,7 +163,7 @@ window.patternViewer = (() => {
             annoCtx.lineWidth = size;
             annoCtx.lineCap = 'round';
             annoCtx.lineJoin = 'round';
-            annoCtx.strokeStyle = isEraser ? '#ffffff' : color;
+            annoCtx.strokeStyle = isEraser ? 'rgba(0,0,0,1)' : color;
             annoCtx.globalCompositeOperation = isEraser ? 'destination-out' : 'source-over';
         },
 
@@ -185,17 +175,12 @@ window.patternViewer = (() => {
         },
 
         endDraw() {
+            if (!isDrawing) return;
             isDrawing = false;
-            if (currentPath) {
-                paths.push(currentPath);
-                currentPath = null;
-            }
+            if (currentPath) { paths.push(currentPath); currentPath = null; }
         },
 
-        undo() {
-            paths.pop();
-            redrawPaths();
-        },
+        undo() { paths.pop(); redrawPaths(); },
 
         getRect() {
             const el = document.getElementById('canvas-container');

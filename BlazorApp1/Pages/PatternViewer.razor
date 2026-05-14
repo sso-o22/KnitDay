@@ -286,6 +286,7 @@
         {
             _dotNetRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("patternViewer.init", _dotNetRef);
+            await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, false, _tool);
         }
     }
 
@@ -346,8 +347,10 @@
     async Task OnGlobalMouseUp(MouseEventArgs e)
     {
         if (_isDrawingRuler && Math.Abs(_previewW) > 5) { _rulers.Add(new RulerOverlay { X = _previewW > 0 ? _rulerStartX : _rulerStartX + _previewW, Y = _previewH > 0 ? _rulerStartY : _rulerStartY + _previewH, Width = Math.Abs(_previewW), Height = Math.Abs(_previewH), Page = _currentPage }); }
-        _isDrawing = false; _isDrawingRuler = false; _draggingRuler = null; _resizingRuler = null;
-        if (_pdfLoaded) await JS.InvokeVoidAsync("patternViewer.endDraw");
+        _isDrawingRuler = false; _draggingRuler = null; _resizingRuler = null;
+        if (_isDrawing && _pdfLoaded && (_tool == "pen" || _tool == "eraser"))
+            await JS.InvokeVoidAsync("patternViewer.endDraw");
+        _isDrawing = false;
         StateHasChanged();
     }
 
