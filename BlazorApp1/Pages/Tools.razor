@@ -118,10 +118,13 @@ else
             </div>
 
             <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">소재</label>
-                    <input class="form-control" @bind="_editingTool.Material" placeholder="예: 대나무, 알루미늄, 스테인리스" />
-                </div>
+                @if (_editingTool.NeedleType == NeedleType.대바늘)
+                {
+                    <div class="form-group">
+                        <label class="form-label">소재</label>
+                        <input class="form-control" @bind="_editingTool.Material" placeholder="예: 대나무, 알루미늄, 스테인리스" />
+                    </div>
+                }
                 @if (_editingTool.NeedleType == NeedleType.대바늘)
                 {
                     <div class="form-group">

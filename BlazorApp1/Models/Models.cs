@@ -9,6 +9,7 @@ namespace KnitLog.Models
     public enum NeedleType { 대바늘, 코바늘 }
     public enum ProjectStatus { 진행중, 완료, 위시리스트 }
     public enum YarnWeight { 레이스, 핑거, 스포츠, DK, 워스티드, 벌키, 슈퍼벌키 }
+    public enum YarnType { 콘사, 볼실, 타래실, 손염색실, 기타 }
 
     // ─────────────────────────────────────────────
     // 실 (Yarn)
@@ -21,11 +22,14 @@ namespace KnitLog.Models
         public string Color { get; set; } = "";
         public string ColorCode { get; set; } = "#ffffff";
         public YarnWeight Weight { get; set; } = YarnWeight.워스티드;
+        public YarnType YarnType { get; set; } = YarnType.볼실;
+        public string LotNumber { get; set; } = "";
         public string Material { get; set; } = "";
         public int WeightGram { get; set; }
         public int LengthMeter { get; set; }
         public string PurchasePlace { get; set; } = "";
         public decimal Price { get; set; }
+        public DateTime? PurchaseDate { get; set; }
         public int Quantity { get; set; } = 1;
         public string Memo { get; set; } = "";
         public DateTime CreatedAt { get; set; } = DateTime.Now;

@@ -52,11 +52,15 @@ else
                 {
                     <div style="font-size:0.82rem; color:var(--text-mid);">@yarn.Brand</div>
                 }
-                <div style="font-size:0.82rem; color:var(--text-mid);">@yarn.Color · @yarn.Weight</div>
+                <div style="font-size:0.82rem; color:var(--text-mid);">@yarn.Color · @yarn.Weight · @yarn.YarnType</div>
 
                 @if (!string.IsNullOrEmpty(yarn.Material))
                 {
                     <div style="font-size:0.8rem; color:var(--text-light);">@yarn.Material</div>
+                }
+                @if (!string.IsNullOrEmpty(yarn.LotNumber))
+                {
+                    <div style="font-size:0.78rem; color:var(--text-light);">Lot: @yarn.LotNumber</div>
                 }
 
                 <div style="display:flex; gap:12px; font-size:0.78rem; color:var(--text-light); margin:8px 0;">
@@ -67,7 +71,13 @@ else
 
                 @if (!string.IsNullOrEmpty(yarn.PurchasePlace))
                 {
-                    <div style="font-size:0.78rem; color:var(--text-light); margin-bottom:10px;">🛒 @yarn.PurchasePlace</div>
+                    <div style="font-size:0.78rem; color:var(--text-light); margin-bottom:10px;">
+                        🛒 @yarn.PurchasePlace
+                        @if (yarn.PurchaseDate.HasValue)
+                        {
+                            <span> · @yarn.PurchaseDate.Value.ToString("yyyy.MM.dd")</span>
+                        }
+                    </div>
                 }
 
                 <div class="flex gap-1">
@@ -92,11 +102,11 @@ else
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">실 이름 *</label>
-                    <input class="form-control" @bind="_editingYarn.Name" placeholder="예: 러스크" />
+                    <input class="form-control" @bind="_editingYarn.Name" placeholder="예: 알파카 그란데" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">브랜드</label>
-                    <input class="form-control" @bind="_editingYarn.Brand" placeholder="예: 솜솜뜨개" />
+                    <input class="form-control" @bind="_editingYarn.Brand" placeholder="예: 랑 야른스" />
                 </div>
             </div>
 
@@ -117,15 +127,26 @@ else
 
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">굵기</label>
-                    <select class="form-control" @bind="_editingYarn.Weight">
-                        @foreach (var w in Enum.GetValues<YarnWeight>())
-                        { <option value="@w">@w</option> }
+                    <label class="form-label">실 종류</label>
+                    <select class="form-control" @bind="_editingYarn.YarnType">
+                        @foreach (var t in Enum.GetValues<YarnType>())
+                        { <option value="@t">@t</option> }
                     </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">소재</label>
                     <input class="form-control" @bind="_editingYarn.Material" placeholder="예: 울 100%" />
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">Lot 번호</label>
+                    <input class="form-control" @bind="_editingYarn.LotNumber" placeholder="예: 1234" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">수량 (볼)</label>
+                    <input type="number" class="form-control" @bind="_editingYarn.Quantity" min="0" />
                 </div>
             </div>
 
@@ -139,19 +160,21 @@ else
                     <input type="number" class="form-control" @bind="_editingYarn.LengthMeter" min="0" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">수량 (볼)</label>
-                    <input type="number" class="form-control" @bind="_editingYarn.Quantity" min="0" />
+                    <label class="form-label">가격 (볼당)</label>
+                    <input type="number" class="form-control" @bind="_editingYarn.Price" min="0" />
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">구매처</label>
-                    <input class="form-control" @bind="_editingYarn.PurchasePlace" placeholder="예: 솜솜뜨개" />
+                    <input class="form-control" @bind="_editingYarn.PurchasePlace" placeholder="예: 마이뜨개, 야바야, 에트시" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">가격 (볼당)</label>
-                    <input type="number" class="form-control" @bind="_editingYarn.Price" min="0" />
+                    <label class="form-label">구매일</label>
+                    <input type="date" class="form-control"
+                           value="@_editingYarn.PurchaseDate?.ToString("yyyy-MM-dd")"
+                           @onchange="e => _editingYarn.PurchaseDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                 </div>
             </div>
 
