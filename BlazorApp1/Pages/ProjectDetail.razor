@@ -572,7 +572,7 @@ else
             StartRefreshTimer();
     }
 
-    void GoBack() => Nav.NavigateTo("/schedule");
+    void GoBack() => Nav.NavigateTo("schedule");
     void GoToViewer() => Nav.NavigateTo("pattern-viewer/" + ProjectId);
 
     // ── 카운터 ──────────────────────────────────────────
@@ -755,7 +755,7 @@ else
     {
         if (_project == null) return;
         await Storage.CompleteProjectAsync(_project.Id);
-        Nav.NavigateTo("/finished");
+        Nav.NavigateTo("finished");
     }
 
     // ── 수정 모달 ────────────────────────────────────────
