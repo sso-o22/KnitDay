@@ -199,11 +199,11 @@ body {
 .btn-secondary:hover { background: var(--ivory-mid); }
 
 .btn-sage {
-    background: #eef2ff;
-    color: #2a2a2a;
-    border: 1px solid #cbd5e1;
+    background: #dff2d8;
+    color: #1a3318;
+    border: 1px solid #c8e6be;
 }
-.btn-sage:hover { background: #cfd8ff; color: #2a2a2a; }
+.btn-sage:hover { background: #c8e6be; color: #1a3318; }
 
 .btn-mint {
     background: #ddf0d5;
