@@ -57,6 +57,7 @@ body {
 .app-shell {
     display: flex;
     min-height: 100vh; height: 100dvh; min-height: 100dvh;
+    position: relative;
 }
 
 /* ── 사이드바 ────────────────────────────────────────── */
@@ -483,16 +484,20 @@ body {
     .grid-2 { grid-template-columns: 1fr; }
 
     .modal-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        min-height: 100%;
         align-items: flex-start;
         padding: 0;
-        overflow-y: auto;
     }
 
     .modal {
         padding: 20px 16px;
         max-height: none;
         border-radius: 0;
-        min-height: 100vh; height: 100dvh; min-height: 100dvh;
+        min-height: 100%;
         box-shadow: none;
     }
 
