@@ -22,7 +22,7 @@ namespace KnitLog.Models
         public string Color { get; set; } = "";
         public string ColorCode { get; set; } = "#ffffff";
         public YarnWeight Weight { get; set; } = YarnWeight.워스티드;
-        public YarnType YarnType { get; set; } = YarnType.볼실;
+        public YarnType YarnType { get; set; } = YarnType.콘사;
         public string LotNumber { get; set; } = "";
         public string Material { get; set; } = "";
         public int WeightGram { get; set; }
