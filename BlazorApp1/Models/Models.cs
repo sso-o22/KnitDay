@@ -9,7 +9,6 @@ namespace KnitLog.Models
     public enum NeedleType { 대바늘, 코바늘 }
     public enum ProjectStatus { 진행중, 완료, 위시리스트 }
     public enum YarnWeight { 레이스, 핑거, 스포츠, DK, 워스티드, 벌키, 슈퍼벌키 }
-    public enum KnitStitch { 메리야스, 가터, 고무단, 바둑판, 기타 }
 
     // ─────────────────────────────────────────────
     // 실 (Yarn)
@@ -38,21 +37,22 @@ namespace KnitLog.Models
     public class Swatch
     {
         public Guid Id { get; set; } = Guid.NewGuid();
-        public string Name { get; set; } = "";              // 스와치 이름 (선택)
+        public string Name { get; set; } = "";
 
         // 연결
-        public Guid? YarnId { get; set; }                   // 사용 실
-        public Guid? ProjectId { get; set; }                // 연결 프로젝트/위시리스트
+        public Guid? YarnId { get; set; }
+        public string YarnNameDirect { get; set; } = "";    // 직접 입력 실 이름
+        public Guid? ProjectId { get; set; }
 
         // 도구
-        public double NeedleSizeMm { get; set; }            // 바늘 굵기
-        public KnitStitch Stitch { get; set; } = KnitStitch.메리야스;
+        public double NeedleSizeMm { get; set; }
+        public string Stitch { get; set; } = "메리야스";     // 자유 입력
 
-        // 세탁 전 게이지 (10cm 기준)
-        public double PreWashStitches { get; set; }         // 코수
-        public double PreWashRows { get; set; }             // 단수
-        public double PreWashWidthCm { get; set; }          // 가로 cm
-        public double PreWashHeightCm { get; set; }         // 세로 cm
+        // 세탁 전 게이지
+        public double PreWashStitches { get; set; }
+        public double PreWashRows { get; set; }
+        public double PreWashWidthCm { get; set; }
+        public double PreWashHeightCm { get; set; }
 
         // 세탁 후 게이지
         public double PostWashStitches { get; set; }
@@ -60,7 +60,7 @@ namespace KnitLog.Models
         public double PostWashWidthCm { get; set; }
         public double PostWashHeightCm { get; set; }
 
-        // 수축률 (자동 계산 프로퍼티)
+        // 수축률 자동 계산
         public double WidthShrinkagePercent =>
             PreWashWidthCm > 0
                 ? Math.Round((PostWashWidthCm - PreWashWidthCm) / PreWashWidthCm * 100, 1)

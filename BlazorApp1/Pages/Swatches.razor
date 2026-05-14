@@ -45,6 +45,10 @@ else
                                 @yarn.Brand @yarn.Name
                             </div>
                         }
+                        else if (!string.IsNullOrEmpty(s.YarnNameDirect))
+                        {
+                            <div style="font-size:0.82rem; color:var(--text-mid);">🧵 @s.YarnNameDirect</div>
+                        }
                     </div>
                     <div style="display:flex; gap:6px;">
                         <button class="btn btn-ghost btn-sm" @onclick="() => OpenEditModal(s)">✏️</button>
@@ -152,7 +156,7 @@ else
 
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">사용 실</label>
+                    <label class="form-label">사용 실 — 장고에서 선택</label>
                     <select class="form-control" value="@_editing.YarnId" @onchange="OnYarnChanged">
                         <option value="">선택 안 함</option>
                         @foreach (var y in _yarns)
@@ -161,6 +165,13 @@ else
                         }
                     </select>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">또는 직접 입력</label>
+                    <input class="form-control" @bind="_editing.YarnNameDirect" placeholder="예: 랑 아르누보 아이보리" />
+                </div>
+            </div>
+
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">연결 프로젝트/위시리스트</label>
                     <select class="form-control" value="@_editing.ProjectId" @onchange="OnProjectChanged">
@@ -180,12 +191,7 @@ else
                 </div>
                 <div class="form-group">
                     <label class="form-label">뜨개 방법</label>
-                    <select class="form-control" @bind="_editing.Stitch">
-                        @foreach (var st in Enum.GetValues<KnitStitch>())
-                        {
-                            <option value="@st">@st</option>
-                        }
-                    </select>
+                    <input class="form-control" @bind="_editing.Stitch" placeholder="예: 메리야스, 가터, 2x2 고무단" />
                 </div>
             </div>
 
@@ -317,8 +323,8 @@ else
     {
         _editing = new Swatch
         {
-            Id = s.Id, Name = s.Name, YarnId = s.YarnId, ProjectId = s.ProjectId,
-            NeedleSizeMm = s.NeedleSizeMm, Stitch = s.Stitch,
+            Id = s.Id, Name = s.Name, YarnId = s.YarnId, YarnNameDirect = s.YarnNameDirect,
+            ProjectId = s.ProjectId, NeedleSizeMm = s.NeedleSizeMm, Stitch = s.Stitch,
             PreWashStitches = s.PreWashStitches, PreWashRows = s.PreWashRows,
             PreWashWidthCm = s.PreWashWidthCm, PreWashHeightCm = s.PreWashHeightCm,
             PostWashStitches = s.PostWashStitches, PostWashRows = s.PostWashRows,
