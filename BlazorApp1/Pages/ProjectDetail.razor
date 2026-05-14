@@ -465,8 +465,8 @@ else
         }
     }
 
-    void GoBack() => Nav.NavigateTo("/schedule");
-    void GoToViewer() => Nav.NavigateTo("pattern-viewer/" + ProjectId);
+    void GoBack() => Nav.NavigateTo(Nav.BaseUri + "schedule");
+    void GoToViewer() => Nav.NavigateTo(Nav.BaseUri + "pattern-viewer/" + ProjectId);
 
     // ── 카운터 ──────────────────────────────────────────
     async Task CounterChange(ProjectCounter counter, int delta)

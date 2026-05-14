@@ -178,7 +178,7 @@ else
 
     void GoToDetail(Guid id)
     {
-        Nav.NavigateTo("schedule/" + id);
+        Nav.NavigateTo(Nav.BaseUri + "schedule/" + id);
     }
 
     void OpenAddModal()
