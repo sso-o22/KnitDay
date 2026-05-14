@@ -28,13 +28,13 @@
             <div class="divider"></div>
             <div style="display:flex; align-items:center; gap:5px;">
                 <span style="font-size:10px;">Size</span>
-                <input type="range" min="2" max="50" @bind="_penSize" style="width:60px; cursor:pointer;" />
+                <input type="range" min="2" max="50" @bind="_penSize" @bind:after="SyncTool" style="width:60px; cursor:pointer;" />
                 <span style="font-size:10px; min-width:15px;">@_penSize</span>
             </div>
             @if (_tool == "pen")
             {
                 <div class="divider"></div>
-                <input type="color" value="@_penColor" @oninput="e => _penColor = e.Value?.ToString() ?? _penColor"
+                <input type="color" value="@_penColor" @oninput="OnColorChange"
                        style="width:28px; height:28px; border:none; border-radius:50%; padding:2px; cursor:pointer; background:transparent;" title="펜 색상" />
             }
         }
@@ -352,7 +352,22 @@
     void ChangeRulerOpacity(RulerOverlay r, ChangeEventArgs e) => r.Opacity = (double.TryParse(e.Value?.ToString(), out var v) ? v : 35) / 100.0;
     string HexToRgb(string hex) { hex = hex.TrimStart('#'); return $"{Convert.ToInt32(hex[..2], 16)},{Convert.ToInt32(hex[2..4], 16)},{Convert.ToInt32(hex[4..6], 16)}"; }
     string RgbToHex(string rgb) { var p = rgb.Split(','); return $"#{int.Parse(p[0]):X2}{int.Parse(p[1]):X2}{int.Parse(p[2]):X2}"; }
-    void SetTool(string t) => _tool = t;
+    void SetTool(string t)
+    {
+        _tool = t;
+        _ = JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, t == "eraser");
+    }
+
+    async Task SyncTool()
+    {
+        await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, _tool == "eraser");
+    }
+
+    async Task OnColorChange(ChangeEventArgs e)
+    {
+        _penColor = e.Value?.ToString() ?? _penColor;
+        await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, _tool == "eraser");
+    }
     string GetCursor() => _tool switch { "select" => "default", "pen" => "crosshair", "eraser" => "cell", _ => "crosshair" };
     void ClearAll() { _rulers.Clear(); _ = JS.InvokeVoidAsync("patternViewer.clearAnnotations"); }
     void GoBack() => Nav.NavigateTo("schedule/" + ProjectId);
