@@ -428,6 +428,14 @@ body {
 /* Blazor 기본 top-row 숨김 */
 .top-row { display: none !important; }
 
+/* ── 프로젝트 상세 그리드 ────────────────────────────── */
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
 /* ── 홈 요약 카드 그리드 ─────────────────────────────── */
 .stats-grid {
     display: grid;
@@ -482,6 +490,14 @@ body {
 
     .grid-3,
     .grid-2 { grid-template-columns: 1fr; }
+
+    .detail-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .detail-grid .card[style*='span 2'],
+    .detail-grid > .card { grid-column: span 1 !important; }
 
     .modal-backdrop {
         position: absolute;
