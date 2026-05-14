@@ -68,8 +68,7 @@
             <div id="canvas-container" style="position:relative; display:inline-block; align-self:flex-start;">
                 <canvas id="pdf-canvas" style="display:block;"></canvas>
                 <canvas id="anno-canvas"
-                        style="position:absolute; top:0; left:0; cursor:@GetCursor();"
-                        @onmousedown="OnCanvasMouseDown">
+                        style="position:absolute; top:0; left:0; cursor:@GetCursor();">
                 </canvas>
 
                 @foreach (var ruler in _rulers.Where(r => r.Page == _currentPage))
@@ -304,6 +303,12 @@
 
     async Task PrevPage() { if (_currentPage > 1) { _currentPage--; await RenderPage(); } }
     async Task NextPage() { if (_currentPage < _totalPages) { _currentPage++; await RenderPage(); } }
+
+    [JSInvokable]
+    public async Task PrevPageFromJS() { if (_currentPage > 1) { _currentPage--; await RenderPage(); } }
+
+    [JSInvokable]
+    public async Task NextPageFromJS() { if (_currentPage < _totalPages) { _currentPage++; await RenderPage(); } }
     async Task ZoomIn() { _zoom = Math.Min(3.0, _zoom + 0.2); await RenderPage(); }
     async Task ZoomOut() { _zoom = Math.Max(0.5, _zoom - 0.2); await RenderPage(); }
     async Task RenderPage() { await JS.InvokeVoidAsync("patternViewer.renderPage", _currentPage, _zoom); StateHasChanged(); }
@@ -316,6 +321,12 @@
             _isDrawing = true;
             await JS.InvokeVoidAsync("patternViewer.startDraw", e.OffsetX, e.OffsetY, _penColor, _penSize, _tool == "eraser");
         }
+    }
+
+    [JSInvokable]
+    public void OnCanvasPointerDown(double x, double y)
+    {
+        if (_tool == "ruler") { _isDrawingRuler = true; _rulerStartX = x; _rulerStartY = y; _previewW = 0; _previewH = 0; StateHasChanged(); }
     }
 
     async Task OnGlobalMouseMove(MouseEventArgs e)
@@ -355,18 +366,18 @@
     void SetTool(string t)
     {
         _tool = t;
-        _ = JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, t == "eraser");
+        _ = JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, t == "eraser", t);
     }
 
     async Task SyncTool()
     {
-        await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, _tool == "eraser");
+        await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, _tool == "eraser", _tool);
     }
 
     async Task OnColorChange(ChangeEventArgs e)
     {
         _penColor = e.Value?.ToString() ?? _penColor;
-        await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, _tool == "eraser");
+        await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, _tool == "eraser", _tool);
     }
     string GetCursor() => _tool switch { "select" => "default", "pen" => "crosshair", "eraser" => "cell", _ => "crosshair" };
     void ClearAll() { _rulers.Clear(); _ = JS.InvokeVoidAsync("patternViewer.clearAnnotations"); }

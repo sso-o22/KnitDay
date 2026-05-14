@@ -68,18 +68,30 @@ window.patternViewer = (() => {
     let _color = '#e74c3c';
     let _size = 4;
     let _isEraser = false;
+    let _tool = 'select';
+
+    function isDrawingTool() {
+        return _tool === 'pen' || _tool === 'eraser';
+    }
 
     function onPointerDown(e) {
-        if (e.touches) e.preventDefault();
         const pos = getPos(e);
-        patternViewer.startDraw(pos.x, pos.y, _color, _size, _isEraser);
+        if (isDrawingTool()) {
+            if (e.touches) e.preventDefault();
+            patternViewer.startDraw(pos.x, pos.y, _color, _size, _isEraser);
+        } else if (_tool === 'ruler' || _tool === 'select') {
+            // ruler/select는 Blazor에 위임
+            if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', pos.x, pos.y);
+        }
     }
 
     function onPointerMove(e) {
-        if (e.touches) e.preventDefault();
-        if (!isDrawing) return;
-        const pos = getPos(e);
-        patternViewer.draw(pos.x, pos.y);
+        if (isDrawingTool()) {
+            if (e.touches) e.preventDefault();
+            if (!isDrawing) return;
+            const pos = getPos(e);
+            patternViewer.draw(pos.x, pos.y);
+        }
     }
 
     function onPointerUp(e) {
@@ -123,12 +135,26 @@ window.patternViewer = (() => {
             annoCanvas.addEventListener('touchstart', onPointerDown, { passive: false });
             annoCanvas.addEventListener('touchmove', onPointerMove, { passive: false });
             annoCanvas.addEventListener('touchend', onPointerUp);
+
+            // 휠 이벤트로 페이지 이동 (한 번만 등록)
+            const container = annoCanvas.closest('div[style*="overflow:auto"], div[style*="overflow: auto"]')
+                || annoCanvas.parentElement?.parentElement;
+            if (container && !container._wheelRegistered) {
+                container._wheelRegistered = true;
+                container.addEventListener('wheel', (e) => {
+                    e.preventDefault();
+                    if (!dotNetRef) return;
+                    if (e.deltaY > 0) dotNetRef.invokeMethodAsync('NextPageFromJS');
+                    else dotNetRef.invokeMethodAsync('PrevPageFromJS');
+                }, { passive: false });
+            }
         },
 
-        setTool(color, size, isEraser) {
+        setTool(color, size, isEraser, tool) {
             _color = color;
             _size = size;
             _isEraser = isEraser;
+            if (tool !== undefined) _tool = tool;
         },
 
         startDraw(x, y, color, size, isEraser) {
