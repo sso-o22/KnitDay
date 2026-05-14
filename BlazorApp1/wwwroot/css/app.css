@@ -496,8 +496,8 @@ body {
         gap: 12px;
     }
 
-    .detail-grid .card[style*='span 2'],
-    .detail-grid > .card { grid-column: span 1 !important; }
+    .detail-grid .card { grid-column: span 1 !important; }
+
 
     .modal-backdrop {
         position: absolute;
