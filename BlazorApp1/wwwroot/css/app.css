@@ -424,10 +424,13 @@ body {
 .gap-2 { gap: 16px; }
 .divider { height: 1px; background: var(--border); margin: 20px 0; }
 
+/* Blazor 기본 top-row 숨김 */
+.top-row { display: none !important; }
+
 /* ── 홈 요약 카드 그리드 ─────────────────────────────── */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 16px;
     margin-bottom: 32px;
 }
