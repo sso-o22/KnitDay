@@ -50,26 +50,26 @@ body {
     font-family: 'DM Sans', 'Noto Sans KR', sans-serif;
     background: var(--ivory);
     color: var(--text-dark);
-    min-height: 100vh;
+    min-height: 100vh; height: 100dvh; min-height: 100dvh;
 }
 
 /* ── 레이아웃 ────────────────────────────────────────── */
 .app-shell {
     display: flex;
-    min-height: 100vh;
+    min-height: 100vh; height: 100dvh; min-height: 100dvh;
 }
 
 /* ── 사이드바 ────────────────────────────────────────── */
 .sidebar {
     width: 220px;
-    min-height: 100vh;
+    min-height: 100vh; height: 100dvh; min-height: 100dvh;
     background: var(--sidebar-bg);
     display: flex;
     flex-direction: column;
     padding: 0;
     position: sticky;
     top: 0;
-    height: 100vh;
+    height: 100vh; height: 100dvh;
     overflow-y: auto;
 }
 
@@ -492,7 +492,7 @@ body {
         padding: 20px 16px;
         max-height: none;
         border-radius: 0;
-        min-height: 100vh;
+        min-height: 100vh; height: 100dvh; min-height: 100dvh;
         box-shadow: none;
     }
 
