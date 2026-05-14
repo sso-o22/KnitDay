@@ -145,7 +145,7 @@ else
     <div class="modal-backdrop" @onclick="CloseModal">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">@(_editing.Id == Guid.Empty ? "스와치 추가" : "스와치 수정")</h2>
+                <h2 class="modal-title">@(_editing.Id == Guid.Empty ? "스와치 추가" : "스와치 추가")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
             </div>
 
