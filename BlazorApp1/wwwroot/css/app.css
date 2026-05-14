@@ -424,6 +424,22 @@ body {
 .gap-2 { gap: 16px; }
 .divider { height: 1px; background: var(--border); margin: 20px 0; }
 
+/* ── 홈 요약 카드 그리드 ─────────────────────────────── */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+}
+
 /* ── 하단 탭바 (모바일 전용) ─────────────────────────── */
 .bottom-nav {
     display: none;
