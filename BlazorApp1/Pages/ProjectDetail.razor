@@ -70,6 +70,47 @@ else
                         <div style="font-weight:500; word-break:break-all;">@_project.PatternSource</div>
                     </div>
                 }
+                @if (_project.YarnUsages.Count > 0)
+                {
+                    <div>
+                        <div class="form-label">사용 실</div>
+                        @foreach (var usage in _project.YarnUsages)
+                        {
+                            var yarn = _yarns.Find(y => y.Id == usage.YarnId);
+                            if (yarn != null)
+                            {
+                                <div style="display:flex; align-items:center; gap:5px; margin-bottom:3px;">
+                                    <span class="color-dot" style="background:@yarn.ColorCode; width:12px; height:12px;"></span>
+                                    <span style="font-size:0.85rem; font-weight:500;">@yarn.Brand @yarn.Name</span>
+                                    @if (usage.BallsUsed > 0)
+                                    {
+                                        <span style="font-size:0.78rem; color:var(--text-light);">@usage.BallsUsed볼</span>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+                @if (_project.ToolIds.Count > 0 || !string.IsNullOrEmpty(_project.NeedleNote))
+                {
+                    <div>
+                        <div class="form-label">사용 바늘</div>
+                        @foreach (var toolId in _project.ToolIds)
+                        {
+                            var tool = _allTools.Find(t => t.Id == toolId);
+                            if (tool != null)
+                            {
+                                <div style="font-size:0.85rem; font-weight:500; margin-bottom:2px;">
+                                    @tool.NeedleType @tool.SizeMm mm
+                                </div>
+                            }
+                        }
+                        @if (!string.IsNullOrEmpty(_project.NeedleNote))
+                        {
+                            <div style="font-size:0.85rem; font-weight:500;">@_project.NeedleNote</div>
+                        }
+                    </div>
+                }
             </div>
 
             @if (!string.IsNullOrEmpty(_project.Description))
@@ -371,7 +412,7 @@ else
             {
                 <p style="color:var(--text-light); font-size:0.88rem;">
                     연결된 스와치가 없어요.
-                    <a href="/swatches" style="color:#267848;">스와치 페이지</a>에서 이 프로젝트를 선택해 연결할 수 있어요.
+                    <a href="swatches" style="color:#267848;">스와치 페이지</a>에서 이 프로젝트를 선택해 연결할 수 있어요.
                 </p>
             }
             else
@@ -515,21 +556,20 @@ else
     private PeriodicTimer? _refreshTimer;
     List<Swatch> _linkedSwatches = new();
     List<Yarn> _yarns = new();
+    List<KnitTool> _allTools = new();
 
     protected override async Task OnInitializedAsync()
     {
         var all = await Storage.GetProjectsAsync();
         _project = all.FirstOrDefault(p => p.Id == ProjectId);
         _yarns = await Storage.GetYarnsAsync();
+        _allTools = await Storage.GetToolsAsync();
         var allSwatches = await Storage.GetSwatchesAsync();
         _linkedSwatches = allSwatches.Where(s => s.ProjectId == ProjectId).ToList();
         _loading = false;
 
-        // 진행 중인 세션이 있으면 타이머 시작
         if (_project?.Sessions.Any(s => s.IsActive) == true)
-        {
             StartRefreshTimer();
-        }
     }
 
     void GoBack() => Nav.NavigateTo("/schedule");

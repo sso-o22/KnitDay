@@ -119,6 +119,7 @@ namespace KnitLog.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public List<ProjectYarnUsage> YarnUsages { get; set; } = new();
         public List<Guid> ToolIds { get; set; } = new();
+        public string NeedleNote { get; set; } = "";        // 바늘 직접 입력 (예: 4mm 대바늘 80cm)
         public List<ProjectPhoto> Photos { get; set; } = new();
         public List<ProjectCounter> Counters { get; set; } = new();
         public List<ChecklistItem> Checklist { get; set; } = new();
