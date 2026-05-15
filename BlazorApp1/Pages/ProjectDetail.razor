@@ -259,7 +259,7 @@ else
                                         <span>목표</span>
                                         <input type="number" style="width:65px;" class="form-control"
                                                value="@(counter.Target == 0 ? "" : counter.Target.ToString())"
-                                               @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = SaveProject(); }"
+                                               @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = Save(); }"
                                                min="0" placeholder="없음" />
                                         <button class="btn btn-ghost btn-sm" @onclick="() => ResetCounter(counter)">초기화</button>
                                     </div>
