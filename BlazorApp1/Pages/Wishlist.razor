@@ -62,7 +62,7 @@ else
 <!-- 추가/수정 모달 -->
 @if (_showModal && _editingProject != null)
 {
-    <div class="modal-backdrop" @onclick="CloseModal">
+    <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingProject.Id == Guid.Empty ? "위시 추가" : "위시 수정")</h2>

@@ -72,7 +72,7 @@ else
 <!-- 상세 모달 -->
 @if (_showDetail && _selectedProject != null)
 {
-    <div class="modal-backdrop" @onclick="CloseDetail">
+    <div class="modal-backdrop">
         <div class="modal" style="max-width:720px;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@_selectedProject.Title</h2>

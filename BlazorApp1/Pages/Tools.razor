@@ -128,7 +128,7 @@ else
 
 @if (_showModal && _editingTool != null)
 {
-    <div class="modal-backdrop" @onclick="CloseModal">
+    <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingTool.Id == Guid.Empty ? "도구 추가" : "도구 수정")</h2>

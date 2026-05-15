@@ -563,7 +563,7 @@ else
 <!-- 사진 확대 모달 -->
 @if (_showPhoto && _selectedPhoto != null)
 {
-    <div class="modal-backdrop" @onclick="() => _showPhoto = false">
+    <div class="modal-backdrop">
         <div style="max-width:90vw; max-height:90vh;" @onclick:stopPropagation="true">
             <img src="@_selectedPhoto.Base64Data"
                  style="max-width:90vw; max-height:85vh; object-fit:contain; border-radius:var(--radius); display:block;" />
@@ -578,7 +578,7 @@ else
 <!-- 수정 모달 -->
 @if (_showEditModal && _project != null)
 {
-    <div class="modal-backdrop" @onclick="CloseEditModal">
+    <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">프로젝트 수정</h2>

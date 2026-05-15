@@ -142,7 +142,7 @@ else
 @* ── 추가/수정 모달 ── *@
 @if (_showModal)
 {
-    <div class="modal-backdrop" @onclick="CloseModal">
+    <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editing.Id == Guid.Empty ? "스와치 추가" : "스와치 추가")</h2>

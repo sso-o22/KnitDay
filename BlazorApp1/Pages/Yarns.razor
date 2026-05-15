@@ -92,7 +92,7 @@ else
 <!-- 추가/수정 모달 -->
 @if (_showModal && _editingYarn != null)
 {
-    <div class="modal-backdrop" @onclick="CloseModal">
+    <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingYarn.Id == Guid.Empty ? "실 추가" : "실 수정")</h2>

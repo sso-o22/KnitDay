@@ -189,7 +189,7 @@ else
 
 @if (_showModal)
 {
-    <div class="modal-backdrop" @onclick="CloseModal">
+    <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingProject?.Id == Guid.Empty ? "새 프로젝트" : "프로젝트 수정")</h2>
