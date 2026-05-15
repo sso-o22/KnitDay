@@ -57,6 +57,7 @@
 [data-theme="sky"]    { --theme-pale:#eaf7ff; --theme-light:#d3f4ff; --theme-mid:#a8dff5; --theme-muted:#6aaac8; --theme-btn:#eaf7ff; --theme-active:#1a6a8a; }
 [data-theme="pink"]   { --theme-pale:#fff1f1; --theme-light:#ffe7e7; --theme-mid:#f5c0c0; --theme-muted:#c88888; --theme-btn:#fff1f1; --theme-active:#8a3a3a; }
 [data-theme="purple"] { --theme-pale:#f3efff; --theme-light:#e9e1ff; --theme-mid:#c8b8e8; --theme-muted:#8878b8; --theme-btn:#f3efff; --theme-active:#5a3a8a; }
+[data-theme="mono"]   { --theme-pale:#f5f5f5; --theme-light:#e0e0e0; --theme-mid:#cccccc; --theme-muted:#888888; --theme-btn:#f5f5f5; --theme-active:#333333; }
 
 
 /* ── 다크모드 ────────────────────────────────────────────── */
@@ -75,11 +76,11 @@
 }
 
 /* 다크모드 + 각 테마 조합 */
-[data-dark="true"][data-theme="green"]  { --theme-pale:#1e2a1e; --theme-light:#2a4a2a; --theme-mid:#2a3a2a; --theme-muted:#5a8a5a; --theme-btn:#1e2a1e; --theme-active:#6abf7a; }
-[data-dark="true"][data-theme="yellow"] { --theme-pale:#2a2810; --theme-light:#3a3818; --theme-mid:#3a3510; --theme-muted:#8a7820; --theme-btn:#2a2810; --theme-active:#d4b840; }
-[data-dark="true"][data-theme="sky"]    { --theme-pale:#102028; --theme-light:#183040; --theme-mid:#182838; --theme-muted:#3a7a9a; --theme-btn:#102028; --theme-active:#5ab8e8; }
-[data-dark="true"][data-theme="pink"]   { --theme-pale:#281818; --theme-light:#3a2020; --theme-mid:#381818; --theme-muted:#8a4a4a; --theme-btn:#281818; --theme-active:#e87a7a; }
-[data-dark="true"][data-theme="purple"] { --theme-pale:#1e1828; --theme-light:#2a2038; --theme-mid:#281e38; --theme-muted:#6a58a8; --theme-btn:#1e1828; --theme-active:#a888e8; }
+[data-dark="true"][data-theme="green"]  { --theme-pale:#1a231a; --theme-light:#243824; --theme-mid:#2e442e; --theme-muted:#4a7a4a; --theme-btn:#1a231a; --theme-active:#7dd87a; }
+[data-dark="true"][data-theme="yellow"] { --theme-pale:#222010; --theme-light:#332f14; --theme-mid:#443c18; --theme-muted:#7a6a20; --theme-btn:#222010; --theme-active:#e8cc50; }
+[data-dark="true"][data-theme="sky"]    { --theme-pale:#0e1e28; --theme-light:#142840; --theme-mid:#1a3450; --theme-muted:#2a6888; --theme-btn:#0e1e28; --theme-active:#60c8f0; }
+[data-dark="true"][data-theme="pink"]   { --theme-pale:#221414; --theme-light:#341c1c; --theme-mid:#442424; --theme-muted:#7a3838; --theme-btn:#221414; --theme-active:#f08888; }
+[data-dark="true"][data-theme="purple"] { --theme-pale:#181420; --theme-light:#221a30; --theme-mid:#2c2040; --theme-muted:#5a4898; --theme-btn:#181420; --theme-active:#b898f8; }
 
 /* ── 리셋 & 기본 ────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }

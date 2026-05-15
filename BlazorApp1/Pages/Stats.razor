@@ -31,14 +31,10 @@ else
         </div>
         <div class="card" style="text-align:center;">
             <div style="font-size:2rem; margin-bottom:4px;">⏱️</div>
-            <div style="font-size:1.5rem; font-weight:800; color:var(--theme-active);">@_totalHours<span style="font-size:1rem;">h</span></div>
+            <div style="font-size:1.3rem; font-weight:800; color:var(--theme-active);">@_totalTimeStr</div>
             <div style="font-size:0.82rem; color:var(--text-mid);">총 뜨개 시간</div>
         </div>
-        <div class="card" style="text-align:center;">
-            <div style="font-size:2rem; margin-bottom:4px;">🧵</div>
-            <div style="font-size:2rem; font-weight:800; color:var(--theme-active);">@_totalYarns</div>
-            <div style="font-size:0.82rem; color:var(--text-mid);">실 종류</div>
-        </div>
+
     </div>
 
     <!-- 기간 탭 -->
@@ -92,8 +88,6 @@ else
         {
             @foreach (var (session, projectTitle) in _recentSessions)
             {
-                var totalSecs = (int)((session.EndTime ?? DateTime.Now) - session.StartTime).TotalSeconds;
-                var h = totalSecs / 3600; var m = (totalSecs % 3600) / 60;
                 <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border);">
                     <div style="width:44px; height:44px; background:var(--theme-pale); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">🧶</div>
                     <div style="flex:1; min-width:0;">
@@ -101,7 +95,7 @@ else
                         <div style="font-size:0.78rem; color:var(--text-light);">@session.StartTime.ToString("M월 d일 HH:mm")</div>
                     </div>
                     <div style="font-weight:700; color:var(--theme-active); font-size:0.9rem; flex-shrink:0;">
-                        @(h > 0 ? $"{h}h {m:D2}m" : $"{m}분")
+                        @FormatTime((int)((session.EndTime ?? DateTime.Now) - session.StartTime).TotalSeconds)
                     </div>
                 </div>
             }
@@ -112,8 +106,8 @@ else
 @code {
     bool _loading = true;
     string _period = "week";
-    int _totalFinished, _totalInProgress, _totalYarns;
-    double _totalHours;
+    int _totalFinished, _totalInProgress;
+    string _totalTimeStr = "0분";
     List<(string Label, int Minutes)> _chartData = new();
     List<(KnitSession Session, string ProjectTitle)> _recentSessions = new();
     List<KnitProject> _projects = new();
@@ -121,17 +115,23 @@ else
     protected override async Task OnInitializedAsync()
     {
         _projects  = await Storage.GetProjectsAsync();
-        var yarns  = await Storage.GetYarnsAsync();
         _totalFinished   = _projects.Count(p => p.Status == ProjectStatus.완료);
         _totalInProgress = _projects.Count(p => p.Status == ProjectStatus.진행중);
-        _totalYarns      = yarns.Count;
         var allSecs = _projects.SelectMany(p => p.Sessions)
             .Where(s => s.EndTime.HasValue)
             .Sum(s => (int)((s.EndTime!.Value) - s.StartTime).TotalSeconds);
-        _totalHours = Math.Round(allSecs / 3600.0, 1);
+        _totalTimeStr = FormatTime(allSecs);
         BuildChart();
         BuildRecentSessions();
         _loading = false;
+    }
+
+    string FormatTime(int secs)
+    {
+        var h = secs / 3600; var m = (secs % 3600) / 60; var s = secs % 60;
+        if (h > 0) return $"{h}시간 {m:D2}분";
+        if (m > 0) return $"{m}분 {s:D2}초";
+        return secs > 0 ? $"{s}초" : "0분";
     }
 
     void SetPeriod(string period) { _period = period; BuildChart(); }

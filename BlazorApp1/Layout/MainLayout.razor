@@ -24,33 +24,18 @@
             <li><NavLink href="settings" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-label">설정</span></NavLink></li>
         </ul>
 
-        <!-- 사이드바 하단 통계 -->
+        <!-- 사이드바 하단 통계 + 다크 토글 -->
         <div class="sidebar-stats">
             <div class="sidebar-stat-row">
                 <span>✅ 완성작</span>
                 <strong>@(_finished)개</strong>
             </div>
             <div class="sidebar-stat-row">
-                <span>⏱️ 총 시간</span>
-                <strong>@(_hours)h</strong>
+                <span>⏱️ 오늘</span>
+                <strong>@_todayTime</strong>
             </div>
             <div class="sidebar-dark-toggle" @onclick="ToggleDark" title="@(_isDark ? "라이트 모드" : "다크 모드")">
                 @(_isDark ? "☀️" : "🌙")
-            </div>
-        </div>
-
-        <!-- 테마 선택 -->
-        <div class="theme-picker">
-            <div class="theme-picker-label">테마</div>
-            <div class="theme-dots">
-                @foreach (var t in _themes)
-                {
-                    <button class="theme-dot @(_currentTheme == t.Id ? "active" : "")"
-                            style="background:@t.DotColor;"
-                            title="@t.Name"
-                            @onclick="() => SetTheme(t.Id)">
-                    </button>
-                }
             </div>
         </div>
     </nav>
@@ -74,29 +59,31 @@
 </div>
 
 @code {
-    record ThemeOption(string Id, string Name, string DotColor);
-    readonly List<ThemeOption> _themes = new()
-    {
-        new("green",  "연두", "#c8e6be"),
-        new("yellow", "노랑", "#fffdc7"),
-        new("sky",    "하늘", "#d3f4ff"),
-        new("pink",   "분홍", "#ffe7e7"),
-        new("purple", "보라", "#e9e1ff"),
-    };
-
     string _currentTheme = "green";
     bool _isDark = false;
     int _finished;
-    double _hours;
+    string _todayTime = "0분";
 
     protected override async Task OnInitializedAsync()
     {
         var projects = await Storage.GetProjectsAsync();
         _finished = projects.Count(p => p.Status == ProjectStatus.완료);
-        var secs = projects.SelectMany(p => p.Sessions)
-            .Where(s => s.EndTime.HasValue)
+
+        var todaySecs = projects
+            .SelectMany(p => p.Sessions)
+            .Where(s => s.EndTime.HasValue && s.StartTime.Date == DateTime.Today)
             .Sum(s => (int)((s.EndTime!.Value - s.StartTime).TotalSeconds));
-        _hours = Math.Round(secs / 3600.0, 1);
+        _todayTime = FormatTime(todaySecs);
+    }
+
+    string FormatTime(int secs)
+    {
+        var h = secs / 3600;
+        var m = (secs % 3600) / 60;
+        var s = secs % 60;
+        if (h > 0) return $"{h}시간 {m:D2}분";
+        if (m > 0) return $"{m}분 {s:D2}초";
+        return secs > 0 ? $"{s}초" : "0분";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -111,13 +98,6 @@
             await ApplyDark(_isDark);
             StateHasChanged();
         }
-    }
-
-    async Task SetTheme(string id)
-    {
-        _currentTheme = id;
-        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_theme", id);
-        await ApplyTheme(id);
     }
 
     async Task ToggleDark()
