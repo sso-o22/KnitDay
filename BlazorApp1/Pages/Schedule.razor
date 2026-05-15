@@ -110,9 +110,9 @@ else
                         }
                     </div>
 
-                    @if (!string.IsNullOrEmpty(proj.Memo))
+                    @if (!string.IsNullOrEmpty(proj.PatternMemo))
                     {
-                        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:10px; white-space:pre-wrap; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@proj.Memo</p>
+                        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:10px; white-space:pre-wrap; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@proj.PatternMemo</p>
                     }
 
                     <div style="display:flex; gap:8px; flex-wrap:wrap;" @onclick:stopPropagation="true">

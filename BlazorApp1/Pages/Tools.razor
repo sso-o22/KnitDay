@@ -41,13 +41,13 @@ else
                 <div class="card">
                     <div class="flex-between mb-1">
                         <div class="card-title" style="margin-bottom:0;">
-                            @if (tool.IsSet)
+                            @if (!string.IsNullOrEmpty(tool.Brand) || !string.IsNullOrEmpty(tool.ModelName))
                             {
-                                <span>세트</span>
+                                <span>@tool.Brand @tool.ModelName</span>
                             }
                             else
                             {
-                                <span>@(tool.SizeMm)mm</span>
+                                <span>@(tool.IsSet ? "세트" : $"{tool.SizeMm}mm")</span>
                             }
                         </div>
                         <div style="display:flex; gap:4px; align-items:center;">
@@ -61,12 +61,9 @@ else
                         </div>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(tool.Brand) || !string.IsNullOrEmpty(tool.ModelName))
-                    {
-                        <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:4px;">
-                            @tool.Brand @tool.ModelName
-                        </div>
-                    }
+                    <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:4px;">
+                        @tool.SizeDisplay
+                    </div>
 
                     @if (tool.IsSet && tool.SetSizes.Count > 0)
                     {
