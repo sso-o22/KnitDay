@@ -157,7 +157,9 @@ else
                 <!-- 단일 굵기 -->
                 <div class="form-group">
                     <label class="form-label">굵기 (mm) *</label>
-                    <input type="number" class="form-control" @bind="_editingTool.SizeMm"
+                    <input type="number" class="form-control"
+                           value="@(_editingTool.SizeMm == 0 ? "" : _editingTool.SizeMm.ToString())"
+                           @onchange="e => _editingTool.SizeMm = double.TryParse(e.Value?.ToString(), out var v) ? v : 0"
                            step="0.25" min="0.5" max="30" placeholder="예: 3.5" />
                 </div>
             }
@@ -176,9 +178,15 @@ else
                             </div>
                         }
                     </div>
-                    <div style="display:flex; gap:8px;">
-                        <input type="number" class="form-control" @bind="_newSetSize"
-                               step="0.25" min="0.5" max="30" placeholder="굵기 입력 (mm)" />
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <button class="btn btn-ghost btn-sm" style="font-size:1.1rem; padding:3px 12px;"
+                                @onclick="DecNewSetSize">−</button>
+                        <input type="number" class="form-control" style="text-align:center;"
+                               value="@(_newSetSize == 0 ? "" : _newSetSize.ToString())"
+                               @onchange="e => _newSetSize = double.TryParse(e.Value?.ToString(), out var v) ? v : _newSetSize"
+                               step="0.25" min="0.5" max="30" placeholder="굵기 (mm)" />
+                        <button class="btn btn-ghost btn-sm" style="font-size:1.1rem; padding:3px 12px;"
+                                @onclick="IncNewSetSize">+</button>
                         <button class="btn btn-sage btn-sm" @onclick="AddSetSize">추가</button>
                     </div>
                 </div>
@@ -193,7 +201,10 @@ else
                     </div>
                     <div class="form-group">
                         <label class="form-label">길이 (cm)</label>
-                        <input type="number" class="form-control" @bind="_editingTool.LengthCm" min="0" placeholder="예: 80" />
+                        <input type="number" class="form-control"
+                               value="@(_editingTool.LengthCm == 0 ? "" : _editingTool.LengthCm.ToString())"
+                               @onchange="e => _editingTool.LengthCm = int.TryParse(e.Value?.ToString(), out var v) ? v : 0"
+                               min="0" placeholder="예: 80" />
                     </div>
                 </div>
             }
@@ -252,12 +263,27 @@ else
 
     void CloseModal() { _showModal = false; _editingTool = null; }
 
+    // 4mm 미만: 0.25 단위, 4mm 이상: 0.5 단위
+    double GetStep(double size) => size < 4.0 ? 0.25 : 0.5;
+
+    void IncNewSetSize()
+    {
+        var step = GetStep(_newSetSize);
+        _newSetSize = Math.Round(_newSetSize + step, 2);
+    }
+
+    void DecNewSetSize()
+    {
+        var step = GetStep(_newSetSize > 0 ? _newSetSize : 0.25);
+        _newSetSize = Math.Max(0.5, Math.Round(_newSetSize - step, 2));
+    }
+
     void AddSetSize()
     {
         if (_editingTool == null || _newSetSize <= 0) return;
         if (!_editingTool.SetSizes.Contains(_newSetSize))
             _editingTool.SetSizes.Add(_newSetSize);
-        _newSetSize = 0;
+        // 추가 후 값 유지 (초기화 안 함)
     }
 
     async Task SaveTool()
