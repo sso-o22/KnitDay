@@ -99,6 +99,10 @@ else
                         </div>
                     }
 
+                    @if (tool.NeedleType == NeedleType.코바늘 && !string.IsNullOrEmpty(tool.HookSize))
+                    {
+                        <div style="font-size:0.8rem; color:var(--text-light);">호수: @tool.HookSize</div>
+                    }
                     @if (!string.IsNullOrEmpty(tool.Material) && tool.NeedleType != NeedleType.케이블)
                     {
                         <div style="font-size:0.8rem; color:var(--text-light);">소재: @tool.Material</div>
@@ -153,30 +157,40 @@ else
                 </div>
             </div>
 
-            <!-- 브랜드 / 모델명 (케이블은 브랜드만) -->
             @if (_editingTool.NeedleType == NeedleType.케이블)
             {
+                <!-- 케이블: 브랜드, 길이, 사이즈(선택) -->
                 <div class="form-group">
                     <label class="form-label">브랜드</label>
                     <input class="form-control" @bind="_editingTool.Brand" placeholder="예: 클로버, KnitPro" />
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">길이 (cm)</label>
-                        <input type="number" class="form-control"
-                               value="@(_editingTool.LengthCm == 0 ? "" : _editingTool.LengthCm.ToString())"
-                               @onchange="e => _editingTool.LengthCm = int.TryParse(e.Value?.ToString(), out var v) ? v : 0"
-                               min="0" placeholder="예: 80" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">사이즈 (선택)</label>
-                        <input class="form-control" @bind="_editingTool.Material" placeholder="예: S, M, L" />
-                    </div>
+                <div class="form-group">
+                    <label class="form-label">길이 (cm)</label>
+                    <input type="number" class="form-control"
+                           value="@(_editingTool.LengthCm == 0 ? "" : _editingTool.LengthCm.ToString())"
+                           @onchange="e => _editingTool.LengthCm = int.TryParse(e.Value?.ToString(), out var v) ? v : 0"
+                           min="0" placeholder="예: 80" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">사이즈 (선택)</label>
+                    <input class="form-control" @bind="_editingTool.Material" placeholder="예: S, M, L" />
                 </div>
             }
-            else
+            else if (_editingTool.NeedleType == NeedleType.대바늘)
             {
-                <!-- 세트 여부 (대바늘/코바늘) -->
+                <!-- 대바늘: 브랜드, 모델명, 굵기, 길이, 소재(선택) -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">브랜드</label>
+                        <input class="form-control" @bind="_editingTool.Brand" placeholder="예: 클로버, KnitPro" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">모델명</label>
+                        <input class="form-control" @bind="_editingTool.ModelName" placeholder="예: 랜턴문, 진저, 심포니" />
+                    </div>
+                </div>
+
+                <!-- 세트 여부 -->
                 <div class="form-group">
                     <label style="cursor:pointer; display:flex; align-items:center; gap:8px; font-size:0.88rem;">
                         <input type="checkbox" checked="@_editingTool.IsSet"
@@ -226,17 +240,85 @@ else
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">소재</label>
-                        <input class="form-control" @bind="_editingTool.Material" placeholder="예: 대나무, 알루미늄" />
-                    </div>
-                    <div class="form-group">
                         <label class="form-label">길이 (cm)</label>
                         <input type="number" class="form-control"
                                value="@(_editingTool.LengthCm == 0 ? "" : _editingTool.LengthCm.ToString())"
                                @onchange="e => _editingTool.LengthCm = int.TryParse(e.Value?.ToString(), out var v) ? v : 0"
-                               min="0" placeholder="예: 10, 13" />
+                               min="0" placeholder="예: 80" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">소재 (선택)</label>
+                        <input class="form-control" @bind="_editingTool.Material" placeholder="예: 대나무, 알루미늄" />
                     </div>
                 </div>
+            }
+            else
+            {
+                <!-- 코바늘: 브랜드, 모델명, 굵기(mm) 또는 호수 -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">브랜드</label>
+                        <input class="form-control" @bind="_editingTool.Brand" placeholder="예: 클로버, KnitPro" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">모델명</label>
+                        <input class="form-control" @bind="_editingTool.ModelName" placeholder="예: 아미코" />
+                    </div>
+                </div>
+
+                <!-- 세트 여부 -->
+                <div class="form-group">
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:8px; font-size:0.88rem;">
+                        <input type="checkbox" checked="@_editingTool.IsSet"
+                               @onchange="e => _editingTool.IsSet = (bool)(e.Value ?? false)"
+                               style="width:16px; height:16px;" />
+                        <span>세트 바늘 (굵기 여러 개)</span>
+                    </label>
+                </div>
+
+                @if (!_editingTool.IsSet)
+                {
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">굵기 (mm)</label>
+                            <input type="number" class="form-control"
+                                   value="@(_editingTool.SizeMm == 0 ? "" : _editingTool.SizeMm.ToString())"
+                                   @onchange="e => _editingTool.SizeMm = double.TryParse(e.Value?.ToString(), out var v) ? v : 0"
+                                   step="0.25" min="0.5" max="30" placeholder="예: 3.5" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">호수 (선택)</label>
+                            <input class="form-control" @bind="_editingTool.HookSize" placeholder="예: 5호, 7/0호" />
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <label class="form-label">굵기 목록</label>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                            @foreach (var s in _editingTool.SetSizes.OrderBy(x => x).ToList())
+                            {
+                                <div style="display:flex; align-items:center; gap:3px; background:var(--ivory-dark); border-radius:6px; padding:3px 8px;">
+                                    <span style="font-size:0.82rem;">@(s)mm</span>
+                                    <button class="btn btn-danger btn-sm" style="padding:0 4px; font-size:0.7rem; line-height:1.2;"
+                                            @onclick="() => _editingTool.SetSizes.Remove(s)">✕</button>
+                                </div>
+                            }
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <button class="btn btn-ghost btn-sm" style="font-size:1.1rem; padding:3px 12px;"
+                                    @onclick="DecNewSetSize">−</button>
+                            <input type="number" class="form-control" style="text-align:center;"
+                                   value="@(_newSetSize == 0 ? "" : _newSetSize.ToString())"
+                                   @onchange="e => _newSetSize = double.TryParse(e.Value?.ToString(), out var v) ? v : _newSetSize"
+                                   step="0.25" min="0.5" max="30" placeholder="굵기 (mm)" />
+                            <button class="btn btn-ghost btn-sm" style="font-size:1.1rem; padding:3px 12px;"
+                                    @onclick="IncNewSetSize">+</button>
+                            <button class="btn btn-sage btn-sm" @onclick="AddSetSize">추가</button>
+                        </div>
+                    </div>
+                }
             }
 
             <div class="form-group">

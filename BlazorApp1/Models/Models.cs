@@ -93,6 +93,7 @@ namespace KnitLog.Models
         public List<double> SetSizes { get; set; } = new(); // 세트일 때 굵기 목록
         public string Material { get; set; } = "";
         public int LengthCm { get; set; }
+        public string HookSize { get; set; } = "";          // 코바늘 호수 (예: 5호, 7/0호)
         public string Memo { get; set; } = "";
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
