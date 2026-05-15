@@ -69,6 +69,24 @@ namespace KnitLog.Services
             await SaveAsync(KEY_PROJECTS, list);
         }
 
+        public async Task PauseProjectAsync(Guid id)
+        {
+            var list = await GetProjectsAsync();
+            var proj = list.Find(p => p.Id == id);
+            if (proj is null) return;
+            proj.Status = ProjectStatus.일시중단;
+            await SaveAsync(KEY_PROJECTS, list);
+        }
+
+        public async Task ResumeProjectAsync(Guid id)
+        {
+            var list = await GetProjectsAsync();
+            var proj = list.Find(p => p.Id == id);
+            if (proj is null) return;
+            proj.Status = ProjectStatus.진행중;
+            await SaveAsync(KEY_PROJECTS, list);
+        }
+
         public async Task StartProjectAsync(Guid id)
         {
             var list = await GetProjectsAsync();

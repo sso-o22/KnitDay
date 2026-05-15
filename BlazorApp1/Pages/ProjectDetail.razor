@@ -35,7 +35,20 @@ else
         <div style="display:flex; gap:8px;">
             <button class="btn btn-secondary" @onclick="OpenEditModal">✏️ 수정</button>
             <button class="btn btn-secondary" @onclick="GoToViewer">📄 도안 뷰어</button>
-            <button class="btn btn-sage" @onclick="CompleteProject">✅ 완료</button>
+            @if (_project.Status == ProjectStatus.진행중)
+            {
+                <button class="btn btn-ghost" @onclick="PauseProject">⏸️ 중단</button>
+                <button class="btn btn-sage" @onclick="CompleteProject">✅ 완료</button>
+            }
+            else if (_project.Status == ProjectStatus.일시중단)
+            {
+                <button class="btn btn-sage" @onclick="ResumeProject">▶️ 재개</button>
+                <button class="btn btn-sage" @onclick="CompleteProject">✅ 완료</button>
+            }
+            else
+            {
+                <button class="btn btn-sage" @onclick="CompleteProject">✅ 완료</button>
+            }
         </div>
     </div>
 
@@ -133,6 +146,32 @@ else
                 <div class="divider"></div>
                 <div class="form-label">메모</div>
                 <p style="white-space:pre-wrap; font-size:0.9rem;">@_project.Memo</p>
+            }
+
+            @* 일시중단 상태 표시 *@
+            @if (_project.Status == ProjectStatus.일시중단)
+            {
+                <div class="divider"></div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="badge" style="background:#f5e6c0; color:#8a6010;">⏸️ 일시 중단 중</span>
+                    <span style="font-size:0.82rem; color:var(--text-light);">재개 버튼을 눌러 다시 시작하세요</span>
+                </div>
+            }
+
+            @* 참고 영상 *@
+            @if (_project.VideoLinks.Count > 0)
+            {
+                <div class="divider"></div>
+                <div class="form-label">🎬 참고 영상</div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    @foreach (var link in _project.VideoLinks)
+                    {
+                        <a href="@link" target="_blank" rel="noopener noreferrer"
+                           style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--theme-active); word-break:break-all;">
+                            🔗 @link
+                        </a>
+                    }
+                </div>
             }
         </div>
 
@@ -544,6 +583,22 @@ else
                 <textarea class="form-control" rows="2" @bind="_project.Memo"></textarea>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">🎬 참고 영상 링크</label>
+                @foreach (var link in _project.VideoLinks.ToList())
+                {
+                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
+                        <span style="flex:1; font-size:0.82rem; color:var(--text-mid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@link</span>
+                        <button class="btn btn-danger btn-sm" style="padding:2px 6px; flex-shrink:0;"
+                                @onclick="() => _project.VideoLinks.Remove(link)">✕</button>
+                    </div>
+                }
+                <div style="display:flex; gap:6px;">
+                    <input class="form-control" @bind="_newVideoLink" placeholder="유튜브 등 영상 URL 입력" />
+                    <button class="btn btn-sage btn-sm" @onclick="AddVideoLink" style="flex-shrink:0;">추가</button>
+                </div>
+            </div>
+
             <div class="modal-footer">
                 <button class="btn btn-ghost" @onclick="CloseEditModal">취소</button>
                 <button class="btn btn-primary" @onclick="SaveEdit">저장</button>
@@ -557,6 +612,7 @@ else
 
     bool _loading = true;
     bool _showEditModal = false;
+    string _newVideoLink = "";
     bool _showPhoto = false;
     bool _addingCounter = false;
     bool _addingCheck = false;
@@ -819,9 +875,33 @@ else
         Nav.NavigateTo("finished");
     }
 
+    async Task PauseProject()
+    {
+        if (_project == null) return;
+        await Storage.PauseProjectAsync(_project.Id);
+        _project.Status = ProjectStatus.일시중단;
+        StateHasChanged();
+    }
+
+    async Task ResumeProject()
+    {
+        if (_project == null) return;
+        await Storage.ResumeProjectAsync(_project.Id);
+        _project.Status = ProjectStatus.진행중;
+        StateHasChanged();
+    }
+
     // ── 수정 모달 ────────────────────────────────────────
     void OpenEditModal() => _showEditModal = true;
     void CloseEditModal() => _showEditModal = false;
+
+    void AddVideoLink()
+    {
+        if (string.IsNullOrWhiteSpace(_newVideoLink)) return;
+        if (!_project!.VideoLinks.Contains(_newVideoLink))
+            _project.VideoLinks.Add(_newVideoLink.Trim());
+        _newVideoLink = "";
+    }
 
     async Task SaveEdit()
     {

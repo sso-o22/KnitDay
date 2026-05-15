@@ -7,7 +7,7 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">📆 뜨케줄</h1>
-        <p class="page-subtitle">현재 진행중인 뜨개 프로젝트</p>
+        <p class="page-subtitle">진행중 · 일시중단 프로젝트</p>
     </div>
     <button class="btn btn-primary" @onclick="OpenAddModal">+ 새 프로젝트</button>
 </div>
@@ -38,7 +38,14 @@ else
 
                 <div class="flex-between mb-1">
                     <div class="card-title" style="margin-bottom:0;">@proj.Title</div>
-                    <span class="badge badge-progress">진행중</span>
+                    @if (proj.Status == ProjectStatus.일시중단)
+                    {
+                        <span class="badge" style="background:#f5e6c0; color:#8a6010;">⏸️ 일시중단</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-progress">진행중</span>
+                    }
                 </div>
 
                 @if (!string.IsNullOrEmpty(proj.PatternName))
@@ -197,7 +204,7 @@ else
     async Task LoadData()
     {
         var all = await Storage.GetProjectsAsync();
-        _projects = all.Where(p => p.Status == ProjectStatus.진행중).ToList();
+        _projects = all.Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단).ToList();
         _yarns = await Storage.GetYarnsAsync();
         _tools = await Storage.GetToolsAsync();
     }
