@@ -6,7 +6,7 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">⚒️ 도구</h1>
-        <p class="page-subtitle">보유중인 대바늘 · 코바늘</p>
+        <p class="page-subtitle">보유중인 대바늘 · 코바늘 · 케이블</p>
     </div>
     <button class="btn btn-primary" @onclick="OpenAddModal">+ 도구 추가</button>
 </div>
@@ -18,11 +18,17 @@
 else
 {
     <div style="display:flex; gap:8px; margin-bottom:20px;">
+        <button class="btn @(_tab == -1 ? "btn-primary" : "btn-ghost")" @onclick="() => _tab = -1">
+            전체 (@_tools.Count)
+        </button>
         <button class="btn @(_tab == 0 ? "btn-primary" : "btn-ghost")" @onclick="() => _tab = 0">
             대바늘 (@KnitCount)
         </button>
         <button class="btn @(_tab == 1 ? "btn-primary" : "btn-ghost")" @onclick="() => _tab = 1">
             코바늘 (@CrochetCount)
+        </button>
+        <button class="btn @(_tab == 2 ? "btn-primary" : "btn-ghost")" @onclick="() => _tab = 2">
+            케이블 (@CableCount)
         </button>
     </div>
 
@@ -36,7 +42,7 @@ else
     else
     {
         <div class="grid-3">
-            @foreach (var tool in FilteredTools.OrderBy(t => t.IsSet ? 999 : t.SizeMm))
+            @foreach (var tool in FilteredTools.OrderBy(t => t.NeedleType).ThenBy(t => t.IsSet ? 999 : t.SizeMm))
             {
                 <div class="card">
                     <div class="flex-between mb-1">
@@ -45,50 +51,62 @@ else
                             {
                                 <span>@tool.Brand @tool.ModelName</span>
                             }
+                            else if (tool.NeedleType == NeedleType.케이블)
+                            {
+                                <span>케이블</span>
+                            }
                             else
                             {
                                 <span>@(tool.IsSet ? "세트" : $"{tool.SizeMm}mm")</span>
                             }
                         </div>
                         <div style="display:flex; gap:4px; align-items:center;">
-                            @if (tool.IsSet)
+                            @if (tool.NeedleType != NeedleType.케이블)
                             {
-                                <span class="badge badge-done" style="font-size:0.7rem;">세트</span>
+                                <span class="badge badge-done" style="font-size:0.7rem;">
+                                    @(tool.IsSet ? "세트" : "단품")
+                                </span>
                             }
-                            <span class="badge @(tool.NeedleType == NeedleType.대바늘 ? "badge-progress" : "badge-wish")">
+                            <span class="badge @(tool.NeedleType == NeedleType.대바늘 ? "badge-progress" : tool.NeedleType == NeedleType.코바늘 ? "badge-wish" : "badge-done")">
                                 @tool.NeedleType
                             </span>
                         </div>
                     </div>
 
-                    <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:4px;">
-                        @tool.SizeDisplay
-                    </div>
-
-                    @if (tool.IsSet && tool.SetSizes.Count > 0)
+                    @* 굵기: 회색 태그로 표시 *@
+                    @if (tool.NeedleType != NeedleType.케이블)
                     {
                         <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px;">
-                            @foreach (var s in tool.SetSizes.OrderBy(x => x))
+                            @if (tool.IsSet && tool.SetSizes.Count > 0)
                             {
-                                <span style="background:var(--ivory-dark); border-radius:4px; padding:2px 6px; font-size:0.75rem; color:var(--text-mid);">
-                                    @(s)mm
-                                </span>
+                                @foreach (var s in tool.SetSizes.OrderBy(x => x))
+                                {
+                                    <span style="background:var(--ivory-dark); border-radius:4px; padding:2px 6px; font-size:0.75rem; color:var(--text-mid);">@(s)mm</span>
+                                }
+                            }
+                            else if (!tool.IsSet && tool.SizeMm > 0)
+                            {
+                                <span style="background:var(--ivory-dark); border-radius:4px; padding:2px 6px; font-size:0.75rem; color:var(--text-mid);">@(tool.SizeMm)mm</span>
                             }
                         </div>
                     }
 
-                    @if (tool.NeedleType == NeedleType.대바늘)
+                    @* 케이블 사이즈 태그 *@
+                    @if (tool.NeedleType == NeedleType.케이블 && !string.IsNullOrEmpty(tool.Material))
                     {
-                        @if (!string.IsNullOrEmpty(tool.Material))
-                        {
-                            <div style="font-size:0.8rem; color:var(--text-light);">소재: @tool.Material</div>
-                        }
-                        @if (tool.LengthCm > 0)
-                        {
-                            <div style="font-size:0.8rem; color:var(--text-light);">길이: @(tool.LengthCm)cm</div>
-                        }
+                        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px;">
+                            <span style="background:var(--ivory-dark); border-radius:4px; padding:2px 6px; font-size:0.75rem; color:var(--text-mid);">@tool.Material</span>
+                        </div>
                     }
 
+                    @if (!string.IsNullOrEmpty(tool.Material) && tool.NeedleType != NeedleType.케이블)
+                    {
+                        <div style="font-size:0.8rem; color:var(--text-light);">소재: @tool.Material</div>
+                    }
+                    @if (tool.LengthCm > 0)
+                    {
+                        <div style="font-size:0.8rem; color:var(--text-light);">길이: @(tool.LengthCm)cm</div>
+                    }
                     @if (!string.IsNullOrEmpty(tool.Memo))
                     {
                         <div style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">@tool.Memo</div>
@@ -127,6 +145,11 @@ else
                                @onchange="() => _editingTool.NeedleType = NeedleType.코바늘" />
                         코바늘
                     </label>
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:6px;">
+                        <input type="radio" name="needleType" checked="@(_editingTool.NeedleType == NeedleType.케이블)"
+                               @onchange="() => _editingTool.NeedleType = NeedleType.케이블" />
+                        케이블
+                    </label>
                 </div>
             </div>
 
@@ -142,58 +165,73 @@ else
                 </div>
             </div>
 
-            <!-- 세트 여부 -->
-            <div class="form-group">
-                <label style="cursor:pointer; display:flex; align-items:center; gap:8px; font-size:0.88rem;">
-                    <input type="checkbox" checked="@_editingTool.IsSet"
-                           @onchange="e => _editingTool.IsSet = (bool)(e.Value ?? false)"
-                           style="width:16px; height:16px;" />
-                    <span>세트 바늘 (굵기 여러 개)</span>
-                </label>
-            </div>
-
-            @if (!_editingTool.IsSet)
+            @if (_editingTool.NeedleType == NeedleType.케이블)
             {
-                <!-- 단일 굵기 -->
-                <div class="form-group">
-                    <label class="form-label">굵기 (mm) *</label>
-                    <input type="number" class="form-control"
-                           value="@(_editingTool.SizeMm == 0 ? "" : _editingTool.SizeMm.ToString())"
-                           @onchange="e => _editingTool.SizeMm = double.TryParse(e.Value?.ToString(), out var v) ? v : 0"
-                           step="0.25" min="0.5" max="30" placeholder="예: 3.5" />
+                <!-- 케이블 전용 -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">사이즈 (선택)</label>
+                        <input class="form-control" @bind="_editingTool.Material" placeholder="예: S, M, L, 80cm" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">길이 (cm)</label>
+                        <input type="number" class="form-control"
+                               value="@(_editingTool.LengthCm == 0 ? "" : _editingTool.LengthCm.ToString())"
+                               @onchange="e => _editingTool.LengthCm = int.TryParse(e.Value?.ToString(), out var v) ? v : 0"
+                               min="0" placeholder="예: 10, 13" />
+                    </div>
                 </div>
             }
             else
             {
-                <!-- 세트 굵기 입력 -->
+                <!-- 세트 여부 (대바늘/코바늘) -->
                 <div class="form-group">
-                    <label class="form-label">굵기 목록</label>
-                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
-                        @foreach (var s in _editingTool.SetSizes.OrderBy(x => x).ToList())
-                        {
-                            <div style="display:flex; align-items:center; gap:3px; background:var(--ivory-dark); border-radius:6px; padding:3px 8px;">
-                                <span style="font-size:0.82rem;">@(s)mm</span>
-                                <button class="btn btn-danger btn-sm" style="padding:0 4px; font-size:0.7rem; line-height:1.2;"
-                                        @onclick="() => _editingTool.SetSizes.Remove(s)">✕</button>
-                            </div>
-                        }
-                    </div>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <button class="btn btn-ghost btn-sm" style="font-size:1.1rem; padding:3px 12px;"
-                                @onclick="DecNewSetSize">−</button>
-                        <input type="number" class="form-control" style="text-align:center;"
-                               value="@(_newSetSize == 0 ? "" : _newSetSize.ToString())"
-                               @onchange="e => _newSetSize = double.TryParse(e.Value?.ToString(), out var v) ? v : _newSetSize"
-                               step="0.25" min="0.5" max="30" placeholder="굵기 (mm)" />
-                        <button class="btn btn-ghost btn-sm" style="font-size:1.1rem; padding:3px 12px;"
-                                @onclick="IncNewSetSize">+</button>
-                        <button class="btn btn-sage btn-sm" @onclick="AddSetSize">추가</button>
-                    </div>
+                    <label style="cursor:pointer; display:flex; align-items:center; gap:8px; font-size:0.88rem;">
+                        <input type="checkbox" checked="@_editingTool.IsSet"
+                               @onchange="e => _editingTool.IsSet = (bool)(e.Value ?? false)"
+                               style="width:16px; height:16px;" />
+                        <span>세트 바늘 (굵기 여러 개)</span>
+                    </label>
                 </div>
-            }
 
-            @if (_editingTool.NeedleType == NeedleType.대바늘)
-            {
+                @if (!_editingTool.IsSet)
+                {
+                    <div class="form-group">
+                        <label class="form-label">굵기 (mm) *</label>
+                        <input type="number" class="form-control"
+                               value="@(_editingTool.SizeMm == 0 ? "" : _editingTool.SizeMm.ToString())"
+                               @onchange="e => _editingTool.SizeMm = double.TryParse(e.Value?.ToString(), out var v) ? v : 0"
+                               step="0.25" min="0.5" max="30" placeholder="예: 3.5" />
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <label class="form-label">굵기 목록</label>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                            @foreach (var s in _editingTool.SetSizes.OrderBy(x => x).ToList())
+                            {
+                                <div style="display:flex; align-items:center; gap:3px; background:var(--ivory-dark); border-radius:6px; padding:3px 8px;">
+                                    <span style="font-size:0.82rem;">@(s)mm</span>
+                                    <button class="btn btn-danger btn-sm" style="padding:0 4px; font-size:0.7rem; line-height:1.2;"
+                                            @onclick="() => _editingTool.SetSizes.Remove(s)">✕</button>
+                                </div>
+                            }
+                        </div>
+                        <div style="display:flex; gap:8px; align-items:center;">
+                            <button class="btn btn-ghost btn-sm" style="font-size:1.1rem; padding:3px 12px;"
+                                    @onclick="DecNewSetSize">−</button>
+                            <input type="number" class="form-control" style="text-align:center;"
+                                   value="@(_newSetSize == 0 ? "" : _newSetSize.ToString())"
+                                   @onchange="e => _newSetSize = double.TryParse(e.Value?.ToString(), out var v) ? v : _newSetSize"
+                                   step="0.25" min="0.5" max="30" placeholder="굵기 (mm)" />
+                            <button class="btn btn-ghost btn-sm" style="font-size:1.1rem; padding:3px 12px;"
+                                    @onclick="IncNewSetSize">+</button>
+                            <button class="btn btn-sage btn-sm" @onclick="AddSetSize">추가</button>
+                        </div>
+                    </div>
+                }
+
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">소재</label>
@@ -204,7 +242,7 @@ else
                         <input type="number" class="form-control"
                                value="@(_editingTool.LengthCm == 0 ? "" : _editingTool.LengthCm.ToString())"
                                @onchange="e => _editingTool.LengthCm = int.TryParse(e.Value?.ToString(), out var v) ? v : 0"
-                               min="0" placeholder="예: 80" />
+                               min="0" placeholder="예: 10, 13" />
                     </div>
                 </div>
             }
@@ -225,17 +263,22 @@ else
 @code {
     bool _loading = true;
     bool _showModal = false;
-    int _tab = 0;
+    int _tab = -1;  // -1 = 전체
     double _newSetSize = 0;
     List<KnitTool> _tools = new();
     KnitTool? _editingTool;
 
     int KnitCount    => _tools.Count(t => t.NeedleType == NeedleType.대바늘);
     int CrochetCount => _tools.Count(t => t.NeedleType == NeedleType.코바늘);
+    int CableCount   => _tools.Count(t => t.NeedleType == NeedleType.케이블);
 
-    List<KnitTool> FilteredTools => _tools
-        .Where(t => t.NeedleType == (_tab == 0 ? NeedleType.대바늘 : NeedleType.코바늘))
-        .ToList();
+    List<KnitTool> FilteredTools => _tab switch
+    {
+        0  => _tools.Where(t => t.NeedleType == NeedleType.대바늘).ToList(),
+        1  => _tools.Where(t => t.NeedleType == NeedleType.코바늘).ToList(),
+        2  => _tools.Where(t => t.NeedleType == NeedleType.케이블).ToList(),
+        _  => _tools.ToList(),
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -248,7 +291,13 @@ else
         _editingTool = new KnitTool
         {
             Id = Guid.Empty,
-            NeedleType = _tab == 0 ? NeedleType.대바늘 : NeedleType.코바늘
+            NeedleType = _tab switch
+            {
+                0 => NeedleType.대바늘,
+                1 => NeedleType.코바늘,
+                2 => NeedleType.케이블,
+                _ => NeedleType.대바늘
+            }
         };
         _newSetSize = 0;
         _showModal = true;
@@ -263,7 +312,6 @@ else
 
     void CloseModal() { _showModal = false; _editingTool = null; }
 
-    // 4mm 미만: 0.25 단위, 4mm 이상: 0.5 단위
     double GetStep(double size) => size < 4.0 ? 0.25 : 0.5;
 
     void IncNewSetSize()
@@ -283,14 +331,16 @@ else
         if (_editingTool == null || _newSetSize <= 0) return;
         if (!_editingTool.SetSizes.Contains(_newSetSize))
             _editingTool.SetSizes.Add(_newSetSize);
-        // 추가 후 값 유지 (초기화 안 함)
     }
 
     async Task SaveTool()
     {
         if (_editingTool == null) return;
-        if (!_editingTool.IsSet && _editingTool.SizeMm <= 0) return;
-        if (_editingTool.IsSet && _editingTool.SetSizes.Count == 0) return;
+        if (_editingTool.NeedleType != NeedleType.케이블)
+        {
+            if (!_editingTool.IsSet && _editingTool.SizeMm <= 0) return;
+            if (_editingTool.IsSet && _editingTool.SetSizes.Count == 0) return;
+        }
         if (_editingTool.Id == Guid.Empty) _editingTool.Id = Guid.NewGuid();
         await Storage.SaveToolAsync(_editingTool);
         _tools = await Storage.GetToolsAsync();

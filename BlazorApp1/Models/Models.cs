@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace KnitLog.Models
 {
-    public enum NeedleType { 대바늘, 코바늘 }
+    public enum NeedleType { 대바늘, 코바늘, 케이블 }
     public enum ProjectStatus { 진행중, 일시중단, 완료, 위시리스트 }
     public enum YarnWeight { 레이스, 핑거, 스포츠, DK, 워스티드, 벌키, 슈퍼벌키 }
     public enum YarnType { 콘사, 볼실, 타래실, 손염색실, 기타 }
