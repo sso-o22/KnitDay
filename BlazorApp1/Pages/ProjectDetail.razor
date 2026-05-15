@@ -553,7 +553,7 @@ else
     </div>
 
         <!-- ── 연결된 실 ── -->
-        <div class="card" style="grid-column: span 2;">
+        <div class="card">
             <div class="card-title" style="margin-bottom:12px;">🧵 연결된 실</div>
             @if (_project.YarnUsages.Count == 0)
             {
@@ -585,7 +585,7 @@ else
         </div>
 
         <!-- ── 연결된 스와치 ── -->
-        <div class="card" style="grid-column: span 2;">
+        <div class="card">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
                 <div class="card-title" style="margin-bottom:0;">🧪 연결된 스와치</div>
                 <a href="swatches" class="btn btn-ghost btn-sm">스와치 관리</a>
@@ -717,10 +717,31 @@ else
                 </select>
             </div>
 
-            @* 사용 바늘 - 직접 입력만 *@
+            @* 사용 바늘 *@
             <div class="form-group">
                 <label class="form-label">사용 바늘</label>
+                <div style="display:flex; gap:6px; margin-bottom:6px;">
+                    <button type="button" class="btn btn-sm @(_project.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
+                            @onclick='() => _project.NeedleType = (_project.NeedleType == NeedleType.대바늘 ? (NeedleType?)null : NeedleType.대바늘)'>대바늘</button>
+                    <button type="button" class="btn btn-sm @(_project.NeedleType == NeedleType.코바늘 ? "btn-sage" : "btn-ghost")"
+                            @onclick='() => _project.NeedleType = (_project.NeedleType == NeedleType.코바늘 ? (NeedleType?)null : NeedleType.코바늘)'>코바늘</button>
+                </div>
                 <input class="form-control" @bind="_project.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
+            </div>
+
+            @* 카테고리 *@
+            <div class="form-group">
+                <label class="form-label">카테고리</label>
+                <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
+                    {
+                        <button type="button"
+                                class="btn btn-sm @(_project.Category == cat ? "btn-sage" : "btn-ghost")"
+                                @onclick="() => _project.Category = (_project.Category == cat ? ProjectCategory.미분류 : cat)">
+                            @cat
+                        </button>
+                    }
+                </div>
             </div>
 
             <div class="form-row">

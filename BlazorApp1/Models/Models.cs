@@ -8,6 +8,7 @@ namespace KnitLog.Models
 {
     public enum NeedleType { 대바늘, 코바늘, 케이블 }
     public enum ProjectStatus { 진행중, 일시중단, 완료, 위시리스트 }
+    public enum ProjectCategory { 미분류, 옷, 소품, 인형, 수세미, 기타 }
     public enum YarnWeight { 레이스, 핑거, 스포츠, DK, 워스티드, 벌키, 슈퍼벌키 }
     public enum YarnType { 콘사, 볼실, 타래실, 손염색실, 기타 }
 
@@ -122,6 +123,7 @@ namespace KnitLog.Models
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public ProjectStatus Status { get; set; } = ProjectStatus.위시리스트;
+        public ProjectCategory Category { get; set; } = ProjectCategory.미분류;
         public string Title { get; set; } = "";
         public string Description { get; set; } = "";
         public string PatternName { get; set; } = "";
@@ -132,6 +134,7 @@ namespace KnitLog.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public List<ProjectYarnUsage> YarnUsages { get; set; } = new();
         public List<Guid> ToolIds { get; set; } = new();
+        public NeedleType? NeedleType { get; set; }          // 대바늘/코바늘 선택
         public string NeedleNote { get; set; } = "";        // 바늘 직접 입력 (예: 4mm 대바늘 80cm)
         public List<ProjectPhoto> Photos { get; set; } = new();
         public List<ProjectCounter> Counters { get; set; } = new();

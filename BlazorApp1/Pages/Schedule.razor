@@ -245,7 +245,28 @@ else
                 @* 사용 바늘 *@
                 <div class="form-group">
                     <label class="form-label">사용 바늘</label>
+                    <div style="display:flex; gap:6px; margin-bottom:6px;">
+                        <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
+                                @onclick='() => _editingProject.NeedleType = (_editingProject.NeedleType == NeedleType.대바늘 ? (NeedleType?)null : NeedleType.대바늘)'>대바늘</button>
+                        <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.코바늘 ? "btn-sage" : "btn-ghost")"
+                                @onclick='() => _editingProject.NeedleType = (_editingProject.NeedleType == NeedleType.코바늘 ? (NeedleType?)null : NeedleType.코바늘)'>코바늘</button>
+                    </div>
                     <input class="form-control" @bind="_editingProject.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
+                </div>
+
+                @* 카테고리 *@
+                <div class="form-group">
+                    <label class="form-label">카테고리</label>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
+                        {
+                            <button type="button"
+                                    class="btn btn-sm @(_editingProject.Category == cat ? "btn-sage" : "btn-ghost")"
+                                    @onclick="() => _editingProject.Category = (_editingProject.Category == cat ? ProjectCategory.미분류 : cat)">
+                                @cat
+                            </button>
+                        }
+                    </div>
                 </div>
 
                 <div class="form-row">
