@@ -387,7 +387,11 @@
     string GetCursor() => _tool switch { "select" => "default", "pen" => "crosshair", "eraser" => "cell", _ => "crosshair" };
     void ClearAll() { _rulers.Clear(); _ = JS.InvokeVoidAsync("patternViewer.clearAnnotations"); }
     void GoBack() => Nav.NavigateTo("schedule/" + ProjectId);
-    public async ValueTask DisposeAsync() { _dotNetRef?.Dispose(); }
+    public async ValueTask DisposeAsync()
+    {
+        _dotNetRef?.Dispose();
+        await JS.InvokeVoidAsync("patternViewer.dispose");
+    }
 
     class RulerOverlay { public double X, Y, Width, Height, Opacity = 0.35; public string ColorRgb = "180,220,190"; public int Page; }
 }

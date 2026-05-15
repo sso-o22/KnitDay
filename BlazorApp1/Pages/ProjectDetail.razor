@@ -808,7 +808,7 @@ else
     {
         StopRefreshTimer();
         _dragRef?.Dispose();
-        await ValueTask.CompletedTask;
+        await JS.InvokeVoidAsync("cleanupCardDrag");
     }
 
     // ── 완료 처리 ────────────────────────────────────────
