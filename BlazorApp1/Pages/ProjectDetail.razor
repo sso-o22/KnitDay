@@ -418,73 +418,73 @@ else
             }
         }
 
-                <!-- ── 참고 영상 ── -->
-        <div class="card" style="grid-column: span 2;">
-            <div class="card-title" style="margin-bottom:12px;">🎬 참고 영상</div>
+    <div class="card" style="grid-column: span 2;">
+        <div class="card-title" style="margin-bottom:12px;">🎬 참고 영상</div>
 
-            @if (_project.VideoLinks.Count > 0)
-            {
-                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
-                    @foreach (var link in _project.VideoLinks.ToList())
-                    {
-                        <div style="display:flex; align-items:center; gap:8px; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px 12px;">
-                            <span style="font-size:1.1rem;">🔗</span>
-                            <a href="@link" target="_blank" rel="noopener noreferrer"
-                               style="flex:1; font-size:0.85rem; color:var(--theme-active); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
-                               @onclick:stopPropagation>@link</a>
-                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; flex-shrink:0;"
-                                    @onclick="() => RemoveVideoLink(link)">✕</button>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">참고 영상이 없어요. 도안 영상 링크를 추가해 보세요!</p>
-            }
-
-            <div style="display:flex; gap:8px;">
-                <input class="form-control" @bind="_newVideoLink" @bind:event="oninput"
-                       placeholder="유튜브, 블로그 등 URL 입력"
-                       @onkeydown="async e => { if (e.Key == \"Enter\") await AddVideoLinkAndSave(); }" />
-                <button class="btn btn-sage" style="flex-shrink:0;" @onclick="AddVideoLinkAndSave">추가</button>
+        @if (_project.VideoLinks.Count > 0)
+        {
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+                @foreach (var link in _project.VideoLinks.ToList())
+                {
+                    <div style="display:flex; align-items:center; gap:8px; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px 12px;">
+                        <span style="font-size:1.1rem;">🔗</span>
+                        <a href="@link" target="_blank" rel="noopener noreferrer"
+                        style="flex:1; font-size:0.85rem; color:var(--theme-active); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                        @onclick:stopPropagation>@link</a>
+                        <button class="btn btn-danger btn-sm" style="padding:2px 6px; flex-shrink:0;"
+                                @onclick="() => RemoveVideoLink(link)">✕</button>
+                    </div>
+                }
             </div>
+        }
+        else
+        {
+            <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">참고 영상이 없어요. 도안 영상 링크를 추가해 보세요!</p>
+        }
+
+        <div style="display:flex; gap:8px;">
+            <input class="form-control" 
+                @bind="_newVideoLink" 
+                @bind:event="oninput"
+                placeholder="유튜브, 블로그 등 URL 입력"
+                @onkeydown="@(async e => { if (e.Key == "Enter") await AddVideoLinkAndSave(); })" />
+            <button class="btn btn-sage" style="flex-shrink:0;" @onclick="AddVideoLinkAndSave">추가</button>
         </div>
+    </div>
 
-                <!-- ── 과정 사진 ── -->
-        <div class="card" style="grid-column: span 2;">
-            <div class="card-title">📷 과정 사진</div>
+    <div class="card" style="grid-column: span 2;">
+        <div class="card-title">📷 과정 사진</div>
 
-            @if (_project.Photos.Count > 0)
-            {
-                <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-                    @foreach (var photo in _project.Photos)
-                    {
-                        <div style="position:relative;">
-                            <img src="@photo.Base64Data"
-                                 style="width:140px; height:140px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer;"
-                                 @onclick="() => OpenPhoto(photo)"
-                                 alt="과정 사진" />
-                            @if (!string.IsNullOrEmpty(photo.Caption))
-                            {
-                                <div style="font-size:0.75rem; color:var(--text-mid); text-align:center; margin-top:4px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                                    @photo.Caption
-                                </div>
-                            }
-                            <button class="btn btn-danger btn-sm"
-                                    style="position:absolute; top:4px; right:4px; padding:2px 6px; font-size:0.7rem;"
-                                    @onclick="() => RemovePhoto(photo.Id)">✕</button>
-                        </div>
-                    }
-                </div>
-            }
-            else
-            {
-                <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">아직 사진이 없어요. 과정을 기록해 보세요!</p>
-            }
+        @if (_project.Photos.Count > 0)
+        {
+            <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                @foreach (var photo in _project.Photos)
+                {
+                    <div style="position:relative;">
+                        <img src="@photo.Base64Data"
+                            style="width:140px; height:140px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer;"
+                            @onclick="() => OpenPhoto(photo)"
+                            alt="과정 사진" />
+                        @if (!string.IsNullOrEmpty(photo.Caption))
+                        {
+                            <div style="font-size:0.75rem; color:var(--text-mid); text-align:center; margin-top:4px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                @photo.Caption
+                            </div>
+                        }
+                        <button class="btn btn-danger btn-sm"
+                                style="position:absolute; top:4px; right:4px; padding:2px 6px; font-size:0.7rem;"
+                                @onclick="() => RemovePhoto(photo.Id)">✕</button>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">아직 사진이 없어요. 과정을 기록해 보세요!</p>
+        }
 
-            <InputFile OnChange="OnPhotoSelected" accept="image/*" multiple class="form-control" style="padding:6px;" />
-        </div>
+        <InputFile OnChange="OnPhotoSelected" accept="image/*" multiple class="form-control" style="padding:6px;" />
+    </div>
 
         <!-- ── 연결된 스와치 ── -->
         <div class="card" style="grid-column: span 2;">
