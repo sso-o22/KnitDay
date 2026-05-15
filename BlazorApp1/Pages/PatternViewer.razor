@@ -68,7 +68,8 @@
             <div id="canvas-container" style="position:relative; display:inline-block; align-self:flex-start;">
                 <canvas id="pdf-canvas" style="display:block;"></canvas>
                 <canvas id="anno-canvas"
-                        style="position:absolute; top:0; left:0; cursor:@GetCursor();">
+                        style="position:absolute; top:0; left:0; cursor:@GetCursor();"
+                        @onmousedown="OnCanvasMouseDown">
                 </canvas>
 
                 @foreach (var ruler in _rulers.Where(r => r.Page == _currentPage))
@@ -316,12 +317,15 @@
 
     async Task OnCanvasMouseDown(MouseEventArgs e)
     {
-        if (_tool == "ruler") { _isDrawingRuler = true; _rulerStartX = e.OffsetX; _rulerStartY = e.OffsetY; _previewW = 0; _previewH = 0; }
-        else if (_tool == "pen" || _tool == "eraser")
+        if (_tool == "ruler")
         {
-            _isDrawing = true;
-            await JS.InvokeVoidAsync("patternViewer.startDraw", e.OffsetX, e.OffsetY, _penColor, _penSize, _tool == "eraser");
+            _isDrawingRuler = true;
+            _rulerStartX = e.OffsetX;
+            _rulerStartY = e.OffsetY;
+            _previewW = 0;
+            _previewH = 0;
         }
+        // pen/eraser는 JS의 onDown이 처리
     }
 
     [JSInvokable]
@@ -332,14 +336,13 @@
 
     async Task OnGlobalMouseMove(MouseEventArgs e)
     {
-        if (_isDrawingRuler || _draggingRuler != null || _resizingRuler != null || _isDrawing)
+        if (_isDrawingRuler || _draggingRuler != null || _resizingRuler != null)
         {
             var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect");
             double curX = e.ClientX - rect[0]; double curY = e.ClientY - rect[1];
             if (_isDrawingRuler) { _previewW = curX - _rulerStartX; _previewH = curY - _rulerStartY; }
             else if (_draggingRuler != null) { _draggingRuler.X = curX - _dragOffsetX; _draggingRuler.Y = curY - _dragOffsetY; }
             else if (_resizingRuler != null) { _resizingRuler.Width = Math.Max(30, curX - _resizingRuler.X); _resizingRuler.Height = Math.Max(10, curY - _resizingRuler.Y); }
-            else if (_isDrawing) { await JS.InvokeVoidAsync("patternViewer.draw", curX, curY); }
             StateHasChanged();
         }
     }
