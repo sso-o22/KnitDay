@@ -98,12 +98,8 @@ else
                     {
                         <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:4px;">📋 @proj.PatternName</div>
                     }
-                    @if (!string.IsNullOrEmpty(proj.Memo))
-                    {
-                        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:10px; white-space:pre-wrap; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@proj.Memo</p>
-                    }
 
-                    <div style="display:flex; gap:12px; font-size:0.8rem; color:var(--text-light); margin-bottom:14px;">
+                    <div style="display:flex; gap:12px; font-size:0.8rem; color:var(--text-light); margin-bottom:6px;">
                         @if (proj.StartDate.HasValue)
                         {
                             <span>시작 @proj.StartDate.Value.ToString("yy.MM.dd")</span>
@@ -113,6 +109,11 @@ else
                             <span>→ @proj.EndDate.Value.ToString("yy.MM.dd") 목표</span>
                         }
                     </div>
+
+                    @if (!string.IsNullOrEmpty(proj.Memo))
+                    {
+                        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:10px; white-space:pre-wrap; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@proj.Memo</p>
+                    }
 
                     <div style="display:flex; gap:8px; flex-wrap:wrap;" @onclick:stopPropagation="true">
                         <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)">✏️ 수정</button>
