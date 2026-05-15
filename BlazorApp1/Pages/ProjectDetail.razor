@@ -257,7 +257,7 @@ else
                                         <span>단위</span>
                                         <input type="number" style="width:55px;" class="form-control" @bind="counter.Step" min="1" />
                                         <span>목표</span>
-                                        <input type="number" style="width:65px;" class="form-control"
+                                        <input type="number" style="width:80px;" class="form-control"
                                                value="@(counter.Target == 0 ? "" : counter.Target.ToString())"
                                                @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = Save(); }"
                                                min="0" placeholder="없음" />
@@ -552,6 +552,34 @@ else
         <InputFile OnChange="OnPhotoSelected" accept="image/*" multiple class="form-control" style="padding:6px;" />
     </div>
 
+        <!-- ── 연결된 실 ── -->
+        @if (_project.YarnUsages.Count > 0)
+        {
+        <div class="card" style="grid-column: span 2;">
+            <div class="card-title" style="margin-bottom:12px;">🧵 연결된 실</div>
+            <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                @foreach (var usage in _project.YarnUsages)
+                {
+                    var yarn = _yarns.Find(y => y.Id == usage.YarnId);
+                    if (yarn != null)
+                    {
+                        <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 14px; display:flex; align-items:center; gap:10px; min-width:180px;">
+                            <span class="color-dot" style="background:@yarn.ColorCode; width:20px; height:20px; border-radius:50%; flex-shrink:0; border:1px solid rgba(0,0,0,0.08);"></span>
+                            <div>
+                                <div style="font-size:0.88rem; font-weight:600;">@yarn.Brand @yarn.Name</div>
+                                <div style="font-size:0.78rem; color:var(--text-mid);">@yarn.Color</div>
+                                @if (usage.BallsUsed > 0)
+                                {
+                                    <div style="font-size:0.75rem; color:var(--text-light); margin-top:1px;">@(usage.BallsUsed)볼 사용</div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+        }
+
         <!-- ── 연결된 스와치 ── -->
         <div class="card" style="grid-column: span 2;">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
@@ -641,28 +669,56 @@ else
                 <button class="btn btn-ghost btn-sm" @onclick="CloseEditModal">✕</button>
             </div>
 
-            <div class="form-group">
-                <label class="form-label">작품명 *</label>
-                <input class="form-control" @bind="_project.Title" />
-            </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">도안명</label>
-                    <input class="form-control" @bind="_project.PatternName" />
+                    <label class="form-label">도안명 *</label>
+                    <input class="form-control" @bind="_project.PatternName" placeholder="예: 마시멜로 후드 집업" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">도안 출처</label>
-                    <input class="form-control" @bind="_project.PatternSource" />
+                    <input class="form-control" @bind="_project.PatternSource" placeholder="작가명, 책 이름, URL 등" />
                 </div>
             </div>
+
             <div class="form-group">
                 <label class="form-label">도안 메모</label>
-                <textarea class="form-control" rows="2" @bind="_project.PatternMemo"></textarea>
+                <textarea class="form-control" rows="2" @bind="_project.PatternMemo" placeholder="사이즈, 수정 사항 등"></textarea>
             </div>
+
+            @* 사용 실 *@
             <div class="form-group">
-                <label class="form-label">설명</label>
-                <textarea class="form-control" rows="3" @bind="_project.Description"></textarea>
+                <label class="form-label">사용 실 — 실 창고에서 선택</label>
+                @foreach (var usage in _project.YarnUsages)
+                {
+                    var yarn = _yarns.Find(y => y.Id == usage.YarnId);
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        @if (yarn != null)
+                        {
+                            <span class="color-dot" style="background:@yarn.ColorCode;"></span>
+                            <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
+                        }
+                        <input class="form-control" type="number" min="1" style="width:70px;"
+                               value="@usage.BallsUsed"
+                               @onchange="e => usage.BallsUsed = int.TryParse(e.Value?.ToString(), out var n) ? n : 1" />
+                        <span style="font-size:0.82rem; color:var(--text-mid);">볼</span>
+                        <button class="btn btn-danger btn-sm" @onclick="() => _project.YarnUsages.Remove(usage)">✕</button>
+                    </div>
+                }
+                <select class="form-control" @onchange="OnEditAddYarn">
+                    <option value="">+ 실 추가</option>
+                    @foreach (var y in _yarns)
+                    {
+                        <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
+                    }
+                </select>
             </div>
+
+            @* 사용 바늘 - 직접 입력만 *@
+            <div class="form-group">
+                <label class="form-label">사용 바늘</label>
+                <input class="form-control" @bind="_project.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
+            </div>
+
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">시작일</label>
@@ -677,9 +733,10 @@ else
                            @onchange="e => _project.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                 </div>
             </div>
+
             <div class="form-group">
                 <label class="form-label">메모</label>
-                <textarea class="form-control" rows="2" @bind="_project.Memo"></textarea>
+                <textarea class="form-control" rows="2" @bind="_project.Memo" placeholder="기타 메모"></textarea>
             </div>
 
             <div class="modal-footer">
@@ -1017,6 +1074,16 @@ else
         if (_project == null) return;
         _project.VideoLinks.Remove(link);
         await Save();
+    }
+
+    void OnEditAddYarn(ChangeEventArgs e)
+    {
+        if (_project == null) return;
+        var val = e.Value?.ToString();
+        if (string.IsNullOrEmpty(val)) return;
+        var yarnId = Guid.Parse(val);
+        if (!_project.YarnUsages.Any(u => u.YarnId == yarnId))
+            _project.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = 1 });
     }
 
     async Task SaveEdit()
