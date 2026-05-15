@@ -155,6 +155,8 @@ namespace KnitLog.Models
         public string Label { get; set; } = "단수";
         public int Value { get; set; } = 0;
         public int Step { get; set; } = 1;
+        public int Target { get; set; } = 0;           // 목표값 (0 = 미설정)
+        public DateTime? LastUpdatedAt { get; set; }   // 마지막 + 클릭 시각
     }
 
     public class ChecklistItem
