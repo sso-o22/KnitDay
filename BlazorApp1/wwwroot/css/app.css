@@ -191,6 +191,7 @@ body {
     font-size: 1.9rem;
     font-weight: 800;
     color: var(--black);
+    outline: none;
 }
 
 .page-subtitle {
