@@ -4,8 +4,10 @@
 @page "/schedule/{ProjectId:guid}"
 @using KnitLog.Models
 @using KnitLog.Services
+@using Microsoft.JSInterop
 @inject StorageService Storage
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 @if (_loading)
 {
@@ -133,240 +135,251 @@ else
             }
         </div>
 
-        <!-- ── 단수 카운터 ── -->
-        <div class="card">
-            <div class="card-title">🔢 단수 카운터</div>
-            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
-                현재 뜨고 있는 단/코 수를 기록해요
-            </p>
-
-            @foreach (var counter in _project.Counters)
+        @foreach (var cardId in _cardOrder)
+        {
+            var dragStyle = _dragCard == cardId ? "opacity:0.5;" : _dragOver == cardId ? "outline:2px dashed #267848; outline-offset:2px;" : "";
+            @if (cardId == "counter")
             {
-                <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; border:1px solid var(--border);">
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                        <span style="font-weight:500; font-size:0.9rem;">@counter.Label</span>
-                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" @onclick="() => RemoveCounter(counter.Id)">✕</button>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:12px; justify-content:center;">
-                        <button class="btn btn-secondary" style="width:40px; height:40px; font-size:1.2rem; padding:0; display:flex; align-items:center; justify-content:center; line-height:1;"
-                                @onclick="() => CounterChange(counter, -counter.Step)">−</button>
-                        <span style="font-size:2rem; font-weight:700; color:var(--text-mid); min-width:60px; text-align:center;">
-                            @counter.Value
-                        </span>
-                        <button class="btn btn-primary" style="width:40px; height:40px; font-size:1.2rem; padding:0; display:flex; align-items:center; justify-content:center; line-height:1;"
-                                @onclick="() => CounterChange(counter, counter.Step)">+</button>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:8px; margin-top:10px; font-size:0.8rem; color:var(--text-mid);">
-                        <span>단위:</span>
-                        <input type="number" style="width:60px;" class="form-control" @bind="counter.Step" min="1" />
-                        <button class="btn btn-ghost btn-sm" @onclick="() => ResetCounter(counter)">초기화</button>
-                    </div>
-                </div>
-            }
-
-            <!-- 카운터 추가 -->
-            @if (_addingCounter)
-            {
-                <div style="display:flex; gap:8px; margin-top:8px;">
-                    <input class="form-control" @bind="_newCounterLabel" placeholder="이름 (예: 단수, 코수)" />
-                    <button class="btn btn-primary btn-sm" @onclick="AddCounter">추가</button>
-                    <button class="btn btn-ghost btn-sm" @onclick="() => _addingCounter = false">취소</button>
-                </div>
-            }
-            else
-            {
-                <button class="btn btn-ghost btn-sm mt-1" @onclick="() => _addingCounter = true">+ 카운터 추가</button>
-            }
-        </div>
-
-        <!-- ── 뜨개 시간 기록 ── -->
-        <div class="card">
-            <div class="card-title">⏱️ 뜨개 시간</div>
-            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
-                지금 뜨는 시간을 기록해요
-            </p>
-
-            @{
-                var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
-            }
-
-            <!-- 타이머 디스플레이 -->
-            <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:20px; margin-bottom:14px; text-align:center; border:1px solid var(--border);">
-                <div style="font-family:'Courier New', monospace; font-size:3rem; font-weight:700; color:var(--sage-dark); letter-spacing:4px; margin-bottom:8px;">
-                    @if (activeSession != null)
-                    {
-                        <span>@(_timerDisplay)</span>
-                    }
-                    else
-                    {
-                        <span>00:00:00</span>
-                    }
-                </div>
-                <div style="font-size:0.8rem; color:var(--text-mid);">
-                    @if (activeSession != null)
-                    {
-                        <span>진행 중...</span>
-                    }
-                    else
-                    {
-                        <span>준비 완료</span>
-                    }
-                </div>
-            </div>
-
-            <!-- 시작/종료 버튼 -->
-            <div style="display:flex; gap:8px;">
-                @if (activeSession == null)
-                {
-                    <!-- 시작 버튼 -->
-                    <button class="btn btn-primary" style="flex:1; padding:10px;" @onclick="StartSession">
-                        ▶️ 시작
-                    </button>
-                }
-                else
-                {
-                    <!-- 종료 버튼 -->
-                    <button class="btn btn-danger" style="flex:1; padding:10px;" @onclick="EndSession">
-                        ⏹️ 종료
-                    </button>
-                }
-            </div>
-
-            <!-- 메모 입력 (진행 중일 때만) -->
-            @if (activeSession != null)
-            {
-                <div style="margin-top:14px;">
-                    <input class="form-control" type="text" placeholder="메모 (선택사항)" @bind="_sessionMemo" style="font-size:0.9rem; padding:8px;" />
-                </div>
-            }
-        </div>
-
-        <!-- ── 누적 시간 ── -->
-        <div class="card">
-            <div class="card-title">📊 누적 시간</div>
-            
-            @{
-                var totalSeconds = _project.Sessions.Sum(s => {
-                    var end = s.EndTime ?? DateTime.Now;
-                    return (int)(end - s.StartTime).TotalSeconds;
-                });
-                var displayHours = totalSeconds / 3600;
-                var displayMins = (totalSeconds % 3600) / 60;
-                var displaySecs = totalSeconds % 60;
-            }
-            
-            <div style="background:var(--sage-light); border-radius:var(--radius-sm); padding:16px; text-align:center;">
-                <div style="font-size:0.85rem; color:var(--text-mid); margin-bottom:8px;">총 뜨개 시간</div>
-                <div style="font-family:'Courier New', monospace; font-size:2.2rem; font-weight:700; color:var(--sage-dark);">
-                    @if (displayHours > 0)
-                    {
-                        <span>@(displayHours):@(displayMins.ToString("D2")):@(displaySecs.ToString("D2"))</span>
-                    }
-                    else if (displayMins > 0)
-                    {
-                        <span>00:@(displayMins.ToString("D2")):@(displaySecs.ToString("D2"))</span>
-                    }
-                    else
-                    {
-                        <span>00:00:@(displaySecs.ToString("D2"))</span>
-                    }
-                </div>
-                <div style="font-size:0.75rem; color:var(--text-mid); margin-top:8px;">
-                    @(_project.Sessions.Count)개 세션
-                </div>
-            </div>
-
-            <!-- 시간 기록 목록 -->
-            @if (_project.Sessions.Count > 0)
-            {
-                <div class="divider"></div>
-                <div style="font-size:0.9rem; font-weight:500; margin-bottom:12px; color:var(--text-dark);">
-                    최근 기록
-                </div>
+                <!-- ── 단수 카운터 ── -->
+                        <div class="card" draggable="true" style="@dragStyle" @ondragstart='() => DragStart("counter")' @ondragover="() => _dragOver = \"counter\"" @ondragover:preventDefault @ondrop='async () => await Drop("counter")' @ondragleave="() => { if(_dragOver==\"counter\") _dragOver=\"\"; }">
+                            <div class="card-title">🔢 단수 카운터</div>
+                            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
+                                현재 뜨고 있는 단/코 수를 기록해요
+                            </p>
                 
-                @foreach (var session in _project.Sessions.OrderByDescending(s => s.StartTime).Take(5))
-                {
-                    <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:10px; margin-bottom:8px; border:1px solid var(--border); font-size:0.85rem;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                            <span style="color:var(--text-mid);">@(session.StartTime.ToString("M월 d일 HH:mm"))</span>
-                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick="() => RemoveSession(session.Id)">✕</button>
-                        </div>
-                        <div style="font-weight:600; color:var(--sage-dark);">
-                            @{
-                                var end = session.EndTime ?? DateTime.Now;
-                                var totalSecs = (int)(end - session.StartTime).TotalSeconds;
-                                var sh = totalSecs / 3600;
-                                var sm = (totalSecs % 3600) / 60;
-                                var ss = totalSecs % 60;
-                            }
-                            @if (sh > 0)
+                            @foreach (var counter in _project.Counters)
                             {
-                                <span>@(sh):@(sm.ToString("D2")):@(ss.ToString("D2"))</span>
+                                <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                                        <span style="font-weight:500; font-size:0.9rem;">@counter.Label</span>
+                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" @onclick="() => RemoveCounter(counter.Id)">✕</button>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:12px; justify-content:center;">
+                                        <button class="btn btn-secondary" style="width:40px; height:40px; font-size:1.2rem; padding:0; display:flex; align-items:center; justify-content:center; line-height:1;"
+                                                @onclick="() => CounterChange(counter, -counter.Step)">−</button>
+                                        <span style="font-size:2rem; font-weight:700; color:var(--text-mid); min-width:60px; text-align:center;">
+                                            @counter.Value
+                                        </span>
+                                        <button class="btn btn-primary" style="width:40px; height:40px; font-size:1.2rem; padding:0; display:flex; align-items:center; justify-content:center; line-height:1;"
+                                                @onclick="() => CounterChange(counter, counter.Step)">+</button>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px; margin-top:10px; font-size:0.8rem; color:var(--text-mid);">
+                                        <span>단위:</span>
+                                        <input type="number" style="width:60px;" class="form-control" @bind="counter.Step" min="1" />
+                                        <button class="btn btn-ghost btn-sm" @onclick="() => ResetCounter(counter)">초기화</button>
+                                    </div>
+                                </div>
+                            }
+                
+                            <!-- 카운터 추가 -->
+                            @if (_addingCounter)
+                            {
+                                <div style="display:flex; gap:8px; margin-top:8px;">
+                                    <input class="form-control" @bind="_newCounterLabel" placeholder="이름 (예: 단수, 코수)" />
+                                    <button class="btn btn-primary btn-sm" @onclick="AddCounter">추가</button>
+                                    <button class="btn btn-ghost btn-sm" @onclick="() => _addingCounter = false">취소</button>
+                                </div>
                             }
                             else
                             {
-                                <span>00:@(sm.ToString("D2")):@(ss.ToString("D2"))</span>
+                                <button class="btn btn-ghost btn-sm mt-1" @onclick="() => _addingCounter = true">+ 카운터 추가</button>
                             }
                         </div>
-                        @if (!string.IsNullOrEmpty(session.Memo))
-                        {
-                            <div style="font-size:0.75rem; color:var(--text-mid); margin-top:4px;">@(session.Memo)</div>
-                        }
-                    </div>
-                }
             }
-        </div>
-
-        <!-- ── 도안 체크리스트 ── -->
-        <div class="card">
-            <div class="card-title">📋 도안 체크리스트</div>
-            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
-                완료한 단계를 체크해요
-            </p>
-
-            @foreach (var item in _project.Checklist)
+            else if (cardId == "checklist")
             {
-                <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);">
-                    <input type="checkbox" checked="@item.Done"
-                           @onchange="() => ToggleCheck(item)"
-                           style="width:16px; height:16px; accent-color:#2a5a26; cursor:pointer;" />
-                    <span style="flex:1; font-size:0.88rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "")">
-                        @item.Text
-                    </span>
-                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;"
-                            @onclick="() => RemoveCheckItem(item.Id)">✕</button>
-                </div>
+                <!-- ── 도안 체크리스트 ── -->
+                        <div class="card" draggable="true" style="@dragStyle" @ondragstart='() => DragStart("checklist")' @ondragover="() => _dragOver = \"checklist\"" @ondragover:preventDefault @ondrop='async () => await Drop("checklist")' @ondragleave="() => { if(_dragOver==\"checklist\") _dragOver=\"\"; }">
+                            <div class="card-title">📋 도안 체크리스트</div>
+                            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
+                                완료한 단계를 체크해요
+                            </p>
+                
+                            @foreach (var item in _project.Checklist)
+                            {
+                                <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);">
+                                    <input type="checkbox" checked="@item.Done"
+                                           @onchange="() => ToggleCheck(item)"
+                                           style="width:16px; height:16px; accent-color:#2a5a26; cursor:pointer;" />
+                                    <span style="flex:1; font-size:0.88rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "")">
+                                        @item.Text
+                                    </span>
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;"
+                                            @onclick="() => RemoveCheckItem(item.Id)">✕</button>
+                                </div>
+                            }
+                
+                            @if (_project.Checklist.Count > 0)
+                            {
+                                var done = _project.Checklist.Count(c => c.Done);
+                                var total = _project.Checklist.Count;
+                                <div style="margin:10px 0 4px; font-size:0.8rem; color:var(--text-mid);">
+                                    @done / @total 완료
+                                </div>
+                                <div style="height:6px; background:#e8e8e8; border-radius:3px;">
+                                    <div style="height:6px; background:#c8e6be; border-radius:3px; width:@(done * 100 / total)%;"></div>
+                                </div>
+                            }
+                
+                            @if (_addingCheck)
+                            {
+                                <div style="display:flex; gap:8px; margin-top:12px;">
+                                    <input class="form-control" @bind="_newCheckText" placeholder="예: 1~10단 완료" />
+                                    <button class="btn btn-primary btn-sm" @onclick="AddCheckItem">추가</button>
+                                    <button class="btn btn-ghost btn-sm" @onclick="() => _addingCheck = false">취소</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <button class="btn btn-ghost btn-sm mt-1" @onclick="() => _addingCheck = true">+ 항목 추가</button>
+                            }
+                        </div>
             }
-
-            @if (_project.Checklist.Count > 0)
+            else if (cardId == "timer")
             {
-                var done = _project.Checklist.Count(c => c.Done);
-                var total = _project.Checklist.Count;
-                <div style="margin:10px 0 4px; font-size:0.8rem; color:var(--text-mid);">
-                    @done / @total 완료
-                </div>
-                <div style="height:6px; background:#e8e8e8; border-radius:3px;">
-                    <div style="height:6px; background:#c8e6be; border-radius:3px; width:@(done * 100 / total)%;"></div>
-                </div>
+                <!-- ── 뜨개 시간 기록 ── -->
+                        <div class="card" draggable="true" style="@dragStyle" @ondragstart='() => DragStart("timer")' @ondragover="() => _dragOver = \"timer\"" @ondragover:preventDefault @ondrop='async () => await Drop("timer")' @ondragleave="() => { if(_dragOver==\"timer\") _dragOver=\"\"; }">
+                            <div class="card-title">⏱️ 뜨개 시간</div>
+                            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
+                                지금 뜨는 시간을 기록해요
+                            </p>
+                
+                            @{
+                                var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
+                            }
+                
+                            <!-- 타이머 디스플레이 -->
+                            <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:20px; margin-bottom:14px; text-align:center; border:1px solid var(--border);">
+                                <div style="font-family:'Courier New', monospace; font-size:3rem; font-weight:700; color:var(--sage-dark); letter-spacing:4px; margin-bottom:8px;">
+                                    @if (activeSession != null)
+                                    {
+                                        <span>@(_timerDisplay)</span>
+                                    }
+                                    else
+                                    {
+                                        <span>00:00:00</span>
+                                    }
+                                </div>
+                                <div style="font-size:0.8rem; color:var(--text-mid);">
+                                    @if (activeSession != null)
+                                    {
+                                        <span>진행 중...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>준비 완료</span>
+                                    }
+                                </div>
+                            </div>
+                
+                            <!-- 시작/종료 버튼 -->
+                            <div style="display:flex; gap:8px;">
+                                @if (activeSession == null)
+                                {
+                                    <!-- 시작 버튼 -->
+                                    <button class="btn btn-primary" style="flex:1; padding:10px;" @onclick="StartSession">
+                                        ▶️ 시작
+                                    </button>
+                                }
+                                else
+                                {
+                                    <!-- 종료 버튼 -->
+                                    <button class="btn btn-danger" style="flex:1; padding:10px;" @onclick="EndSession">
+                                        ⏹️ 종료
+                                    </button>
+                                }
+                            </div>
+                
+                            <!-- 메모 입력 (진행 중일 때만) -->
+                            @if (activeSession != null)
+                            {
+                                <div style="margin-top:14px;">
+                                    <input class="form-control" type="text" placeholder="메모 (선택사항)" @bind="_sessionMemo" style="font-size:0.9rem; padding:8px;" />
+                                </div>
+                            }
+                        </div>
             }
-
-            @if (_addingCheck)
+            else if (cardId == "accum")
             {
-                <div style="display:flex; gap:8px; margin-top:12px;">
-                    <input class="form-control" @bind="_newCheckText" placeholder="예: 1~10단 완료" />
-                    <button class="btn btn-primary btn-sm" @onclick="AddCheckItem">추가</button>
-                    <button class="btn btn-ghost btn-sm" @onclick="() => _addingCheck = false">취소</button>
-                </div>
+                <!-- ── 누적 시간 ── -->
+                        <div class="card" draggable="true" style="@dragStyle" @ondragstart='() => DragStart("accum")' @ondragover="() => _dragOver = \"accum\"" @ondragover:preventDefault @ondrop='async () => await Drop("accum")' @ondragleave="() => { if(_dragOver==\"accum\") _dragOver=\"\"; }">
+                            <div class="card-title">📊 누적 시간</div>
+                            
+                            @{
+                                var totalSeconds = _project.Sessions.Sum(s => {
+                                    var end = s.EndTime ?? DateTime.Now;
+                                    return (int)(end - s.StartTime).TotalSeconds;
+                                });
+                                var displayHours = totalSeconds / 3600;
+                                var displayMins = (totalSeconds % 3600) / 60;
+                                var displaySecs = totalSeconds % 60;
+                            }
+                            
+                            <div style="background:var(--sage-light); border-radius:var(--radius-sm); padding:16px; text-align:center;">
+                                <div style="font-size:0.85rem; color:var(--text-mid); margin-bottom:8px;">총 뜨개 시간</div>
+                                <div style="font-family:'Courier New', monospace; font-size:2.2rem; font-weight:700; color:var(--sage-dark);">
+                                    @if (displayHours > 0)
+                                    {
+                                        <span>@(displayHours):@(displayMins.ToString("D2")):@(displaySecs.ToString("D2"))</span>
+                                    }
+                                    else if (displayMins > 0)
+                                    {
+                                        <span>00:@(displayMins.ToString("D2")):@(displaySecs.ToString("D2"))</span>
+                                    }
+                                    else
+                                    {
+                                        <span>00:00:@(displaySecs.ToString("D2"))</span>
+                                    }
+                                </div>
+                                <div style="font-size:0.75rem; color:var(--text-mid); margin-top:8px;">
+                                    @(_project.Sessions.Count)개 세션
+                                </div>
+                            </div>
+                
+                            <!-- 시간 기록 목록 -->
+                            @if (_project.Sessions.Count > 0)
+                            {
+                                <div class="divider"></div>
+                                <div style="font-size:0.9rem; font-weight:500; margin-bottom:12px; color:var(--text-dark);">
+                                    최근 기록
+                                </div>
+                                
+                                @foreach (var session in _project.Sessions.OrderByDescending(s => s.StartTime).Take(5))
+                                {
+                                    <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:10px; margin-bottom:8px; border:1px solid var(--border); font-size:0.85rem;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                            <span style="color:var(--text-mid);">@(session.StartTime.ToString("M월 d일 HH:mm"))</span>
+                                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick="() => RemoveSession(session.Id)">✕</button>
+                                        </div>
+                                        <div style="font-weight:600; color:var(--sage-dark);">
+                                            @{
+                                                var end = session.EndTime ?? DateTime.Now;
+                                                var totalSecs = (int)(end - session.StartTime).TotalSeconds;
+                                                var sh = totalSecs / 3600;
+                                                var sm = (totalSecs % 3600) / 60;
+                                                var ss = totalSecs % 60;
+                                            }
+                                            @if (sh > 0)
+                                            {
+                                                <span>@(sh):@(sm.ToString("D2")):@(ss.ToString("D2"))</span>
+                                            }
+                                            else
+                                            {
+                                                <span>00:@(sm.ToString("D2")):@(ss.ToString("D2"))</span>
+                                            }
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(session.Memo))
+                                        {
+                                            <div style="font-size:0.75rem; color:var(--text-mid); margin-top:4px;">@(session.Memo)</div>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
             }
-            else
-            {
-                <button class="btn btn-ghost btn-sm mt-1" @onclick="() => _addingCheck = true">+ 항목 추가</button>
-            }
-        </div>
+        }
 
-        
-
-        <!-- ── 과정 사진 ── -->
+                <!-- ── 과정 사진 ── -->
         <div class="card" style="grid-column: span 2;">
             <div class="card-title">📷 과정 사진</div>
 
@@ -435,7 +448,7 @@ else
                             <div style="font-size:0.78rem; color:var(--text-mid); display:flex; gap:6px; flex-wrap:wrap;">
                                 @if (s.NeedleSizeMm > 0)
                                 {
-                                    <span>@s.NeedleSizeMm mm</span>
+                                    <span>🪡 @s.NeedleSizeMm mm</span>
                                 }
                                 <span>@s.Stitch</span>
                             </div>
@@ -566,6 +579,20 @@ else
         _allTools = await Storage.GetToolsAsync();
         var allSwatches = await Storage.GetSwatchesAsync();
         _linkedSwatches = allSwatches.Where(s => s.ProjectId == ProjectId).ToList();
+
+        // 저장된 카드 순서 불러오기
+        try
+        {
+            var savedOrder = await JS.InvokeAsync<string?>("localStorage.getItem", CARD_ORDER_KEY);
+            if (!string.IsNullOrEmpty(savedOrder))
+            {
+                var parsed = System.Text.Json.JsonSerializer.Deserialize<List<string>>(savedOrder);
+                if (parsed != null && parsed.Count == 4)
+                    _cardOrder = parsed;
+            }
+        }
+        catch { }
+
         _loading = false;
 
         if (_project?.Sessions.Any(s => s.IsActive) == true)
@@ -574,6 +601,31 @@ else
 
     void GoBack() => Nav.NavigateTo("schedule");
     void GoToViewer() => Nav.NavigateTo("pattern-viewer/" + ProjectId);
+
+    // ── 카드 드래그앤드롭 ──────────────────────────────────
+    string _dragCard = "";
+    string _dragOver = "";
+    List<string> _cardOrder = new() { "counter", "checklist", "timer", "accum" };
+    const string CARD_ORDER_KEY = "knitlog_card_order";
+
+    void DragStart(string card) => _dragCard = card;
+
+    async Task Drop(string targetCard)
+    {
+        _dragOver = "";
+        if (string.IsNullOrEmpty(_dragCard) || _dragCard == targetCard) { _dragCard = ""; return; }
+        var fromIdx = _cardOrder.IndexOf(_dragCard);
+        var toIdx   = _cardOrder.IndexOf(targetCard);
+        if (fromIdx >= 0 && toIdx >= 0)
+        {
+            _cardOrder.RemoveAt(fromIdx);
+            _cardOrder.Insert(toIdx, _dragCard);
+            // localStorage에 저장
+            var json = System.Text.Json.JsonSerializer.Serialize(_cardOrder);
+            await JS.InvokeVoidAsync("localStorage.setItem", CARD_ORDER_KEY, json);
+        }
+        _dragCard = "";
+    }
 
     // ── 카운터 ──────────────────────────────────────────
     async Task CounterChange(ProjectCounter counter, int delta)
