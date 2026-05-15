@@ -81,6 +81,7 @@
 [data-dark="true"][data-theme="sky"]    { --theme-pale:#0e1e28; --theme-light:#142840; --theme-mid:#1a3450; --theme-muted:#2a6888; --theme-btn:#0e1e28; --theme-active:#60c8f0; }
 [data-dark="true"][data-theme="pink"]   { --theme-pale:#221414; --theme-light:#341c1c; --theme-mid:#442424; --theme-muted:#7a3838; --theme-btn:#221414; --theme-active:#f08888; }
 [data-dark="true"][data-theme="purple"] { --theme-pale:#181420; --theme-light:#221a30; --theme-mid:#2c2040; --theme-muted:#5a4898; --theme-btn:#181420; --theme-active:#b898f8; }
+[data-dark="true"][data-theme="mono"]   { --theme-pale:#111111; --theme-light:#252525; --theme-mid:#1e1e1e; --theme-muted:#505050; --theme-btn:#111111; --theme-active:#b0b0b0; }
 
 /* ── 리셋 & 기본 ────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -746,6 +747,43 @@ body {
 .dark-toggle-btn.on .dark-toggle-thumb {
     transform: translateX(24px);
 }
+
+
+/* ── 다크모드 버튼 오버라이드 ───────────────────────────── */
+[data-dark="true"] .btn-primary,
+[data-dark="true"] .btn-sage {
+    color: var(--theme-active);
+    border-color: var(--theme-light);
+}
+
+[data-dark="true"] .btn-primary:hover,
+[data-dark="true"] .btn-sage:hover {
+    color: var(--theme-active);
+}
+
+[data-dark="true"] .btn-secondary {
+    background: var(--ivory-mid);
+    color: var(--text-mid);
+    border-color: var(--border);
+}
+[data-dark="true"] .btn-secondary:hover { background: var(--ivory-dark); }
+
+[data-dark="true"] .btn-ghost {
+    background: transparent;
+    color: var(--text-mid);
+    border-color: var(--border);
+}
+[data-dark="true"] .btn-ghost:hover { background: var(--ivory-dark); }
+
+[data-dark="true"] .btn-mint {
+    color: var(--theme-active);
+}
+
+[data-dark="true"] .btn-danger {
+    color: #e87878;
+    border-color: #5a2020;
+}
+[data-dark="true"] .btn-danger:hover { background: #2a1010; }
 
 /* ── 로딩 ────────────────────────────────────────────── */
 .loading {
