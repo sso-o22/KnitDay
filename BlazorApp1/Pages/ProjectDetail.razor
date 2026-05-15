@@ -611,7 +611,7 @@ else
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender && !_loading)
+        if (_dragRef == null && !_loading)
         {
             _dragRef = DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("initCardDrag", _dragRef);

@@ -1,40 +1,50 @@
 // 드래그앤드롭 기본 동작 방지
 document.addEventListener('dragover', e => e.preventDefault());
 
-// 카드 드래그앤드롭
 window.initCardDrag = (dotNetRef) => {
     let dragId = null;
+
+    // 이미 등록된 리스너 제거 방지
+    if (window._cardDragInitialized) return;
+    window._cardDragInitialized = true;
 
     document.addEventListener('dragstart', e => {
         const card = e.target.closest('[data-cardid]');
         if (!card) return;
         dragId = card.dataset.cardid;
-        setTimeout(() => card.style.opacity = '0.5', 0);
+        card.style.opacity = '0.5';
     });
 
     document.addEventListener('dragend', e => {
-        const card = e.target.closest('[data-cardid]');
-        if (card) card.style.opacity = '';
-        document.querySelectorAll('[data-cardid]').forEach(c => c.style.outline = '');
+        document.querySelectorAll('[data-cardid]').forEach(c => {
+            c.style.opacity = '';
+            c.style.outline = '';
+        });
         dragId = null;
     });
 
     document.addEventListener('dragover', e => {
         const card = e.target.closest('[data-cardid]');
-        if (!card || card.dataset.cardid === dragId) return;
+        if (!card) return;
         document.querySelectorAll('[data-cardid]').forEach(c => c.style.outline = '');
-        card.style.outline = '2px dashed #267848';
-        card.style.outlineOffset = '2px';
+        if (card.dataset.cardid !== dragId)
+            card.style.outline = '2px dashed #267848';
     });
 
     document.addEventListener('drop', e => {
+        e.preventDefault();
         const card = e.target.closest('[data-cardid]');
         document.querySelectorAll('[data-cardid]').forEach(c => {
             c.style.outline = '';
             c.style.opacity = '';
         });
-        if (!card || !dragId || card.dataset.cardid === dragId) return;
-        dotNetRef.invokeMethodAsync('DropCard', dragId, card.dataset.cardid);
+        if (!card || !dragId || card.dataset.cardid === dragId) {
+            dragId = null;
+            return;
+        }
+        const toId = card.dataset.cardid;
+        const fromId = dragId;
         dragId = null;
+        dotNetRef.invokeMethodAsync('DropCard', fromId, toId);
     });
 };
