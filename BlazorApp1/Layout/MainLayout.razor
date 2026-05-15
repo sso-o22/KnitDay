@@ -2,6 +2,8 @@
    MainLayout.razor  —  전체 레이아웃 (사이드바 + 콘텐츠)
    ===================================================================== *@
 @inherits LayoutComponentBase
+@inject IJSRuntime JS
+@implements IAsyncDisposable
 
 <div class="app-shell">
     <!-- 사이드바 (태블릿/PC용) -->
@@ -12,49 +14,29 @@
         </div>
 
         <ul class="nav-list">
-            <li>
-                <NavLink href="" Match="NavLinkMatch.All" class="nav-item">
-                    <span class="nav-icon">🏠</span>
-                    <span class="nav-label">홈</span>
-                </NavLink>
-            </li>
-            <li>
-                <NavLink href="schedule" class="nav-item">
-                    <span class="nav-icon">📆</span>
-                    <span class="nav-label">뜨케줄</span>
-                </NavLink>
-            </li>
-            <li>
-                <NavLink href="finished" class="nav-item">
-                    <span class="nav-icon">✅</span>
-                    <span class="nav-label">완성작</span>
-                </NavLink>
-            </li>
-            <li>
-                <NavLink href="wishlist" class="nav-item">
-                    <span class="nav-icon">💫</span>
-                    <span class="nav-label">위시리스트</span>
-                </NavLink>
-            </li>
-            <li>
-                <NavLink href="yarns" class="nav-item">
-                    <span class="nav-icon">🧵</span>
-                    <span class="nav-label">실 장고</span>
-                </NavLink>
-            </li>
-            <li>
-                <NavLink href="swatches" class="nav-item">
-                    <span class="nav-icon">🧪</span>
-                    <span class="nav-label">스와치</span>
-                </NavLink>
-            </li>
-            <li>
-                <NavLink href="tools" class="nav-item">
-                    <span class="nav-icon">⚒️</span>
-                    <span class="nav-label">도구</span>
-                </NavLink>
-            </li>
+            <li><NavLink href="" Match="NavLinkMatch.All" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">홈</span></NavLink></li>
+            <li><NavLink href="schedule" class="nav-item"><span class="nav-icon">📆</span><span class="nav-label">뜨케줄</span></NavLink></li>
+            <li><NavLink href="finished" class="nav-item"><span class="nav-icon">✅</span><span class="nav-label">완성작</span></NavLink></li>
+            <li><NavLink href="wishlist" class="nav-item"><span class="nav-icon">💫</span><span class="nav-label">위시리스트</span></NavLink></li>
+            <li><NavLink href="yarns" class="nav-item"><span class="nav-icon">🧵</span><span class="nav-label">실 장고</span></NavLink></li>
+            <li><NavLink href="swatches" class="nav-item"><span class="nav-icon">🧪</span><span class="nav-label">스와치</span></NavLink></li>
+            <li><NavLink href="tools" class="nav-item"><span class="nav-icon">⚒️</span><span class="nav-label">도구</span></NavLink></li>
         </ul>
+
+        <!-- 테마 선택 -->
+        <div class="theme-picker">
+            <div class="theme-picker-label">테마</div>
+            <div class="theme-dots">
+                @foreach (var t in _themes)
+                {
+                    <button class="theme-dot @(_currentTheme == t.Id ? "active" : "")"
+                            style="background:@t.Color;"
+                            title="@t.Name"
+                            @onclick="() => SetTheme(t.Id)">
+                    </button>
+                }
+            </div>
+        </div>
 
         <div class="sidebar-footer">
             <small>나만의 뜨개 기록</small>
@@ -68,33 +50,53 @@
 
     <!-- 하단 탭바 (모바일 전용) -->
     <nav class="bottom-nav">
-        <NavLink href="" Match="NavLinkMatch.All" class="bottom-nav-item">
-            <span class="bottom-nav-icon">🏠</span>
-            <span class="bottom-nav-label">홈</span>
-        </NavLink>
-        <NavLink href="schedule" class="bottom-nav-item">
-            <span class="bottom-nav-icon">📆</span>
-            <span class="bottom-nav-label">뜨케줄</span>
-        </NavLink>
-        <NavLink href="finished" class="bottom-nav-item">
-            <span class="bottom-nav-icon">✅</span>
-            <span class="bottom-nav-label">완성작</span>
-        </NavLink>
-        <NavLink href="wishlist" class="bottom-nav-item">
-            <span class="bottom-nav-icon">💫</span>
-            <span class="bottom-nav-label">위시리스트</span>
-        </NavLink>
-        <NavLink href="yarns" class="bottom-nav-item">
-            <span class="bottom-nav-icon">🧵</span>
-            <span class="bottom-nav-label">실 장고</span>
-        </NavLink>
-        <NavLink href="swatches" class="bottom-nav-item">
-            <span class="bottom-nav-icon">🧪</span>
-            <span class="bottom-nav-label">스와치</span>
-        </NavLink>
-        <NavLink href="tools" class="bottom-nav-item">
-            <span class="bottom-nav-icon">⚒️</span>
-            <span class="bottom-nav-label">도구</span>
-        </NavLink>
+        <NavLink href="" Match="NavLinkMatch.All" class="bottom-nav-item"><span class="bottom-nav-icon">🏠</span><span class="bottom-nav-label">홈</span></NavLink>
+        <NavLink href="schedule" class="bottom-nav-item"><span class="bottom-nav-icon">📆</span><span class="bottom-nav-label">뜨케줄</span></NavLink>
+        <NavLink href="finished" class="bottom-nav-item"><span class="bottom-nav-icon">✅</span><span class="bottom-nav-label">완성작</span></NavLink>
+        <NavLink href="wishlist" class="bottom-nav-item"><span class="bottom-nav-icon">💫</span><span class="bottom-nav-label">위시리스트</span></NavLink>
+        <NavLink href="yarns" class="bottom-nav-item"><span class="bottom-nav-icon">🧵</span><span class="bottom-nav-label">실 장고</span></NavLink>
+        <NavLink href="swatches" class="bottom-nav-item"><span class="bottom-nav-icon">🧪</span><span class="bottom-nav-label">스와치</span></NavLink>
+        <NavLink href="tools" class="bottom-nav-item"><span class="bottom-nav-icon">⚒️</span><span class="bottom-nav-label">도구</span></NavLink>
     </nav>
 </div>
+
+@code {
+    record ThemeOption(string Id, string Name, string Color);
+
+    readonly List<ThemeOption> _themes = new()
+    {
+        new("green",  "연두", "#f0f9ec"),
+        new("yellow", "노랑", "#fffde4"),
+        new("sky",    "하늘", "#eaf7ff"),
+        new("pink",   "분홍", "#fff1f1"),
+        new("purple", "보라", "#f3efff"),
+    };
+
+    string _currentTheme = "green";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var saved = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_theme");
+            if (!string.IsNullOrEmpty(saved)) _currentTheme = saved;
+            await ApplyTheme(_currentTheme);
+            StateHasChanged();
+        }
+    }
+
+    async Task SetTheme(string themeId)
+    {
+        _currentTheme = themeId;
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_theme", themeId);
+        await ApplyTheme(themeId);
+    }
+
+    async Task ApplyTheme(string themeId)
+    {
+        await JS.InvokeVoidAsync("eval",
+            $"document.documentElement.setAttribute('data-theme', '{themeId}')");
+    }
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
