@@ -58,6 +58,29 @@
 [data-theme="pink"]   { --theme-pale:#fff1f1; --theme-light:#ffe7e7; --theme-mid:#f5c0c0; --theme-muted:#c88888; --theme-btn:#fff1f1; --theme-active:#8a3a3a; }
 [data-theme="purple"] { --theme-pale:#f3efff; --theme-light:#e9e1ff; --theme-mid:#c8b8e8; --theme-muted:#8878b8; --theme-btn:#f3efff; --theme-active:#5a3a8a; }
 
+
+/* ── 다크모드 ────────────────────────────────────────────── */
+[data-dark="true"] {
+    --ivory:      #1a1a1a;
+    --ivory-dark: #242424;
+    --ivory-mid:  #2e2e2e;
+    --white:      #1e1e1e;
+    --black:      #f0f0f0;
+    --text-dark:  #f0f0f0;
+    --text-mid:   #a8a8a8;
+    --text-light: #6a6a6a;
+    --border:     #333333;
+    --shadow:     rgba(0,0,0,0.4);
+    --shadow-md:  rgba(0,0,0,0.6);
+}
+
+/* 다크모드 + 각 테마 조합 */
+[data-dark="true"][data-theme="green"]  { --theme-pale:#1e2a1e; --theme-light:#2a4a2a; --theme-mid:#2a3a2a; --theme-muted:#5a8a5a; --theme-btn:#1e2a1e; --theme-active:#6abf7a; }
+[data-dark="true"][data-theme="yellow"] { --theme-pale:#2a2810; --theme-light:#3a3818; --theme-mid:#3a3510; --theme-muted:#8a7820; --theme-btn:#2a2810; --theme-active:#d4b840; }
+[data-dark="true"][data-theme="sky"]    { --theme-pale:#102028; --theme-light:#183040; --theme-mid:#182838; --theme-muted:#3a7a9a; --theme-btn:#102028; --theme-active:#5ab8e8; }
+[data-dark="true"][data-theme="pink"]   { --theme-pale:#281818; --theme-light:#3a2020; --theme-mid:#381818; --theme-muted:#8a4a4a; --theme-btn:#281818; --theme-active:#e87a7a; }
+[data-dark="true"][data-theme="purple"] { --theme-pale:#1e1828; --theme-light:#2a2038; --theme-mid:#281e38; --theme-muted:#6a58a8; --theme-btn:#1e1828; --theme-active:#a888e8; }
+
 /* ── 리셋 & 기본 ────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -538,7 +561,7 @@ body {
         left: 0;
         right: 0;
         z-index: 100;
-        background: #ffffff;
+        background: var(--white);
         border-top: 1px solid var(--border);
         box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
         padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -570,6 +593,44 @@ body {
     .bottom-nav-label { font-weight: 500; line-height: 1; }
 }
 
+
+
+/* ── 사이드바 하단 통계 ──────────────────────────────────── */
+.sidebar-stats {
+    padding: 14px 20px 10px;
+    border-top: 1px solid var(--theme-mid);
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.sidebar-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--theme-muted);
+}
+
+.sidebar-stat-row strong {
+    color: var(--theme-active);
+    font-weight: 700;
+}
+
+.sidebar-dark-toggle {
+    margin-top: 8px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    text-align: center;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    transition: background 0.15s;
+    user-select: none;
+}
+
+.sidebar-dark-toggle:hover {
+    background: var(--theme-light);
+}
 
 /* ── 테마 색상 선택기 ────────────────────────────────────── */
 .theme-picker {
@@ -649,6 +710,40 @@ body {
     font-size: 0.72rem;
     color: var(--text-mid);
     font-weight: 500;
+}
+
+
+/* ── 다크모드 토글 스위치 ────────────────────────────────── */
+.dark-toggle-btn {
+    width: 52px;
+    height: 28px;
+    border-radius: 14px;
+    background: var(--border);
+    border: none;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.25s;
+    flex-shrink: 0;
+}
+
+.dark-toggle-btn.on {
+    background: var(--theme-active);
+}
+
+.dark-toggle-thumb {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: white;
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.25s;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+
+.dark-toggle-btn.on .dark-toggle-thumb {
+    transform: translateX(24px);
 }
 
 /* ── 로딩 ────────────────────────────────────────────── */

@@ -1,0 +1,199 @@
+@page "/stats"
+@using KnitLog.Models
+@using KnitLog.Services
+@inject StorageService Storage
+@inject IJSRuntime JS
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">📊 통계</h1>
+        <p class="page-subtitle">나의 뜨개 기록을 돌아봐요</p>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <div class="loading">불러오는 중...</div>
+}
+else
+{
+    <!-- 요약 카드 -->
+    <div class="stats-grid" style="margin-bottom:28px;">
+        <div class="card" style="text-align:center;">
+            <div style="font-size:2rem; margin-bottom:4px;">✅</div>
+            <div style="font-size:2rem; font-weight:800; color:var(--theme-active);">@_totalFinished</div>
+            <div style="font-size:0.82rem; color:var(--text-mid);">완성작</div>
+        </div>
+        <div class="card" style="text-align:center;">
+            <div style="font-size:2rem; margin-bottom:4px;">📆</div>
+            <div style="font-size:2rem; font-weight:800; color:var(--theme-active);">@_totalInProgress</div>
+            <div style="font-size:0.82rem; color:var(--text-mid);">진행중</div>
+        </div>
+        <div class="card" style="text-align:center;">
+            <div style="font-size:2rem; margin-bottom:4px;">⏱️</div>
+            <div style="font-size:1.5rem; font-weight:800; color:var(--theme-active);">@_totalHours<span style="font-size:1rem;">h</span></div>
+            <div style="font-size:0.82rem; color:var(--text-mid);">총 뜨개 시간</div>
+        </div>
+        <div class="card" style="text-align:center;">
+            <div style="font-size:2rem; margin-bottom:4px;">🧵</div>
+            <div style="font-size:2rem; font-weight:800; color:var(--theme-active);">@_totalYarns</div>
+            <div style="font-size:0.82rem; color:var(--text-mid);">실 종류</div>
+        </div>
+    </div>
+
+    <!-- 기간 탭 -->
+    <div style="display:flex; gap:8px; margin-bottom:20px;">
+        @foreach (var p in new[] { ("day","오늘"), ("week","이번 주"), ("month","이번 달") })
+        {
+            <button class="btn @(_period == p.Item1 ? "btn-sage" : "btn-secondary")"
+                    @onclick="() => SetPeriod(p.Item1)">@p.Item2</button>
+        }
+    </div>
+
+    <!-- 뜨개 시간 그래프 -->
+    <div class="card" style="margin-bottom:20px;">
+        <div class="card-title" style="margin-bottom:16px;">⏱️ 뜨개 시간</div>
+        @if (_chartData.Count == 0)
+        {
+            <div style="text-align:center; padding:32px; color:var(--text-light);">이 기간에 기록이 없어요</div>
+        }
+        else
+        {
+            <div style="display:flex; align-items:flex-end; gap:6px; height:160px; padding-bottom:8px;">
+                @{ var maxVal = _chartData.Max(d => d.Minutes); maxVal = maxVal == 0 ? 1 : maxVal; }
+                @foreach (var d in _chartData)
+                {
+                    var heightPct = maxVal > 0 ? (double)d.Minutes / maxVal * 100 : 0;
+                    <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%;">
+                        <div style="flex:1; display:flex; align-items:flex-end; width:100%;">
+                            <div style="width:100%; height:@(heightPct)%; background:var(--theme-light); border-radius:4px 4px 0 0; min-height:@(d.Minutes > 0 ? "4px" : "0"); transition:height 0.3s;"></div>
+                        </div>
+                        @if (d.Minutes > 0)
+                        {
+                            <div style="font-size:0.65rem; color:var(--theme-active); font-weight:600;">
+                                @(d.Minutes >= 60 ? $"{d.Minutes/60}h{d.Minutes%60:D2}m" : $"{d.Minutes}m")
+                            </div>
+                        }
+                        <div style="font-size:0.65rem; color:var(--text-light); white-space:nowrap;">@d.Label</div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- 세션 기록 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">📋 최근 뜨개 기록</div>
+        @if (_recentSessions.Count == 0)
+        {
+            <div style="color:var(--text-light); font-size:0.88rem;">기록이 없어요</div>
+        }
+        else
+        {
+            @foreach (var (session, projectTitle) in _recentSessions)
+            {
+                var totalSecs = (int)((session.EndTime ?? DateTime.Now) - session.StartTime).TotalSeconds;
+                var h = totalSecs / 3600; var m = (totalSecs % 3600) / 60;
+                <div style="display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border);">
+                    <div style="width:44px; height:44px; background:var(--theme-pale); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:1.1rem; flex-shrink:0;">🧶</div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="font-weight:600; font-size:0.88rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@projectTitle</div>
+                        <div style="font-size:0.78rem; color:var(--text-light);">@session.StartTime.ToString("M월 d일 HH:mm")</div>
+                    </div>
+                    <div style="font-weight:700; color:var(--theme-active); font-size:0.9rem; flex-shrink:0;">
+                        @(h > 0 ? $"{h}h {m:D2}m" : $"{m}분")
+                    </div>
+                </div>
+            }
+        }
+    </div>
+}
+
+@code {
+    bool _loading = true;
+    string _period = "week";
+    int _totalFinished, _totalInProgress, _totalYarns;
+    double _totalHours;
+    List<(string Label, int Minutes)> _chartData = new();
+    List<(KnitSession Session, string ProjectTitle)> _recentSessions = new();
+    List<KnitProject> _projects = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _projects  = await Storage.GetProjectsAsync();
+        var yarns  = await Storage.GetYarnsAsync();
+        _totalFinished   = _projects.Count(p => p.Status == ProjectStatus.완료);
+        _totalInProgress = _projects.Count(p => p.Status == ProjectStatus.진행중);
+        _totalYarns      = yarns.Count;
+        var allSecs = _projects.SelectMany(p => p.Sessions)
+            .Where(s => s.EndTime.HasValue)
+            .Sum(s => (int)((s.EndTime!.Value) - s.StartTime).TotalSeconds);
+        _totalHours = Math.Round(allSecs / 3600.0, 1);
+        BuildChart();
+        BuildRecentSessions();
+        _loading = false;
+    }
+
+    void SetPeriod(string period) { _period = period; BuildChart(); }
+
+    void BuildChart()
+    {
+        _chartData.Clear();
+        var now = DateTime.Now;
+
+        if (_period == "day")
+        {
+            // 오늘 1시간 단위
+            for (int h = 0; h < 24; h += 2)
+            {
+                var from = now.Date.AddHours(h);
+                var to   = from.AddHours(2);
+                var mins = GetMinutes(from, to);
+                _chartData.Add(($"{h:D2}", mins));
+            }
+        }
+        else if (_period == "week")
+        {
+            // 이번 주 7일
+            var monday = now.Date.AddDays(-(int)now.DayOfWeek == 0 ? 6 : (int)now.DayOfWeek - 1);
+            var dayNames = new[] { "월","화","수","목","금","토","일" };
+            for (int i = 0; i < 7; i++)
+            {
+                var day = monday.AddDays(i);
+                var mins = GetMinutes(day, day.AddDays(1));
+                _chartData.Add((dayNames[i], mins));
+            }
+        }
+        else
+        {
+            // 이번 달 주 단위
+            var firstDay = new DateTime(now.Year, now.Month, 1);
+            var lastDay  = firstDay.AddMonths(1);
+            var week = 1;
+            var cur  = firstDay;
+            while (cur < lastDay)
+            {
+                var end = new DateTime[] { cur.AddDays(7), lastDay }.Min();
+                var mins = GetMinutes(cur, end);
+                _chartData.Add(($"{week}주", mins));
+                cur = end; week++;
+            }
+        }
+    }
+
+    int GetMinutes(DateTime from, DateTime to) =>
+        _projects.SelectMany(p => p.Sessions)
+            .Where(s => s.EndTime.HasValue && s.StartTime >= from && s.StartTime < to)
+            .Sum(s => (int)((s.EndTime!.Value - s.StartTime).TotalMinutes));
+
+    void BuildRecentSessions()
+    {
+        _recentSessions = _projects
+            .SelectMany(p => p.Sessions
+                .Where(s => s.EndTime.HasValue)
+                .Select(s => (s, p.Title)))
+            .OrderByDescending(x => x.s.StartTime)
+            .Take(10)
+            .ToList();
+    }
+}
