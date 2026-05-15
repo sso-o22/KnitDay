@@ -43,12 +43,12 @@
     --radius-sm:      9px;
 
     /* ── 테마 변수 (JS로 교체) ── */
-    --theme-pale:     #f0f9ec;   /* 사이드바 배경 */
-    --theme-light:    #c8e6be;   /* 활성 메뉴 배경 */
-    --theme-mid:      #d4eccc;   /* 구분선/테두리 */
-    --theme-muted:    #a8c8a0;   /* 푸터 텍스트 */
-    --theme-btn:      #dff2d8;   /* 버튼 배경 */
-    --theme-active:   #267848;   /* 활성 텍스트/아이콘 */
+    --theme-pale:     #f5f5f5;   /* 사이드바 배경 */
+    --theme-light:    #e0e0e0;   /* 활성 메뉴 배경 */
+    --theme-mid:      #cccccc;   /* 구분선/테두리 */
+    --theme-muted:    #888888;   /* 푸터 텍스트 */
+    --theme-btn:      #f5f5f5;   /* 버튼 배경 */
+    --theme-active:   #333333;   /* 활성 텍스트/아이콘 */
 }
 
 /* ── 테마 정의 ───────────────────────────────────────────── */
