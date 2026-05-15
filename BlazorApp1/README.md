@@ -112,6 +112,36 @@ dotnet run
 ---
 
 ## 📝 업데이트 내역
+### 2026년 5월 14일
+
+#### 🌅 오전 (10:33 - 11:43)
+- **컴포넌트 정리 및 최적화**
+  - `Models.cs` 리팩토링 - 데이터 구조 정리 및 정규화
+  - `PatternViewer.razor` 간소화
+  - `Swatches.razor` 정리 및 통합
+
+- **JavaScript 모듈 정리** (`patternViewer.js`)
+  - 불필요한 코드 제거 및 간소화
+  - 기능 최적화
+
+#### 🌄 오후 (14:33 - 17:23)
+- **데이터 서비스 개선** (`StorageService.cs`)
+  - 저장소 로직 정리 및 최적화
+  - 데이터 마이그레이션 로직 추가
+
+- **페이지별 정리 작업**
+  - `Schedule.razor` - 리스트 관리 로직 간소화
+  - `ProjectDetail.razor` - 불필요 코드 정리
+  - `Tools.razor` - UI 단순화
+  - `Yarns.razor` - 목록 표시 로직 개선
+  - `Wishlist.razor` - 마이너 수정
+
+- **UI/CSS 최적화** (`app.css`)
+  - 스타일 통일 및 레이아웃 조정
+
+- **레이아웃 미세 조정** (`MainLayout.razor`)
+
+---
 ### 2026년 5월 15일
 - README를 현재 프로젝트 상태에 맞게 동기화했습니다.
 - 실제 있는 페이지 목록을 반영하고, 기능 설명을 확장했습니다.
