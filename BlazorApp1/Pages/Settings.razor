@@ -1,0 +1,85 @@
+@page "/settings"
+@inject IJSRuntime JS
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">⚙️ 설정</h1>
+        <p class="page-subtitle">앱 환경을 설정해요</p>
+    </div>
+</div>
+
+<div style="max-width:480px; display:flex; flex-direction:column; gap:16px;">
+
+    <!-- 테마 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:16px;">🎨 테마 색상</div>
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:12px;">
+            @foreach (var t in _themes)
+            {
+                <button class="settings-theme-btn @(_currentTheme == t.Id ? "active" : "")"
+                        @onclick="() => SetTheme(t.Id)">
+                    <div class="settings-theme-dot" style="background:@t.DotColor;"></div>
+                    <span class="settings-theme-name">@t.Name</span>
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- 데이터 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:4px;">💾 데이터</div>
+        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:16px;">
+            데이터는 이 브라우저에 저장돼요. Firebase 연동 전까지는 기기마다 따로 관리돼요.
+        </p>
+        <button class="btn btn-secondary" @onclick="ExportData">📤 데이터 내보내기</button>
+    </div>
+
+</div>
+
+@code {
+    record ThemeOption(string Id, string Name, string DotColor);
+
+    readonly List<ThemeOption> _themes = new()
+    {
+        new("green",  "연두", "#c8e6be"),
+        new("yellow", "노랑", "#fffdc7"),
+        new("sky",    "하늘", "#d3f4ff"),
+        new("pink",   "분홍", "#ffe7e7"),
+        new("purple", "보라", "#e9e1ff"),
+    };
+
+    string _currentTheme = "green";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var saved = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_theme");
+            if (!string.IsNullOrEmpty(saved)) _currentTheme = saved;
+            StateHasChanged();
+        }
+    }
+
+    async Task SetTheme(string themeId)
+    {
+        _currentTheme = themeId;
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_theme", themeId);
+        await JS.InvokeVoidAsync("eval",
+            $"document.documentElement.setAttribute('data-theme', '{themeId}')");
+    }
+
+    async Task ExportData()
+    {
+        await JS.InvokeVoidAsync("eval", @"
+            const keys = ['knittracker_projects','knittracker_yarns','knittracker_tools','knittracker_swatches'];
+            const data = {};
+            keys.forEach(k => { const v = localStorage.getItem(k); if(v) data[k] = JSON.parse(v); });
+            data.exportedAt = new Date().toISOString();
+            const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'knitlog_backup_' + new Date().toISOString().slice(0,10) + '.json';
+            a.click();
+        ");
+    }
+}

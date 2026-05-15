@@ -1,5 +1,5 @@
 @* =====================================================================
-   Pages/Yarns.razor  —  실 장고
+   Pages/Yarns.razor  —  실 창고
    ===================================================================== *@
 @page "/yarns"
 @using KnitLog.Models
@@ -8,7 +8,7 @@
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">🧵 실 장고</h1>
+        <h1 class="page-title">🧵 실 창고</h1>
         <p class="page-subtitle">보유중인 실 목록</p>
     </div>
     <button class="btn btn-primary" @onclick="OpenAddModal">+ 실 추가</button>
@@ -102,11 +102,11 @@ else
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">실 이름 *</label>
-                    <input class="form-control" @bind="_editingYarn.Name" placeholder="예: 러스크" />
+                    <input class="form-control" @bind="_editingYarn.Name" placeholder="예: 알파카 그란데" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">브랜드</label>
-                    <input class="form-control" @bind="_editingYarn.Brand" placeholder="예: 솜솜뜨개" />
+                    <input class="form-control" @bind="_editingYarn.Brand" placeholder="예: 랑 야른스" />
                 </div>
             </div>
 
@@ -145,22 +145,22 @@ else
                     <input class="form-control" @bind="_editingYarn.LotNumber" placeholder="예: 1234" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">수량</label>
+                    <label class="form-label">수량 (볼)</label>
                     <input type="number" class="form-control" @bind="_editingYarn.Quantity" min="0" />
                 </div>
             </div>
 
             <div class="form-row-3">
                 <div class="form-group">
-                    <label class="form-label">무게 (g)</label>
+                    <label class="form-label">무게 (g/볼)</label>
                     <input type="number" class="form-control" @bind="_editingYarn.WeightGram" min="0" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">길이 (m)</label>
+                    <label class="form-label">길이 (m/볼)</label>
                     <input type="number" class="form-control" @bind="_editingYarn.LengthMeter" min="0" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">가격 </label>
+                    <label class="form-label">가격 (볼당)</label>
                     <input type="number" class="form-control" @bind="_editingYarn.Price" min="0" />
                 </div>
             </div>
@@ -168,7 +168,7 @@ else
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">구매처</label>
-                    <input class="form-control" @bind="_editingYarn.PurchasePlace" placeholder="예: 솜솜뜨개" />
+                    <input class="form-control" @bind="_editingYarn.PurchasePlace" placeholder="예: 마이뜨개, 야바야, 에트시" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">구매일</label>

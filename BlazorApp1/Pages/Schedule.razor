@@ -85,7 +85,7 @@ else
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">도안명 *</label>
-                        <input class="form-control" @bind="_editingProject.PatternName" placeholder="예: 모비 스웨터" />
+                        <input class="form-control" @bind="_editingProject.PatternName" placeholder="예: 마시멜로 후드 집업" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">도안 출처</label>
@@ -105,7 +105,7 @@ else
 
                 @* 사용 실 *@
                 <div class="form-group">
-                    <label class="form-label">사용 실 — 실 장고에서 선택</label>
+                    <label class="form-label">사용 실 — 실 창고에서 선택</label>
                     @foreach (var usage in _editingProject.YarnUsages)
                     {
                         var yarn = _yarns.Find(y => y.Id == usage.YarnId);
@@ -148,7 +148,7 @@ else
                             }
                         </div>
                     }
-                    <input class="form-control" @bind="_editingProject.NeedleNote" placeholder="예: 4mm 대바늘, 3.5mm 코바늘" />
+                    <input class="form-control" @bind="_editingProject.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
                 </div>
 
                 <div class="form-row">
