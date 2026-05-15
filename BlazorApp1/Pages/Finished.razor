@@ -5,7 +5,6 @@
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
-@inject NavigationManager Nav
 
 <div class="page-header">
     <div>
@@ -56,7 +55,7 @@ else
                 @if (proj.StartDate.HasValue && proj.EndDate.HasValue)
                 {
                     var days = (proj.EndDate.Value - proj.StartDate.Value).Days;
-                    <div style="font-size:0.78rem; color:#8a6a08; margin-top:2px;">총 @days일 소요</div>
+                    <div style="font-size:0.78rem; color:#8a6a08; margin-top:2px;">총 @(days)일 소요</div>
                 }
             </div>
         }
