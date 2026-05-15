@@ -53,7 +53,7 @@
 
 /* ── 테마 정의 ───────────────────────────────────────────── */
 [data-theme="green"]  { --theme-pale:#f0f9ec; --theme-light:#c8e6be; --theme-mid:#d4eccc; --theme-muted:#a8c8a0; --theme-btn:#dff2d8; --theme-active:#3a7a4a; }
-[data-theme="yellow"] { --theme-pale:#fffde4; --theme-light:#fffdc7; --theme-mid:#f5e88a; --theme-muted:#c8a84a; --theme-btn:#fffde4; --theme-active:#8a6a00; }
+[data-theme="yellow"] { --theme-pale:#fffde4; --theme-light:#fffdc7; --theme-mid:#e8d870; --theme-muted:#a08828; --theme-btn:#fffde4; --theme-active:#7a5a00; }
 [data-theme="sky"]    { --theme-pale:#eaf7ff; --theme-light:#d3f4ff; --theme-mid:#a8dff5; --theme-muted:#6aaac8; --theme-btn:#eaf7ff; --theme-active:#1a6a8a; }
 [data-theme="pink"]   { --theme-pale:#fff1f1; --theme-light:#ffe7e7; --theme-mid:#f5c0c0; --theme-muted:#c88888; --theme-btn:#fff1f1; --theme-active:#8a3a3a; }
 [data-theme="purple"] { --theme-pale:#f3efff; --theme-light:#e9e1ff; --theme-mid:#c8b8e8; --theme-muted:#8878b8; --theme-btn:#f3efff; --theme-active:#5a3a8a; }
@@ -122,7 +122,7 @@ body {
     gap: 12px;
     padding: 11px 16px;
     border-radius: var(--radius-sm);
-    color: #6a8c65;
+    color: var(--theme-active);
     text-decoration: none;
     font-size: 0.88rem;
     font-weight: 500;
@@ -130,24 +130,18 @@ body {
 }
 
 .nav-item:hover {
-    background: #ddf0d5;
-    color: #2a2a2a;
+    background: var(--theme-light);
+    color: #1a1a1a;
 }
 
 .nav-item.active {
-    background: #c8e6be;
-    color: #1a3318;
+    background: var(--theme-light);
+    color: #1a1a1a;
     font-weight: 600;
 }
 
 .nav-icon { font-size: 1.1rem; width: 22px; text-align: center; }
 
-.sidebar-footer {
-    padding: 20px 24px;
-    color: var(--theme-muted);
-    font-size: 0.75rem;
-    border-top: 1px solid var(--theme-mid);
-}
 
 /* ── 메인 콘텐츠 ─────────────────────────────────────── */
 .main-content {
@@ -199,7 +193,7 @@ body {
 .btn-primary {
     background: var(--theme-btn);
     color: #1a1a1a;
-    border: 1px solid var(--theme-light);
+    border: 1px solid var(--theme-mid);
 }
 
 .btn-primary:hover {
@@ -220,7 +214,7 @@ body {
 .btn-sage {
     background: var(--theme-btn);
     color: #1a1a1a;
-    border: 1px solid var(--theme-light);
+    border: 1px solid var(--theme-mid);
 }
 .btn-sage:hover { background: var(--theme-light); color: #1a1a1a; }
 
@@ -579,8 +573,9 @@ body {
 
 /* ── 테마 색상 선택기 ────────────────────────────────────── */
 .theme-picker {
-    padding: 12px 24px;
+    padding: 16px 24px 20px;
     border-top: 1px solid var(--theme-mid);
+    margin-top: auto;
 }
 
 .theme-picker-label {

@@ -30,16 +30,12 @@
                 @foreach (var t in _themes)
                 {
                     <button class="theme-dot @(_currentTheme == t.Id ? "active" : "")"
-                            style="background:@t.Color;"
+                            style="background:@t.DotColor;"
                             title="@t.Name"
                             @onclick="() => SetTheme(t.Id)">
                     </button>
                 }
             </div>
-        </div>
-
-        <div class="sidebar-footer">
-            <small>나만의 뜨개 기록</small>
         </div>
     </nav>
 
@@ -61,15 +57,15 @@
 </div>
 
 @code {
-    record ThemeOption(string Id, string Name, string Color);
+    record ThemeOption(string Id, string Name, string PaleColor, string DotColor);
 
     readonly List<ThemeOption> _themes = new()
     {
-        new("green",  "연두", "#f0f9ec"),
-        new("yellow", "노랑", "#fffde4"),
-        new("sky",    "하늘", "#eaf7ff"),
-        new("pink",   "분홍", "#fff1f1"),
-        new("purple", "보라", "#f3efff"),
+        new("green",  "연두", "#f0f9ec", "#c8e6be"),
+        new("yellow", "노랑", "#fffde4", "#fffdc7"),
+        new("sky",    "하늘", "#eaf7ff", "#d3f4ff"),
+        new("pink",   "분홍", "#fff1f1", "#ffe7e7"),
+        new("purple", "보라", "#f3efff", "#e9e1ff"),
     };
 
     string _currentTheme = "green";
