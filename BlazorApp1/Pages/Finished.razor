@@ -73,7 +73,7 @@ else
 @if (_showDetail && _selectedProject != null)
 {
     <div class="modal-backdrop">
-        <div class="modal" style="max-width:720px;" @onclick:stopPropagation="true">
+        <div class="modal" style="max-width:740px;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@_selectedProject.Title</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseDetail">✕</button>
@@ -82,55 +82,143 @@ else
             <!-- 사진 갤러리 -->
             @if (_selectedProject.Photos.Count > 0)
             {
-                <div class="photo-grid" style="margin-bottom:16px;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
                     @foreach (var photo in _selectedProject.Photos)
                     {
-                        <img src="@photo.Base64Data" class="photo-thumb"
-                             style="width:120px; height:120px;" alt="과정 사진" />
+                        <img src="@photo.Base64Data"
+                             style="width:130px; height:130px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border);"
+                             alt="과정 사진" />
                     }
                 </div>
             }
 
-            <div class="form-row">
+            <!-- 날짜 / 소요일 / 누적시간 -->
+            <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px; padding:12px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
                 @if (_selectedProject.StartDate.HasValue)
                 {
-                    <div>
-                        <div class="form-label">시작일</div>
-                        <div>@_selectedProject.StartDate.Value.ToString("yyyy.MM.dd")</div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">시작일</div>
+                        <div style="font-size:0.9rem; font-weight:600;">@_selectedProject.StartDate.Value.ToString("yyyy.MM.dd")</div>
                     </div>
                 }
                 @if (_selectedProject.EndDate.HasValue)
                 {
-                    <div>
-                        <div class="form-label">완성일</div>
-                        <div>@_selectedProject.EndDate.Value.ToString("yyyy.MM.dd")</div>
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">완성일</div>
+                        <div style="font-size:0.9rem; font-weight:600;">@_selectedProject.EndDate.Value.ToString("yyyy.MM.dd")</div>
+                    </div>
+                }
+                @if (_selectedProject.StartDate.HasValue && _selectedProject.EndDate.HasValue)
+                {
+                    var days = (_selectedProject.EndDate.Value - _selectedProject.StartDate.Value).Days;
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">소요일</div>
+                        <div style="font-size:0.9rem; font-weight:600; color:#8a6a08;">@days 일</div>
+                    </div>
+                }
+                @{
+                    var totalMin = _selectedProject.Sessions.Sum(s => {
+                        var end = s.EndTime ?? DateTime.Now;
+                        return (int)(end - s.StartTime).TotalMinutes;
+                    });
+                    var completedMin = _selectedProject.Sessions.Where(s => s.EndTime.HasValue).Sum(s => (int)(s.EndTime!.Value - s.StartTime).TotalMinutes);
+                }
+                @if (completedMin > 0)
+                {
+                    var h = completedMin / 60; var m = completedMin % 60;
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
+                        <div style="font-size:0.9rem; font-weight:600; color:#267848;">@(h > 0 ? $"{h}시간 " : "")@(m > 0 ? $"{m}분" : "")</div>
                     </div>
                 }
             </div>
 
+            <!-- 도안 정보 -->
             @if (!string.IsNullOrEmpty(_selectedProject.PatternName))
             {
-                <div class="mt-2">
-                    <div class="form-label">도안</div>
-                    <div>@_selectedProject.PatternName</div>
+                <div style="margin-bottom:12px;">
+                    <div class="form-label" style="margin-bottom:4px;">📋 도안</div>
+                    <div style="font-size:0.92rem;">@_selectedProject.PatternName</div>
                     @if (!string.IsNullOrEmpty(_selectedProject.PatternSource))
-                    { <div style="font-size:0.82rem; color:var(--text-mid);">@_selectedProject.PatternSource</div> }
+                    {
+                        <div style="font-size:0.82rem; color:var(--text-mid);">출처: @_selectedProject.PatternSource</div>
+                    }
+                    @if (!string.IsNullOrEmpty(_selectedProject.PatternMemo))
+                    {
+                        <div style="font-size:0.82rem; color:var(--text-mid); margin-top:2px; white-space:pre-wrap;">@_selectedProject.PatternMemo</div>
+                    }
                 </div>
             }
 
-            @if (!string.IsNullOrEmpty(_selectedProject.Description))
+            <!-- 사용 실 -->
+            @if (_selectedYarns.Count > 0)
             {
-                <div class="mt-2">
-                    <div class="form-label">설명</div>
-                    <p style="white-space:pre-wrap; font-size:0.9rem;">@_selectedProject.Description</p>
+                <div style="margin-bottom:12px;">
+                    <div class="form-label" style="margin-bottom:6px;">🧵 사용 실</div>
+                    @foreach (var (usage, yarn) in _selectedYarns)
+                    {
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:0.88rem;">
+                            <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
+                            <span>@yarn.Brand @yarn.Name (@yarn.Color)</span>
+                            @if (usage.BallsUsed > 0)
+                            {
+                                <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed 볼</span>
+                            }
+                        </div>
+                    }
                 </div>
             }
 
+            <!-- 사용 바늘 -->
+            @if (_selectedTools.Count > 0 || !string.IsNullOrEmpty(_selectedProject.NeedleNote))
+            {
+                <div style="margin-bottom:12px;">
+                    <div class="form-label" style="margin-bottom:6px;">🪡 사용 바늘</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                        @foreach (var tool in _selectedTools)
+                        {
+                            <span style="background:var(--ivory-dark); border-radius:4px; padding:3px 8px; font-size:0.8rem;">@tool.NeedleType @tool.SizeDisplay</span>
+                        }
+                        @if (!string.IsNullOrEmpty(_selectedProject.NeedleNote))
+                        {
+                            <span style="background:var(--ivory-dark); border-radius:4px; padding:3px 8px; font-size:0.8rem;">@_selectedProject.NeedleNote</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- 연결된 스와치 -->
+            @if (_selectedSwatches.Count > 0)
+            {
+                <div style="margin-bottom:12px;">
+                    <div class="form-label" style="margin-bottom:6px;">📐 스와치</div>
+                    @foreach (var s in _selectedSwatches)
+                    {
+                        <div style="font-size:0.85rem; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:4px;">
+                            <span style="font-weight:600;">@s.Name</span>
+                            @if (s.PreWashStitches > 0)
+                            {
+                                <span style="color:var(--text-mid); margin-left:8px;">세탁 전 @(s.PreWashStitches)코×@(s.PreWashRows)단</span>
+                            }
+                            @if (s.PostWashStitches > 0)
+                            {
+                                <span style="color:var(--text-mid); margin-left:8px;">→ 세탁 후 @(s.PostWashStitches)코×@(s.PostWashRows)단</span>
+                            }
+                            @if (!string.IsNullOrEmpty(s.Stitch))
+                            {
+                                <span style="color:var(--text-light); margin-left:8px;">(@s.Stitch)</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- 메모 -->
             @if (!string.IsNullOrEmpty(_selectedProject.Memo))
             {
-                <div class="mt-2">
-                    <div class="form-label">메모</div>
-                    <p style="white-space:pre-wrap; font-size:0.9rem;">@_selectedProject.Memo</p>
+                <div style="margin-bottom:12px;">
+                    <div class="form-label" style="margin-bottom:4px;">📝 메모</div>
+                    <p style="white-space:pre-wrap; font-size:0.9rem; color:var(--text-mid);">@_selectedProject.Memo</p>
                 </div>
             }
 
@@ -148,6 +236,14 @@ else
     List<KnitProject> _projects = new();
     KnitProject? _selectedProject;
 
+    List<Yarn> _allYarns = new();
+    List<KnitTool> _allTools = new();
+    List<Swatch> _allSwatches = new();
+
+    List<(ProjectYarnUsage usage, Yarn yarn)> _selectedYarns = new();
+    List<KnitTool> _selectedTools = new();
+    List<Swatch> _selectedSwatches = new();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
@@ -160,10 +256,32 @@ else
         _projects = all.Where(p => p.Status == ProjectStatus.완료)
                        .OrderByDescending(p => p.EndDate)
                        .ToList();
+        _allYarns   = await Storage.GetYarnsAsync();
+        _allTools   = await Storage.GetToolsAsync();
+        _allSwatches = await Storage.GetSwatchesAsync();
     }
 
-    void OpenDetail(KnitProject proj) { _selectedProject = proj; _showDetail = true; }
-    void CloseDetail() { _showDetail = false; _selectedProject = null; }
+    void OpenDetail(KnitProject proj)
+    {
+        _selectedProject = proj;
+        _selectedYarns = proj.YarnUsages
+            .Select(u => (u, _allYarns.FirstOrDefault(y => y.Id == u.YarnId)))
+            .Where(x => x.Item2 != null)
+            .Select(x => (x.u, x.Item2!))
+            .ToList();
+        _selectedTools = _allTools.Where(t => proj.ToolIds.Contains(t.Id)).ToList();
+        _selectedSwatches = _allSwatches.Where(s => s.ProjectId == proj.Id).ToList();
+        _showDetail = true;
+    }
+
+    void CloseDetail()
+    {
+        _showDetail = false;
+        _selectedProject = null;
+        _selectedYarns.Clear();
+        _selectedTools.Clear();
+        _selectedSwatches.Clear();
+    }
 
     async Task DeleteProject(Guid id)
     {

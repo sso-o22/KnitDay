@@ -278,18 +278,9 @@ else
 
                 @if (!_editingTool.IsSet)
                 {
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label">굵기 (mm)</label>
-                            <input type="number" class="form-control"
-                                   value="@(_editingTool.SizeMm == 0 ? "" : _editingTool.SizeMm.ToString())"
-                                   @onchange="e => _editingTool.SizeMm = double.TryParse(e.Value?.ToString(), out var v) ? v : 0"
-                                   step="0.25" min="0.5" max="30" placeholder="예: 3.5" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">호수 (선택)</label>
-                            <input class="form-control" @bind="_editingTool.HookSize" placeholder="예: 5호, 7/0호" />
-                        </div>
+                    <div class="form-group">
+                        <label class="form-label">굵기 / 호수</label>
+                        <input class="form-control" @bind="_editingTool.HookSize" placeholder="예: 3.5mm / 5호 / 7/0호" />
                     </div>
                 }
                 else
