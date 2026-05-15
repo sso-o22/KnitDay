@@ -28,7 +28,12 @@ KnitLog/
 │   ├── Finished.razor         ← 완성작
 │   ├── Wishlist.razor         ← 위시리스트
 │   ├── Yarns.razor            ← 실 장고
-│   └── Tools.razor            ← 도구 (바늘)
+│   ├── Tools.razor            ← 도구 (바늘)
+│   ├── PatternViewer.razor    ← 패턴 뷰어
+│   ├── ProjectDetail.razor    ← 프로젝트 상세
+│   ├── Settings.razor         ← 설정
+│   ├── Stats.razor            ← 통계
+│   └── Swatches.razor         ← 색상 샘플
 │
 └── wwwroot/
     ├── index.html             ← 진입 HTML
@@ -98,6 +103,11 @@ dotnet run
 | **💫 위시리스트** | 뜨고 싶은 작품 메모, 뜨케줄로 이동 |
 | **🎀 실 장고** | 실 정보 기록 (브랜드/색상/무게/가격/구매처), 색상 코드 |
 | **🪢 도구** | 대바늘/코바늘 정보 (브랜드/mm/소재/길이) |
+| **📄 패턴 뷰어** | 패턴 이미지/정보 미리보기 |
+| **🔎 프로젝트 상세** | 프로젝트별 상세 정보 및 편집 |
+| **⚙️ 설정** | 다크 모드 및 앱 설정 |
+| **📊 통계** | 프로젝트 통계 요약 |
+| **🎨 색상 샘플** | 게이지/색상 샘플 기록 |
 
 ---
 
