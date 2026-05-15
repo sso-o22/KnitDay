@@ -425,16 +425,26 @@ else
         {
             <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
                 @foreach (var link in _project.VideoLinks.ToList())
-                {
-                    <div style="display:flex; align-items:center; gap:8px; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px 12px;">
-                        <span style="font-size:1.1rem;">🔗</span>
-                        <a href="@link" target="_blank" rel="noopener noreferrer"
-                        style="flex:1; font-size:0.85rem; color:var(--theme-active); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
-                        @onclick:stopPropagation>@link</a>
-                        <button class="btn btn-danger btn-sm" style="padding:2px 6px; flex-shrink:0;"
-                                @onclick="() => RemoveVideoLink(link)">✕</button>
-                    </div>
-                }
+    {
+    <div style="margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+        @if (link.Contains("youtube.com") || link.Contains("youtu.be"))
+        {
+            @* 유튜브 영상 플레이어 *@
+            <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:var(--radius-sm); margin-bottom:8px;">
+                <iframe src="@GetEmbedUrl(link)" 
+                        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                        allowfullscreen>
+                </iframe>
+            </div>
+        }
+        
+        <div style="display:flex; align-items:center; gap:8px;">
+            <a href="@link" target="_blank" style="flex:1; font-size:0.8rem; color:var(--text-mid);">🔗 원문 링크 보기</a>
+            <button class="btn btn-danger btn-sm" @onclick="() => RemoveVideoLink(link)">✕</button>
+        </div>
+    </div>
+}
             </div>
         }
         else
@@ -670,6 +680,22 @@ else
 
         if (_project?.Sessions.Any(s => s.IsActive) == true)
             StartRefreshTimer();
+    }
+
+    // 유튜브 링크를 임베드용으로 변환하는 함수
+    private string GetEmbedUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url)) return "";
+        
+        if (url.Contains("youtube.com/watch?v="))
+        {
+            return url.Replace("youtube.com/watch?v=", "youtube.com/embed/");
+        }
+        if (url.Contains("youtu.be/"))
+        {
+            return url.Replace("youtu.be/", "youtube.com/embed/");
+        }
+        return url; // 유튜브가 아니면 그대로 반환
     }
 
     void GoBack() => Nav.NavigateTo("schedule");
