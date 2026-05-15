@@ -1,194 +1,1033 @@
-// =====================================================================
-// Models.cs  —  니트로그 앱 전체 데이터 모델
-// =====================================================================
-using System;
-using System.Collections.Generic;
+@* =====================================================================
+   Pages/ProjectDetail.razor  —  뜨케줄 프로젝트 상세 페이지
+   ===================================================================== *@
+@page "/schedule/{ProjectId:guid}"
+@using KnitLog.Models
+@using KnitLog.Services
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject StorageService Storage
+@inject NavigationManager Nav
+@inject IJSRuntime JS
 
-namespace KnitLog.Models
+@if (_loading)
 {
-    public enum NeedleType { 대바늘, 코바늘, 케이블 }
-    public enum ProjectStatus { 진행중, 일시중단, 완료, 위시리스트 }
-    public enum YarnWeight { 레이스, 핑거, 스포츠, DK, 워스티드, 벌키, 슈퍼벌키 }
-    public enum YarnType { 콘사, 볼실, 타래실, 손염색실, 기타 }
+    <div class="loading">불러오는 중...</div>
+}
+else if (_project == null)
+{
+    <div class="empty-state">
+        <div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volleyball-icon lucide-volleyball"><path d="M11 7a16 16 20 0 1 10.98 4.362"/><path d="M12 12a13 13 0 0 1-8.66 5"/><path d="M16.83 13.634a16 16 0 0 1-9.267 7.328"/><path d="M20.66 17A13 13 0 0 0 12 12a13 13 0 0 1 0-10"/><path d="M8.17 15.366a16 16 0 0 1-1.713-11.69"/><circle cx="12" cy="12" r="10"/></svg></div>
+        <p>프로젝트를 찾을 수 없어요.</p>
+        <button class="btn btn-primary mt-2" @onclick="GoBack">← 뒤로가기</button>
+    </div>
+}
+else
+{
+    <div class="page-header">
+        <div style="display:flex; align-items:center; gap:12px;">
+            <button class="btn btn-ghost btn-sm" @onclick="GoBack">← 뒤로</button>
+            <div>
+                <h1 class="page-title" style="margin-bottom:0;">@_project.Title</h1>
+                @* <p class="page-subtitle">@_project.PatternName</p> *@
+            </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button class="btn btn-secondary" @onclick="OpenEditModal">✏️ 수정</button>
+            <button class="btn btn-secondary" @onclick="GoToViewer">📄 도안 뷰어</button>
+            @if (_project.Status == ProjectStatus.진행중)
+            {
+                <button class="btn btn-ghost" @onclick="PauseProject">⏸️ 중단</button>
+                <button class="btn btn-sage" @onclick="CompleteProject">✅ 완료</button>
+            }
+            else if (_project.Status == ProjectStatus.일시중단)
+            {
+                <button class="btn btn-sage" @onclick="ResumeProject">▶️ 재개</button>
+                <button class="btn btn-sage" @onclick="CompleteProject">✅ 완료</button>
+            }
+            else
+            {
+                <button class="btn btn-sage" @onclick="CompleteProject">✅ 완료</button>
+            }
+        </div>
+    </div>
 
-    // ─────────────────────────────────────────────
-    // 실 (Yarn)
-    // ─────────────────────────────────────────────
-    public class Yarn
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public string Name { get; set; } = "";
-        public string Brand { get; set; } = "";
-        public string Color { get; set; } = "";
-        public string ColorCode { get; set; } = "#ffffff";
-        public YarnWeight Weight { get; set; } = YarnWeight.워스티드;
-        public YarnType YarnType { get; set; } = YarnType.볼실;
-        public string LotNumber { get; set; } = "";
-        public string Material { get; set; } = "";
-        public int WeightGram { get; set; }
-        public int LengthMeter { get; set; }
-        public string PurchasePlace { get; set; } = "";
-        public decimal Price { get; set; }
-        public DateTime? PurchaseDate { get; set; }
-        public int Quantity { get; set; } = 1;
-        public string Memo { get; set; } = "";
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-    }
+    <div class="detail-grid">
 
-    // ─────────────────────────────────────────────
-    // 스와치 (Swatch)
-    // ─────────────────────────────────────────────
-    public class Swatch
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public string Name { get; set; } = "";
+        <!-- ── 기본 정보 카드 ── -->
+        <div class="card" style="grid-column: span 2;">
+            <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px,1fr)); gap:16px;">
+                @if (_project.StartDate.HasValue)
+                {
+                    <div>
+                        <div class="form-label">시작일</div>
+                        <div style="font-weight:500;">@_project.StartDate.Value.ToString("yyyy년 M월 d일")</div>
+                    </div>
+                }
+                @if (_project.EndDate.HasValue)
+                {
+                    <div>
+                        <div class="form-label">목표 종료일</div>
+                        <div style="font-weight:500;">@_project.EndDate.Value.ToString("yyyy년 M월 d일")</div>
+                    </div>
+                }
+                @if (_project.StartDate.HasValue)
+                {
+                    var elapsed = (DateTime.Today - _project.StartDate.Value).Days;
+                    <div>
+                        <div class="form-label">진행 기간</div>
+                        <div style="font-weight:500; color:var(--text-dark);">@(elapsed)일째 뜨는 중</div>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_project.PatternSource))
+                {
+                    <div>
+                        <div class="form-label">도안 출처</div>
+                        <div style="font-weight:500; word-break:break-all;">@_project.PatternSource</div>
+                    </div>
+                }
+                @if (_project.YarnUsages.Count > 0)
+                {
+                    <div>
+                        <div class="form-label">사용 실</div>
+                        @foreach (var usage in _project.YarnUsages)
+                        {
+                            var yarn = _yarns.Find(y => y.Id == usage.YarnId);
+                            if (yarn != null)
+                            {
+                                <div style="display:flex; align-items:center; gap:5px; margin-bottom:3px;">
+                                    <span class="color-dot" style="background:@yarn.ColorCode; width:12px; height:12px;"></span>
+                                    <span style="font-size:0.85rem; font-weight:500;">@yarn.Brand @yarn.Name</span>
+                                    @if (usage.BallsUsed > 0)
+                                    {
+                                        <span style="font-size:0.78rem; color:var(--text-light);">@(usage.BallsUsed)볼</span>
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+                @if (_project.ToolIds.Count > 0 || !string.IsNullOrEmpty(_project.NeedleNote))
+                {
+                    <div>
+                        <div class="form-label">사용 바늘</div>
+                        @foreach (var toolId in _project.ToolIds)
+                        {
+                            var tool = _allTools.Find(t => t.Id == toolId);
+                            if (tool != null)
+                            {
+                                <div style="font-size:0.85rem; font-weight:500; margin-bottom:2px;">
+                                    @tool.NeedleType @tool.SizeMm mm
+                                </div>
+                            }
+                        }
+                        @if (!string.IsNullOrEmpty(_project.NeedleNote))
+                        {
+                            <div style="font-size:0.85rem; font-weight:500;">@_project.NeedleNote</div>
+                        }
+                    </div>
+                }
+            </div>
 
-        // 연결
-        public Guid? YarnId { get; set; }
-        public string YarnNameDirect { get; set; } = "";    // 직접 입력 실 이름
-        public Guid? ProjectId { get; set; }
+            @if (!string.IsNullOrEmpty(_project.Description))
+            {
+                <div class="divider"></div>
+                <div class="form-label">설명</div>
+                <p style="white-space:pre-wrap; font-size:0.9rem;">@_project.Description</p>
+            }
+            @if (!string.IsNullOrEmpty(_project.PatternMemo))
+            {
+                <div class="divider"></div>
+                <div class="form-label">도안 메모</div>
+                <p style="white-space:pre-wrap; font-size:0.9rem;">@_project.PatternMemo</p>
+            }
+            @if (!string.IsNullOrEmpty(_project.Memo))
+            {
+                <div class="divider"></div>
+                <div class="form-label">메모</div>
+                <p style="white-space:pre-wrap; font-size:0.9rem;">@_project.Memo</p>
+            }
 
-        // 도구
-        public double NeedleSizeMm { get; set; }
-        public string Stitch { get; set; } = "메리야스";     // 자유 입력
+            @* 일시중단 상태 표시 *@
+            @if (_project.Status == ProjectStatus.일시중단)
+            {
+                <div class="divider"></div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <span class="badge" style="background:#f5e6c0; color:#8a6010;">⏸️ 일시 중단 중</span>
+                    <span style="font-size:0.82rem; color:var(--text-light);">재개 버튼을 눌러 다시 시작하세요</span>
+                </div>
+            }
 
-        // 세탁 전 게이지
-        public double PreWashStitches { get; set; }
-        public double PreWashRows { get; set; }
-        public double PreWashWidthCm { get; set; }
-        public double PreWashHeightCm { get; set; }
+            @* 참고 영상 *@
+            @* @if (_project.VideoLinks.Count > 0)
+            {
+                <div class="divider"></div>
+                <div class="form-label">🎬 참고 영상</div>
+                <div style="display:flex; flex-direction:column; gap:6px;">
+                    @foreach (var link in _project.VideoLinks)
+                    {
+                        <a href="@link" target="_blank" rel="noopener noreferrer"
+                           style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--theme-active); word-break:break-all;">
+                            🔗 @link
+                        </a>
+                    }
+                </div>
+            } *@
+        </div>
 
-        // 세탁 후 게이지
-        public double PostWashStitches { get; set; }
-        public double PostWashRows { get; set; }
-        public double PostWashWidthCm { get; set; }
-        public double PostWashHeightCm { get; set; }
-
-        // 수축률 자동 계산
-        public double WidthShrinkagePercent =>
-            PreWashWidthCm > 0
-                ? Math.Round((PostWashWidthCm - PreWashWidthCm) / PreWashWidthCm * 100, 1)
-                : 0;
-
-        public double HeightShrinkagePercent =>
-            PreWashHeightCm > 0
-                ? Math.Round((PostWashHeightCm - PreWashHeightCm) / PreWashHeightCm * 100, 1)
-                : 0;
-
-        public string Memo { get; set; } = "";
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-    }
-
-    // ─────────────────────────────────────────────
-    // 도구 (Tool - 바늘)
-    // ─────────────────────────────────────────────
-    public class KnitTool
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public NeedleType NeedleType { get; set; } = NeedleType.대바늘;
-        public string Brand { get; set; } = "";
-        public string ModelName { get; set; } = "";      // 바늘 이름/모델 (예: 랜턴문, 진저)
-        public bool IsSet { get; set; } = false;         // 세트 여부
-        public double SizeMm { get; set; }               // 단일 굵기
-        public List<double> SetSizes { get; set; } = new(); // 세트일 때 굵기 목록
-        public string Material { get; set; } = "";
-        public int LengthCm { get; set; }
-        public string HookSize { get; set; } = "";          // 코바늘 호수 (예: 5호, 7/0호)
-        public string Memo { get; set; } = "";
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-        // 표시용 굵기 문자열
-        public string SizeDisplay => IsSet && SetSizes.Count > 0
-            ? string.Join(", ", SetSizes.Select(s => $"{s}mm"))
-            : $"{SizeMm}mm";
-    }
-
-    // ─────────────────────────────────────────────
-    // 뜨개 과정 사진
-    // ─────────────────────────────────────────────
-    public class ProjectPhoto
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public string FileName { get; set; } = "";
-        public string Base64Data { get; set; } = "";
-        public string Caption { get; set; } = "";
-        public DateTime TakenAt { get; set; } = DateTime.Now;
-    }
-
-    // ─────────────────────────────────────────────
-    // 뜨개 프로젝트
-    // ─────────────────────────────────────────────
-    public class KnitProject
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public ProjectStatus Status { get; set; } = ProjectStatus.위시리스트;
-        public string Title { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string PatternName { get; set; } = "";
-        public string PatternSource { get; set; } = "";
-        public string PatternMemo { get; set; } = "";
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
-        public List<ProjectYarnUsage> YarnUsages { get; set; } = new();
-        public List<Guid> ToolIds { get; set; } = new();
-        public string NeedleNote { get; set; } = "";        // 바늘 직접 입력 (예: 4mm 대바늘 80cm)
-        public List<ProjectPhoto> Photos { get; set; } = new();
-        public List<ProjectCounter> Counters { get; set; } = new();
-        public List<ChecklistItem> Checklist { get; set; } = new();
-        public List<KnitSession> Sessions { get; set; } = new();
-        public string Memo { get; set; } = "";
-        public string WishMemo { get; set; } = "";
-        public List<string> VideoLinks { get; set; } = new();  // 참고 영상 링크
-    }
-
-    public class ProjectYarnUsage
-    {
-        public Guid YarnId { get; set; }
-        public int BallsUsed { get; set; }
-        public string Memo { get; set; } = "";
-    }
-
-    public class ProjectCounter
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public string Label { get; set; } = "단수";
-        public int Value { get; set; } = 0;
-        public int Step { get; set; } = 1;
-        public int Target { get; set; } = 0;           // 목표값 (0 = 미설정)
-        public DateTime? LastUpdatedAt { get; set; }   // 마지막 + 클릭 시각
-    }
-
-    public class ChecklistItem
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public string Text { get; set; } = "";
-        public bool Done { get; set; } = false;
-    }
-
-    public class KnitSession
-    {
-        public Guid Id { get; set; } = Guid.NewGuid();
-        public DateTime StartTime { get; set; }
-        public DateTime? EndTime { get; set; }
-        public string Memo { get; set; } = "";
-
-        public int GetDurationMinutes()
+        @foreach (var cardId in _cardOrder)
         {
-            var end = EndTime ?? DateTime.Now;
-            return (int)(end - StartTime).TotalMinutes;
+            @if (cardId == "counter")
+            {
+                <!-- ── 단수 카운터 ── -->
+                        <div class="card" draggable="true" data-cardid="counter">
+                            <div class="card-title">🔢 단수 카운터</div>
+                            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
+                                현재 뜨고 있는 단/코 수를 기록해요
+                            </p>
+
+                            @foreach (var counter in _project.Counters)
+                            {
+                                var hasTarget = counter.Target > 0;
+                                var progress = hasTarget ? Math.Min(100.0, counter.Value * 100.0 / counter.Target) : 0.0;
+                                var isDone = hasTarget && counter.Value >= counter.Target;
+
+                                <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; border:1px solid @(isDone ? "#7ec8a0" : "var(--border)");">
+                                    <!-- 라벨 + 삭제 -->
+                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                                        <span style="font-weight:600; font-size:0.92rem;">@counter.Label</span>
+                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" @onclick="() => RemoveCounter(counter.Id)">✕</button>
+                                    </div>
+
+                                    <!-- 원형 게이지 + 카운터 버튼 -->
+                                    <div style="display:flex; align-items:center; gap:16px; justify-content:center; margin-bottom:10px;">
+                                        <button class="btn btn-secondary" style="width:44px; height:44px; font-size:1.3rem; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;"
+                                                @onclick="() => CounterChange(counter, -counter.Step)">−</button>
+
+                                        <!-- 원형 게이지 -->
+                                        <div style="position:relative; width:88px; height:88px; flex-shrink:0;">
+                                            <svg viewBox="0 0 88 88" width="88" height="88" style="transform:rotate(-90deg);">
+                                                <circle cx="44" cy="44" r="36" fill="none" stroke="var(--border)" stroke-width="7" />
+                                                @if (hasTarget)
+                                                {
+                                                    var circ = 2 * Math.PI * 36;
+                                                    var dash = circ * progress / 100.0;
+                                                    <circle cx="44" cy="44" r="36" fill="none"
+                                                            stroke="@(isDone ? "#7ec8a0" : "#f5c842")"
+                                                            stroke-width="7"
+                                                            stroke-linecap="round"
+                                                            stroke-dasharray="@dash.ToString("F1") @circ.ToString("F1")" />
+                                                }
+                                            </svg>
+                                            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                                                <span style="font-size:1.6rem; font-weight:800; color:var(--text-dark); line-height:1;">@counter.Value</span>
+                                                @if (hasTarget)
+                                                {
+                                                    <span style="font-size:0.65rem; color:var(--text-light); margin-top:1px;">/ @counter.Target</span>
+                                                }
+                                            </div>
+                                        </div>
+
+                                        <button class="btn btn-primary" style="width:44px; height:44px; font-size:1.3rem; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;"
+                                                @onclick="() => CounterChange(counter, counter.Step)">+</button>
+                                    </div>
+
+                                    <!-- 프로그레스 바 (목표 있을 때만) -->
+                                    @if (hasTarget)
+                                    {
+                                        <div style="height:5px; background:var(--border); border-radius:99px; margin-bottom:8px; overflow:hidden;">
+                                            <div style="height:100%; width:@(progress.ToString("F1"))%; background:@(isDone ? "#7ec8a0" : "#f5c842"); border-radius:99px; transition:width 0.3s;"></div>
+                                        </div>
+                                        <div style="text-align:center; font-size:0.75rem; color:@(isDone ? "#267848" : "var(--text-mid)"); margin-bottom:6px;">
+                                            @if (isDone) { <span>🎉 목표 달성!</span> }
+                                            else { <span>@(progress.ToString("F0"))% (@counter.Value / @counter.Target)</span> }
+                                        </div>
+                                    }
+
+                                    <!-- 마지막 + 클릭 시각 -->
+                                    @if (counter.LastUpdatedAt.HasValue)
+                                    {
+                                        <div style="text-align:center; font-size:0.75rem; color:var(--text-light); margin-bottom:8px;">
+                                            🕐 마지막 업데이트: @counter.LastUpdatedAt.Value.ToString("HH:mm:ss")
+                                        </div>
+                                    }
+
+                                    <!-- 단위 / 목표 / 초기화 -->
+                                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:0.8rem; color:var(--text-mid);">
+                                        <span>단위</span>
+                                        <input type="number" style="width:55px;" class="form-control" @bind="counter.Step" min="1" />
+                                        <span>목표</span>
+                                        <input type="number" style="width:65px;" class="form-control"
+                                               value="@(counter.Target == 0 ? "" : counter.Target.ToString())"
+                                               @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = Save(); }"
+                                               min="0" placeholder="없음" />
+                                        <button class="btn btn-ghost btn-sm" @onclick="() => ResetCounter(counter)">초기화</button>
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- 카운터 추가 -->
+                            @if (_addingCounter)
+                            {
+                                <div style="display:flex; gap:8px; margin-top:8px;">
+                                    <input class="form-control" @bind="_newCounterLabel" placeholder="이름 (예: 단수, 코수)" />
+                                    <button class="btn btn-primary btn-sm" @onclick="AddCounter">추가</button>
+                                    <button class="btn btn-ghost btn-sm" @onclick="() => _addingCounter = false">취소</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <button class="btn btn-ghost btn-sm mt-1" @onclick="() => _addingCounter = true">+ 카운터 추가</button>
+                            }
+                        </div>
+            }
+            else if (cardId == "checklist")
+            {
+                <!-- ── 도안 체크리스트 ── -->
+                        <div class="card" draggable="true" data-cardid="checklist">
+                            <div class="card-title">📋 도안 체크리스트</div>
+                            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
+                                완료한 단계를 체크해요
+                            </p>
+                
+                            @foreach (var item in _project.Checklist)
+                            {
+                                <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);">
+                                    <input type="checkbox" checked="@item.Done"
+                                           @onchange="() => ToggleCheck(item)"
+                                           style="width:16px; height:16px; accent-color:#2a5a26; cursor:pointer;" />
+                                    <span style="flex:1; font-size:0.88rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "")">
+                                        @item.Text
+                                    </span>
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;"
+                                            @onclick="() => RemoveCheckItem(item.Id)">✕</button>
+                                </div>
+                            }
+                
+                            @if (_project.Checklist.Count > 0)
+                            {
+                                var done = _project.Checklist.Count(c => c.Done);
+                                var total = _project.Checklist.Count;
+                                <div style="margin:10px 0 4px; font-size:0.8rem; color:var(--text-mid);">
+                                    @done / @total 완료
+                                </div>
+                                <div style="height:6px; background:#e8e8e8; border-radius:3px;">
+                                    <div style="height:6px; background:#c8e6be; border-radius:3px; width:@(done * 100 / total)%;"></div>
+                                </div>
+                            }
+                
+                            @if (_addingCheck)
+                            {
+                                <div style="display:flex; gap:8px; margin-top:12px;">
+                                    <input class="form-control" @bind="_newCheckText" placeholder="예: 1~10단 완료" />
+                                    <button class="btn btn-primary btn-sm" @onclick="AddCheckItem">추가</button>
+                                    <button class="btn btn-ghost btn-sm" @onclick="() => _addingCheck = false">취소</button>
+                                </div>
+                            }
+                            else
+                            {
+                                <button class="btn btn-ghost btn-sm mt-1" @onclick="() => _addingCheck = true">+ 항목 추가</button>
+                            }
+                        </div>
+            }
+            else if (cardId == "timer")
+            {
+                <!-- ── 뜨개 시간 기록 ── -->
+                        <div class="card" draggable="true" data-cardid="timer">
+                            <div class="card-title">⏱️ 뜨개 시간</div>
+                            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
+                                지금 뜨는 시간을 기록해요
+                            </p>
+                
+                            @{
+                                var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
+                            }
+                
+                            <!-- 타이머 디스플레이 -->
+                            <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:20px; margin-bottom:14px; text-align:center; border:1px solid var(--border);">
+                                <div style="font-family:'Courier New', monospace; font-size:3rem; font-weight:700; color:var(--sage-dark); letter-spacing:4px; margin-bottom:8px;">
+                                    @if (activeSession != null)
+                                    {
+                                        <span>@(_timerDisplay)</span>
+                                    }
+                                    else
+                                    {
+                                        <span>00:00:00</span>
+                                    }
+                                </div>
+                                <div style="font-size:0.8rem; color:var(--text-mid);">
+                                    @if (activeSession != null)
+                                    {
+                                        <span>진행 중...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>준비 완료</span>
+                                    }
+                                </div>
+                            </div>
+                
+                            <!-- 시작/종료 버튼 -->
+                            <div style="display:flex; gap:8px;">
+                                @if (activeSession == null)
+                                {
+                                    <!-- 시작 버튼 -->
+                                    <button class="btn btn-primary" style="flex:1; padding:10px;" @onclick="StartSession">
+                                        ▶️ 시작
+                                    </button>
+                                }
+                                else
+                                {
+                                    <!-- 종료 버튼 -->
+                                    <button class="btn btn-danger" style="flex:1; padding:10px;" @onclick="EndSession">
+                                        ⏹️ 종료
+                                    </button>
+                                }
+                            </div>
+                
+                            <!-- 메모 입력 (진행 중일 때만) -->
+                            @if (activeSession != null)
+                            {
+                                <div style="margin-top:14px;">
+                                    <input class="form-control" type="text" placeholder="메모 (선택사항)" @bind="_sessionMemo" style="font-size:0.9rem; padding:8px;" />
+                                </div>
+                            }
+                        </div>
+            }
+            else if (cardId == "accum")
+            {
+                <!-- ── 누적 시간 ── -->
+                        <div class="card" draggable="true" data-cardid="accum">
+                            <div class="card-title">📊 누적 시간</div>
+                            
+                            @{
+                                var totalSeconds = _project.Sessions.Sum(s => {
+                                    var end = s.EndTime ?? DateTime.Now;
+                                    return (int)(end - s.StartTime).TotalSeconds;
+                                });
+                                var displayHours = totalSeconds / 3600;
+                                var displayMins = (totalSeconds % 3600) / 60;
+                                var displaySecs = totalSeconds % 60;
+                            }
+                            
+                            <div style="background:var(--sage-light); border-radius:var(--radius-sm); padding:16px; text-align:center;">
+                                <div style="font-size:0.85rem; color:var(--text-mid); margin-bottom:8px;">총 뜨개 시간</div>
+                                <div style="font-family:'Courier New', monospace; font-size:2.2rem; font-weight:700; color:var(--sage-dark);">
+                                    @if (displayHours > 0)
+                                    {
+                                        <span>@(displayHours):@(displayMins.ToString("D2")):@(displaySecs.ToString("D2"))</span>
+                                    }
+                                    else if (displayMins > 0)
+                                    {
+                                        <span>00:@(displayMins.ToString("D2")):@(displaySecs.ToString("D2"))</span>
+                                    }
+                                    else
+                                    {
+                                        <span>00:00:@(displaySecs.ToString("D2"))</span>
+                                    }
+                                </div>
+                                <div style="font-size:0.75rem; color:var(--text-mid); margin-top:8px;">
+                                    @(_project.Sessions.Count)개 세션
+                                </div>
+                            </div>
+                
+                            <!-- 시간 기록 목록 -->
+                            @if (_project.Sessions.Count > 0)
+                            {
+                                <div class="divider"></div>
+                                <div style="font-size:0.9rem; font-weight:500; margin-bottom:12px; color:var(--text-dark);">
+                                    최근 기록
+                                </div>
+                                
+                                @foreach (var session in _project.Sessions.OrderByDescending(s => s.StartTime).Take(5))
+                                {
+                                    <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:10px; margin-bottom:8px; border:1px solid var(--border); font-size:0.85rem;">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                            <span style="color:var(--text-mid);">@(session.StartTime.ToString("M월 d일 HH:mm"))</span>
+                                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick="() => RemoveSession(session.Id)">✕</button>
+                                        </div>
+                                        <div style="font-weight:600; color:var(--sage-dark);">
+                                            @{
+                                                var end = session.EndTime ?? DateTime.Now;
+                                                var totalSecs = (int)(end - session.StartTime).TotalSeconds;
+                                                var sh = totalSecs / 3600;
+                                                var sm = (totalSecs % 3600) / 60;
+                                                var ss = totalSecs % 60;
+                                            }
+                                            @if (sh > 0)
+                                            {
+                                                <span>@(sh):@(sm.ToString("D2")):@(ss.ToString("D2"))</span>
+                                            }
+                                            else
+                                            {
+                                                <span>00:@(sm.ToString("D2")):@(ss.ToString("D2"))</span>
+                                            }
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(session.Memo))
+                                        {
+                                            <div style="font-size:0.75rem; color:var(--text-mid); margin-top:4px;">@(session.Memo)</div>
+                                        }
+                                    </div>
+                                }
+                            }
+                        </div>
+            }
         }
 
-        public string GetFormattedDuration()
+    <div class="card" style="grid-column: span 2;">
+        <div class="card-title" style="margin-bottom:12px;">🎬 참고 영상</div>
+
+        @if (_project.VideoLinks.Count > 0)
         {
-            var minutes = GetDurationMinutes();
-            var hours = minutes / 60;
-            var mins = minutes % 60;
-            if (hours > 0)
-                return mins > 0 ? $"{hours}시간 {mins}분" : $"{hours}시간";
-            return $"{mins}분";
+            <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+                @foreach (var link in _project.VideoLinks.ToList())
+                {
+                    <div style="margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+                        @if (link.Contains("youtube.com") || link.Contains("youtu.be"))
+                        {
+                            @* 유튜브 영상 플레이어 *@
+                            <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:var(--radius-sm); margin-bottom:8px;">
+                                <iframe src="@GetEmbedUrl(link)" 
+                                        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                        allowfullscreen>
+                                </iframe>
+                            </div>
+                        }
+                        
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <a href="@link" target="_blank" style="flex:1; font-size:0.8rem; color:var(--text-mid);">🔗 원문 링크 보기</a>
+                            <button class="btn btn-danger btn-sm" @onclick="() => RemoveVideoLink(link)">✕</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">참고 영상이 없어요. 도안 영상 링크를 추가해 보세요!</p>
         }
 
-        public bool IsActive => !EndTime.HasValue;
+        <div style="display:flex; gap:8px;">
+            <input class="form-control" 
+                @bind="_newVideoLink" 
+                @bind:event="oninput"
+                placeholder="유튜브, 블로그 등 URL 입력"
+                @onkeydown="@(async e => { if (e.Key == "Enter") await AddVideoLinkAndSave(); })" />
+            <button class="btn btn-sage" style="flex-shrink:0;" @onclick="AddVideoLinkAndSave">추가</button>
+        </div>
+    </div>
+
+    <div class="card" style="grid-column: span 2;">
+        <div class="card-title">📷 과정 사진</div>
+
+        @if (_project.Photos.Count > 0)
+        {
+            <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                @foreach (var photo in _project.Photos)
+                {
+                    <div style="position:relative;">
+                        <img src="@photo.Base64Data"
+                            style="width:140px; height:140px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer;"
+                            @onclick="() => OpenPhoto(photo)"
+                            alt="과정 사진" />
+                        @if (!string.IsNullOrEmpty(photo.Caption))
+                        {
+                            <div style="font-size:0.75rem; color:var(--text-mid); text-align:center; margin-top:4px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                @photo.Caption
+                            </div>
+                        }
+                        <button class="btn btn-danger btn-sm"
+                                style="position:absolute; top:4px; right:4px; padding:2px 6px; font-size:0.7rem;"
+                                @onclick="() => RemovePhoto(photo.Id)">✕</button>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">아직 사진이 없어요. 과정을 기록해 보세요!</p>
+        }
+
+        <InputFile OnChange="OnPhotoSelected" accept="image/*" multiple class="form-control" style="padding:6px;" />
+    </div>
+
+        <!-- ── 연결된 스와치 ── -->
+        <div class="card" style="grid-column: span 2;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
+                <div class="card-title" style="margin-bottom:0;">🧪 연결된 스와치</div>
+                <a href="swatches" class="btn btn-ghost btn-sm">스와치 관리</a>
+            </div>
+
+            @if (_linkedSwatches.Count == 0)
+            {
+                <p style="color:var(--text-light); font-size:0.88rem;">
+                    연결된 스와치가 없어요.
+                    <a href="swatches" style="color:#267848;">스와치 페이지</a>에서 이 프로젝트를 선택해 연결할 수 있어요.
+                </p>
+            }
+            else
+            {
+                <div class="grid-3">
+                    @foreach (var s in _linkedSwatches)
+                    {
+                        var yarn = _yarns.Find(y => y.Id == s.YarnId);
+                        <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:12px;">
+                            <div style="font-weight:600; font-size:0.9rem; margin-bottom:6px;">
+                                @(string.IsNullOrEmpty(s.Name) ? "스와치" : s.Name)
+                            </div>
+                            @if (yarn != null)
+                            {
+                                <div style="display:flex; align-items:center; gap:5px; font-size:0.8rem; color:var(--text-mid); margin-bottom:8px;">
+                                    <span class="color-dot" style="background:@yarn.ColorCode; width:10px; height:10px;"></span>
+                                    @yarn.Brand @yarn.Name
+                                </div>
+                            }
+                            <div style="font-size:0.78rem; color:var(--text-mid); display:flex; gap:6px; flex-wrap:wrap;">
+                                @if (s.NeedleSizeMm > 0)
+                                {
+                                    <span>🪡 @s.NeedleSizeMm mm</span>
+                                }
+                                <span>@s.Stitch</span>
+                            </div>
+                            @if (s.PreWashWidthCm > 0)
+                            {
+                                var w = s.WidthShrinkagePercent;
+                                var h = s.HeightShrinkagePercent;
+                                <div style="margin-top:8px; display:flex; gap:6px;">
+                                    <span style="font-size:0.78rem; color:@(w < 0 ? "#c0392b" : "#267848"); font-weight:600;">
+                                        가로 @(w > 0 ? "+" : "")@w%
+                                    </span>
+                                    @if (s.PreWashHeightCm > 0)
+                                    {
+                                        <span style="font-size:0.78rem; color:@(h < 0 ? "#c0392b" : "#267848"); font-weight:600;">
+                                            세로 @(h > 0 ? "+" : "")@h%
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- 사진 확대 모달 -->
+
+<!-- 사진 확대 모달 -->
+@if (_showPhoto && _selectedPhoto != null)
+{
+    <div class="modal-backdrop">
+        <div style="max-width:90vw; max-height:90vh;" @onclick:stopPropagation="true">
+            <img src="@_selectedPhoto.Base64Data"
+                 style="max-width:90vw; max-height:85vh; object-fit:contain; border-radius:var(--radius); display:block;" />
+            @if (!string.IsNullOrEmpty(_selectedPhoto.Caption))
+            {
+                <p style="text-align:center; color:white; margin-top:10px;">@_selectedPhoto.Caption</p>
+            }
+        </div>
+    </div>
+}
+
+<!-- 수정 모달 -->
+@if (_showEditModal && _project != null)
+{
+    <div class="modal-backdrop">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">프로젝트 수정</h2>
+                <button class="btn btn-ghost btn-sm" @onclick="CloseEditModal">✕</button>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">작품명 *</label>
+                <input class="form-control" @bind="_project.Title" />
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">도안명</label>
+                    <input class="form-control" @bind="_project.PatternName" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">도안 출처</label>
+                    <input class="form-control" @bind="_project.PatternSource" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">도안 메모</label>
+                <textarea class="form-control" rows="2" @bind="_project.PatternMemo"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="form-label">설명</label>
+                <textarea class="form-control" rows="3" @bind="_project.Description"></textarea>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">시작일</label>
+                    <input type="date" class="form-control"
+                           value="@_project.StartDate?.ToString("yyyy-MM-dd")"
+                           @onchange="e => _project.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">목표 종료일</label>
+                    <input type="date" class="form-control"
+                           value="@_project.EndDate?.ToString("yyyy-MM-dd")"
+                           @onchange="e => _project.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">메모</label>
+                <textarea class="form-control" rows="2" @bind="_project.Memo"></textarea>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-ghost" @onclick="CloseEditModal">취소</button>
+                <button class="btn btn-primary" @onclick="SaveEdit">저장</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Guid ProjectId { get; set; }
+
+    bool _loading = true;
+    bool _showEditModal = false;
+    string _newVideoLink = "";
+    bool _showPhoto = false;
+    bool _addingCounter = false;
+    bool _addingCheck = false;
+    string _newCounterLabel = "";
+    string _newCheckText = "";
+    string _sessionMemo = "";
+    string _timerDisplay = "00:00:00";
+    KnitProject? _project;
+    ProjectPhoto? _selectedPhoto;
+    private PeriodicTimer? _refreshTimer;
+    List<Swatch> _linkedSwatches = new();
+    List<Yarn> _yarns = new();
+    List<KnitTool> _allTools = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var all = await Storage.GetProjectsAsync();
+        _project = all.FirstOrDefault(p => p.Id == ProjectId);
+        _yarns = await Storage.GetYarnsAsync();
+        _allTools = await Storage.GetToolsAsync();
+        var allSwatches = await Storage.GetSwatchesAsync();
+        _linkedSwatches = allSwatches.Where(s => s.ProjectId == ProjectId).ToList();
+
+        // 저장된 카드 순서 불러오기
+        try
+        {
+            var savedOrder = await JS.InvokeAsync<string?>("localStorage.getItem", CARD_ORDER_KEY);
+            if (!string.IsNullOrEmpty(savedOrder))
+            {
+                var parsed = System.Text.Json.JsonSerializer.Deserialize<List<string>>(savedOrder);
+                if (parsed != null && parsed.Count == 4)
+                    _cardOrder = parsed;
+            }
+        }
+        catch { }
+
+        _loading = false;
+
+        if (_project?.Sessions.Any(s => s.IsActive) == true)
+            StartRefreshTimer();
+    }
+
+    // 유튜브 링크를 임베드용으로 변환하는 함수
+    private string GetEmbedUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url)) return "";
+        
+        if (url.Contains("youtube.com/watch?v="))
+        {
+            return url.Replace("youtube.com/watch?v=", "youtube.com/embed/");
+        }
+        if (url.Contains("youtu.be/"))
+        {
+            return url.Replace("youtu.be/", "youtube.com/embed/");
+        }
+        return url; // 유튜브가 아니면 그대로 반환
+    }
+
+    void GoBack() => Nav.NavigateTo("schedule");
+    void GoToViewer() => Nav.NavigateTo("pattern-viewer/" + ProjectId);
+
+    // ── 카드 드래그앤드롭 ──────────────────────────────────
+    string _dragCard = "";
+    string _dragOver = "";
+    List<string> _cardOrder = new() { "counter", "checklist", "timer", "accum" };
+    const string CARD_ORDER_KEY = "knitlog_card_order";
+    DotNetObjectReference<ProjectDetail>? _dragRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_dragRef == null && !_loading)
+        {
+            _dragRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("initCardDrag", _dragRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task DropCard(string fromId, string toId)
+    {
+        var fromIdx = _cardOrder.IndexOf(fromId);
+        var toIdx   = _cardOrder.IndexOf(toId);
+        if (fromIdx < 0 || toIdx < 0) return;
+        _cardOrder.RemoveAt(fromIdx);
+        _cardOrder.Insert(toIdx, fromId);
+        var json = System.Text.Json.JsonSerializer.Serialize(_cardOrder);
+        await JS.InvokeVoidAsync("localStorage.setItem", CARD_ORDER_KEY, json);
+        StateHasChanged();
+    }
+
+    void DragStart(string card) => _dragCard = card;
+    void DragOver(string card) => _dragOver = card;
+    void DragLeave(string card) { if (_dragOver == card) _dragOver = ""; }
+
+    // ── 카운터 ──────────────────────────────────────────
+    async Task CounterChange(ProjectCounter counter, int delta)
+    {
+        counter.Value = Math.Max(0, counter.Value + delta);
+        if (delta > 0) counter.LastUpdatedAt = DateTime.Now;
+        await Save();
+    }
+
+    async Task ResetCounter(ProjectCounter counter)
+    {
+        counter.Value = 0;
+        await Save();
+    }
+
+    async Task AddCounter()
+    {
+        if (_project == null || string.IsNullOrWhiteSpace(_newCounterLabel)) return;
+        _project.Counters.Add(new ProjectCounter { Label = _newCounterLabel });
+        _newCounterLabel = "";
+        _addingCounter = false;
+        await Save();
+    }
+
+    async Task RemoveCounter(Guid id)
+    {
+        _project?.Counters.RemoveAll(c => c.Id == id);
+        await Save();
+    }
+
+    // ── 체크리스트 ──────────────────────────────────────
+    async Task ToggleCheck(ChecklistItem item)
+    {
+        item.Done = !item.Done;
+        await Save();
+    }
+
+    async Task AddCheckItem()
+    {
+        if (_project == null || string.IsNullOrWhiteSpace(_newCheckText)) return;
+        _project.Checklist.Add(new ChecklistItem { Text = _newCheckText });
+        _newCheckText = "";
+        _addingCheck = false;
+        await Save();
+    }
+
+    async Task RemoveCheckItem(Guid id)
+    {
+        _project?.Checklist.RemoveAll(c => c.Id == id);
+        await Save();
+    }
+
+    // ── 사진 ────────────────────────────────────────────
+    async Task OnPhotoSelected(InputFileChangeEventArgs e)
+    {
+        if (_project == null) return;
+        foreach (var file in e.GetMultipleFiles(10))
+        {
+            var buf = new byte[file.Size];
+            await file.OpenReadStream(10 * 1024 * 1024).ReadAsync(buf);
+            var base64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(buf)}";
+            _project.Photos.Add(new ProjectPhoto
+            {
+                FileName   = file.Name,
+                Base64Data = base64,
+                TakenAt    = DateTime.Now
+            });
+        }
+        await Save();
+    }
+
+    async Task RemovePhoto(Guid id)
+    {
+        _project?.Photos.RemoveAll(p => p.Id == id);
+        await Save();
+    }
+
+    void OpenPhoto(ProjectPhoto photo) { _selectedPhoto = photo; _showPhoto = true; }
+
+    // ── 뜨개 시간 기록 ──────────────────────────────────
+    async Task StartSession()
+    {
+        if (_project == null) return;
+        
+        // 진행 중인 세션이 있으면 먼저 종료
+        var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
+        if (activeSession != null)
+        {
+            activeSession.EndTime = DateTime.Now;
+            if (!string.IsNullOrEmpty(_sessionMemo))
+                activeSession.Memo = _sessionMemo;
+        }
+        
+        // 새 세션 시작
+        _project.Sessions.Add(new KnitSession { StartTime = DateTime.Now });
+        _sessionMemo = "";
+        await Save();
+        
+        // 진행 중인 표시를 위해 UI 새로 고침
+        StartRefreshTimer();
+    }
+
+    async Task EndSession()
+    {
+        if (_project == null) return;
+        
+        var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
+        if (activeSession != null)
+        {
+            activeSession.EndTime = DateTime.Now;
+            if (!string.IsNullOrEmpty(_sessionMemo))
+                activeSession.Memo = _sessionMemo;
+        }
+        
+        _sessionMemo = "";
+        await Save();
+        StopRefreshTimer();
+    }
+
+    async Task RemoveSession(Guid id)
+    {
+        _project?.Sessions.RemoveAll(s => s.Id == id);
+        await Save();
+    }
+
+    // 진행 중인 세션의 경과 시간을 표시하기 위해 주기적으로 새로 고침
+    private void StartRefreshTimer()
+    {
+        StopRefreshTimer();
+        _refreshTimer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        _ = RefreshUIAsync();
+    }
+
+    private void StopRefreshTimer()
+    {
+        _refreshTimer?.Dispose();
+        _refreshTimer = null;
+    }
+
+    private async Task RefreshUIAsync()
+    {
+        try
+        {
+            while (_refreshTimer is not null && await _refreshTimer.WaitForNextTickAsync())
+            {
+                UpdateTimerDisplay();
+                StateHasChanged();
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private void UpdateTimerDisplay()
+    {
+        if (_project == null) return;
+        
+        var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
+        if (activeSession == null)
+        {
+            _timerDisplay = "00:00:00";
+            return;
+        }
+
+        var elapsedSeconds = (int)(DateTime.Now - activeSession.StartTime).TotalSeconds;
+        var hours = elapsedSeconds / 3600;
+        var minutes = (elapsedSeconds % 3600) / 60;
+        var seconds = elapsedSeconds % 60;
+
+        _timerDisplay = $"{hours:D2}:{minutes:D2}:{seconds:D2}";
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        StopRefreshTimer();
+        _dragRef?.Dispose();
+        await JS.InvokeVoidAsync("cleanupCardDrag");
+    }
+
+    // ── 완료 처리 ────────────────────────────────────────
+    async Task CompleteProject()
+    {
+        if (_project == null) return;
+        await Storage.CompleteProjectAsync(_project.Id);
+        Nav.NavigateTo("finished");
+    }
+
+    async Task PauseProject()
+    {
+        if (_project == null) return;
+        await Storage.PauseProjectAsync(_project.Id);
+        _project.Status = ProjectStatus.일시중단;
+        StateHasChanged();
+    }
+
+    async Task ResumeProject()
+    {
+        if (_project == null) return;
+        await Storage.ResumeProjectAsync(_project.Id);
+        _project.Status = ProjectStatus.진행중;
+        StateHasChanged();
+    }
+
+    // ── 수정 모달 ────────────────────────────────────────
+    void OpenEditModal() => _showEditModal = true;
+    void CloseEditModal() => _showEditModal = false;
+
+    void AddVideoLink()
+    {
+        if (string.IsNullOrWhiteSpace(_newVideoLink)) return;
+        if (!_project!.VideoLinks.Contains(_newVideoLink))
+            _project.VideoLinks.Add(_newVideoLink.Trim());
+        _newVideoLink = "";
+    }
+
+    async Task AddVideoLinkAndSave()
+    {
+        if (string.IsNullOrWhiteSpace(_newVideoLink) || _project == null) return;
+        if (!_project.VideoLinks.Contains(_newVideoLink.Trim()))
+            _project.VideoLinks.Add(_newVideoLink.Trim());
+        _newVideoLink = "";
+        await Save();
+    }
+
+    async Task RemoveVideoLink(string link)
+    {
+        if (_project == null) return;
+        _project.VideoLinks.Remove(link);
+        await Save();
+    }
+
+    async Task SaveEdit()
+    {
+        await Save();
+        CloseEditModal();
+    }
+
+    async Task Save()
+    {
+        if (_project != null)
+            await Storage.SaveProjectAsync(_project);
     }
 }
