@@ -807,6 +807,7 @@ else
     public async ValueTask DisposeAsync()
     {
         StopRefreshTimer();
+        _dragRef?.Dispose();
         await ValueTask.CompletedTask;
     }
 
@@ -832,12 +833,5 @@ else
     {
         if (_project != null)
             await Storage.SaveProjectAsync(_project);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        _refreshTimer?.Dispose();
-        _dragRef?.Dispose();
-        await ValueTask.CompletedTask;
     }
 }
