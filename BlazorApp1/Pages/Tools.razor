@@ -1,6 +1,3 @@
-@* =====================================================================
-   Pages/Tools.razor  —  도구 (바늘) 관리
-   ===================================================================== *@
 @page "/tools"
 @using KnitLog.Models
 @using KnitLog.Services
@@ -20,7 +17,6 @@
 }
 else
 {
-    <!-- 탭: 대바늘 / 코바늘 -->
     <div style="display:flex; gap:8px; margin-bottom:20px;">
         <button class="btn @(_tab == 0 ? "btn-primary" : "btn-ghost")" @onclick="() => _tab = 0">
             대바늘 (@KnitCount)
@@ -40,30 +36,62 @@ else
     else
     {
         <div class="grid-3">
-            @foreach (var tool in FilteredTools.OrderBy(t => t.SizeMm))
+            @foreach (var tool in FilteredTools.OrderBy(t => t.IsSet ? 999 : t.SizeMm))
             {
                 <div class="card">
                     <div class="flex-between mb-1">
                         <div class="card-title" style="margin-bottom:0;">
-                            @tool.SizeMm mm
+                            @if (tool.IsSet)
+                            {
+                                <span>세트</span>
+                            }
+                            else
+                            {
+                                <span>@(tool.SizeMm)mm</span>
+                            }
                         </div>
-                        <span class="badge @(tool.NeedleType == NeedleType.대바늘 ? "badge-progress" : "badge-wish")">
-                            @tool.NeedleType
-                        </span>
+                        <div style="display:flex; gap:4px; align-items:center;">
+                            @if (tool.IsSet)
+                            {
+                                <span class="badge badge-done" style="font-size:0.7rem;">세트</span>
+                            }
+                            <span class="badge @(tool.NeedleType == NeedleType.대바늘 ? "badge-progress" : "badge-wish")">
+                                @tool.NeedleType
+                            </span>
+                        </div>
                     </div>
 
-                    @if (!string.IsNullOrEmpty(tool.Brand))
+                    @if (!string.IsNullOrEmpty(tool.Brand) || !string.IsNullOrEmpty(tool.ModelName))
                     {
-                        <div style="font-size:0.85rem; color:var(--text-mid);">@tool.Brand</div>
+                        <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:4px;">
+                            @tool.Brand @tool.ModelName
+                        </div>
                     }
-                    @if (!string.IsNullOrEmpty(tool.Material))
+
+                    @if (tool.IsSet && tool.SetSizes.Count > 0)
                     {
-                        <div style="font-size:0.8rem; color:var(--text-light);">소재: @tool.Material</div>
+                        <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:6px;">
+                            @foreach (var s in tool.SetSizes.OrderBy(x => x))
+                            {
+                                <span style="background:var(--ivory-dark); border-radius:4px; padding:2px 6px; font-size:0.75rem; color:var(--text-mid);">
+                                    @(s)mm
+                                </span>
+                            }
+                        </div>
                     }
-                    @if (tool.NeedleType == NeedleType.대바늘 && tool.LengthCm > 0)
+
+                    @if (tool.NeedleType == NeedleType.대바늘)
                     {
-                        <div style="font-size:0.8rem; color:var(--text-light);">길이: @tool.LengthCm cm</div>
+                        @if (!string.IsNullOrEmpty(tool.Material))
+                        {
+                            <div style="font-size:0.8rem; color:var(--text-light);">소재: @tool.Material</div>
+                        }
+                        @if (tool.LengthCm > 0)
+                        {
+                            <div style="font-size:0.8rem; color:var(--text-light);">길이: @(tool.LengthCm)cm</div>
+                        }
                     }
+
                     @if (!string.IsNullOrEmpty(tool.Memo))
                     {
                         <div style="font-size:0.8rem; color:var(--text-light); margin-top:4px;">@tool.Memo</div>
@@ -79,7 +107,6 @@ else
     }
 }
 
-<!-- 추가/수정 모달 -->
 @if (_showModal && _editingTool != null)
 {
     <div class="modal-backdrop" @onclick="CloseModal">
@@ -89,6 +116,7 @@ else
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
             </div>
 
+            <!-- 종류 -->
             <div class="form-group">
                 <label class="form-label">종류 *</label>
                 <div style="display:flex; gap:12px;">
@@ -105,34 +133,73 @@ else
                 </div>
             </div>
 
+            <!-- 브랜드 / 모델명 -->
             <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">굵기(mm) 또는 호수 *</label>
-                    <input type="number" class="form-control" @bind="_editingTool.SizeMm"
-                           step="0.25" min="0.5" max="30" placeholder="예: 3.5" />
-                </div>
                 <div class="form-group">
                     <label class="form-label">브랜드</label>
                     <input class="form-control" @bind="_editingTool.Brand" placeholder="예: 클로버, KnitPro" />
                 </div>
+                <div class="form-group">
+                    <label class="form-label">모델명</label>
+                    <input class="form-control" @bind="_editingTool.ModelName" placeholder="예: 랜턴문, 진저, 심포니" />
+                </div>
             </div>
 
-            <div class="form-row">
-                @if (_editingTool.NeedleType == NeedleType.대바늘)
-                {
+            <!-- 세트 여부 -->
+            <div class="form-group">
+                <label style="cursor:pointer; display:flex; align-items:center; gap:8px; font-size:0.88rem;">
+                    <input type="checkbox" checked="@_editingTool.IsSet"
+                           @onchange="e => _editingTool.IsSet = (bool)(e.Value ?? false)"
+                           style="width:16px; height:16px;" />
+                    <span>세트 바늘 (굵기 여러 개)</span>
+                </label>
+            </div>
+
+            @if (!_editingTool.IsSet)
+            {
+                <!-- 단일 굵기 -->
+                <div class="form-group">
+                    <label class="form-label">굵기 (mm) *</label>
+                    <input type="number" class="form-control" @bind="_editingTool.SizeMm"
+                           step="0.25" min="0.5" max="30" placeholder="예: 3.5" />
+                </div>
+            }
+            else
+            {
+                <!-- 세트 굵기 입력 -->
+                <div class="form-group">
+                    <label class="form-label">굵기 목록</label>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                        @foreach (var s in _editingTool.SetSizes.OrderBy(x => x).ToList())
+                        {
+                            <div style="display:flex; align-items:center; gap:3px; background:var(--ivory-dark); border-radius:6px; padding:3px 8px;">
+                                <span style="font-size:0.82rem;">@(s)mm</span>
+                                <button class="btn btn-danger btn-sm" style="padding:0 4px; font-size:0.7rem; line-height:1.2;"
+                                        @onclick="() => _editingTool.SetSizes.Remove(s)">✕</button>
+                            </div>
+                        }
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <input type="number" class="form-control" @bind="_newSetSize"
+                               step="0.25" min="0.5" max="30" placeholder="굵기 입력 (mm)" />
+                        <button class="btn btn-sage btn-sm" @onclick="AddSetSize">추가</button>
+                    </div>
+                </div>
+            }
+
+            @if (_editingTool.NeedleType == NeedleType.대바늘)
+            {
+                <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">소재</label>
-                        <input class="form-control" @bind="_editingTool.Material" placeholder="예: 대나무, 알루미늄, 스테인리스" />
+                        <input class="form-control" @bind="_editingTool.Material" placeholder="예: 대나무, 알루미늄" />
                     </div>
-                }
-                @if (_editingTool.NeedleType == NeedleType.대바늘)
-                {
                     <div class="form-group">
                         <label class="form-label">길이 (cm)</label>
-                        <input type="number" class="form-control" @bind="_editingTool.LengthCm" min="0" placeholder="예: 35" />
+                        <input type="number" class="form-control" @bind="_editingTool.LengthCm" min="0" placeholder="예: 80" />
                     </div>
-                }
-            </div>
+                </div>
+            }
 
             <div class="form-group">
                 <label class="form-label">메모</label>
@@ -150,7 +217,8 @@ else
 @code {
     bool _loading = true;
     bool _showModal = false;
-    int _tab = 0; // 0 = 대바늘, 1 = 코바늘
+    int _tab = 0;
+    double _newSetSize = 0;
     List<KnitTool> _tools = new();
     KnitTool? _editingTool;
 
@@ -174,15 +242,32 @@ else
             Id = Guid.Empty,
             NeedleType = _tab == 0 ? NeedleType.대바늘 : NeedleType.코바늘
         };
+        _newSetSize = 0;
         _showModal = true;
     }
 
-    void OpenEditModal(KnitTool tool) { _editingTool = tool; _showModal = true; }
+    void OpenEditModal(KnitTool tool)
+    {
+        _editingTool = tool;
+        _newSetSize = 0;
+        _showModal = true;
+    }
+
     void CloseModal() { _showModal = false; _editingTool = null; }
+
+    void AddSetSize()
+    {
+        if (_editingTool == null || _newSetSize <= 0) return;
+        if (!_editingTool.SetSizes.Contains(_newSetSize))
+            _editingTool.SetSizes.Add(_newSetSize);
+        _newSetSize = 0;
+    }
 
     async Task SaveTool()
     {
-        if (_editingTool == null || _editingTool.SizeMm <= 0) return;
+        if (_editingTool == null) return;
+        if (!_editingTool.IsSet && _editingTool.SizeMm <= 0) return;
+        if (_editingTool.IsSet && _editingTool.SetSizes.Count == 0) return;
         if (_editingTool.Id == Guid.Empty) _editingTool.Id = Guid.NewGuid();
         await Storage.SaveToolAsync(_editingTool);
         _tools = await Storage.GetToolsAsync();

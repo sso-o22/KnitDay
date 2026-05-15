@@ -22,7 +22,7 @@ namespace KnitLog.Models
         public string Color { get; set; } = "";
         public string ColorCode { get; set; } = "#ffffff";
         public YarnWeight Weight { get; set; } = YarnWeight.워스티드;
-        public YarnType YarnType { get; set; } = YarnType.콘사;
+        public YarnType YarnType { get; set; } = YarnType.볼실;
         public string LotNumber { get; set; } = "";
         public string Material { get; set; } = "";
         public int WeightGram { get; set; }
@@ -87,11 +87,19 @@ namespace KnitLog.Models
         public Guid Id { get; set; } = Guid.NewGuid();
         public NeedleType NeedleType { get; set; } = NeedleType.대바늘;
         public string Brand { get; set; } = "";
-        public double SizeMm { get; set; }
+        public string ModelName { get; set; } = "";      // 바늘 이름/모델 (예: 랜턴문, 진저)
+        public bool IsSet { get; set; } = false;         // 세트 여부
+        public double SizeMm { get; set; }               // 단일 굵기
+        public List<double> SetSizes { get; set; } = new(); // 세트일 때 굵기 목록
         public string Material { get; set; } = "";
         public int LengthCm { get; set; }
         public string Memo { get; set; } = "";
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        // 표시용 굵기 문자열
+        public string SizeDisplay => IsSet && SetSizes.Count > 0
+            ? string.Join(", ", SetSizes.Select(s => $"{s}mm"))
+            : $"{SizeMm}mm";
     }
 
     // ─────────────────────────────────────────────
