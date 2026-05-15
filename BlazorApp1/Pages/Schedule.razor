@@ -25,28 +25,54 @@ else if (_projects.Count == 0)
 }
 else
 {
-    <!-- 컨트롤 바: 정렬 + 뷰 전환 -->
+    <!-- 컨트롤 바: 필터 + 정렬 + 뷰 전환 -->
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:8px; flex-wrap:wrap;">
-        <div style="display:flex; align-items:center; gap:8px;">
+        <!-- 왼쪽: 필터 + 정렬 -->
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+
+            <!-- 상태 필터 -->
+            <div style="display:flex; gap:4px;">
+                <button class="btn btn-sm @(_statusFilter == "all" ? "btn-sage" : "btn-ghost")"
+                        @onclick='() => _statusFilter = "all"'>전체</button>
+                <button class="btn btn-sm @(_statusFilter == "진행중" ? "btn-sage" : "btn-ghost")"
+                        @onclick='() => _statusFilter = "진행중"'>진행중</button>
+                <button class="btn btn-sm @(_statusFilter == "일시중단" ? "btn-sage" : "btn-ghost")"
+                        @onclick='() => _statusFilter = "일시중단"'>⏸ 중단</button>
+            </div>
+
+            <!-- 정렬 기준 -->
             <span style="font-size:0.82rem; color:var(--text-mid);">정렬</span>
-            <select class="form-control" style="width:auto; padding:5px 10px; font-size:0.82rem;" @bind="_sortOrder">
-                <option value="created">등록순</option>
+            <select class="form-control" style="width:auto; padding:5px 10px; font-size:0.82rem;" @bind="_sortField">
+                <option value="created">등록일</option>
                 <option value="start">시작일</option>
                 <option value="updated">수정일</option>
                 <option value="title">이름순</option>
             </select>
+
+            <!-- 오름/내림차순 -->
+            <button class="btn btn-sm btn-ghost" @onclick="ToggleSortDir" title="@(_sortAsc ? "오름차순" : "내림차순")">
+                @(_sortAsc ? "↑ 오름" : "↓ 내림")
+            </button>
         </div>
+
+        <!-- 오른쪽: 뷰 전환 -->
         <div style="display:flex; gap:4px;">
             <button class="btn btn-sm @(_isListView ? "btn-ghost" : "btn-sage")" @onclick="() => _isListView = false" title="카드형">⊞</button>
             <button class="btn btn-sm @(_isListView ? "btn-sage" : "btn-ghost")" @onclick="() => _isListView = true" title="리스트형">☰</button>
         </div>
     </div>
 
-    @if (!_isListView)
+    @if (!FilteredSortedProjects.Any())
+    {
+        <div class="empty-state" style="padding:40px 0;">
+            <p style="color:var(--text-mid);">해당 상태의 프로젝트가 없어요.</p>
+        </div>
+    }
+    else if (!_isListView)
     {
         <!-- 카드형 -->
         <div class="grid-2">
-            @foreach (var proj in SortedProjects)
+            @foreach (var proj in FilteredSortedProjects)
             {
                 <div class="card" style="cursor:pointer;" @onclick="() => GoToDetail(proj.Id)">
                     @if (proj.Photos.Count > 0)
@@ -72,9 +98,9 @@ else
                     {
                         <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:4px;">📋 @proj.PatternName</div>
                     }
-                    @if (!string.IsNullOrEmpty(proj.Description))
+                    @if (!string.IsNullOrEmpty(proj.Memo))
                     {
-                        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:10px; white-space:pre-wrap;">@proj.Description</p>
+                        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:10px; white-space:pre-wrap; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@proj.Memo</p>
                     }
 
                     <div style="display:flex; gap:12px; font-size:0.8rem; color:var(--text-light); margin-bottom:14px;">
@@ -90,6 +116,16 @@ else
 
                     <div style="display:flex; gap:8px; flex-wrap:wrap;" @onclick:stopPropagation="true">
                         <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)">✏️ 수정</button>
+                        @if (proj.Status == ProjectStatus.진행중)
+                        {
+                            <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a;"
+                                    @onclick="() => ToggleSuspend(proj)">⏸ 일시중단</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-ghost"
+                                    @onclick="() => ToggleSuspend(proj)">▶ 재개</button>
+                        }
                         <button class="btn btn-sm btn-sage" @onclick="() => CompleteProject(proj.Id)">✅ 완료</button>
                         <button class="btn btn-danger btn-sm" @onclick="() => DeleteProject(proj.Id)">🗑️</button>
                     </div>
@@ -101,7 +137,7 @@ else
     {
         <!-- 리스트형 -->
         <div style="display:flex; flex-direction:column; gap:8px;">
-            @foreach (var proj in SortedProjects)
+            @foreach (var proj in FilteredSortedProjects)
             {
                 <div class="card" style="cursor:pointer; display:flex; align-items:center; gap:14px; padding:12px 16px;"
                      @onclick="() => GoToDetail(proj.Id)">
@@ -132,6 +168,15 @@ else
 
                     <div style="display:flex; gap:6px; flex-shrink:0;" @onclick:stopPropagation="true">
                         <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)">✏️</button>
+                        @if (proj.Status == ProjectStatus.진행중)
+                        {
+                            <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a; padding:4px 8px;"
+                                    @onclick="() => ToggleSuspend(proj)">⏸</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-sm btn-ghost" @onclick="() => ToggleSuspend(proj)">▶</button>
+                        }
                         <button class="btn btn-sage btn-sm" @onclick="() => CompleteProject(proj.Id)">✅</button>
                         <button class="btn btn-danger btn-sm" @onclick="() => DeleteProject(proj.Id)">🗑️</button>
                     </div>
@@ -166,11 +211,6 @@ else
                 <div class="form-group">
                     <label class="form-label">도안 메모</label>
                     <textarea class="form-control" rows="2" @bind="_editingProject.PatternMemo" placeholder="사이즈, 수정 사항 등"></textarea>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">설명</label>
-                    <textarea class="form-control" rows="2" @bind="_editingProject.Description" placeholder="작품에 대한 설명"></textarea>
                 </div>
 
                 @* 사용 실 *@
@@ -253,16 +293,39 @@ else
 @code {
     bool _loading = true;
     bool _isListView = false;
-    string _sortOrder = "created";
+    string _sortField = "created";
+    bool _sortAsc = false;          // false = 내림차순(기본), true = 오름차순
+    string _statusFilter = "all";   // "all" | "진행중" | "일시중단"
     List<KnitProject> _projects = new();
 
-    IEnumerable<KnitProject> SortedProjects => _sortOrder switch
+    IEnumerable<KnitProject> FilteredSortedProjects
     {
-        "start"   => _projects.OrderBy(p => p.StartDate ?? DateTime.MaxValue),
-        "updated" => _projects.OrderByDescending(p => p.CreatedAt),
-        "title"   => _projects.OrderBy(p => p.Title),
-        _         => _projects.OrderByDescending(p => p.CreatedAt),
-    };
+        get
+        {
+            // 1) 상태 필터
+            var filtered = _statusFilter switch
+            {
+                "진행중"   => _projects.Where(p => p.Status == ProjectStatus.진행중),
+                "일시중단" => _projects.Where(p => p.Status == ProjectStatus.일시중단),
+                _          => _projects.AsEnumerable(),
+            };
+
+            // 2) 정렬 (오름/내림 모두 지원)
+            Func<KnitProject, object> keySelector = _sortField switch
+            {
+                "start"   => p => (object)(p.StartDate ?? DateTime.MaxValue),
+                "updated" => p => (object)p.CreatedAt,
+                "title"   => p => (object)p.Title,
+                _         => p => (object)p.CreatedAt,
+            };
+
+            return _sortAsc
+                ? filtered.OrderBy(keySelector)
+                : filtered.OrderByDescending(keySelector);
+        }
+    }
+
+    void ToggleSortDir() => _sortAsc = !_sortAsc;
 
     bool _showModal = false;
     List<Yarn> _yarns = new();
@@ -330,7 +393,6 @@ else
     async Task SaveProject()
     {
         if (_editingProject == null || string.IsNullOrWhiteSpace(_editingProject.PatternName)) return;
-        // 도안명을 작품명으로도 사용
         if (string.IsNullOrWhiteSpace(_editingProject.Title))
             _editingProject.Title = _editingProject.PatternName;
         if (_editingProject.Id == Guid.Empty)
@@ -338,6 +400,15 @@ else
         await Storage.SaveProjectAsync(_editingProject);
         await LoadData();
         CloseModal();
+    }
+
+    async Task ToggleSuspend(KnitProject proj)
+    {
+        proj.Status = proj.Status == ProjectStatus.진행중
+            ? ProjectStatus.일시중단
+            : ProjectStatus.진행중;
+        await Storage.SaveProjectAsync(proj);
+        await LoadData();
     }
 
     async Task CompleteProject(Guid id)
