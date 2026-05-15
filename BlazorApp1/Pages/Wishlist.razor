@@ -32,7 +32,7 @@ else
         {
             <div class="card">
                 <div class="flex-between mb-1">
-                    <div class="card-title" style="margin-bottom:0;">@proj.Title</div>
+                    <div class="card-title" style="margin-bottom:0;">@proj.PatternName</div>
                     <span class="badge badge-wish">위시</span>
                 </div>
 
@@ -114,12 +114,20 @@ else
     async Task LoadData()
     {
         var all = await Storage.GetProjectsAsync();
+        // 데이터 표시 시에도 Title 대신 PatternName을 우선적으로 보여주려면 
+        // 여기서 정렬이나 가공을 할 수 있습니다.
         _projects = all.Where(p => p.Status == ProjectStatus.위시리스트).ToList();
     }
 
     void OpenAddModal()
     {
-        _editingProject = new KnitProject { Id = Guid.Empty, Status = ProjectStatus.위시리스트 };
+        // 초기화 시 빈 문자열이라도 넣어둡니다.
+        _editingProject = new KnitProject { 
+            Id = Guid.Empty, 
+            Status = ProjectStatus.위시리스트,
+            Title = "",
+            PatternName = "" 
+        };
         _showModal = true;
     }
 
@@ -128,8 +136,20 @@ else
 
     async Task SaveProject()
     {
-        if (_editingProject == null || string.IsNullOrWhiteSpace(_editingProject.Title)) return;
+        if (_editingProject == null) return;
+
+        // [수정 포인트] Title 대신 PatternName이 있는지 확인합니다.
+        if (string.IsNullOrWhiteSpace(_editingProject.PatternName))
+        {
+            // 도안명이 비어있으면 저장되지 않도록 하거나, 기본값을 넣어줍니다.
+            return; 
+        }
+
+        // 다른 로직에서 Title을 참조할 수 있으므로 PatternName과 동일하게 맞춰줍니다.
+        _editingProject.Title = _editingProject.PatternName;
+
         if (_editingProject.Id == Guid.Empty) _editingProject.Id = Guid.NewGuid();
+        
         await Storage.SaveProjectAsync(_editingProject);
         await LoadData();
         CloseModal();
