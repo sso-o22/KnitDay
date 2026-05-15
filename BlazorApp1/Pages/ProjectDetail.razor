@@ -553,32 +553,36 @@ else
     </div>
 
         <!-- ── 연결된 실 ── -->
-        @if (_project.YarnUsages.Count > 0)
-        {
         <div class="card" style="grid-column: span 2;">
             <div class="card-title" style="margin-bottom:12px;">🧵 연결된 실</div>
-            <div style="display:flex; flex-wrap:wrap; gap:10px;">
-                @foreach (var usage in _project.YarnUsages)
-                {
-                    var yarn = _yarns.Find(y => y.Id == usage.YarnId);
-                    if (yarn != null)
+            @if (_project.YarnUsages.Count == 0)
+            {
+                <p style="color:var(--text-light); font-size:0.88rem;">연결된 실이 없어요. 수정 버튼에서 실을 추가할 수 있어요.</p>
+            }
+            else
+            {
+                <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                    @foreach (var usage in _project.YarnUsages)
                     {
-                        <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 14px; display:flex; align-items:center; gap:10px; min-width:180px;">
-                            <span class="color-dot" style="background:@yarn.ColorCode; width:20px; height:20px; border-radius:50%; flex-shrink:0; border:1px solid rgba(0,0,0,0.08);"></span>
-                            <div>
-                                <div style="font-size:0.88rem; font-weight:600;">@yarn.Brand @yarn.Name</div>
-                                <div style="font-size:0.78rem; color:var(--text-mid);">@yarn.Color</div>
-                                @if (usage.BallsUsed > 0)
-                                {
-                                    <div style="font-size:0.75rem; color:var(--text-light); margin-top:1px;">@(usage.BallsUsed)볼 사용</div>
-                                }
+                        var yarn = _yarns.Find(y => y.Id == usage.YarnId);
+                        if (yarn != null)
+                        {
+                            <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 14px; display:flex; align-items:center; gap:10px; min-width:180px;">
+                                <span class="color-dot" style="background:@yarn.ColorCode; width:20px; height:20px; border-radius:50%; flex-shrink:0; border:1px solid rgba(0,0,0,0.08);"></span>
+                                <div>
+                                    <div style="font-size:0.88rem; font-weight:600;">@yarn.Brand @yarn.Name</div>
+                                    <div style="font-size:0.78rem; color:var(--text-mid);">@yarn.Color</div>
+                                    @if (usage.BallsUsed > 0)
+                                    {
+                                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:1px;">@(usage.BallsUsed)볼 사용</div>
+                                    }
+                                </div>
                             </div>
-                        </div>
+                        }
                     }
-                }
-            </div>
+                </div>
+            }
         </div>
-        }
 
         <!-- ── 연결된 스와치 ── -->
         <div class="card" style="grid-column: span 2;">

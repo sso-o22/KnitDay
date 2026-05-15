@@ -245,20 +245,6 @@ else
                 @* 사용 바늘 *@
                 <div class="form-group">
                     <label class="form-label">사용 바늘</label>
-                    @if (_tools.Count > 0)
-                    {
-                        <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
-                            @foreach (var tool in _tools)
-                            {
-                                var selected = _editingProject.ToolIds.Contains(tool.Id);
-                                <button type="button"
-                                        class="btn btn-sm @(selected ? "btn-sage" : "btn-ghost")"
-                                        @onclick="() => ToggleTool(tool.Id)">
-                                    @tool.NeedleType @tool.SizeMm mm
-                                </button>
-                            }
-                        </div>
-                    }
                     <input class="form-control" @bind="_editingProject.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
                 </div>
 
