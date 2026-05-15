@@ -5,6 +5,7 @@
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
+@inject NavigationManager Nav
 
 <div class="page-header">
     <div>
@@ -41,28 +42,21 @@ else
                     <div style="width:100%; height:100px; background:#e8e8e8; border-radius:var(--radius-sm);
                                 display:flex; align-items:center; justify-content:center; font-size:2.5rem; margin-bottom:12px;">👕</div>
                 }
-
                 <div class="card-title">@proj.Title</div>
-
                 @if (!string.IsNullOrEmpty(proj.PatternName))
                 {
                     <div style="font-size:0.8rem; color:var(--text-mid);">@proj.PatternName</div>
                 }
-
                 @if (proj.EndDate.HasValue)
                 {
                     <div style="font-size:0.78rem; color:var(--text-light); margin-top:6px;">
                         완성일: @proj.EndDate.Value.ToString("yyyy년 M월 d일")
                     </div>
                 }
-
-                <!-- 소요 기간 계산 -->
                 @if (proj.StartDate.HasValue && proj.EndDate.HasValue)
                 {
                     var days = (proj.EndDate.Value - proj.StartDate.Value).Days;
-                    <div style="font-size:0.78rem; color:#8a6a08; margin-top:2px;">
-                        총 @days 소요
-                    </div>
+                    <div style="font-size:0.78rem; color:#8a6a08; margin-top:2px;">총 @days일 소요</div>
                 }
             </div>
         }
@@ -117,11 +111,9 @@ else
                     </div>
                 }
                 @{
-                    var totalMin = _selectedProject.Sessions.Sum(s => {
-                        var end = s.EndTime ?? DateTime.Now;
-                        return (int)(end - s.StartTime).TotalMinutes;
-                    });
-                    var completedMin = _selectedProject.Sessions.Where(s => s.EndTime.HasValue).Sum(s => (int)(s.EndTime!.Value - s.StartTime).TotalMinutes);
+                    var completedMin = _selectedProject.Sessions
+                        .Where(s => s.EndTime.HasValue)
+                        .Sum(s => (int)(s.EndTime!.Value - s.StartTime).TotalMinutes);
                 }
                 @if (completedMin > 0)
                 {
@@ -129,6 +121,13 @@ else
                     <div style="text-align:center;">
                         <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
                         <div style="font-size:0.9rem; font-weight:600; color:#267848;">@(h > 0 ? $"{h}시간 " : "")@(m > 0 ? $"{m}분" : "")</div>
+                    </div>
+                }
+                else
+                {
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
+                        <div style="font-size:0.82rem; color:var(--text-light);">기록 없음</div>
                     </div>
                 }
             </div>
@@ -187,29 +186,93 @@ else
                 </div>
             }
 
-            <!-- 연결된 스와치 -->
+            <!-- 스와치 -->
             @if (_selectedSwatches.Count > 0)
             {
                 <div style="margin-bottom:12px;">
                     <div class="form-label" style="margin-bottom:6px;">📐 스와치</div>
                     @foreach (var s in _selectedSwatches)
                     {
-                        <div style="font-size:0.85rem; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:4px;">
-                            <span style="font-weight:600;">@s.Name</span>
-                            @if (s.PreWashStitches > 0)
-                            {
-                                <span style="color:var(--text-mid); margin-left:8px;">세탁 전 @(s.PreWashStitches)코×@(s.PreWashRows)단</span>
-                            }
-                            @if (s.PostWashStitches > 0)
-                            {
-                                <span style="color:var(--text-mid); margin-left:8px;">→ 세탁 후 @(s.PostWashStitches)코×@(s.PostWashRows)단</span>
-                            }
-                            @if (!string.IsNullOrEmpty(s.Stitch))
-                            {
-                                <span style="color:var(--text-light); margin-left:8px;">(@s.Stitch)</span>
-                            }
+                        <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:6px; font-size:0.84rem;">
+                            <div style="font-weight:600; margin-bottom:6px;">@(string.IsNullOrEmpty(s.Name) ? "스와치" : s.Name)
+                                @if (!string.IsNullOrEmpty(s.Stitch))
+                                {
+                                    <span style="font-weight:400; color:var(--text-mid); margin-left:6px;">(@s.Stitch)</span>
+                                }
+                                @if (s.NeedleSizeMm > 0)
+                                {
+                                    <span style="font-weight:400; color:var(--text-mid); margin-left:6px;">@(s.NeedleSizeMm)mm</span>
+                                }
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                                <!-- 세탁 전 -->
+                                <div>
+                                    <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:3px;">세탁 전</div>
+                                    @if (s.PreWashStitches > 0 || s.PreWashRows > 0)
+                                    {
+                                        <div>@(s.PreWashStitches)코 × @(s.PreWashRows)단</div>
+                                    }
+                                    @if (s.PreWashWidthCm > 0 || s.PreWashHeightCm > 0)
+                                    {
+                                        <div style="color:var(--text-mid);">@(s.PreWashWidthCm)cm × @(s.PreWashHeightCm)cm</div>
+                                    }
+                                </div>
+                                <!-- 세탁 후 -->
+                                @if (s.PostWashStitches > 0 || s.PostWashWidthCm > 0)
+                                {
+                                    <div>
+                                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:3px;">세탁 후</div>
+                                        @if (s.PostWashStitches > 0 || s.PostWashRows > 0)
+                                        {
+                                            <div>@(s.PostWashStitches)코 × @(s.PostWashRows)단</div>
+                                        }
+                                        @if (s.PostWashWidthCm > 0 || s.PostWashHeightCm > 0)
+                                        {
+                                            <div style="color:var(--text-mid);">@(s.PostWashWidthCm)cm × @(s.PostWashHeightCm)cm</div>
+                                        }
+                                        @if (s.WidthShrinkagePercent != 0 || s.HeightShrinkagePercent != 0)
+                                        {
+                                            <div style="font-size:0.75rem; margin-top:2px;">
+                                                <span style="color:@(s.WidthShrinkagePercent < 0 ? "#c0392b" : "#267848");">가로 @(s.WidthShrinkagePercent > 0 ? "+" : "")@(s.WidthShrinkagePercent)%</span>
+                                                <span style="color:@(s.HeightShrinkagePercent < 0 ? "#c0392b" : "#267848"); margin-left:6px;">세로 @(s.HeightShrinkagePercent > 0 ? "+" : "")@(s.HeightShrinkagePercent)%</span>
+                                            </div>
+                                        }
+                                    </div>
+                                }
+                            </div>
                         </div>
                     }
+                </div>
+            }
+
+            <!-- 완성 치수 -->
+            @if (!_editingMeasurements)
+            {
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
+                        <div class="form-label" style="margin-bottom:0;">📏 완성 치수</div>
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem;" @onclick="() => _editingMeasurements = true">✏️ 입력</button>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_selectedProject.MeasurementsMemo))
+                    {
+                        <p style="white-space:pre-wrap; font-size:0.88rem; color:var(--text-mid); background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 12px;">@_selectedProject.MeasurementsMemo</p>
+                    }
+                    else
+                    {
+                        <p style="font-size:0.82rem; color:var(--text-light);">치수 정보가 없어요.</p>
+                    }
+                </div>
+            }
+            else
+            {
+                <div style="margin-bottom:12px;">
+                    <div class="form-label" style="margin-bottom:4px;">📏 완성 치수</div>
+                    <textarea class="form-control" rows="4" @bind="_selectedProject.MeasurementsMemo"
+                              placeholder="예) 가슴둘레(세탁전): 92cm / 세탁후: 89cm&#10;총장(세탁전): 58cm / 세탁후: 56cm&#10;소매길이: 62cm"></textarea>
+                    <div style="display:flex; gap:8px; margin-top:6px;">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveMeasurements">저장</button>
+                        <button class="btn btn-ghost btn-sm" @onclick="() => _editingMeasurements = false">취소</button>
+                    </div>
                 </div>
             }
 
@@ -224,6 +287,7 @@ else
 
             <div class="modal-footer">
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteProject(_selectedProject.Id)">삭제</button>
+                <button class="btn btn-secondary btn-sm" @onclick="() => RestoreToSchedule(_selectedProject.Id)">↩ 뜨케줄로 복귀</button>
                 <button class="btn btn-ghost" @onclick="CloseDetail">닫기</button>
             </div>
         </div>
@@ -233,6 +297,7 @@ else
 @code {
     bool _loading = true;
     bool _showDetail = false;
+    bool _editingMeasurements = false;
     List<KnitProject> _projects = new();
     KnitProject? _selectedProject;
 
@@ -256,20 +321,21 @@ else
         _projects = all.Where(p => p.Status == ProjectStatus.완료)
                        .OrderByDescending(p => p.EndDate)
                        .ToList();
-        _allYarns   = await Storage.GetYarnsAsync();
-        _allTools   = await Storage.GetToolsAsync();
+        _allYarns    = await Storage.GetYarnsAsync();
+        _allTools    = await Storage.GetToolsAsync();
         _allSwatches = await Storage.GetSwatchesAsync();
     }
 
     void OpenDetail(KnitProject proj)
     {
         _selectedProject = proj;
+        _editingMeasurements = false;
         _selectedYarns = proj.YarnUsages
             .Select(u => (u, _allYarns.FirstOrDefault(y => y.Id == u.YarnId)))
             .Where(x => x.Item2 != null)
             .Select(x => (x.u, x.Item2!))
             .ToList();
-        _selectedTools = _allTools.Where(t => proj.ToolIds.Contains(t.Id)).ToList();
+        _selectedTools   = _allTools.Where(t => proj.ToolIds.Contains(t.Id)).ToList();
         _selectedSwatches = _allSwatches.Where(s => s.ProjectId == proj.Id).ToList();
         _showDetail = true;
     }
@@ -278,9 +344,28 @@ else
     {
         _showDetail = false;
         _selectedProject = null;
+        _editingMeasurements = false;
         _selectedYarns.Clear();
         _selectedTools.Clear();
         _selectedSwatches.Clear();
+    }
+
+    async Task SaveMeasurements()
+    {
+        if (_selectedProject == null) return;
+        await Storage.SaveProjectAsync(_selectedProject);
+        _editingMeasurements = false;
+    }
+
+    async Task RestoreToSchedule(Guid id)
+    {
+        var all = await Storage.GetProjectsAsync();
+        var proj = all.FirstOrDefault(p => p.Id == id);
+        if (proj == null) return;
+        proj.Status = ProjectStatus.진행중;
+        await Storage.SaveProjectAsync(proj);
+        CloseDetail();
+        await LoadData();
     }
 
     async Task DeleteProject(Guid id)
