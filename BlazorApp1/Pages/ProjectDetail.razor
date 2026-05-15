@@ -5,6 +5,7 @@
 @using KnitLog.Models
 @using KnitLog.Services
 @using Microsoft.JSInterop
+@implements IAsyncDisposable
 @inject StorageService Storage
 @inject NavigationManager Nav
 @inject IJSRuntime JS
@@ -137,11 +138,10 @@ else
 
         @foreach (var cardId in _cardOrder)
         {
-            var dragStyle = _dragCard == cardId ? "opacity:0.5;" : _dragOver == cardId ? "outline:2px dashed #267848; outline-offset:2px;" : "";
             @if (cardId == "counter")
             {
                 <!-- ── 단수 카운터 ── -->
-                        <div class="card" draggable="true" style="@dragStyle" @ondragstart='() => DragStart("counter")' @ondragover="() => _dragOver = \"counter\"" @ondragover:preventDefault @ondrop='async () => await Drop("counter")' @ondragleave="() => { if(_dragOver==\"counter\") _dragOver=\"\"; }">
+                        <div class="card" draggable="true" data-cardid="counter">
                             <div class="card-title">🔢 단수 카운터</div>
                             <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
                                 현재 뜨고 있는 단/코 수를 기록해요
@@ -189,7 +189,7 @@ else
             else if (cardId == "checklist")
             {
                 <!-- ── 도안 체크리스트 ── -->
-                        <div class="card" draggable="true" style="@dragStyle" @ondragstart='() => DragStart("checklist")' @ondragover="() => _dragOver = \"checklist\"" @ondragover:preventDefault @ondrop='async () => await Drop("checklist")' @ondragleave="() => { if(_dragOver==\"checklist\") _dragOver=\"\"; }">
+                        <div class="card" draggable="true" data-cardid="checklist">
                             <div class="card-title">📋 도안 체크리스트</div>
                             <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
                                 완료한 단계를 체크해요
@@ -238,7 +238,7 @@ else
             else if (cardId == "timer")
             {
                 <!-- ── 뜨개 시간 기록 ── -->
-                        <div class="card" draggable="true" style="@dragStyle" @ondragstart='() => DragStart("timer")' @ondragover="() => _dragOver = \"timer\"" @ondragover:preventDefault @ondrop='async () => await Drop("timer")' @ondragleave="() => { if(_dragOver==\"timer\") _dragOver=\"\"; }">
+                        <div class="card" draggable="true" data-cardid="timer">
                             <div class="card-title">⏱️ 뜨개 시간</div>
                             <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
                                 지금 뜨는 시간을 기록해요
@@ -302,7 +302,7 @@ else
             else if (cardId == "accum")
             {
                 <!-- ── 누적 시간 ── -->
-                        <div class="card" draggable="true" style="@dragStyle" @ondragstart='() => DragStart("accum")' @ondragover="() => _dragOver = \"accum\"" @ondragover:preventDefault @ondrop='async () => await Drop("accum")' @ondragleave="() => { if(_dragOver==\"accum\") _dragOver=\"\"; }">
+                        <div class="card" draggable="true" data-cardid="accum">
                             <div class="card-title">📊 누적 시간</div>
                             
                             @{
@@ -607,25 +607,33 @@ else
     string _dragOver = "";
     List<string> _cardOrder = new() { "counter", "checklist", "timer", "accum" };
     const string CARD_ORDER_KEY = "knitlog_card_order";
+    DotNetObjectReference<ProjectDetail>? _dragRef;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_loading)
+        {
+            _dragRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("initCardDrag", _dragRef);
+        }
+    }
+
+    [JSInvokable]
+    public async Task DropCard(string fromId, string toId)
+    {
+        var fromIdx = _cardOrder.IndexOf(fromId);
+        var toIdx   = _cardOrder.IndexOf(toId);
+        if (fromIdx < 0 || toIdx < 0) return;
+        _cardOrder.RemoveAt(fromIdx);
+        _cardOrder.Insert(toIdx, fromId);
+        var json = System.Text.Json.JsonSerializer.Serialize(_cardOrder);
+        await JS.InvokeVoidAsync("localStorage.setItem", CARD_ORDER_KEY, json);
+        StateHasChanged();
+    }
 
     void DragStart(string card) => _dragCard = card;
-
-    async Task Drop(string targetCard)
-    {
-        _dragOver = "";
-        if (string.IsNullOrEmpty(_dragCard) || _dragCard == targetCard) { _dragCard = ""; return; }
-        var fromIdx = _cardOrder.IndexOf(_dragCard);
-        var toIdx   = _cardOrder.IndexOf(targetCard);
-        if (fromIdx >= 0 && toIdx >= 0)
-        {
-            _cardOrder.RemoveAt(fromIdx);
-            _cardOrder.Insert(toIdx, _dragCard);
-            // localStorage에 저장
-            var json = System.Text.Json.JsonSerializer.Serialize(_cardOrder);
-            await JS.InvokeVoidAsync("localStorage.setItem", CARD_ORDER_KEY, json);
-        }
-        _dragCard = "";
-    }
+    void DragOver(string card) => _dragOver = card;
+    void DragLeave(string card) { if (_dragOver == card) _dragOver = ""; }
 
     // ── 카운터 ──────────────────────────────────────────
     async Task CounterChange(ProjectCounter counter, int delta)
@@ -824,5 +832,12 @@ else
     {
         if (_project != null)
             await Storage.SaveProjectAsync(_project);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _refreshTimer?.Dispose();
+        _dragRef?.Dispose();
+        await ValueTask.CompletedTask;
     }
 }
