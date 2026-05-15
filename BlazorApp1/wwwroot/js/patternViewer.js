@@ -59,9 +59,17 @@ window.patternViewer = (() => {
 
     // ── 캔버스 이벤트 핸들러 ──────────────────────────────
     function onDown(e) {
+        const pos = getCanvasPos(e);
+
+        if (_tool === 'ruler') {
+            // ruler는 Blazor에 위임
+            if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', pos.x, pos.y);
+            return;
+        }
+
         if (_tool !== 'pen' && _tool !== 'eraser') return;
         if (e.touches) e.preventDefault();
-        const pos = getCanvasPos(e);
+
         isDrawing = true;
         currentPath = {
             page: currentPageNum, color: _color, size: _size,
