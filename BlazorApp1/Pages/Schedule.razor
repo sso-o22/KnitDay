@@ -25,57 +25,120 @@ else if (_projects.Count == 0)
 }
 else
 {
-    <div class="grid-2">
-        @foreach (var proj in _projects)
-        {
-            <div class="card" style="cursor:pointer;" @onclick="() => GoToDetail(proj.Id)">
-                @if (proj.Photos.Count > 0)
-                {
-                    <img src="@proj.Photos[0].Base64Data" class="photo-thumb"
-                         style="width:100%; height:160px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px;"
-                         alt="프로젝트 사진" />
-                }
+    <!-- 컨트롤 바: 정렬 + 뷰 전환 -->
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:0.82rem; color:var(--text-mid);">정렬</span>
+            <select class="form-control" style="width:auto; padding:5px 10px; font-size:0.82rem;" @bind="_sortOrder">
+                <option value="created">등록순</option>
+                <option value="start">시작일</option>
+                <option value="updated">수정일</option>
+                <option value="title">이름순</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:4px;">
+            <button class="btn btn-sm @(_isListView ? "btn-ghost" : "btn-sage")" @onclick="() => _isListView = false" title="카드형">⊞</button>
+            <button class="btn btn-sm @(_isListView ? "btn-sage" : "btn-ghost")" @onclick="() => _isListView = true" title="리스트형">☰</button>
+        </div>
+    </div>
 
-                <div class="flex-between mb-1">
-                    <div class="card-title" style="margin-bottom:0;">@proj.Title</div>
-                    @if (proj.Status == ProjectStatus.일시중단)
+    @if (!_isListView)
+    {
+        <!-- 카드형 -->
+        <div class="grid-2">
+            @foreach (var proj in SortedProjects)
+            {
+                <div class="card" style="cursor:pointer;" @onclick="() => GoToDetail(proj.Id)">
+                    @if (proj.Photos.Count > 0)
                     {
-                        <span class="badge" style="background:#f5e6c0; color:#8a6010;">⏸️ 일시중단</span>
+                        <img src="@proj.Photos[0].Base64Data" class="photo-thumb"
+                             style="width:100%; height:160px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px;"
+                             alt="프로젝트 사진" />
+                    }
+
+                    <div class="flex-between mb-1">
+                        <div class="card-title" style="margin-bottom:0;">@proj.Title</div>
+                        @if (proj.Status == ProjectStatus.일시중단)
+                        {
+                            <span class="badge" style="background:#f5e6c0; color:#8a6010;">⏸️ 일시중단</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-progress">진행중</span>
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(proj.PatternName))
+                    {
+                        <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:4px;">📋 @proj.PatternName</div>
+                    }
+                    @if (!string.IsNullOrEmpty(proj.Description))
+                    {
+                        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:10px; white-space:pre-wrap;">@proj.Description</p>
+                    }
+
+                    <div style="display:flex; gap:12px; font-size:0.8rem; color:var(--text-light); margin-bottom:14px;">
+                        @if (proj.StartDate.HasValue)
+                        {
+                            <span>시작 @proj.StartDate.Value.ToString("yy.MM.dd")</span>
+                        }
+                        @if (proj.EndDate.HasValue)
+                        {
+                            <span>→ @proj.EndDate.Value.ToString("yy.MM.dd") 목표</span>
+                        }
+                    </div>
+
+                    <div style="display:flex; gap:8px; flex-wrap:wrap;" @onclick:stopPropagation="true">
+                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)">✏️ 수정</button>
+                        <button class="btn btn-sm btn-sage" @onclick="() => CompleteProject(proj.Id)">✅ 완료</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteProject(proj.Id)">🗑️</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- 리스트형 -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            @foreach (var proj in SortedProjects)
+            {
+                <div class="card" style="cursor:pointer; display:flex; align-items:center; gap:14px; padding:12px 16px;"
+                     @onclick="() => GoToDetail(proj.Id)">
+                    @if (proj.Photos.Count > 0)
+                    {
+                        <img src="@proj.Photos[0].Base64Data"
+                             style="width:52px; height:52px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border); flex-shrink:0;"
+                             alt="사진" />
                     }
                     else
                     {
-                        <span class="badge badge-progress">진행중</span>
+                        <div style="width:52px; height:52px; background:var(--ivory-dark); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">🧶</div>
                     }
-                </div>
 
-                @if (!string.IsNullOrEmpty(proj.PatternName))
-                {
-                    <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:4px;">📋 @proj.PatternName</div>
-                }
-                @if (!string.IsNullOrEmpty(proj.Description))
-                {
-                    <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:10px; white-space:pre-wrap;">@proj.Description</p>
-                }
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+                            <span style="font-weight:700; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@proj.Title</span>
+                            @if (proj.Status == ProjectStatus.일시중단)
+                            {
+                                <span class="badge" style="background:#f5e6c0; color:#8a6010; flex-shrink:0;">⏸️</span>
+                            }
+                        </div>
+                        <div style="font-size:0.78rem; color:var(--text-mid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            @if (!string.IsNullOrEmpty(proj.PatternName)) { <span>@proj.PatternName</span> }
+                            @if (proj.StartDate.HasValue) { <span style="margin-left:8px;">· @proj.StartDate.Value.ToString("yy.MM.dd") 시작</span> }
+                        </div>
+                    </div>
 
-                <div style="display:flex; gap:12px; font-size:0.8rem; color:var(--text-light); margin-bottom:14px;">
-                    @if (proj.StartDate.HasValue)
-                    {
-                        <span>시작 @proj.StartDate.Value.ToString("yy.MM.dd")</span>
-                    }
-                    @if (proj.EndDate.HasValue)
-                    {
-                        <span>→ @proj.EndDate.Value.ToString("yy.MM.dd") 목표</span>
-                    }
+                    <div style="display:flex; gap:6px; flex-shrink:0;" @onclick:stopPropagation="true">
+                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)">✏️</button>
+                        <button class="btn btn-sage btn-sm" @onclick="() => CompleteProject(proj.Id)">✅</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => DeleteProject(proj.Id)">🗑️</button>
+                    </div>
                 </div>
-
-                <div style="display:flex; gap:8px; flex-wrap:wrap;" @onclick:stopPropagation="true">
-                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)">✏️ 수정</button>
-                    <button class="btn btn-sm btn-sage" @onclick="() => CompleteProject(proj.Id)">✅ 완료</button>
-                    <button class="btn btn-danger btn-sm" @onclick="() => DeleteProject(proj.Id)">🗑️</button>
-                </div>
-            </div>
-        }
-    </div>
+            }
+        </div>
+    }
 }
 
 @if (_showModal)
@@ -189,8 +252,19 @@ else
 
 @code {
     bool _loading = true;
-    bool _showModal = false;
+    bool _isListView = false;
+    string _sortOrder = "created";
     List<KnitProject> _projects = new();
+
+    IEnumerable<KnitProject> SortedProjects => _sortOrder switch
+    {
+        "start"   => _projects.OrderBy(p => p.StartDate ?? DateTime.MaxValue),
+        "updated" => _projects.OrderByDescending(p => p.CreatedAt),
+        "title"   => _projects.OrderBy(p => p.Title),
+        _         => _projects.OrderByDescending(p => p.CreatedAt),
+    };
+
+    bool _showModal = false;
     List<Yarn> _yarns = new();
     List<KnitTool> _tools = new();
     KnitProject? _editingProject;

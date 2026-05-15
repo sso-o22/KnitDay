@@ -418,6 +418,39 @@ else
             }
         }
 
+                <!-- ── 참고 영상 ── -->
+        <div class="card" style="grid-column: span 2;">
+            <div class="card-title" style="margin-bottom:12px;">🎬 참고 영상</div>
+
+            @if (_project.VideoLinks.Count > 0)
+            {
+                <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+                    @foreach (var link in _project.VideoLinks.ToList())
+                    {
+                        <div style="display:flex; align-items:center; gap:8px; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px 12px;">
+                            <span style="font-size:1.1rem;">🔗</span>
+                            <a href="@link" target="_blank" rel="noopener noreferrer"
+                               style="flex:1; font-size:0.85rem; color:var(--theme-active); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                               @onclick:stopPropagation>@link</a>
+                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; flex-shrink:0;"
+                                    @onclick="() => RemoveVideoLink(link)">✕</button>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">참고 영상이 없어요. 도안 영상 링크를 추가해 보세요!</p>
+            }
+
+            <div style="display:flex; gap:8px;">
+                <input class="form-control" @bind="_newVideoLink" @bind:event="oninput"
+                       placeholder="유튜브, 블로그 등 URL 입력"
+                       @onkeydown="async e => { if (e.Key == \"Enter\") await AddVideoLinkAndSave(); }" />
+                <button class="btn btn-sage" style="flex-shrink:0;" @onclick="AddVideoLinkAndSave">추가</button>
+            </div>
+        </div>
+
                 <!-- ── 과정 사진 ── -->
         <div class="card" style="grid-column: span 2;">
             <div class="card-title">📷 과정 사진</div>
@@ -581,22 +614,6 @@ else
             <div class="form-group">
                 <label class="form-label">메모</label>
                 <textarea class="form-control" rows="2" @bind="_project.Memo"></textarea>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">🎬 참고 영상 링크</label>
-                @foreach (var link in _project.VideoLinks.ToList())
-                {
-                    <div style="display:flex; align-items:center; gap:6px; margin-bottom:6px;">
-                        <span style="flex:1; font-size:0.82rem; color:var(--text-mid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@link</span>
-                        <button class="btn btn-danger btn-sm" style="padding:2px 6px; flex-shrink:0;"
-                                @onclick="() => _project.VideoLinks.Remove(link)">✕</button>
-                    </div>
-                }
-                <div style="display:flex; gap:6px;">
-                    <input class="form-control" @bind="_newVideoLink" placeholder="유튜브 등 영상 URL 입력" />
-                    <button class="btn btn-sage btn-sm" @onclick="AddVideoLink" style="flex-shrink:0;">추가</button>
-                </div>
             </div>
 
             <div class="modal-footer">
@@ -901,6 +918,22 @@ else
         if (!_project!.VideoLinks.Contains(_newVideoLink))
             _project.VideoLinks.Add(_newVideoLink.Trim());
         _newVideoLink = "";
+    }
+
+    async Task AddVideoLinkAndSave()
+    {
+        if (string.IsNullOrWhiteSpace(_newVideoLink) || _project == null) return;
+        if (!_project.VideoLinks.Contains(_newVideoLink.Trim()))
+            _project.VideoLinks.Add(_newVideoLink.Trim());
+        _newVideoLink = "";
+        await Save();
+    }
+
+    async Task RemoveVideoLink(string link)
+    {
+        if (_project == null) return;
+        _project.VideoLinks.Remove(link);
+        await Save();
     }
 
     async Task SaveEdit()
