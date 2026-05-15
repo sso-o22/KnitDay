@@ -28,11 +28,11 @@
         <div class="sidebar-stats">
             <div class="sidebar-stat-row">
                 <span>✅ 완성작</span>
-                <strong>@_finished개</strong>
+                <strong>@(_finished)개</strong>
             </div>
             <div class="sidebar-stat-row">
                 <span>⏱️ 총 시간</span>
-                <strong>@_hours h</strong>
+                <strong>@(_hours)h</strong>
             </div>
             <div class="sidebar-dark-toggle" @onclick="ToggleDark" title="@(_isDark ? "라이트 모드" : "다크 모드")">
                 @(_isDark ? "☀️" : "🌙")
