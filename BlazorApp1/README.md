@@ -67,7 +67,7 @@ Visual Studio에서 **Blazor WebAssembly App** 프로젝트를 생성한 후,
 
 - `Models/` 폴더 → `Models.cs` 추가
 - `Services/` 폴더 → `StorageService.cs` 추가  
-- `Pages/` 폴더에 5개 Razor 파일 추가
+- `Pages/` 폴더에 필요한 Razor 파일 추가
 
 ### 4. 실행!
 
@@ -111,80 +111,17 @@ dotnet run
 
 ---
 
-## � 업데이트 내역
-### 2026년 5월 14일
-
-#### 🌅 오전 (10:33 - 11:43)
-- **컴포넌트 정리 및 최적화**
-  - Models.cs 리팩토링 - 데이터 구조 정리 및 정규화
-  - PatternViewer.razor 간소화
-  - Swatches.razor 완전 제거 (불필요 기능 통합)
-  
-- **JavaScript 모듈 정리** (`patternViewer.js`)
-  - 불필요한 코드 제거 및 간소화 (150+ 줄 삭제)
-  - 기능 최적화
-
-#### 🌄 오후 (14:33 - 17:23)
-- **데이터 서비스 개선** (`StorageService.cs`)
-  - 저장소 로직 정리 및 최적화
-  - 데이터 마이그레이션 로직 추가
-
-- **페이지별 정리 작업**
-  - Schedule.razor - 리스트 관리 로직 간소화
-  - ProjectDetail.razor - 불필요 코드 정리
-  - Tools.razor - UI 단순화
-  - Yarns.razor - 목록 표시 로직 개선
-  - Wishlist.razor - 마이너 수정
-
-- **UI/CSS 최적화** (`app.css`)
-  - 스타일 통일 및 레이아웃 조정
-
-- **레이아웃 미세 조정** (`MainLayout.razor`)
-
----
+## 📝 업데이트 내역
 ### 2026년 5월 15일
-
-#### 🌅 오전 (10:52 - 11:30)
-- **색상 시스템 개선** (`MainLayout.razor`, `app.css`)
-  - UI 색상 체계 정리 및 최적화
-  
-- **다크 모드 지원** (`Settings.razor`, `Stats.razor` 신규)
-  - 다크 모드/라이트 모드 토글 추가
-  - 통계 페이지(`Stats.razor`) 신규 추가
-  - 설정 페이지 확장
-
-- **배포 최적화** (`index.html`, `app.css`)
-  - 프로덕션 배포 설정
-
-#### 🌞 오전 중반 (11:30 - 13:00)
-- **모델 확장** (`Models.cs`)
-  - 프로젝트 데이터 필드 추가 및 확장
-  
-- **스케줄/뜨케줄 개선** (`Schedule.razor`)
-  - UI/UX 개선
-  - 기능 확장 및 인터렉션 개선
-  
-- **프로젝트 상세 페이지 대폭 업그레이드** (`ProjectDetail.razor`)
-  - 프로젝트 상세 정보 관리 기능 강화 (200+ 줄 추가)
-  - 이미지 업로드 및 프로젝트 정보 편집 기능
-  
-- **도구 관리 페이지 개선** (`Tools.razor`)
-  - 바늘/도구 관리 기능 확장 (150+ 줄 추가)
-  - 상세 정보 입력 및 검색 기능
-
-- **위시리스트 기능 추가** (`Wishlist.razor`)
-  - 위시리스트 관리 기능 개선
-  
-- **저장소 서비스 확장** (`StorageService.cs`)
-  - 데이터 저장/로드 로직 추가 및 개선
-
-#### 🌆 오후 (13:00 - 14:00)
-- **UI/CSS 최적화** (`app.css`)
-  - 반응형 디자인 개선
-  - 스타일 통일 및 가독성 향상
-  
-- **홈 페이지 UI 개선** (`Home.razor`)
-  - 대시보드 레이아웃 조정
+- README를 현재 프로젝트 상태에 맞게 동기화했습니다.
+- 실제 있는 페이지 목록을 반영하고, 기능 설명을 확장했습니다.
+- 추가된 페이지:
+  - `PatternViewer.razor` : 패턴 뷰어
+  - `ProjectDetail.razor` : 프로젝트 상세 정보 화면
+  - `Settings.razor` : 사용자 설정
+  - `Stats.razor` : 통계 대시보드
+  - `Swatches.razor` : 색상/샘플 페이지
+- 프로젝트 구조와 주요 기능을 최신 문서로 정리했습니다.
 
 ---
 
