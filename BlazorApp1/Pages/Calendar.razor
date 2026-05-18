@@ -360,6 +360,23 @@ else
     }
 
     // ── 스타일 헬퍼 ───────────────────────────────────────────────────
+
+    // hex 색상의 상대 밝기 계산 (0=어둠, 1=밝음)
+    static double HexLuminance(string hex)
+    {
+        hex = hex.TrimStart('#');
+        if (hex.Length < 6) return 0.5;
+        int r = Convert.ToInt32(hex[0..2], 16);
+        int g = Convert.ToInt32(hex[2..4], 16);
+        int b = Convert.ToInt32(hex[4..6], 16);
+        // sRGB 상대 밝기 공식
+        double Linearize(int c) { double s = c / 255.0; return s <= 0.04045 ? s / 12.92 : Math.Pow((s + 0.055) / 1.055, 2.4); }
+        return 0.2126 * Linearize(r) + 0.7152 * Linearize(g) + 0.0722 * Linearize(b);
+    }
+
+    // 배경색에 따라 흰색/검정 텍스트 자동 선택
+    static string ContrastText(string hex) => HexLuminance(hex) > 0.35 ? "#111111" : "#ffffff";
+
     ProjectStyle GetStyle(int index)
     {
         var (pale, accent, text) = _palette[index % _palette.Length];
@@ -370,8 +387,8 @@ else
     {
         if (!string.IsNullOrEmpty(proj.ColorCode))
         {
-            // hex를 밝게 만들어 배경/텍스트색 생성
-            return new ProjectStyle(proj.ColorCode + "33", proj.ColorCode, proj.ColorCode);
+            var chipText = ContrastText(proj.ColorCode);
+            return new ProjectStyle(proj.ColorCode + "33", proj.ColorCode, chipText);
         }
         int idx = Math.Abs(proj.Id.GetHashCode()) % _palette.Length;
         return GetStyle(idx);
