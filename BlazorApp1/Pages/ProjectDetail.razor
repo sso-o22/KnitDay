@@ -181,7 +181,7 @@ else
             {
                 <!-- ── 단수 카운터 ── -->
                 <div class="card" draggable="true" data-cardid="counter" style="overflow:hidden;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:16px;"
+                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => { if (_project.Counters.Count > 0) ToggleCard("counter"); }'>
                         <div class="card-title" style="margin-bottom:0;">🔢 단수 카운터</div>
                         @if (_project.Counters.Count > 0)
@@ -297,7 +297,7 @@ else
             {
                 <!-- ── 도안 체크리스트 ── -->
                 <div class="card" draggable="true" data-cardid="checklist" style="overflow:hidden;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:16px;"
+                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => { if (_project.Checklist.Count > 0) ToggleCard("checklist"); }'>
                         <div class="card-title" style="margin-bottom:0;">📋 도안 체크리스트</div>
                         @if (_project.Checklist.Count > 0)
@@ -496,7 +496,7 @@ else
         }
 
     <div class="card" style="grid-column: span 2; overflow:hidden;">
-        <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:16px;"
+        <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
              @onclick='() => { if (_project.VideoLinks.Count > 0) ToggleCard("video"); }'>
             <div class="card-title" style="margin-bottom:0;">🎬 참고 영상</div>
             @if (_project.VideoLinks.Count > 0)

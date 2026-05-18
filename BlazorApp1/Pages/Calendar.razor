@@ -268,7 +268,7 @@ else
     void BuildStats()
     {
         var active = _allProjects.Where(p =>
-            p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단).ToList();
+            p.Status != ProjectStatus.위시리스트).ToList();
         _activeCount       = active.Count(p => p.Status == ProjectStatus.진행중);
         _overdueCount      = active.Count(p => p.EndDate.HasValue && p.EndDate.Value.Date < _today);
         _deadlineThisMonth = active.Count(p => p.EndDate.HasValue
@@ -281,7 +281,7 @@ else
         var monthStart = _current;
         var monthEnd   = _current.AddMonths(1).AddDays(-1);
         _timelineProjects = _allProjects
-            .Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단)
+            .Where(p => p.Status != ProjectStatus.위시리스트)
             .Where(p => p.StartDate.HasValue || p.EndDate.HasValue)
             .Where(p =>
                 (!p.StartDate.HasValue || p.StartDate.Value.Date <= monthEnd) &&
@@ -303,7 +303,7 @@ else
     void BuildLegend()
     {
         var visible = _allProjects
-            .Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단)
+            .Where(p => p.Status != ProjectStatus.위시리스트)
             .Take(6)
             .ToList();
         _legendProjects = visible
@@ -316,7 +316,7 @@ else
     {
         var result = new List<CalendarEvent>();
         var relevant = _allProjects
-            .Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단)
+            .Where(p => p.Status != ProjectStatus.위시리스트)
             .ToList();
 
         for (int i = 0; i < relevant.Count; i++)
@@ -398,6 +398,7 @@ else
     {
         ProjectStatus.진행중   => "badge-done",
         ProjectStatus.일시중단 => "badge-progress",
+        ProjectStatus.완료     => "badge-done",
         _                      => "badge-wish"
     };
 
