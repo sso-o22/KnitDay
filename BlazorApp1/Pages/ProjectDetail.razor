@@ -180,15 +180,16 @@ else
             @if (cardId == "counter")
             {
                 <!-- ── 단수 카운터 ── -->
-                <div class="card" draggable="true" data-cardid="counter">
-                    <!-- 헤더 (접기/펼치기) -->
-                    @{ var cMb = IsCollapsed("counter") ? "0" : "16px"; var cIcon = IsCollapsed("counter") ? "▶" : "▼"; }
-                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:@cMb;"
-                         @onclick='() => ToggleCard("counter")'>
+                <div class="card" draggable="true" data-cardid="counter" style="overflow:hidden;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:16px;"
+                         @onclick='() => { if (_project.Counters.Count > 0) ToggleCard("counter"); }'>
                         <div class="card-title" style="margin-bottom:0;">🔢 단수 카운터</div>
-                        <span style="font-size:0.85rem; color:var(--text-light); user-select:none;">@cIcon</span>
+                        @if (_project.Counters.Count > 0)
+                        {
+                            <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("counter") ? "▶" : "▼")</span>
+                        }
                     </div>
-                    @if (!IsCollapsed("counter"))
+                    @if (!IsCollapsed("counter") || _project.Counters.Count == 0)
                     {
                         <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">현재 뜨고 있는 단/코 수를 기록해요</p>
                         @foreach (var counter in _project.Counters)
@@ -212,7 +213,7 @@ else
                                         <span style="font-weight:600; font-size:0.92rem; flex:1;">@counter.Label</span>
                                         <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="이름 수정"
                                                 @onclick="() => { _editingCounterId = counter.Id; _editingCounterLabel = counter.Label; }">✏️</button>
-                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" @onclick="() => RemoveCounter(counter.Id)">✕</button>
+                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" disabled="@IsPaused" @onclick="() => RemoveCounter(counter.Id)">✕</button>
                                     }
                                 </div>
                                 <!-- 원형 게이지 + 카운터 버튼 -->
@@ -295,14 +296,16 @@ else
             else if (cardId == "checklist")
             {
                 <!-- ── 도안 체크리스트 ── -->
-                <div class="card" draggable="true" data-cardid="checklist">
-                    @{ var clMb = IsCollapsed("checklist") ? "0" : "16px"; var clIcon = IsCollapsed("checklist") ? "▶" : "▼"; }
-                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:@clMb;"
-                         @onclick='() => ToggleCard("checklist")'>
+                <div class="card" draggable="true" data-cardid="checklist" style="overflow:hidden;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:16px;"
+                         @onclick='() => { if (_project.Checklist.Count > 0) ToggleCard("checklist"); }'>
                         <div class="card-title" style="margin-bottom:0;">📋 도안 체크리스트</div>
-                        <span style="font-size:0.85rem; color:var(--text-light); user-select:none;">@clIcon</span>
+                        @if (_project.Checklist.Count > 0)
+                        {
+                            <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("checklist") ? "▶" : "▼")</span>
+                        }
                     </div>
-                    @if (!IsCollapsed("checklist"))
+                    @if (!IsCollapsed("checklist") || _project.Checklist.Count == 0)
                     {
                         <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">완료한 단계를 체크해요</p>
                         @foreach (var item in _project.Checklist)
@@ -325,8 +328,7 @@ else
                                     <span style="flex:1; font-size:0.88rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "")">@item.Text</span>
                                     <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="이름 수정"
                                             @onclick="() => { _editingCheckId = item.Id; _editingCheckText = item.Text; }">✏️</button>
-                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;" disabled="@IsPaused"
-                                            @onclick="() => RemoveCheckItem(item.Id)">✕</button>
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;" disabled="@IsPaused" @onclick="() => RemoveCheckItem(item.Id)">✕</button>
                                 }
                             </div>
                         }
@@ -364,14 +366,12 @@ else
             else if (cardId == "timer")
             {
                 <!-- ── 뜨개 시간 기록 ── -->
-                <div class="card" draggable="true" data-cardid="timer">
-                    @{ var tMb = IsCollapsed("timer") ? "0" : "16px"; var tIcon = IsCollapsed("timer") ? "▶" : "▼"; }
-                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:@tMb;"
+                <div class="card" draggable="true" data-cardid="timer" style="overflow:hidden;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => ToggleCard("timer")'>
                         <div class="card-title" style="margin-bottom:0;">⏱️ 뜨개 시간</div>
-                        <span style="font-size:0.85rem; color:var(--text-light); user-select:none;">@tIcon</span>
+                        <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("timer") ? "▶" : "▼")</span>
                     </div>
-                    @{ var activeSession = _project?.Sessions.FirstOrDefault(s => s.IsActive); }
                     @if (!IsCollapsed("timer"))
                     {
                         <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">지금 뜨는 시간을 기록해요</p>
@@ -379,7 +379,7 @@ else
                             <!-- 타이머 디스플레이 -->
                             <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:20px; margin-bottom:14px; text-align:center; border:1px solid var(--border);">
                                 <div style="font-family:'Courier New', monospace; font-size:3rem; font-weight:700; color:var(--sage-dark); letter-spacing:4px; margin-bottom:8px;">
-                                    @if (activeSession != null)
+                                    @if (_activeSession != null)
                                     {
                                         <span>@(_timerDisplay)</span>
                                     }
@@ -389,7 +389,7 @@ else
                                     }
                                 </div>
                                 <div style="font-size:0.8rem; color:var(--text-mid);">
-                                    @if (activeSession != null)
+                                    @if (_activeSession != null)
                                     {
                                         <span>진행 중...</span>
                                     }
@@ -402,7 +402,7 @@ else
                 
                             <!-- 시작/종료 버튼 -->
                             <div style="display:flex; gap:8px;">
-                                @if (activeSession == null)
+                                @if (_activeSession == null)
                                 {
                                     <!-- 시작 버튼 -->
                                     <button class="btn btn-primary" style="flex:1; padding:10px;" disabled="@IsPaused" @onclick="StartSession">
@@ -419,7 +419,7 @@ else
                             </div>
                 
                         <!-- 메모 입력 (진행 중일 때만) -->
-                        @if (activeSession != null)
+                        @if (_activeSession != null)
                         {
                             <div style="margin-top:14px;">
                                 <input class="form-control" type="text" placeholder="메모 (선택사항)" @bind="_sessionMemo" style="font-size:0.9rem; padding:8px;" />
@@ -435,31 +435,29 @@ else
             else if (cardId == "accum")
             {
                 <!-- ── 누적 시간 ── -->
-                <div class="card" draggable="true" data-cardid="accum">
-                    @{ var aMb = IsCollapsed("accum") ? "0" : "12px"; var aIcon = IsCollapsed("accum") ? "▶" : "▼"; }
-                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:@aMb;"
+                <div class="card" draggable="true" data-cardid="accum" style="overflow:hidden;">
+                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => ToggleCard("accum")'>
                         <div class="card-title" style="margin-bottom:0;">📊 누적 시간</div>
-                        <span style="font-size:0.85rem; color:var(--text-light); user-select:none;">@aIcon</span>
+                        <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("accum") ? "▶" : "▼")</span>
                     </div>
-                    @{ var totalSeconds = _project?.Sessions.Sum(s => { var end = s.EndTime ?? DateTime.Now; return (int)(end - s.StartTime).TotalSeconds; }) ?? 0; var displayHours = totalSeconds / 3600; var displayMins = (totalSeconds % 3600) / 60; var displaySecs = totalSeconds % 60; }
                     @if (!IsCollapsed("accum"))
                     {
                             
                             <div style="background:var(--sage-light); border-radius:var(--radius-sm); padding:16px; text-align:center;">
                                 <div style="font-size:0.85rem; color:var(--text-mid); margin-bottom:8px;">총 뜨개 시간</div>
                                 <div style="font-family:'Courier New', monospace; font-size:2.2rem; font-weight:700; color:var(--sage-dark);">
-                                    @if (displayHours > 0)
+                                    @if (_displayHours > 0)
                                     {
-                                        <span>@(displayHours):@(displayMins.ToString("D2")):@(displaySecs.ToString("D2"))</span>
+                                        <span>@(_displayHours):@(_displayMins.ToString("D2")):@(_displaySecs.ToString("D2"))</span>
                                     }
-                                    else if (displayMins > 0)
+                                    else if (_displayMins > 0)
                                     {
-                                        <span>00:@(displayMins.ToString("D2")):@(displaySecs.ToString("D2"))</span>
+                                        <span>00:@(_displayMins.ToString("D2")):@(_displaySecs.ToString("D2"))</span>
                                     }
                                     else
                                     {
-                                        <span>00:00:@(displaySecs.ToString("D2"))</span>
+                                        <span>00:00:@(_displaySecs.ToString("D2"))</span>
                                     }
                                 </div>
                                 <div style="font-size:0.75rem; color:var(--text-mid); margin-top:8px;">
@@ -483,15 +481,7 @@ else
                                             <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick="() => RemoveSession(session.Id)">✕</button>
                                         </div>
                                         <div style="font-weight:600; color:var(--sage-dark);">
-                                            @{ var end = session.EndTime ?? DateTime.Now; var totalSecs = (int)(end - session.StartTime).TotalSeconds; var sh = totalSecs / 3600; var sm = (totalSecs % 3600) / 60; var ss = totalSecs % 60; }
-                                            @if (sh > 0)
-                                            {
-                                                <span>@(sh):@(sm.ToString("D2")):@(ss.ToString("D2"))</span>
-                                            }
-                                            else
-                                            {
-                                                <span>00:@(sm.ToString("D2")):@(ss.ToString("D2"))</span>
-                                            }
+                                            <span>@FormatDuration(session)</span>
                                         </div>
                                         @if (!string.IsNullOrEmpty(session.Memo))
                                         {
@@ -500,14 +490,22 @@ else
                                     </div>
                                 }
                             }
-                        }
                     }
                 </div>
             }
         }
 
-    <div class="card" style="grid-column: span 2;">
-        <div class="card-title" style="margin-bottom:12px;">🎬 참고 영상</div>
+    <div class="card" style="grid-column: span 2; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:16px;"
+             @onclick='() => { if (_project.VideoLinks.Count > 0) ToggleCard("video"); }'>
+            <div class="card-title" style="margin-bottom:0;">🎬 참고 영상</div>
+            @if (_project.VideoLinks.Count > 0)
+            {
+                <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("video") ? "▶" : "▼")</span>
+            }
+        </div>
+        @if (!IsCollapsed("video") || _project.VideoLinks.Count == 0)
+        {
 
         @if (_project.VideoLinks.Count > 0)
         {
@@ -548,6 +546,7 @@ else
                 @onkeydown="@(async e => { if (e.Key == "Enter") await AddVideoLinkAndSave(); })" />
             <button class="btn btn-sage" style="flex-shrink:0;" @onclick="AddVideoLinkAndSave">추가</button>
         </div>
+        }
     </div>
 
     <div class="card" style="grid-column: span 2;">
@@ -949,6 +948,11 @@ else
     // 카드 접기/펼치기
     HashSet<string> _collapsedCards = new();
     bool IsCollapsed(string id) => _collapsedCards.Contains(id);
+    string CardPb(string id, bool hasItems = true) => _collapsedCards.Contains(id) && hasItems ? "padding-bottom:0;" : "";
+    string CardMb(string id, bool hasItems, string expanded = "16px") => _collapsedCards.Contains(id) && hasItems ? "0" : expanded;
+    string CardIcon(string id, bool hasItems) => !hasItems ? "" : _collapsedCards.Contains(id) ? "▶" : "▼";
+    string CardCursor(bool hasItems) => hasItems ? "pointer" : "default";
+    string FormatDuration(KnitSession s) { var e = s.EndTime ?? DateTime.Now; var t = (int)(e - s.StartTime).TotalSeconds; var h = t/3600; var m = (t%3600)/60; var sc = t%60; return h > 0 ? $"{h}:{m:D2}:{sc:D2}" : $"00:{m:D2}:{sc:D2}"; }
     void ToggleCard(string id) { if (!_collapsedCards.Add(id)) _collapsedCards.Remove(id); }
 
     // 카운터 이름 편집
@@ -961,6 +965,11 @@ else
 
     // 일시중단 여부
     bool IsPaused => _project?.Status == ProjectStatus.일시중단;
+    KnitSession? _activeSession => _project?.Sessions.FirstOrDefault(s => s.IsActive);
+    int _totalSessionSeconds => _project?.Sessions.Sum(s => { var e = s.EndTime ?? DateTime.Now; return (int)(e - s.StartTime).TotalSeconds; }) ?? 0;
+    int _displayHours => _totalSessionSeconds / 3600;
+    int _displayMins => (_totalSessionSeconds % 3600) / 60;
+    int _displaySecs => _totalSessionSeconds % 60;
 
     static readonly string[] _colorOptions = new[]
     {
@@ -1164,7 +1173,7 @@ else
         
         // 진행 중인 세션이 있으면 먼저 종료
         var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
-        if (activeSession != null)
+        if (_activeSession != null)
         {
             activeSession.EndTime = DateTime.Now;
             if (!string.IsNullOrEmpty(_sessionMemo))
@@ -1185,7 +1194,7 @@ else
         if (_project == null) return;
         
         var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
-        if (activeSession != null)
+        if (_activeSession != null)
         {
             activeSession.EndTime = DateTime.Now;
             if (!string.IsNullOrEmpty(_sessionMemo))
@@ -1235,7 +1244,7 @@ else
         if (_project == null) return;
         
         var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
-        if (activeSession == null)
+        if (_activeSession == null)
         {
             _timerDisplay = "00:00:00";
             return;
