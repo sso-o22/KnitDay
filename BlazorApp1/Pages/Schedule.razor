@@ -6,7 +6,7 @@
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">📆 뜨케줄</h1>
+        <h1 class="page-title">🐙 문어발</h1>
         <p class="page-subtitle">진행중 · 일시중단 프로젝트</p>
     </div>
     <button class="btn btn-primary" @onclick="OpenAddModal">+ 새 프로젝트</button>
@@ -242,6 +242,43 @@ else
                     </select>
                 </div>
 
+                @* 연결된 스와치 *@
+                <div class="form-group">
+                    <label class="form-label">연결된 스와치</label>
+                    @if (!_allSwatches.Any())
+                    {
+                        <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
+                    }
+                    else
+                    {
+                        @foreach (var s in _allSwatches)
+                        {
+                            bool linked = s.ProjectId == _editingProject!.Id && _editingProject.Id != Guid.Empty;
+                            var syarn = _yarns.Find(y => y.Id == s.YarnId);
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                        border-radius:9px; background:@(linked ? "#f0faf4" : "transparent"); border:1px solid @(linked ? "#b8e0c8" : "#e8e8e8");">
+                                <input type="checkbox" checked="@linked"
+                                       @onchange="() => { if (s.ProjectId == _editingProject!.Id) s.ProjectId = null; else s.ProjectId = _editingProject!.Id; }"
+                                       style="width:15px; height:15px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
+                                    @if (syarn != null)
+                                    {
+                                        <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
+                                            <span class="color-dot" style="background:@syarn.ColorCode; width:8px; height:8px;"></span>
+                                            @syarn.Brand @syarn.Name
+                                        </div>
+                                    }
+                                </div>
+                                @if (s.NeedleSizeMm > 0)
+                                {
+                                    <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+
                 @* 사용 바늘 *@
                 <div class="form-group">
                     <label class="form-label">사용 바늘</label>
@@ -368,6 +405,7 @@ else
     bool _showModal = false;
     List<Yarn> _yarns = new();
     List<KnitTool> _tools = new();
+    List<Swatch> _allSwatches = new();
     KnitProject? _editingProject;
 
     protected override async Task OnInitializedAsync()
@@ -382,6 +420,7 @@ else
         _projects = all.Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단).ToList();
         _yarns = await Storage.GetYarnsAsync();
         _tools = await Storage.GetToolsAsync();
+        _allSwatches = await Storage.GetSwatchesAsync();
     }
 
     void GoToDetail(Guid id) => Nav.NavigateTo("projects/" + id);
@@ -436,6 +475,8 @@ else
         if (_editingProject.Id == Guid.Empty)
             _editingProject.Id = Guid.NewGuid();
         await Storage.SaveProjectAsync(_editingProject);
+        foreach (var s in _allSwatches)
+            await Storage.SaveSwatchAsync(s);
         await LoadData();
         CloseModal();
     }

@@ -180,93 +180,98 @@ else
             @if (cardId == "counter")
             {
                 <!-- ── 단수 카운터 ── -->
-                        <div class="card" draggable="true" data-cardid="counter">
-                            <div class="card-title">🔢 단수 카운터</div>
-                            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
-                                현재 뜨고 있는 단/코 수를 기록해요
-                            </p>
-
-                            @foreach (var counter in _project.Counters)
-                            {
-                                var hasTarget = counter.Target > 0;
-                                var progress = hasTarget ? Math.Min(100.0, counter.Value * 100.0 / counter.Target) : 0.0;
-                                var isDone = hasTarget && counter.Value >= counter.Target;
-
-                                <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; border:1px solid @(isDone ? "#7ec8a0" : "var(--border)");">
-                                    <!-- 라벨 + 삭제 -->
-                                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                                        <span style="font-weight:600; font-size:0.92rem;">@counter.Label</span>
+                <div class="card" draggable="true" data-cardid="counter">
+                    <!-- 헤더 (접기/펼치기) -->
+                    @{ var cMb = IsCollapsed("counter") ? "0" : "16px"; var cIcon = IsCollapsed("counter") ? "▶" : "▼"; }
+                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:@cMb;"
+                         @onclick='() => ToggleCard("counter")'>
+                        <div class="card-title" style="margin-bottom:0;">🔢 단수 카운터</div>
+                        <span style="font-size:0.85rem; color:var(--text-light); user-select:none;">@cIcon</span>
+                    </div>
+                    @if (!IsCollapsed("counter"))
+                    {
+                        <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">현재 뜨고 있는 단/코 수를 기록해요</p>
+                        @foreach (var counter in _project.Counters)
+                        {
+                            var hasTarget = counter.Target > 0;
+                            var progress  = hasTarget ? Math.Min(100.0, counter.Value * 100.0 / counter.Target) : 0.0;
+                            var isDone    = hasTarget && counter.Value >= counter.Target;
+                            <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; border:1px solid @(isDone ? "#7ec8a0" : "var(--border)");">
+                                <!-- 라벨 + 연필 + 삭제 -->
+                                <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
+                                    @if (_editingCounterId == counter.Id)
+                                    {
+                                        <input class="form-control" style="flex:1; font-size:0.88rem; padding:4px 8px;"
+                                               @bind="_editingCounterLabel"
+                                               @onkeydown='async e => { if (e.Key == "Enter") await SaveCounterLabel(counter); if (e.Key == "Escape") _editingCounterId = null; }' />
+                                        <button class="btn btn-primary btn-sm" @onclick="() => SaveCounterLabel(counter)">✓</button>
+                                        <button class="btn btn-ghost btn-sm" @onclick="() => _editingCounterId = null">✕</button>
+                                    }
+                                    else
+                                    {
+                                        <span style="font-weight:600; font-size:0.92rem; flex:1;">@counter.Label</span>
+                                        <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="이름 수정"
+                                                @onclick="() => { _editingCounterId = counter.Id; _editingCounterLabel = counter.Label; }">✏️</button>
                                         <button class="btn btn-danger btn-sm" style="padding:2px 8px;" @onclick="() => RemoveCounter(counter.Id)">✕</button>
-                                    </div>
-
-                                    <!-- 원형 게이지 + 카운터 버튼 -->
-                                    <div style="display:flex; align-items:center; gap:16px; justify-content:center; margin-bottom:10px;">
-                                        <button class="btn btn-secondary" style="width:44px; height:44px; font-size:1.3rem; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;"
-                                                @onclick="() => CounterChange(counter, -counter.Step)">−</button>
-
-                                        <!-- 원형 게이지 -->
-                                        <div style="position:relative; width:88px; height:88px; flex-shrink:0;">
-                                            <svg viewBox="0 0 88 88" width="88" height="88" style="transform:rotate(-90deg);">
-                                                <circle cx="44" cy="44" r="36" fill="none" stroke="var(--border)" stroke-width="7" />
-                                                @if (hasTarget)
-                                                {
-                                                    var circ = 2 * Math.PI * 36;
-                                                    var dash = circ * progress / 100.0;
-                                                    <circle cx="44" cy="44" r="36" fill="none"
-                                                            stroke="@(isDone ? "#7ec8a0" : "#f5c842")"
-                                                            stroke-width="7"
-                                                            stroke-linecap="round"
-                                                            stroke-dasharray="@dash.ToString("F1") @circ.ToString("F1")" />
-                                                }
-                                            </svg>
-                                            <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
-                                                <span style="font-size:1.6rem; font-weight:800; color:var(--text-dark); line-height:1;">@counter.Value</span>
-                                                @if (hasTarget)
-                                                {
-                                                    <span style="font-size:0.65rem; color:var(--text-light); margin-top:1px;">/ @counter.Target</span>
-                                                }
-                                            </div>
-                                        </div>
-
-                                        <button class="btn btn-primary" style="width:44px; height:44px; font-size:1.3rem; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;"
-                                                @onclick="() => CounterChange(counter, counter.Step)">+</button>
-                                    </div>
-
-                                    <!-- 프로그레스 바 (목표 있을 때만) -->
-                                    @if (hasTarget)
-                                    {
-                                        <div style="height:5px; background:var(--border); border-radius:99px; margin-bottom:8px; overflow:hidden;">
-                                            <div style="height:100%; width:@(progress.ToString("F1"))%; background:@(isDone ? "#7ec8a0" : "#f5c842"); border-radius:99px; transition:width 0.3s;"></div>
-                                        </div>
-                                        <div style="text-align:center; font-size:0.75rem; color:@(isDone ? "#267848" : "var(--text-mid)"); margin-bottom:6px;">
-                                            @if (isDone) { <span>🎉 목표 달성!</span> }
-                                            else { <span>@(progress.ToString("F0"))% (@counter.Value / @counter.Target)</span> }
-                                        </div>
                                     }
-
-                                    <!-- 마지막 + 클릭 시각 -->
-                                    @if (counter.LastUpdatedAt.HasValue)
-                                    {
-                                        <div style="text-align:center; font-size:0.75rem; color:var(--text-light); margin-bottom:8px;">
-                                            🕐 마지막 업데이트: @counter.LastUpdatedAt.Value.ToString("HH:mm:ss")
-                                        </div>
-                                    }
-
-                                    <!-- 단위 / 목표 / 초기화 -->
-                                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:0.8rem; color:var(--text-mid);">
-                                        <span>단위</span>
-                                        <input type="number" style="width:55px;" class="form-control" @bind="counter.Step" min="1" />
-                                        <span>목표</span>
-                                        <input type="number" style="width:80px;" class="form-control"
-                                               value="@(counter.Target == 0 ? "" : counter.Target.ToString())"
-                                               @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = Save(); }"
-                                               min="0" placeholder="없음" />
-                                        <button class="btn btn-ghost btn-sm" @onclick="() => ResetCounter(counter)">초기화</button>
-                                    </div>
                                 </div>
-                            }
-
-                            <!-- 카운터 추가 -->
+                                <!-- 원형 게이지 + 카운터 버튼 -->
+                                <div style="display:flex; align-items:center; gap:16px; justify-content:center; margin-bottom:10px;">
+                                    <button class="btn btn-secondary" style="width:44px; height:44px; font-size:1.3rem; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;"
+                                            disabled="@IsPaused"
+                                            @onclick="() => CounterChange(counter, -counter.Step)">−</button>
+                                    <div style="position:relative; width:88px; height:88px; flex-shrink:0;">
+                                        <svg viewBox="0 0 88 88" width="88" height="88" style="transform:rotate(-90deg);">
+                                            <circle cx="44" cy="44" r="36" fill="none" stroke="var(--border)" stroke-width="7" />
+                                            @if (hasTarget)
+                                            {
+                                                var circ = 2 * Math.PI * 36;
+                                                var dash = circ * progress / 100.0;
+                                                <circle cx="44" cy="44" r="36" fill="none"
+                                                        stroke="@(isDone ? "#7ec8a0" : "#f5c842")"
+                                                        stroke-width="7" stroke-linecap="round"
+                                                        stroke-dasharray="@dash.ToString("F1") @circ.ToString("F1")" />
+                                            }
+                                        </svg>
+                                        <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+                                            <span style="font-size:1.6rem; font-weight:800; color:var(--text-dark); line-height:1;">@counter.Value</span>
+                                            @if (hasTarget) { <span style="font-size:0.65rem; color:var(--text-light); margin-top:1px;">/ @counter.Target</span> }
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-primary" style="width:44px; height:44px; font-size:1.3rem; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;"
+                                            disabled="@IsPaused"
+                                            @onclick="() => CounterChange(counter, counter.Step)">+</button>
+                                </div>
+                                @if (hasTarget)
+                                {
+                                    <div style="height:5px; background:var(--border); border-radius:99px; margin-bottom:8px; overflow:hidden;">
+                                        <div style="height:100%; width:@(progress.ToString("F1"))%; background:@(isDone ? "#7ec8a0" : "#f5c842"); border-radius:99px; transition:width 0.3s;"></div>
+                                    </div>
+                                    <div style="text-align:center; font-size:0.75rem; color:@(isDone ? "#267848" : "var(--text-mid)"); margin-bottom:6px;">
+                                        @if (isDone) { <span>🎉 목표 달성!</span> }
+                                        else { <span>@(progress.ToString("F0"))% (@counter.Value / @counter.Target)</span> }
+                                    </div>
+                                }
+                                @if (counter.LastUpdatedAt.HasValue)
+                                {
+                                    <div style="text-align:center; font-size:0.75rem; color:var(--text-light); margin-bottom:8px;">
+                                        🕐 마지막 업데이트: @counter.LastUpdatedAt.Value.ToString("HH:mm:ss")
+                                    </div>
+                                }
+                                <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:0.8rem; color:var(--text-mid);">
+                                    <span>단위</span>
+                                    <input type="number" style="width:55px;" class="form-control" @bind="counter.Step" min="1" disabled="@IsPaused" />
+                                    <span>목표</span>
+                                    <input type="number" style="width:80px;" class="form-control"
+                                           value="@(counter.Target == 0 ? "" : counter.Target.ToString())"
+                                           @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = Save(); }"
+                                           min="0" placeholder="없음" disabled="@IsPaused" />
+                                    <button class="btn btn-ghost btn-sm" disabled="@IsPaused" @onclick="() => ResetCounter(counter)">초기화</button>
+                                </div>
+                            </div>
+                        }
+                        @if (!IsPaused)
+                        {
                             @if (_addingCounter)
                             {
                                 <div style="display:flex; gap:8px; margin-top:8px;">
@@ -279,43 +284,63 @@ else
                             {
                                 <button class="btn btn-ghost btn-sm mt-1" @onclick="() => _addingCounter = true">+ 카운터 추가</button>
                             }
-                        </div>
+                        }
+                        else
+                        {
+                            <p style="font-size:0.8rem; color:var(--text-light); margin-top:8px;">⏸️ 일시중단 중에는 편집할 수 없어요</p>
+                        }
+                    }
+                </div>
             }
             else if (cardId == "checklist")
             {
                 <!-- ── 도안 체크리스트 ── -->
-                        <div class="card" draggable="true" data-cardid="checklist">
-                            <div class="card-title">📋 도안 체크리스트</div>
-                            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
-                                완료한 단계를 체크해요
-                            </p>
-                
-                            @foreach (var item in _project.Checklist)
-                            {
-                                <div style="display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border);">
-                                    <input type="checkbox" checked="@item.Done"
-                                           @onchange="() => ToggleCheck(item)"
-                                           style="width:16px; height:16px; accent-color:#2a5a26; cursor:pointer;" />
-                                    <span style="flex:1; font-size:0.88rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "")">
-                                        @item.Text
-                                    </span>
-                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;"
+                <div class="card" draggable="true" data-cardid="checklist">
+                    @{ var clMb = IsCollapsed("checklist") ? "0" : "16px"; var clIcon = IsCollapsed("checklist") ? "▶" : "▼"; }
+                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:@clMb;"
+                         @onclick='() => ToggleCard("checklist")'>
+                        <div class="card-title" style="margin-bottom:0;">📋 도안 체크리스트</div>
+                        <span style="font-size:0.85rem; color:var(--text-light); user-select:none;">@clIcon</span>
+                    </div>
+                    @if (!IsCollapsed("checklist"))
+                    {
+                        <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">완료한 단계를 체크해요</p>
+                        @foreach (var item in _project.Checklist)
+                        {
+                            <div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border);">
+                                <input type="checkbox" checked="@item.Done"
+                                       @onchange="() => ToggleCheck(item)"
+                                       disabled="@IsPaused"
+                                       style="width:16px; height:16px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
+                                @if (_editingCheckId == item.Id)
+                                {
+                                    <input class="form-control" style="flex:1; font-size:0.88rem; padding:4px 8px;"
+                                           @bind="_editingCheckText"
+                                           @onkeydown='async e => { if (e.Key == "Enter") await SaveCheckLabel(item); if (e.Key == "Escape") _editingCheckId = null; }' />
+                                    <button class="btn btn-primary btn-sm" @onclick="() => SaveCheckLabel(item)">✓</button>
+                                    <button class="btn btn-ghost btn-sm" @onclick="() => _editingCheckId = null">✕</button>
+                                }
+                                else
+                                {
+                                    <span style="flex:1; font-size:0.88rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "")">@item.Text</span>
+                                    <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="이름 수정"
+                                            @onclick="() => { _editingCheckId = item.Id; _editingCheckText = item.Text; }">✏️</button>
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;" disabled="@IsPaused"
                                             @onclick="() => RemoveCheckItem(item.Id)">✕</button>
-                                </div>
-                            }
-                
-                            @if (_project.Checklist.Count > 0)
-                            {
-                                var done = _project.Checklist.Count(c => c.Done);
-                                var total = _project.Checklist.Count;
-                                <div style="margin:10px 0 4px; font-size:0.8rem; color:var(--text-mid);">
-                                    @done / @total 완료
-                                </div>
-                                <div style="height:6px; background:#e8e8e8; border-radius:3px;">
-                                    <div style="height:6px; background:#c8e6be; border-radius:3px; width:@(done * 100 / total)%;"></div>
-                                </div>
-                            }
-                
+                                }
+                            </div>
+                        }
+                        @if (_project.Checklist.Count > 0)
+                        {
+                            var done  = _project.Checklist.Count(c => c.Done);
+                            var total = _project.Checklist.Count;
+                            <div style="margin:10px 0 4px; font-size:0.8rem; color:var(--text-mid);">@done / @total 완료</div>
+                            <div style="height:6px; background:#e8e8e8; border-radius:3px;">
+                                <div style="height:6px; background:#c8e6be; border-radius:3px; width:@(done * 100 / total)%;"></div>
+                            </div>
+                        }
+                        @if (!IsPaused)
+                        {
                             @if (_addingCheck)
                             {
                                 <div style="display:flex; gap:8px; margin-top:12px;">
@@ -328,20 +353,28 @@ else
                             {
                                 <button class="btn btn-ghost btn-sm mt-1" @onclick="() => _addingCheck = true">+ 항목 추가</button>
                             }
-                        </div>
+                        }
+                        else
+                        {
+                            <p style="font-size:0.8rem; color:var(--text-light); margin-top:8px;">⏸️ 일시중단 중에는 편집할 수 없어요</p>
+                        }
+                    }
+                </div>
             }
             else if (cardId == "timer")
             {
                 <!-- ── 뜨개 시간 기록 ── -->
-                        <div class="card" draggable="true" data-cardid="timer">
-                            <div class="card-title">⏱️ 뜨개 시간</div>
-                            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">
-                                지금 뜨는 시간을 기록해요
-                            </p>
-                
-                            @{
-                                var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
-                            }
+                <div class="card" draggable="true" data-cardid="timer">
+                    @{ var tMb = IsCollapsed("timer") ? "0" : "16px"; var tIcon = IsCollapsed("timer") ? "▶" : "▼"; }
+                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:@tMb;"
+                         @onclick='() => ToggleCard("timer")'>
+                        <div class="card-title" style="margin-bottom:0;">⏱️ 뜨개 시간</div>
+                        <span style="font-size:0.85rem; color:var(--text-light); user-select:none;">@tIcon</span>
+                    </div>
+                    @{ var activeSession = _project?.Sessions.FirstOrDefault(s => s.IsActive); }
+                    @if (!IsCollapsed("timer"))
+                    {
+                        <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">지금 뜨는 시간을 기록해요</p>
                 
                             <!-- 타이머 디스플레이 -->
                             <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:20px; margin-bottom:14px; text-align:center; border:1px solid var(--border);">
@@ -372,43 +405,46 @@ else
                                 @if (activeSession == null)
                                 {
                                     <!-- 시작 버튼 -->
-                                    <button class="btn btn-primary" style="flex:1; padding:10px;" @onclick="StartSession">
+                                    <button class="btn btn-primary" style="flex:1; padding:10px;" disabled="@IsPaused" @onclick="StartSession">
                                         ▶️ 시작
                                     </button>
                                 }
                                 else
                                 {
                                     <!-- 종료 버튼 -->
-                                    <button class="btn btn-danger" style="flex:1; padding:10px;" @onclick="EndSession">
+                                    <button class="btn btn-danger" style="flex:1; padding:10px;" disabled="@IsPaused" @onclick="EndSession">
                                         ⏹️ 종료
                                     </button>
                                 }
                             </div>
                 
-                            <!-- 메모 입력 (진행 중일 때만) -->
-                            @if (activeSession != null)
-                            {
-                                <div style="margin-top:14px;">
-                                    <input class="form-control" type="text" placeholder="메모 (선택사항)" @bind="_sessionMemo" style="font-size:0.9rem; padding:8px;" />
-                                </div>
-                            }
-                        </div>
+                        <!-- 메모 입력 (진행 중일 때만) -->
+                        @if (activeSession != null)
+                        {
+                            <div style="margin-top:14px;">
+                                <input class="form-control" type="text" placeholder="메모 (선택사항)" @bind="_sessionMemo" style="font-size:0.9rem; padding:8px;" />
+                            </div>
+                        }
+                        @if (IsPaused)
+                        {
+                            <p style="font-size:0.8rem; color:var(--text-light); margin-top:8px;">⏸️ 일시중단 중에는 시간 기록을 할 수 없어요</p>
+                        }
+                    }
+                </div>
             }
             else if (cardId == "accum")
             {
                 <!-- ── 누적 시간 ── -->
-                        <div class="card" draggable="true" data-cardid="accum">
-                            <div class="card-title">📊 누적 시간</div>
-                            
-                            @{
-                                var totalSeconds = _project.Sessions.Sum(s => {
-                                    var end = s.EndTime ?? DateTime.Now;
-                                    return (int)(end - s.StartTime).TotalSeconds;
-                                });
-                                var displayHours = totalSeconds / 3600;
-                                var displayMins = (totalSeconds % 3600) / 60;
-                                var displaySecs = totalSeconds % 60;
-                            }
+                <div class="card" draggable="true" data-cardid="accum">
+                    @{ var aMb = IsCollapsed("accum") ? "0" : "12px"; var aIcon = IsCollapsed("accum") ? "▶" : "▼"; }
+                    <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; margin-bottom:@aMb;"
+                         @onclick='() => ToggleCard("accum")'>
+                        <div class="card-title" style="margin-bottom:0;">📊 누적 시간</div>
+                        <span style="font-size:0.85rem; color:var(--text-light); user-select:none;">@aIcon</span>
+                    </div>
+                    @{ var totalSeconds = _project?.Sessions.Sum(s => { var end = s.EndTime ?? DateTime.Now; return (int)(end - s.StartTime).TotalSeconds; }) ?? 0; var displayHours = totalSeconds / 3600; var displayMins = (totalSeconds % 3600) / 60; var displaySecs = totalSeconds % 60; }
+                    @if (!IsCollapsed("accum"))
+                    {
                             
                             <div style="background:var(--sage-light); border-radius:var(--radius-sm); padding:16px; text-align:center;">
                                 <div style="font-size:0.85rem; color:var(--text-mid); margin-bottom:8px;">총 뜨개 시간</div>
@@ -447,13 +483,7 @@ else
                                             <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick="() => RemoveSession(session.Id)">✕</button>
                                         </div>
                                         <div style="font-weight:600; color:var(--sage-dark);">
-                                            @{
-                                                var end = session.EndTime ?? DateTime.Now;
-                                                var totalSecs = (int)(end - session.StartTime).TotalSeconds;
-                                                var sh = totalSecs / 3600;
-                                                var sm = (totalSecs % 3600) / 60;
-                                                var ss = totalSecs % 60;
-                                            }
+                                            @{ var end = session.EndTime ?? DateTime.Now; var totalSecs = (int)(end - session.StartTime).TotalSeconds; var sh = totalSecs / 3600; var sm = (totalSecs % 3600) / 60; var ss = totalSecs % 60; }
                                             @if (sh > 0)
                                             {
                                                 <span>@(sh):@(sm.ToString("D2")):@(ss.ToString("D2"))</span>
@@ -470,7 +500,9 @@ else
                                     </div>
                                 }
                             }
-                        </div>
+                        }
+                    }
+                </div>
             }
         }
 
@@ -717,6 +749,119 @@ else
                 </select>
             </div>
 
+            @* 스와치 연결 *@
+            <div class="form-group">
+                <label class="form-label">연결된 스와치</label>
+                @if (!_allSwatches.Any())
+                {
+                    <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
+                }
+                else
+                {
+                    @foreach (var s in _allSwatches)
+                    {
+                        bool linked = s.ProjectId == _project.Id;
+                        var yarn = _yarns.Find(y => y.Id == s.YarnId);
+
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                    border-radius:9px; background:@(linked ? "#f0faf4" : "transparent"); border:1px solid @(linked ? "#b8e0c8" : "#e8e8e8");">
+                            <input type="checkbox" checked="@linked"
+                                   @onchange="() => ToggleSwatchLink(s)"
+                                   style="width:15px; height:15px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
+                                @if (yarn != null)
+                                {
+                                    <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
+                                        <span class="color-dot" style="background:@yarn.ColorCode; width:8px; height:8px;"></span>
+                                        @yarn.Brand @yarn.Name
+                                    </div>
+                                }
+                            </div>
+                            @if (s.NeedleSizeMm > 0)
+                            {
+                                <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
+            @* 스와치 연결 *@
+            <div class="form-group">
+                <label class="form-label">연결된 스와치</label>
+                @if (!_allSwatches.Any())
+                {
+                    <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
+                }
+                else
+                {
+                    @foreach (var s in _allSwatches)
+                    {
+                        bool linked = s.ProjectId == _project.Id;
+                        var yarn = _yarns.Find(y => y.Id == s.YarnId);
+
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                    border-radius:9px; background:@(linked ? "#f0faf4" : "transparent"); border:1px solid @(linked ? "#b8e0c8" : "#e8e8e8");">
+                            <input type="checkbox" checked="@linked"
+                                   @onchange="() => ToggleSwatchLink(s)"
+                                   style="width:15px; height:15px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
+                                @if (yarn != null)
+                                {
+                                    <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
+                                        <span class="color-dot" style="background:@yarn.ColorCode; width:8px; height:8px;"></span>
+                                        @yarn.Brand @yarn.Name
+                                    </div>
+                                }
+                            </div>
+                            @if (s.NeedleSizeMm > 0)
+                            {
+                                <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
+            @* 연결된 스와치 *@
+            <div class="form-group">
+                <label class="form-label">연결된 스와치</label>
+                @if (!_allSwatches.Any())
+                {
+                    <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
+                }
+                else
+                {
+                    @foreach (var s in _allSwatches)
+                    {
+                        bool linked = s.ProjectId == _project.Id;
+                        var syarn = _yarns.Find(y => y.Id == s.YarnId);
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                    border-radius:9px; background:@(linked ? "#f0faf4" : "transparent"); border:1px solid @(linked ? "#b8e0c8" : "#e8e8e8");">
+                            <input type="checkbox" checked="@linked"
+                                   @onchange="() => ToggleSwatchLink(s)"
+                                   style="width:15px; height:15px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
+                                @if (syarn != null)
+                                {
+                                    <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
+                                        <span class="color-dot" style="background:@syarn.ColorCode; width:8px; height:8px;"></span>
+                                        @syarn.Brand @syarn.Name
+                                    </div>
+                                }
+                            </div>
+                            @if (s.NeedleSizeMm > 0)
+                            {
+                                <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
             @* 사용 바늘 *@
             <div class="form-group">
                 <label class="form-label">사용 바늘</label>
@@ -764,44 +909,6 @@ else
                 <textarea class="form-control" rows="2" @bind="_project.Memo" placeholder="기타 메모"></textarea>
             </div>
 
-            @* 스와치 연결 *@
-            <div class="form-group">
-                <label class="form-label">연결된 스와치</label>
-                @if (!_allSwatches.Any())
-                {
-                    <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
-                }
-                else
-                {
-                    @foreach (var s in _allSwatches)
-                    {
-                        bool linked = s.ProjectId == _project.Id;
-                        var yarn = _yarns.Find(y => y.Id == s.YarnId);
-
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
-                                    border-radius:9px; background:@(linked ? "#f0faf4" : "transparent"); border:1px solid @(linked ? "#b8e0c8" : "#e8e8e8");">
-                            <input type="checkbox" checked="@linked"
-                                   @onchange="() => ToggleSwatchLink(s)"
-                                   style="width:15px; height:15px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
-                            <div style="flex:1; min-width:0;">
-                                <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
-                                @if (yarn != null)
-                                {
-                                    <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
-                                        <span class="color-dot" style="background:@yarn.ColorCode; width:8px; height:8px;"></span>
-                                        @yarn.Brand @yarn.Name
-                                    </div>
-                                }
-                            </div>
-                            @if (s.NeedleSizeMm > 0)
-                            {
-                                <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
-                            }
-                        </div>
-                    }
-                }
-            </div>
-
             <div class="form-group">
                 <label class="form-label">캘린더 색상</label>
                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -838,6 +945,22 @@ else
 
     bool _loading = true;
     bool _showEditModal = false;
+
+    // 카드 접기/펼치기
+    HashSet<string> _collapsedCards = new();
+    bool IsCollapsed(string id) => _collapsedCards.Contains(id);
+    void ToggleCard(string id) { if (!_collapsedCards.Add(id)) _collapsedCards.Remove(id); }
+
+    // 카운터 이름 편집
+    Guid? _editingCounterId;
+    string _editingCounterLabel = "";
+
+    // 체크리스트 항목 편집
+    Guid? _editingCheckId;
+    string _editingCheckText = "";
+
+    // 일시중단 여부
+    bool IsPaused => _project?.Status == ProjectStatus.일시중단;
 
     static readonly string[] _colorOptions = new[]
     {
@@ -966,6 +1089,22 @@ else
     async Task RemoveCounter(Guid id)
     {
         _project?.Counters.RemoveAll(c => c.Id == id);
+        await Save();
+    }
+
+    async Task SaveCounterLabel(ProjectCounter counter)
+    {
+        if (!string.IsNullOrWhiteSpace(_editingCounterLabel))
+            counter.Label = _editingCounterLabel.Trim();
+        _editingCounterId = null;
+        await Save();
+    }
+
+    async Task SaveCheckLabel(ChecklistItem item)
+    {
+        if (!string.IsNullOrWhiteSpace(_editingCheckText))
+            item.Text = _editingCheckText.Trim();
+        _editingCheckId = null;
         await Save();
     }
 
