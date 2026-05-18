@@ -1,0 +1,118 @@
+@inherits LayoutComponentBase
+@using KnitLog.Models
+@using KnitLog.Services
+@inject StorageService Storage
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="app-shell">
+    <nav class="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-icon">🧶</span>
+            <span class="brand-name">니트로그</span>
+        </div>
+
+        <ul class="nav-list">
+            <li><NavLink href="" Match="NavLinkMatch.All" class="nav-item"><span class="nav-icon">🏠</span><span class="nav-label">홈</span></NavLink></li>
+            <li><NavLink href="schedule" class="nav-item"><span class="nav-icon">🗓️</span><span class="nav-label">뜨케줄</span></NavLink></li>
+            <li><NavLink href="projects" class="nav-item"><span class="nav-icon">🐙</span><span class="nav-label">문어발</span></NavLink></li>
+            <li><NavLink href="finished" class="nav-item"><span class="nav-icon">✅</span><span class="nav-label">완성작</span></NavLink></li>
+            <li><NavLink href="wishlist" class="nav-item"><span class="nav-icon">💫</span><span class="nav-label">위시리스트</span></NavLink></li>
+            <li><NavLink href="yarns" class="nav-item"><span class="nav-icon">🧵</span><span class="nav-label">실 창고</span></NavLink></li>
+            <li><NavLink href="swatches" class="nav-item"><span class="nav-icon">🧪</span><span class="nav-label">스와치</span></NavLink></li>
+            <li><NavLink href="tools" class="nav-item"><span class="nav-icon">⚒️</span><span class="nav-label">도구</span></NavLink></li>
+            <li><NavLink href="stats" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">통계</span></NavLink></li>
+            <li><NavLink href="settings" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-label">설정</span></NavLink></li>
+        </ul>
+
+        <!-- 사이드바 하단 통계 + 다크 토글 -->
+        <div class="sidebar-stats">
+            <div class="sidebar-stat-row">
+                <span>✅ 완성작</span>
+                <strong>@(_finished)개</strong>
+            </div>
+            <div class="sidebar-stat-row">
+                <span>⏱️ 오늘</span>
+                <strong>@_todayTime</strong>
+            </div>
+            <div class="sidebar-dark-toggle" @onclick="ToggleDark" title="@(_isDark ? "라이트 모드" : "다크 모드")">
+                @(_isDark ? "☀️" : "🌙")
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content">@Body</main>
+
+    <nav class="bottom-nav">
+        <NavLink href="" Match="NavLinkMatch.All" class="bottom-nav-item">
+            <span class="bottom-nav-icon">🏠</span><span class="bottom-nav-label">홈</span>
+        </NavLink>
+        <NavLink href="stats" class="bottom-nav-item">
+            <span class="bottom-nav-icon">📊</span><span class="bottom-nav-label">통계</span>
+        </NavLink>
+        <NavLink href="tools" class="bottom-nav-item">
+            <span class="bottom-nav-icon">⚒️</span><span class="bottom-nav-label">도구</span>
+        </NavLink>
+        <NavLink href="settings" class="bottom-nav-item">
+            <span class="bottom-nav-icon">⚙️</span><span class="bottom-nav-label">설정</span>
+        </NavLink>
+    </nav>
+</div>
+
+@code {
+    string _currentTheme = "mono";
+    bool _isDark = false;
+    int _finished;
+    string _todayTime = "0분";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var projects = await Storage.GetProjectsAsync();
+        _finished = projects.Count(p => p.Status == ProjectStatus.완료);
+
+        var todaySecs = projects
+            .SelectMany(p => p.Sessions)
+            .Where(s => s.EndTime.HasValue && s.StartTime.Date == DateTime.Today)
+            .Sum(s => (int)((s.EndTime!.Value - s.StartTime).TotalSeconds));
+        _todayTime = FormatTime(todaySecs);
+    }
+
+    string FormatTime(int secs)
+    {
+        var h = secs / 3600;
+        var m = (secs % 3600) / 60;
+        var s = secs % 60;
+        if (h > 0) return $"{h}시간 {m:D2}분";
+        if (m > 0) return $"{m}분 {s:D2}초";
+        return secs > 0 ? $"{s}초" : "0분";
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var theme = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_theme");
+            if (!string.IsNullOrEmpty(theme)) _currentTheme = theme;
+            var dark = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_dark");
+            _isDark = dark == "true";
+            await ApplyTheme(_currentTheme);
+            await ApplyDark(_isDark);
+            StateHasChanged();
+        }
+    }
+
+    async Task ToggleDark()
+    {
+        _isDark = !_isDark;
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_dark", _isDark.ToString().ToLower());
+        await ApplyDark(_isDark);
+    }
+
+    async Task ApplyTheme(string id) =>
+        await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme','{id}')");
+
+    async Task ApplyDark(bool dark) =>
+        await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark','{dark.ToString().ToLower()}')");
+
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}

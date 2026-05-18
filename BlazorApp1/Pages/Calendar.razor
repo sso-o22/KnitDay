@@ -1,0 +1,383 @@
+@* =====================================================================
+   Pages/Calendar.razor  —  뜨케줄 캘린더 페이지
+   ===================================================================== *@
+@page "/schedule"
+@using KnitLog.Models
+@using KnitLog.Services
+@inject StorageService Storage
+@inject NavigationManager Nav
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title">🗓️ 뜨케줄</h1>
+        <p class="page-subtitle">프로젝트 일정 · 마감 관리</p>
+    </div>
+</div>
+
+@if (_loading)
+{
+    <div class="loading">불러오는 중...</div>
+}
+else
+{
+    <div style="display:flex; gap:20px; align-items:flex-start;">
+
+        <!-- ── 메인 캘린더 ── -->
+        <div style="flex:1; min-width:0;">
+
+            <!-- 뷰 탭 -->
+            <div style="display:flex; gap:4px; background:#f5f5f5; border-radius:9px; padding:3px; margin-bottom:20px; width:fit-content;">
+                <button class="btn btn-sm @(_view == "month" ? "btn-sage" : "btn-ghost")" @onclick='() => _view = "month"'>월간</button>
+                <button class="btn btn-sm @(_view == "timeline" ? "btn-sage" : "btn-ghost")" @onclick='() => _view = "timeline"'>타임라인</button>
+            </div>
+
+            <!-- 월 네비게이션 -->
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                <button class="btn btn-ghost btn-sm" @onclick="PrevMonth">‹ 이전달</button>
+                <span style="font-size:1.05rem; font-weight:500; color:var(--text-dark);">
+                    @_current.Year년 @_current.Month월
+                </span>
+                <button class="btn btn-ghost btn-sm" @onclick="NextMonth">다음달 ›</button>
+            </div>
+
+            @if (_view == "month")
+            {
+                <!-- ── 월간 뷰 ── -->
+                <div style="border:1px solid var(--border); border-radius:var(--radius); overflow:hidden;">
+                    <!-- 요일 헤더 -->
+                    <div style="display:grid; grid-template-columns:repeat(7,1fr); background:#f8f8f8; border-bottom:1px solid var(--border);">
+                        @foreach (var (day, idx) in new[]{"일","월","화","수","목","금","토"}.Select((d,i)=>(d,i)))
+                        {
+                            string dayColor = idx == 0 ? "#e05a5a" : idx == 6 ? "#6a8fcc" : "#9a9a9a";
+                            <div style="text-align:center; padding:8px 0; font-size:0.78rem; font-weight:500;
+                                        color:@dayColor;">@day</div>
+                        }
+                    </div>
+                    <!-- 날짜 그리드 -->
+                    <div style="display:grid; grid-template-columns:repeat(7,1fr);">
+                        @foreach (var cell in _calendarCells)
+                        {
+                            var isToday = cell.Date == _today;
+                            var isOther = cell.Date.Month != _current.Month;
+                            var events  = GetEventsForDate(cell.Date);
+                            string numColor = isToday ? "#fff" : isOther ? "#9a9a9a" : "#111111";
+                            <div style="min-height:80px; border-right:0.5px solid var(--border); border-bottom:0.5px solid var(--border);
+                                        padding:5px; background:@(isToday?"#f0faf4":"transparent");">
+                                <!-- 날짜 숫자 -->
+                                <div style="width:22px; height:22px; display:flex; align-items:center; justify-content:center;
+                                            border-radius:50%; font-size:0.75rem; font-weight:500; margin-bottom:3px;
+                                            background:@(isToday?"#5a8a6a":"transparent");
+                                            color:@numColor;">
+                                    @cell.Date.Day
+                                </div>
+                                <!-- 이벤트 칩 -->
+                                @foreach (var ev in events.Take(2))
+                                {
+                                    <div @onclick="() => GoToProject(ev.Id)" title="@ev.Title"
+                                         style="font-size:0.68rem; border-radius:4px; padding:2px 5px; margin-bottom:2px;
+                                                white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;
+                                                background:@ev.PaleBg; color:@ev.TextColor; border-left:2px solid @ev.AccentColor;">
+                                        @ev.Label @ev.Title
+                                    </div>
+                                }
+                                @if (events.Count > 2)
+                                {
+                                    <div style="font-size:0.65rem; color:var(--text-light); padding-left:4px;">+@(events.Count-2)개</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- ── 타임라인 뷰 ── -->
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    @if (!_timelineProjects.Any())
+                    {
+                        <div class="empty-state" style="padding:40px 0;">
+                            <p style="color:var(--text-mid);">이번 달 일정이 있는 프로젝트가 없어요.</p>
+                        </div>
+                    }
+                    @foreach (var proj in _timelineProjects)
+                    {
+                        var style = GetProjectStyle(proj);
+                        var (barLeft, barWidth) = GetTimelineBar(proj);
+                        <div class="card" style="padding:14px 16px;">
+                            <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                                <span style="font-size:0.82rem; font-weight:500; color:var(--text-dark);">@proj.Title</span>
+                                <span class="badge @GetStatusBadge(proj.Status)">@proj.Status</span>
+                            </div>
+                            <!-- 바 트랙 -->
+                            <div style="position:relative; height:10px; background:#f0f0f0; border-radius:6px; overflow:hidden;">
+                                <div style="position:absolute; left:@(barLeft)%; width:@(barWidth)%; height:100%;
+                                            background:@style.AccentColor; border-radius:6px; min-width:4px;"></div>
+                            </div>
+                            <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:0.72rem; color:var(--text-light);">
+                                <span>@(proj.StartDate.HasValue ? proj.StartDate.Value.ToString("M/d") : "시작일 미정")</span>
+                                <span>@(proj.EndDate.HasValue ? proj.EndDate.Value.ToString("M/d 마감") : "마감일 미정")</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- ── 오른쪽 사이드패널 ── -->
+        <div style="width:200px; flex-shrink:0; display:flex; flex-direction:column; gap:16px;">
+
+            <!-- 이번달 현황 -->
+            <div class="card" style="padding:14px 16px;">
+                <div style="font-size:0.82rem; font-weight:500; color:var(--text-dark); margin-bottom:10px;">이번달 현황</div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                        <span style="color:var(--text-mid);">진행중</span>
+                        <span style="font-weight:500;">@_activeCount개</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                        <span style="color:var(--text-mid);">이번달 마감</span>
+                        <span style="font-weight:500; color:#c05070;">@_deadlineThisMonth개</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
+                        <span style="color:var(--text-mid);">마감 지남</span>
+                        <span style="font-weight:500; color:#e05a5a;">@_overdueCount개</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 다가오는 마감 -->
+            <div class="card" style="padding:14px 16px;">
+                <div style="font-size:0.82rem; font-weight:500; color:var(--text-dark); margin-bottom:10px;">다가오는 마감</div>
+                @if (!_upcomingDeadlines.Any())
+                {
+                    <p style="font-size:0.78rem; color:var(--text-light);">마감일이 설정된 프로젝트가 없어요.</p>
+                }
+                @foreach (var proj in _upcomingDeadlines)
+                {
+                    var daysLeft = (int)(proj.EndDate!.Value.Date - _today).TotalDays;
+                    var isUrgent = daysLeft <= 7;
+                    <div @onclick="() => GoToProject(proj.Id)" style="display:flex; align-items:center; gap:8px;
+                                padding:8px 10px; border-radius:9px; margin-bottom:6px; cursor:pointer;
+                                background:@(isUrgent?"#fef0f3":"#fdfaee");">
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-size:0.78rem; font-weight:500; color:var(--text-dark);
+                                        white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@proj.Title</div>
+                            <div style="font-size:0.7rem; color:var(--text-light);">@proj.EndDate.Value.ToString("M월 d일")</div>
+                        </div>
+                        <span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; white-space:nowrap;
+                                     background:@(isUrgent?"#fad5de":"#faf0c8"); color:@(isUrgent?"#8a3a4a":"#7a6020"); font-weight:500;">
+                            @(daysLeft == 0 ? "오늘" : daysLeft < 0 ? $"{-daysLeft}일 지남" : $"{daysLeft}일")
+                        </span>
+                    </div>
+                }
+            </div>
+
+            <!-- 프로젝트 범례 -->
+            @if (_legendProjects.Any())
+            {
+                <div class="card" style="padding:14px 16px;">
+                    <div style="font-size:0.82rem; font-weight:500; color:var(--text-dark); margin-bottom:10px;">프로젝트</div>
+                    @foreach (var (proj, style) in _legendProjects)
+                    {
+                        <div @onclick="() => GoToProject(proj.Id)"
+                             style="display:flex; align-items:center; gap:8px; margin-bottom:7px; cursor:pointer;">
+                            <div style="width:10px; height:10px; border-radius:50%; background:@style.AccentColor; flex-shrink:0;"></div>
+                            <span style="font-size:0.78rem; color:var(--text-mid); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@proj.Title</span>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    // ── 상태 ───────────────────────────────────────────────────────────
+    bool _loading = true;
+    string _view  = "month";
+    DateTime _today   = DateTime.Today;
+    DateTime _current = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+
+    List<KnitProject> _allProjects = new();
+    List<CalendarCell>  _calendarCells    = new();
+    List<KnitProject>   _timelineProjects = new();
+    List<KnitProject>   _upcomingDeadlines = new();
+    List<(KnitProject, ProjectStyle)> _legendProjects = new();
+
+    int _activeCount        = 0;
+    int _deadlineThisMonth  = 0;
+    int _overdueCount       = 0;
+
+    // ── 색상 팔레트 (프로젝트 인덱스별 순환) ──────────────────────────
+    static readonly (string Pale, string Accent, string Text)[] _palette = new[]
+    {
+        ("#dff2e8", "#5aaa7a", "#2a6a3a"),
+        ("#fef0f3", "#f2b8c6", "#8a3a4a"),
+        ("#fdfaee", "#f7e4a0", "#7a6020"),
+        ("#f4f0fc", "#c8b8e8", "#4a3a7a"),
+        ("#edf5fc", "#b8d8f0", "#2a5070"),
+        ("#fff3e0", "#ffb74d", "#7a4a00"),
+    };
+
+    record ProjectStyle(string PaleBg, string AccentColor, string TextColor);
+    record CalendarCell(DateTime Date);
+    record CalendarEvent(Guid Id, string Title, string Label, string PaleBg, string AccentColor, string TextColor);
+
+    // ── 초기화 ────────────────────────────────────────────────────────
+    protected override async Task OnInitializedAsync()
+    {
+        _allProjects = await Storage.GetProjectsAsync();
+        Rebuild();
+        _loading = false;
+    }
+
+    void Rebuild()
+    {
+        BuildCalendarCells();
+        BuildStats();
+        BuildTimeline();
+        BuildDeadlines();
+        BuildLegend();
+    }
+
+    void BuildCalendarCells()
+    {
+        _calendarCells.Clear();
+        var first     = _current;
+        var startCell = first.AddDays(-(int)first.DayOfWeek);
+        for (int i = 0; i < 42; i++)
+            _calendarCells.Add(new CalendarCell(startCell.AddDays(i)));
+    }
+
+    void BuildStats()
+    {
+        var active = _allProjects.Where(p =>
+            p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단).ToList();
+        _activeCount       = active.Count(p => p.Status == ProjectStatus.진행중);
+        _overdueCount      = active.Count(p => p.EndDate.HasValue && p.EndDate.Value.Date < _today);
+        _deadlineThisMonth = active.Count(p => p.EndDate.HasValue
+            && p.EndDate.Value.Year == _current.Year
+            && p.EndDate.Value.Month == _current.Month);
+    }
+
+    void BuildTimeline()
+    {
+        var monthStart = _current;
+        var monthEnd   = _current.AddMonths(1).AddDays(-1);
+        _timelineProjects = _allProjects
+            .Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단)
+            .Where(p => p.StartDate.HasValue || p.EndDate.HasValue)
+            .Where(p =>
+                (!p.StartDate.HasValue || p.StartDate.Value.Date <= monthEnd) &&
+                (!p.EndDate.HasValue   || p.EndDate.Value.Date   >= monthStart))
+            .OrderBy(p => p.StartDate ?? p.EndDate)
+            .ToList();
+    }
+
+    void BuildDeadlines()
+    {
+        _upcomingDeadlines = _allProjects
+            .Where(p => p.Status != ProjectStatus.완료 && p.Status != ProjectStatus.위시리스트)
+            .Where(p => p.EndDate.HasValue)
+            .OrderBy(p => p.EndDate)
+            .Take(5)
+            .ToList();
+    }
+
+    void BuildLegend()
+    {
+        var visible = _allProjects
+            .Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단)
+            .Take(6)
+            .ToList();
+        _legendProjects = visible
+            .Select((p, i) => (p, GetStyle(i)))
+            .ToList();
+    }
+
+    // ── 이벤트 조회 ───────────────────────────────────────────────────
+    List<CalendarEvent> GetEventsForDate(DateTime date)
+    {
+        var result = new List<CalendarEvent>();
+        var relevant = _allProjects
+            .Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단)
+            .ToList();
+
+        for (int i = 0; i < relevant.Count; i++)
+        {
+            var p = relevant[i];
+            var s = GetStyle(i);
+
+            bool isStart    = p.StartDate.HasValue && p.StartDate.Value.Date == date;
+            bool isEnd      = p.EndDate.HasValue   && p.EndDate.Value.Date   == date;
+            bool isInRange  = p.StartDate.HasValue && p.EndDate.HasValue
+                              && p.StartDate.Value.Date < date && date < p.EndDate.Value.Date;
+
+            if (isStart || isEnd)
+                result.Add(new CalendarEvent(p.Id, p.Title,
+                    isStart && isEnd ? "📌" : isStart ? "▶" : "🏁",
+                    s.PaleBg, s.AccentColor, s.TextColor));
+            else if (isInRange)
+                result.Add(new CalendarEvent(p.Id, p.Title, "·", s.PaleBg, s.AccentColor, s.TextColor));
+        }
+        return result;
+    }
+
+    // ── 타임라인 바 위치 계산 (이번달 기준 %) ─────────────────────────
+    (double left, double width) GetTimelineBar(KnitProject proj)
+    {
+        var monthStart = _current;
+        var monthEnd   = _current.AddMonths(1).AddDays(-1);
+        int totalDays  = (int)(monthEnd - monthStart).TotalDays + 1;
+
+        var start = proj.StartDate.HasValue
+            ? (proj.StartDate.Value.Date < monthStart ? monthStart : proj.StartDate.Value.Date)
+            : monthStart;
+        var end = proj.EndDate.HasValue
+            ? (proj.EndDate.Value.Date > monthEnd ? monthEnd : proj.EndDate.Value.Date)
+            : monthEnd;
+
+        double left  = Math.Max(0, (start - monthStart).TotalDays / totalDays * 100);
+        double width = Math.Max(2, (end - start).TotalDays + 1) / totalDays * 100;
+        width = Math.Min(width, 100 - left);
+        return (Math.Round(left, 1), Math.Round(width, 1));
+    }
+
+    // ── 스타일 헬퍼 ───────────────────────────────────────────────────
+    ProjectStyle GetStyle(int index)
+    {
+        var (pale, accent, text) = _palette[index % _palette.Length];
+        return new ProjectStyle(pale, accent, text);
+    }
+
+    ProjectStyle GetProjectStyle(KnitProject proj)
+    {
+        var visible = _allProjects
+            .Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단)
+            .ToList();
+        int idx = visible.IndexOf(proj);
+        return GetStyle(idx < 0 ? 0 : idx);
+    }
+
+    string GetStatusBadge(ProjectStatus s) => s switch
+    {
+        ProjectStatus.진행중   => "badge-done",
+        ProjectStatus.일시중단 => "badge-progress",
+        _                      => "badge-wish"
+    };
+
+    // ── 네비게이션 ────────────────────────────────────────────────────
+    void PrevMonth()
+    {
+        _current = _current.AddMonths(-1);
+        Rebuild();
+    }
+
+    void NextMonth()
+    {
+        _current = _current.AddMonths(1);
+        Rebuild();
+    }
+
+    void GoToProject(Guid id) => Nav.NavigateTo("projects/" + id);
+}

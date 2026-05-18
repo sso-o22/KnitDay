@@ -21,10 +21,10 @@ else
 {
     <!-- 요약 카드 4개 -->
     <div class="stats-grid">
-        <a href="schedule" class="card" style="text-decoration:none; text-align:center;">
+        <a href="projects" class="card" style="text-decoration:none; text-align:center;">
             <div style="font-size:2.2rem; margin-bottom:8px;">📆</div>
             <div style="font-size:2rem; font-weight:700; color:#8a6a08;">@_inProgress</div>
-            <div style="color:var(--text-mid); font-size:0.88rem;">뜨케줄</div>
+            <div style="color:var(--text-mid); font-size:0.88rem;">문어발</div>
         </a>
         <a href="finished" class="card" style="text-decoration:none; text-align:center;">
             <div style="font-size:2.2rem; margin-bottom:8px;">✅</div>
@@ -61,7 +61,7 @@ else
                         <div style="font-size:0.82rem; color:var(--text-light);">시작일: @proj.StartDate.Value.ToString("yyyy.MM.dd")</div>
                     }
                     <div class="mt-2">
-                        <a href="schedule/@proj.Id" class="btn btn-secondary btn-sm">자세히 보기</a>
+                        <a href="projects/@proj.Id" class="btn btn-secondary btn-sm">자세히 보기</a>
                     </div>
                 </div>
             }
@@ -72,7 +72,7 @@ else
         <div class="card" style="text-align:center; padding:40px;">
             <div style="font-size:2.5rem; margin-bottom:12px;">📆</div>
             <p style="color:var(--text-mid); margin-bottom:16px;">아직 진행중인 프로젝트가 없어요.</p>
-            <a href="schedule" class="btn btn-primary">첫 뜨케줄 만들기</a>
+            <a href="projects" class="btn btn-primary">첫 문어발 만들기</a>
         </div>
     }
 }

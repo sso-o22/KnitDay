@@ -1,7 +1,7 @@
 @* =====================================================================
    Pages/ProjectDetail.razor  —  뜨케줄 프로젝트 상세 페이지
    ===================================================================== *@
-@page "/schedule/{ProjectId:guid}"
+@page "/projects/{ProjectId:guid}"
 @using KnitLog.Models
 @using KnitLog.Services
 @using Microsoft.JSInterop
@@ -836,7 +836,7 @@ else
         return url; // 유튜브가 아니면 그대로 반환
     }
 
-    void GoBack() => Nav.NavigateTo("schedule");
+    void GoBack() => Nav.NavigateTo("projects");
     void GoToViewer() => Nav.NavigateTo("pattern-viewer/" + ProjectId);
 
     // ── 카드 드래그앤드롭 ──────────────────────────────────

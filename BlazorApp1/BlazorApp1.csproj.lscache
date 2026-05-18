@@ -285,8 +285,10 @@ obj/Debug/net8.0/BlazorApp1.GeneratedMSBuildEditorConfig.editorconfig
 App.razor
 Layout/MainLayout.razor
 Pages/
+ Calendar.razor
  Finished.razor
  Home.razor
+ MainLayout.razor
  PatternViewer.razor
  ProjectDetail.razor
  Schedule.razor
@@ -302,8 +304,10 @@ _Imports.razor
 App.razor
 Layout/MainLayout.razor
 Pages/
+ Calendar.razor
  Finished.razor
  Home.razor
+ MainLayout.razor
  PatternViewer.razor
  ProjectDetail.razor
  Schedule.razor

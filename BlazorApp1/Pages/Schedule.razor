@@ -1,4 +1,4 @@
-@page "/schedule"
+@page "/projects"
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
@@ -6,7 +6,7 @@
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">📆 뜨케줄</h1>
+        <h1 class="page-title">🐙 문어발</h1>
         <p class="page-subtitle">진행중 · 일시중단 프로젝트</p>
     </div>
     <button class="btn btn-primary" @onclick="OpenAddModal">+ 새 프로젝트</button>
@@ -354,7 +354,7 @@ else
         _tools = await Storage.GetToolsAsync();
     }
 
-    void GoToDetail(Guid id) => Nav.NavigateTo("schedule/" + id);
+    void GoToDetail(Guid id) => Nav.NavigateTo("projects/" + id);
 
     void OpenAddModal()
     {
