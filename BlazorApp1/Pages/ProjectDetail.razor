@@ -764,6 +764,44 @@ else
                 <textarea class="form-control" rows="2" @bind="_project.Memo" placeholder="기타 메모"></textarea>
             </div>
 
+            @* 스와치 연결 *@
+            <div class="form-group">
+                <label class="form-label">연결된 스와치</label>
+                @if (!_allSwatches.Any())
+                {
+                    <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
+                }
+                else
+                {
+                    @foreach (var s in _allSwatches)
+                    {
+                        bool linked = s.ProjectId == _project.Id;
+                        var yarn = _yarns.Find(y => y.Id == s.YarnId);
+                        @{ string swBg = linked ? "#f0faf4" : "transparent"; string swBorder = linked ? "#b8e0c8" : "#e8e8e8"; }
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                    border-radius:var(--radius-sm); background:@swBg; border:1px solid @swBorder;">
+                            <input type="checkbox" checked="@linked"
+                                   @onchange="() => ToggleSwatchLink(s)"
+                                   style="width:15px; height:15px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
+                                @if (yarn != null)
+                                {
+                                    <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
+                                        <span class="color-dot" style="background:@yarn.ColorCode; width:8px; height:8px;"></span>
+                                        @yarn.Brand @yarn.Name
+                                    </div>
+                                }
+                            </div>
+                            @if (s.NeedleSizeMm > 0)
+                            {
+                                <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
+                            }
+                        </div>
+                    }
+                }
+            </div>
+
             <div class="form-group">
                 <label class="form-label">캘린더 색상</label>
                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
@@ -818,6 +856,7 @@ else
     ProjectPhoto? _selectedPhoto;
     private PeriodicTimer? _refreshTimer;
     List<Swatch> _linkedSwatches = new();
+    List<Swatch> _allSwatches = new();
     List<Yarn> _yarns = new();
     List<KnitTool> _allTools = new();
 
@@ -827,8 +866,8 @@ else
         _project = all.FirstOrDefault(p => p.Id == ProjectId);
         _yarns = await Storage.GetYarnsAsync();
         _allTools = await Storage.GetToolsAsync();
-        var allSwatches = await Storage.GetSwatchesAsync();
-        _linkedSwatches = allSwatches.Where(s => s.ProjectId == ProjectId).ToList();
+        _allSwatches = await Storage.GetSwatchesAsync();
+        _linkedSwatches = _allSwatches.Where(s => s.ProjectId == ProjectId).ToList();
 
         // 저장된 카드 순서 불러오기
         try
@@ -1143,7 +1182,20 @@ else
     async Task SaveEdit()
     {
         await Save();
+        // 스와치 연결 변경사항 저장
+        foreach (var s in _allSwatches)
+            await Storage.SaveSwatchAsync(s);
+        // 연결된 스와치 목록 갱신
+        _linkedSwatches = _allSwatches.Where(s => s.ProjectId == _project!.Id).ToList();
         CloseEditModal();
+    }
+
+    void ToggleSwatchLink(Swatch s)
+    {
+        if (s.ProjectId == _project!.Id)
+            s.ProjectId = null;
+        else
+            s.ProjectId = _project.Id;
     }
 
     async Task Save()
