@@ -94,27 +94,31 @@ else
                     </div>
                 </div>
 
-                @* 수축률 *@
-                @if (s.PreWashWidthCm > 0 || s.PreWashHeightCm > 0)
+                @* 변화율 *@
+                @{
+                    var wRate = CalcRate(s.PreWashStitches, s.PostWashStitches, s.PreWashWidthCm, s.PostWashWidthCm);
+                    var hRate = CalcRate(s.PreWashRows, s.PostWashRows, s.PreWashHeightCm, s.PostWashHeightCm);
+                }
+                @if (wRate.HasValue || hRate.HasValue)
                 {
                     <div style="display:flex; gap:8px; margin-bottom:10px;">
-                        @if (s.PreWashWidthCm > 0)
+                        @if (wRate.HasValue)
                         {
-                            var wColor = s.WidthShrinkagePercent < 0 ? "#c0392b" : "#267848";
+                            var wColor = wRate.Value < 0 ? "#c0392b" : "#267848";
                             <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px; text-align:center;">
                                 <div style="font-size:0.75rem; color:var(--text-light);">가로 변화율</div>
                                 <div style="font-size:1.1rem; font-weight:700; color:@wColor;">
-                                    @(s.WidthShrinkagePercent > 0 ? "+" : "")@s.WidthShrinkagePercent%
+                                    @(wRate.Value > 0 ? "+" : "")@wRate.Value%
                                 </div>
                             </div>
                         }
-                        @if (s.PreWashHeightCm > 0)
+                        @if (hRate.HasValue)
                         {
-                            var hColor = s.HeightShrinkagePercent < 0 ? "#c0392b" : "#267848";
+                            var hColor = hRate.Value < 0 ? "#c0392b" : "#267848";
                             <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px; text-align:center;">
                                 <div style="font-size:0.75rem; color:var(--text-light);">세로 변화율</div>
                                 <div style="font-size:1.1rem; font-weight:700; color:@hColor;">
-                                    @(s.HeightShrinkagePercent > 0 ? "+" : "")@s.HeightShrinkagePercent%
+                                    @(hRate.Value > 0 ? "+" : "")@hRate.Value%
                                 </div>
                             </div>
                         }
@@ -140,6 +144,7 @@ else
 }
 
 @* ── 추가/수정 모달 ── *@
+@{ var pw2 = _showModal ? CalcRate(_editing.PreWashStitches, _editing.PostWashStitches, _editing.PreWashWidthCm, _editing.PostWashWidthCm) : null; var ph2 = _showModal ? CalcRate(_editing.PreWashRows, _editing.PostWashRows, _editing.PreWashHeightCm, _editing.PostWashHeightCm) : null; }
 @if (_showModal)
 {
     <div class="modal-backdrop">
@@ -244,27 +249,27 @@ else
                     </div>
                 </div>
 
-                @* 수축률 미리보기 *@
-                @if (_editing.PreWashWidthCm > 0 || _editing.PreWashHeightCm > 0)
+                @* 변화율 미리보기 *@
+                @if (pw2.HasValue || ph2.HasValue)
                 {
                     <div style="display:flex; gap:8px; margin-top:12px;">
-                        @if (_editing.PreWashWidthCm > 0)
+                        @if (pw2.HasValue)
                         {
-                            var w = _editing.WidthShrinkagePercent;
+                            string pwColor = pw2.Value < 0 ? "#c0392b" : "#267848";
                             <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:8px; text-align:center;">
                                 <div style="font-size:0.72rem; color:var(--text-light);">가로 변화율</div>
-                                <div style="font-weight:700; color:@(w < 0 ? "#c0392b" : "#267848");">
-                                    @(w > 0 ? "+" : "")@w%
+                                <div style="font-weight:700; color:@pwColor;">
+                                    @(pw2.Value > 0 ? "+" : "")@pw2.Value%
                                 </div>
                             </div>
                         }
-                        @if (_editing.PreWashHeightCm > 0)
+                        @if (ph2.HasValue)
                         {
-                            var h = _editing.HeightShrinkagePercent;
+                            string phColor = ph2.Value < 0 ? "#c0392b" : "#267848";
                             <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:8px; text-align:center;">
                                 <div style="font-size:0.72rem; color:var(--text-light);">세로 변화율</div>
-                                <div style="font-weight:700; color:@(h < 0 ? "#c0392b" : "#267848");">
-                                    @(h > 0 ? "+" : "")@h%
+                                <div style="font-weight:700; color:@phColor;">
+                                    @(ph2.Value > 0 ? "+" : "")@ph2.Value%
                                 </div>
                             </div>
                         }
@@ -275,6 +280,62 @@ else
             <div class="form-group">
                 <label class="form-label">메모</label>
                 <textarea class="form-control" rows="3" @bind="_editing.Memo" placeholder="세탁 방법, 특이사항 등"></textarea>
+            </div>
+
+            @* 게이지 계산기 *@
+            <div style="border-radius:var(--radius-sm); padding:14px; margin-bottom:16px; background:var(--lavender-pale); border:1px solid var(--lavender-light);">
+                <div style="font-size:0.88rem; font-weight:600; color:#4e3290; margin-bottom:12px;">🧮 게이지 계산기</div>
+                <p style="font-size:0.78rem; color:var(--text-mid); margin-bottom:12px;">
+                    원작 게이지와 도안 콧수/단수를 입력하면, 내 게이지에 맞는 수정 콧수/단수를 계산해드려요.
+                </p>
+                <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">원작 코 게이지 (10cm당)</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_calcOrigStitchGauge" placeholder="예: 20" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">원작 단 게이지 (10cm당)</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_calcOrigRowGauge" placeholder="예: 28" />
+                    </div>
+                </div>
+                <div class="form-row" style="margin-top:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">도안 콧수</label>
+                        <input class="form-control" type="number" step="1" @bind="_calcPatternStitches" placeholder="예: 120" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">도안 단수</label>
+                        <input class="form-control" type="number" step="1" @bind="_calcPatternRows" placeholder="예: 80" />
+                    </div>
+                </div>
+                @if (GaugeCalcResult != null)
+                {
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        @if (GaugeCalcResult.Value.stitches.HasValue)
+                        {
+                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">수정 콧수</div>
+                                <div style="font-size:1.2rem; font-weight:700; color:#4e3290;">@GaugeCalcResult.Value.stitches.Value 코</div>
+                            </div>
+                        }
+                        @if (GaugeCalcResult.Value.rows.HasValue)
+                        {
+                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">수정 단수</div>
+                                <div style="font-size:1.2rem; font-weight:700; color:#4e3290;">@GaugeCalcResult.Value.rows.Value 단</div>
+                            </div>
+                        }
+                    </div>
+                    <p style="font-size:0.72rem; color:var(--text-light); margin-top:8px; text-align:center;">
+                        내 게이지 기준 — 코: @MyStitchGauge.ToString("F1")/10cm, 단: @MyRowGauge.ToString("F1")/10cm
+                    </p>
+                }
+                else if (_calcOrigStitchGauge > 0 || _calcOrigRowGauge > 0)
+                {
+                    <p style="font-size:0.78rem; color:#c0392b; margin-top:10px;">
+                        ⚠️ 내 게이지를 계산하려면 세탁 후 코수/단수 또는 가로/세로 길이를 입력해주세요.
+                    </p>
+                }
             </div>
 
             <div class="modal-footer">
@@ -293,6 +354,64 @@ else
     List<KnitProject> _projects = new();
     Swatch _editing = new();
 
+    // 게이지 계산기 입력값
+    double _calcOrigStitchGauge = 0;
+    double _calcOrigRowGauge    = 0;
+    int    _calcPatternStitches = 0;
+    int    _calcPatternRows     = 0;
+
+    // 변화율 계산: 코/단이 다르면 코/단 기준, 같으면 길이 기준
+    double? CalcRate(double preStitch, double postStitch, double preCm, double postCm)
+    {
+        // 코/단 수가 입력되어 있고 다르면 코/단 기준
+        if (preStitch > 0 && postStitch > 0 && preStitch != postStitch)
+            return Math.Round((postStitch - preStitch) / preStitch * 100, 1);
+        // 코/단 같거나 없으면 길이 기준
+        if (preCm > 0 && postCm > 0 && preCm != postCm)
+            return Math.Round((postCm - preCm) / preCm * 100, 1);
+        return null;
+    }
+
+    // 내 게이지 (10cm당 코수): 세탁 후 값 우선, 없으면 세탁 전
+    double MyStitchGauge
+    {
+        get
+        {
+            if (_editing.PostWashStitches > 0 && _editing.PostWashWidthCm > 0)
+                return _editing.PostWashStitches / _editing.PostWashWidthCm * 10;
+            if (_editing.PreWashStitches > 0 && _editing.PreWashWidthCm > 0)
+                return _editing.PreWashStitches / _editing.PreWashWidthCm * 10;
+            return 0;
+        }
+    }
+
+    double MyRowGauge
+    {
+        get
+        {
+            if (_editing.PostWashRows > 0 && _editing.PostWashHeightCm > 0)
+                return _editing.PostWashRows / _editing.PostWashHeightCm * 10;
+            if (_editing.PreWashRows > 0 && _editing.PreWashHeightCm > 0)
+                return _editing.PreWashRows / _editing.PreWashHeightCm * 10;
+            return 0;
+        }
+    }
+
+    // 게이지 계산 결과
+    (int? stitches, int? rows)? GaugeCalcResult
+    {
+        get
+        {
+            int? s = null, r = null;
+            if (_calcOrigStitchGauge > 0 && _calcPatternStitches > 0 && MyStitchGauge > 0)
+                s = (int)Math.Round(_calcPatternStitches * MyStitchGauge / _calcOrigStitchGauge);
+            if (_calcOrigRowGauge > 0 && _calcPatternRows > 0 && MyRowGauge > 0)
+                r = (int)Math.Round(_calcPatternRows * MyRowGauge / _calcOrigRowGauge);
+            if (s.HasValue || r.HasValue) return (s, r);
+            return null;
+        }
+    }
+
     protected override async Task OnInitializedAsync()
     {
         _swatches  = await Storage.GetSwatchesAsync();
@@ -304,6 +423,8 @@ else
     void OpenAddModal()
     {
         _editing = new Swatch();
+        _calcOrigStitchGauge = 0; _calcOrigRowGauge = 0;
+        _calcPatternStitches = 0; _calcPatternRows = 0;
         _showModal = true;
     }
 
@@ -331,6 +452,8 @@ else
             PostWashWidthCm = s.PostWashWidthCm, PostWashHeightCm = s.PostWashHeightCm,
             Memo = s.Memo, CreatedAt = s.CreatedAt
         };
+        _calcOrigStitchGauge = 0; _calcOrigRowGauge = 0;
+        _calcPatternStitches = 0; _calcPatternRows = 0;
         _showModal = true;
     }
 
