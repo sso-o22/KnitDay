@@ -291,7 +291,7 @@ else
             .Take(6)
             .ToList();
         _legendProjects = visible
-            .Select((p, i) => (p, GetStyle(i)))
+            .Select(p => (p, GetProjectStyle(p)))
             .ToList();
     }
 
@@ -306,7 +306,7 @@ else
         for (int i = 0; i < relevant.Count; i++)
         {
             var p = relevant[i];
-            var s = GetStyle(i);
+            var s = GetProjectStyle(p);
 
             bool isStart    = p.StartDate.HasValue && p.StartDate.Value.Date == date;
             bool isEnd      = p.EndDate.HasValue   && p.EndDate.Value.Date   == date;
@@ -352,11 +352,8 @@ else
 
     ProjectStyle GetProjectStyle(KnitProject proj)
     {
-        var visible = _allProjects
-            .Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단)
-            .ToList();
-        int idx = visible.IndexOf(proj);
-        return GetStyle(idx < 0 ? 0 : idx);
+        int idx = Math.Abs(proj.Id.GetHashCode()) % _palette.Length;
+        return GetStyle(idx);
     }
 
     string GetStatusBadge(ProjectStatus s) => s switch
