@@ -764,6 +764,29 @@ else
                 <textarea class="form-control" rows="2" @bind="_project.Memo" placeholder="기타 메모"></textarea>
             </div>
 
+            <div class="form-group">
+                <label class="form-label">캘린더 색상</label>
+                <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                    @foreach (var hex in _colorOptions)
+                    {
+                        bool selected = _project.ColorCode == hex;
+                        string dotBorder    = selected ? "3px solid #333"        : "2px solid transparent";
+                        string dotShadow    = selected ? "0 0 0 2px #fff inset"  : "none";
+                        string dotTransform = selected ? "scale(1.2)"            : "scale(1)";
+                        <div @onclick="() => _project.ColorCode = hex"
+                             style="width:28px; height:28px; border-radius:50%; background:@hex; cursor:pointer;
+                                    border:@dotBorder; box-shadow:@dotShadow; transform:@dotTransform;">
+                        </div>
+                    }
+                    <input type="color"
+                           value="@(string.IsNullOrEmpty(_project.ColorCode) ? "#b8e0c8" : _project.ColorCode)"
+                           @onchange="e => _project.ColorCode = e.Value?.ToString() ?? string.Empty"
+                           style="width:28px; height:28px; border-radius:50%; border:2px solid var(--border);
+                                  padding:0; cursor:pointer; overflow:hidden;"
+                           title="직접 색상 선택" />
+                </div>
+            </div>
+
             <div class="modal-footer">
                 <button class="btn btn-ghost" @onclick="CloseEditModal">취소</button>
                 <button class="btn btn-primary" @onclick="SaveEdit">저장</button>
@@ -777,6 +800,12 @@ else
 
     bool _loading = true;
     bool _showEditModal = false;
+
+    static readonly string[] _colorOptions = new[]
+    {
+        "#f2b8c6", "#f7e4a0", "#b8e0c8", "#c8b8e8", "#b8d8f0",
+        "#ffb74d", "#a5d6a7", "#ef9a9a", "#90caf9", "#ce93d8"
+    };
     string _newVideoLink = "";
     bool _showPhoto = false;
     bool _addingCounter = false;

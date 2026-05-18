@@ -379,8 +379,8 @@ else
 
     ProjectStyle GetStyle(int index)
     {
-        var (pale, accent, text) = _palette[index % _palette.Length];
-        return new ProjectStyle(pale, accent, text);
+        var (pale, accent, _) = _palette[index % _palette.Length];
+        return new ProjectStyle(pale, accent, ContrastText(accent));
     }
 
     ProjectStyle GetProjectStyle(KnitProject proj)

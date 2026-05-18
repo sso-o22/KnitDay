@@ -1,4 +1,4 @@
-@page "/projects"
+@page "/schedule"
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
@@ -289,23 +289,21 @@ else
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         @foreach (var hex in _colorOptions)
                         {
-                            // 루프 안에서 로컬 변수를 캡처해야 클릭 이벤트가 올바른 값을 기억합니다.
-                            var currentHex = hex; 
-                            bool selected = _editingProject.ColorCode == currentHex;
-                            
-                            <div @onclick="() => _editingProject.ColorCode = currentHex"
-                                style="width:28px; height:28px; border-radius:50%; background:@currentHex; cursor:pointer;
-                                        border: @(selected ? "3px solid #333" : "2px solid transparent");
-                                        box-shadow: @(selected ? "0 0 0 2px #fff inset" : "none");
-                                        transition: transform 0.1s; transform: @(selected ? "scale(1.2)" : "scale(1)");">
+                            bool selected = _editingProject.ColorCode == hex;
+                            string dotBorder    = selected ? "3px solid #333"       : "2px solid transparent";
+                            string dotShadow    = selected ? "0 0 0 2px #fff inset" : "none";
+                            string dotTransform = selected ? "scale(1.2)"           : "scale(1)";
+                            <div @onclick="() => _editingProject.ColorCode = hex"
+                                 style="width:28px; height:28px; border-radius:50%; background:@hex; cursor:pointer;
+                                        border:@dotBorder; box-shadow:@dotShadow; transform:@dotTransform;">
                             </div>
                         }
-                        
-                        <input type="color" 
-                            value="@(string.IsNullOrEmpty(_editingProject.ColorCode) ? "#b8e0c8" : _editingProject.ColorCode)"
-                            @onchange="@(e => _editingProject.ColorCode = e.Value?.ToString() ?? string.Empty)"
-                            style="width:28px; height:28px; border-radius:50%; border:2px solid var(--border); padding:0; cursor:pointer; overflow:hidden;"
-                            title="직접 색상 선택" />
+                        <input type="color"
+                               value="@(string.IsNullOrEmpty(_editingProject.ColorCode) ? "#b8e0c8" : _editingProject.ColorCode)"
+                               @onchange="e => _editingProject.ColorCode = e.Value?.ToString() ?? string.Empty"
+                               style="width:28px; height:28px; border-radius:50%; border:2px solid var(--border);
+                                      padding:0; cursor:pointer; overflow:hidden;"
+                               title="직접 색상 선택" />
                     </div>
                 </div>
 
@@ -386,7 +384,7 @@ else
         _tools = await Storage.GetToolsAsync();
     }
 
-    void GoToDetail(Guid id) => Nav.NavigateTo("projects/" + id);
+    void GoToDetail(Guid id) => Nav.NavigateTo("schedule/" + id);
 
     void OpenAddModal()
     {
