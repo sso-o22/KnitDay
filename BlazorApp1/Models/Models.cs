@@ -142,6 +142,7 @@ namespace KnitLog.Models
         public List<KnitSession> Sessions { get; set; } = new();
         public string Memo { get; set; } = "";
         public string WishMemo { get; set; } = "";
+        public string ColorCode { get; set; } = "";   // 캘린더 표시 색상 (hex, 예: #f2b8c6)
 
         // 완성 치수 (세탁 전/후)
         public string MeasurementsMemo { get; set; } = ""; // 자유 입력 치수 메모

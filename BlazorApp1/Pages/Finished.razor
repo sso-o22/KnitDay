@@ -245,35 +245,71 @@ else
             }
 
             <!-- 완성 치수 -->
-            @if (!_editingMeasurements)
-            {
-                <div style="margin-bottom:12px;">
-                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px;">
-                        <div class="form-label" style="margin-bottom:0;">📏 완성 치수</div>
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem;" @onclick="() => _editingMeasurements = true">✏️ 입력</button>
-                    </div>
-                    @if (!string.IsNullOrEmpty(_selectedProject.MeasurementsMemo))
+            <div style="margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <div class="form-label" style="margin-bottom:0;">📏 완성 치수</div>
+                    @if (!_editingMeasurements)
                     {
-                        <p style="white-space:pre-wrap; font-size:0.88rem; color:var(--text-mid); background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 12px;">@_selectedProject.MeasurementsMemo</p>
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem;" @onclick="() => _editingMeasurements = true">✏️ 입력</button>
+                    }
+                </div>
+                @if (!_editingMeasurements)
+                {
+                    @if (_measures.Any(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
+                    {
+                        <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem;">
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전</div>
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후</div>
+                            </div>
+                            @foreach (var m in _measures)
+                            {
+                                @if (!string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After))
+                                {
+                                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-top:0.5px solid var(--border);">
+                                        <div style="padding:6px 10px; color:var(--text-dark);">@m.Label</div>
+                                        <div style="padding:6px 10px; color:var(--text-mid); border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.Before) ? "-" : m.Before + "cm")</div>
+                                        <div style="padding:6px 10px; color:var(--text-mid); border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.After) ? "-" : m.After + "cm")</div>
+                                    </div>
+                                }
+                            }
+                        </div>
                     }
                     else
                     {
                         <p style="font-size:0.82rem; color:var(--text-light);">치수 정보가 없어요.</p>
                     }
-                </div>
-            }
-            else
-            {
-                <div style="margin-bottom:12px;">
-                    <div class="form-label" style="margin-bottom:4px;">📏 완성 치수</div>
-                    <textarea class="form-control" rows="4" @bind="_selectedProject.MeasurementsMemo"
-                              placeholder="예) 가슴둘레(세탁전): 92cm / 세탁후: 89cm&#10;총장(세탁전): 58cm / 세탁후: 56cm&#10;소매길이: 62cm"></textarea>
-                    <div style="display:flex; gap:8px; margin-top:6px;">
-                        <button class="btn btn-primary btn-sm" @onclick="SaveMeasurements">저장</button>
-                        <button class="btn btn-ghost btn-sm" @onclick="() => _editingMeasurements = false">취소</button>
+                }
+                else
+                {
+                    <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem; margin-bottom:8px;">
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
+                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
+                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전 (cm)</div>
+                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후 (cm)</div>
+                        </div>
+                        @foreach (var m in _measures)
+                        {
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-top:0.5px solid var(--border);">
+                                <div style="padding:6px 10px; color:var(--text-dark); display:flex; align-items:center;">@m.Label</div>
+                                <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
+                                    <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;"
+                                           @bind="m.Before" placeholder="-" />
+                                </div>
+                                <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
+                                    <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;"
+                                           @bind="m.After" placeholder="-" />
+                                </div>
+                            </div>
+                        }
                     </div>
-                </div>
-            }
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveMeasurements">저장</button>
+                        <button class="btn btn-ghost btn-sm" @onclick="CancelMeasurements">취소</button>
+                    </div>
+                }
+            </div>
 
             <!-- 메모 -->
             @if (!string.IsNullOrEmpty(_selectedProject.Memo))
@@ -286,7 +322,7 @@ else
 
             <div class="modal-footer">
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteProject(_selectedProject.Id)">삭제</button>
-                <button class="btn btn-secondary btn-sm" @onclick="() => RestoreToSchedule(_selectedProject.Id)">↩ 뜨케줄로 복귀</button>
+                <button class="btn btn-secondary btn-sm" @onclick="() => RestoreToSchedule(_selectedProject.Id)">↩ 문어발로 복귀</button>
                 <button class="btn btn-ghost" @onclick="CloseDetail">닫기</button>
             </div>
         </div>
@@ -299,6 +335,15 @@ else
     bool _editingMeasurements = false;
     List<KnitProject> _projects = new();
     KnitProject? _selectedProject;
+
+    class MeasureItem
+    {
+        public string Label { get; set; } = "";
+        public string Before { get; set; } = "";
+        public string After  { get; set; } = "";
+    }
+    static readonly string[] _measureLabels = { "가슴둘레", "총장", "소매길이", "소매단면", "암홀", "어깨" };
+    List<MeasureItem> _measures = new();
 
     List<Yarn> _allYarns = new();
     List<KnitTool> _allTools = new();
@@ -337,6 +382,30 @@ else
         _selectedTools   = _allTools.Where(t => proj.ToolIds.Contains(t.Id)).ToList();
         _selectedSwatches = _allSwatches.Where(s => s.ProjectId == proj.Id).ToList();
         _showDetail = true;
+        LoadMeasures();
+    }
+
+    void LoadMeasures()
+    {
+        if (_selectedProject == null) return;
+        // MeasurementsMemo 형식: "가슴둘레:92:89|총장:58:56|..."
+        var dict = new System.Collections.Generic.Dictionary<string, (string, string)>();
+        if (!string.IsNullOrEmpty(_selectedProject.MeasurementsMemo))
+        {
+            foreach (var part in _selectedProject.MeasurementsMemo.Split('|'))
+            {
+                var seg = part.Split(':');
+                if (seg.Length >= 3)
+                    dict[seg[0]] = (seg[1], seg[2]);
+                else if (seg.Length == 2)
+                    dict[seg[0]] = (seg[1], "");
+            }
+        }
+        _measures = _measureLabels.Select(l =>
+        {
+            var (b, a) = dict.TryGetValue(l, out var v) ? v : ("", "");
+            return new MeasureItem { Label = l, Before = b, After = a };
+        }).ToList();
     }
 
     void CloseDetail()
@@ -344,6 +413,7 @@ else
         _showDetail = false;
         _selectedProject = null;
         _editingMeasurements = false;
+        _measures.Clear();
         _selectedYarns.Clear();
         _selectedTools.Clear();
         _selectedSwatches.Clear();
@@ -352,7 +422,18 @@ else
     async Task SaveMeasurements()
     {
         if (_selectedProject == null) return;
+        // MeasurementsMemo 직렬화: "가슴둘레:92:89|총장:58:56|..."
+        _selectedProject.MeasurementsMemo = string.Join("|",
+            _measures
+                .Where(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After))
+                .Select(m => $"{m.Label}:{m.Before}:{m.After}"));
         await Storage.SaveProjectAsync(_selectedProject);
+        _editingMeasurements = false;
+    }
+
+    void CancelMeasurements()
+    {
+        LoadMeasures();
         _editingMeasurements = false;
     }
 

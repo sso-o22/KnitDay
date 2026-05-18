@@ -1,4 +1,4 @@
-@page "/projects"
+@page "/schedule"
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
@@ -6,7 +6,7 @@
 
 <div class="page-header">
     <div>
-        <h1 class="page-title">🐙 문어발</h1>
+        <h1 class="page-title">📆 뜨케줄</h1>
         <p class="page-subtitle">진행중 · 일시중단 프로젝트</p>
     </div>
     <button class="btn btn-primary" @onclick="OpenAddModal">+ 새 프로젝트</button>
@@ -285,6 +285,31 @@ else
                 </div>
 
                 <div class="form-group">
+                    <label class="form-label">캘린더 색상</label>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        @foreach (var hex in _colorOptions)
+                        {
+                            // 루프 안에서 로컬 변수를 캡처해야 클릭 이벤트가 올바른 값을 기억합니다.
+                            var currentHex = hex; 
+                            bool selected = _editingProject.ColorCode == currentHex;
+                            
+                            <div @onclick="() => _editingProject.ColorCode = currentHex"
+                                style="width:28px; height:28px; border-radius:50%; background:@currentHex; cursor:pointer;
+                                        border: @(selected ? "3px solid #333" : "2px solid transparent");
+                                        box-shadow: @(selected ? "0 0 0 2px #fff inset" : "none");
+                                        transition: transform 0.1s; transform: @(selected ? "scale(1.2)" : "scale(1)");">
+                            </div>
+                        }
+                        
+                        <input type="color" 
+                            value="@(string.IsNullOrEmpty(_editingProject.ColorCode) ? "#b8e0c8" : _editingProject.ColorCode)"
+                            @onchange="@(e => _editingProject.ColorCode = e.Value?.ToString() ?? string.Empty)"
+                            style="width:28px; height:28px; border-radius:50%; border:2px solid var(--border); padding:0; cursor:pointer; overflow:hidden;"
+                            title="직접 색상 선택" />
+                    </div>
+                </div>
+
+                <div class="form-group">
                     <label class="form-label">메모</label>
                     <textarea class="form-control" rows="2" @bind="_editingProject.Memo" placeholder="기타 메모"></textarea>
                 </div>
@@ -305,6 +330,13 @@ else
     bool _sortAsc = false;          // false = 내림차순(기본), true = 오름차순
     string _statusFilter = "all";   // "all" | "진행중" | "일시중단"
     List<KnitProject> _projects = new();
+
+    // 컬러피커 프리셋
+    static readonly string[] _colorOptions = new[]
+    {
+        "#f2b8c6", "#f7e4a0", "#b8e0c8", "#c8b8e8", "#b8d8f0",
+        "#ffb74d", "#a5d6a7", "#ef9a9a", "#90caf9", "#ce93d8"
+    };
 
     IEnumerable<KnitProject> FilteredSortedProjects
     {
@@ -354,7 +386,7 @@ else
         _tools = await Storage.GetToolsAsync();
     }
 
-    void GoToDetail(Guid id) => Nav.NavigateTo("projects/" + id);
+    void GoToDetail(Guid id) => Nav.NavigateTo("schedule/" + id);
 
     void OpenAddModal()
     {
