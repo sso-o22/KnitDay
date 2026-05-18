@@ -35,7 +35,7 @@ else
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
                 <button class="btn btn-ghost btn-sm" @onclick="PrevMonth">‹ 이전달</button>
                 <span style="font-size:1.05rem; font-weight:500; color:var(--text-dark);">
-                    @_current.Year년 @_current.Month월
+                    @(_current.Year)년 @(_current.Month)월
                 </span>
                 <button class="btn btn-ghost btn-sm" @onclick="NextMonth">다음달 ›</button>
             </div>
@@ -132,15 +132,15 @@ else
                 <div style="display:flex; flex-direction:column; gap:8px;">
                     <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
                         <span style="color:var(--text-mid);">진행중</span>
-                        <span style="font-weight:500;">@_activeCount개</span>
+                        <span style="font-weight:500;">@(_activeCount)개</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
                         <span style="color:var(--text-mid);">이번달 마감</span>
-                        <span style="font-weight:500; color:#c05070;">@_deadlineThisMonth개</span>
+                        <span style="font-weight:500; color:#c05070;">@(_deadlineThisMonth)개</span>
                     </div>
                     <div style="display:flex; justify-content:space-between; font-size:0.8rem;">
                         <span style="color:var(--text-mid);">마감 지남</span>
-                        <span style="font-weight:500; color:#e05a5a;">@_overdueCount개</span>
+                        <span style="font-weight:500; color:#e05a5a;">@(_overdueCount)개</span>
                     </div>
                 </div>
             </div>
