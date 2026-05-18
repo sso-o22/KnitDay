@@ -777,7 +777,10 @@ else
                     {
                         bool linked = s.ProjectId == _project.Id;
                         var yarn = _yarns.Find(y => y.Id == s.YarnId);
-                        @{ string swBg = linked ? "#f0faf4" : "transparent"; string swBorder = linked ? "#b8e0c8" : "#e8e8e8"; }
+                        @{
+                            var swBg = linked ? "#f0faf4" : "transparent";
+                            var swBorder = linked ? "#b8e0c8" : "#e8e8e8";
+                        }
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
                                     border-radius:var(--radius-sm); background:@swBg; border:1px solid @swBorder;">
                             <input type="checkbox" checked="@linked"
