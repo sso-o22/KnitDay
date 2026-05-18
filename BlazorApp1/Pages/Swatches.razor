@@ -154,11 +154,11 @@ else
     <div class="modal-backdrop" @onclick="CloseModal">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">@(_editing.Id == Guid.Empty ? "스와치 추가" : "스와치 수정")</h2>
+                <h2 class="modal-title">@(_isEditMode ? "스와치 수정" : "스와치 추가")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
             </div>
 
-            <div class="modal-body">
+            <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding-right: 4px;">
                 <div class="form-group">
                     <label class="form-label">스와치 이름 (선택)</label>
                     <input class="form-control" @bind="_editing.Name" placeholder="예: 러스크 메리야스" />
@@ -166,7 +166,7 @@ else
 
                 <div class="form-row">
                     <div class="form-group">
-                        <label class="form-label">사용 실 — 장고에서 선택</label>
+                        <label class="form-label">사용 실 — 자스에서 선택</label>
                         <select class="form-control" value="@_editing.YarnId" @onchange="OnYarnChanged">
                             <option value="">선택 안 함</option>
                             @foreach (var y in _yarns)
@@ -299,12 +299,14 @@ else
 @code {
     private bool _loading = false;
     private bool _showModal = false;
+    private bool _isEditMode = false;
+    
     private List<SwatchModel> _swatches = new();
     private List<YarnModel> _yarns = new();
     private List<ProjectModel> _projects = new();
     private SwatchModel _editing = new();
 
-    // 임시 목업 클래스 구조 정의 (실제 프로젝트 구조에 맞게 연동하세요)
+    // 데이터 모델 정의 (실제 프로젝트 모델 구조에 맞게 커스텀해 쓰세요)
     public class SwatchModel {
         public Guid Id { get; set; } = Guid.Empty;
         public string Name { get; set; } = "";
@@ -322,20 +324,33 @@ else
         public double PreWashHeightCm { get; set; }
         public double PostWashHeightCm { get; set; }
         public string Memo { get; set; } = "";
+
+        // 깊은 복사를 위한 메서드 (수정 취소 시 원본 유지 목적)
+        public SwatchModel Clone() => (SwatchModel)this.MemberwiseClone();
     }
     public class YarnModel { public Guid Id { get; set; } public string Brand { get; set; } = ""; public string Name { get; set; } = ""; public string Color { get; set; } = ""; public string ColorCode { get; set; } = "#cccccc"; }
     public class ProjectModel { public Guid Id { get; set; } public string Title { get; set; } = ""; public string Status { get; set; } = ""; }
 
     protected override async Task OnInitializedAsync()
     {
-        // 데이터 로드 로직 구현 위치
+        _loading = true;
+        try
+        {
+            // 초기 데이터 로딩 예시 (원래 사용하시던 스토리지 로드 코드가 있다면 여기에 넣으세요)
+            // _swatches = await Storage.GetSwatchesAsync() ?? new();
+            // _yarns = await Storage.GetYarnsAsync() ?? new();
+            // _projects = await Storage.GetProjectsAsync() ?? new();
+        }
+        finally
+        {
+            _loading = false;
+        }
     }
 
     private double? CalcRate(double preCount, double postCount, double preCm, double postCm)
     {
         if (preCount <= 0 || postCount <= 0 || preCm <= 0 || postCm <= 0) return null;
         
-        // 게이지 밀도(1cm당 코/단 수) 변화율 계산 예시
         double preDensity = preCount / preCm;
         double postDensity = postCount / postCm;
         
@@ -343,18 +358,66 @@ else
         return Math.Round(((postDensity - preDensity) / preDensity) * 100, 1);
     }
 
-    private void OpenAddModal() { _editing = new SwatchModel(); _showModal = true; }
-    private void OpenEditModal(SwatchModel swatch) { _editing = swatch; _showModal = true; }
-    private void OpenCalcModal(SwatchModel swatch) { /* 계산기 모달 오픈 로직 */ }
+    private void OpenAddModal() 
+    { 
+        _isEditMode = false;
+        _editing = new SwatchModel(); 
+        _showModal = true; 
+    }
+
+    private void OpenEditModal(SwatchModel swatch) 
+    { 
+        _isEditMode = true;
+        // 원본 데이터를 직접 수정하면 취소했을 때 엉망이 되므로 Clone(복사본)을 수정합니다.
+        _editing = swatch.Clone(); 
+        _showModal = true; 
+    }
+
+    private void OpenCalcModal(SwatchModel swatch) { /* 게이지 계산기 로직 필요 시 작성 */ }
     private void CloseModal() => _showModal = false;
-    private void DeleteSwatch(Guid id) { /* 삭제 로직 */ }
-    private void SaveSwatch() { /* 저장 로직 */ _showModal = false; }
+
+    private void SaveSwatch()
+    {
+        if (!_isEditMode)
+        {
+            // 1. 신규 추가인 경우
+            _editing.Id = Guid.NewGuid(); // 고유 ID 부여
+            _swatches.Add(_editing);      // 보여줄 목록 리스트에 확실하게 집어넣기! 🌟
+        }
+        else
+        {
+            // 2. 기존 데이터 수정인 경우
+            var index = _swatches.FindIndex(s => s.Id == _editing.Id);
+            if (index != -1)
+            {
+                _swatches[index] = _editing; // 목록 리스트의 아이템 복사본으로 교체
+            }
+        }
+
+        // 실제 브라우저나 파일에 저장하는 비동기 서비스가 있다면 추가하세요
+        // Storage.SaveSwatches(_swatches);
+
+        _showModal = false;
+        StateHasChanged(); // 변경된 리스트로 화면을 강제 갱신합니다. 🔄
+    }
+
+    private void DeleteSwatch(Guid id) 
+    { 
+        var swatch = _swatches.Find(s => s.Id == id);
+        if (swatch != null)
+        {
+            _swatches.Remove(swatch);
+            // Storage.SaveSwatches(_swatches);
+            StateHasChanged();
+        }
+    }
     
     private void OnYarnChanged(ChangeEventArgs e) 
     { 
         if (Guid.TryParse(e.Value?.ToString(), out Guid yarnId)) _editing.YarnId = yarnId;
         else _editing.YarnId = null;
     }
+
     private void OnProjectChanged(ChangeEventArgs e) 
     { 
         if (Guid.TryParse(e.Value?.ToString(), out Guid projId)) _editing.ProjectId = projId;
