@@ -32,7 +32,6 @@ else
         {
             var yarn = _yarns.Find(y => y.Id == s.YarnId);
             var project = _projects.Find(p => p.Id == s.ProjectId);
-            
             <div class="card swatch-card">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
                     <div>
@@ -146,147 +145,144 @@ else
 }
 
 @* ── 추가/수정 모달 ── *@
+@{ var pw2 = _showModal ? CalcRate(_editing.PreWashStitches, _editing.PostWashStitches, _editing.PreWashWidthCm, _editing.PostWashWidthCm) : null; var ph2 = _showModal ? CalcRate(_editing.PreWashRows, _editing.PostWashRows, _editing.PreWashHeightCm, _editing.PostWashHeightCm) : null; }
 @if (_showModal)
 {
-    var pw2 = CalcRate(_editing.PreWashStitches, _editing.PostWashStitches, _editing.PreWashWidthCm, _editing.PostWashWidthCm); 
-    var ph2 = CalcRate(_editing.PreWashRows, _editing.PostWashRows, _editing.PreWashHeightCm, _editing.PostWashHeightCm);
-
-    <div class="modal-backdrop" @onclick="CloseModal">
+    <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">@(_isEditMode ? "스와치 수정" : "스와치 추가")</h2>
+                <h2 class="modal-title">@(_editing.Id == Guid.Empty ? "스와치 추가" : "스와치 추가")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
             </div>
 
-            <div class="modal-body" style="max-height: 70vh; overflow-y: auto; padding-right: 4px;">
+            <div class="form-group">
+                <label class="form-label">스와치 이름 (선택)</label>
+                <input class="form-control" @bind="_editing.Name" placeholder="예: 러스크 메리야스" />
+            </div>
+
+            <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">스와치 이름 (선택)</label>
-                    <input class="form-control" @bind="_editing.Name" placeholder="예: 러스크 메리야스" />
+                    <label class="form-label">사용 실 — 장고에서 선택</label>
+                    <select class="form-control" value="@_editing.YarnId" @onchange="OnYarnChanged">
+                        <option value="">선택 안 함</option>
+                        @foreach (var y in _yarns)
+                        {
+                            <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
+                        }
+                    </select>
                 </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">사용 실 — 자스에서 선택</label>
-                        <select class="form-control" value="@_editing.YarnId" @onchange="OnYarnChanged">
-                            <option value="">선택 안 함</option>
-                            @foreach (var y in _yarns)
-                            {
-                                <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
-                            }
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">또는 직접 입력</label>
-                        <input class="form-control" @bind="_editing.YarnNameDirect" placeholder="" />
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">연결 프로젝트/위시리스트</label>
-                        <select class="form-control" value="@_editing.ProjectId" @onchange="OnProjectChanged">
-                            <option value="">선택 안 함</option>
-                            @foreach (var p in _projects)
-                            {
-                                <option value="@p.Id">[@p.Status] @p.Title</option>
-                            }
-                        </select>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">바늘 굵기 (mm)</label>
-                        <input class="form-control" type="number" step="0.25" @bind="_editing.NeedleSizeMm" placeholder="예: 4.5" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">뜨개 방법</label>
-                        <input class="form-control" @bind="_editing.Stitch" placeholder="예: 메리야스, 가터, 2x2 고무단" />
-                    </div>
-                </div>
-
-                @* 세탁 전 *@
-                <div style="background:var(--mint-pale); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
-                    <div style="font-size:0.88rem; font-weight:600; color:#267848; margin-bottom:10px;">세탁 전</div>
-                    <div class="form-row">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">코수</label>
-                            <input class="form-control" type="number" step="0.5" @bind="_editing.PreWashStitches" />
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">단수</label>
-                            <input class="form-control" type="number" step="0.5" @bind="_editing.PreWashRows" />
-                        </div>
-                    </div>
-                    <div class="form-row" style="margin-top:10px;">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">가로 (cm)</label>
-                            <input class="form-control" type="number" step="0.1" @bind="_editing.PreWashWidthCm" />
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">세로 (cm)</label>
-                            <input class="form-control" type="number" step="0.1" @bind="_editing.PreWashHeightCm" />
-                        </div>
-                    </div>
-                </div>
-
-                @* 세탁 후 *@
-                <div style="background:var(--yellow-pale); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
-                    <div style="font-size:0.88rem; font-weight:600; color:#8a6a08; margin-bottom:10px;">세탁 후</div>
-                    <div class="form-row">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">코수</label>
-                            <input class="form-control" type="number" step="0.5" @bind="_editing.PostWashStitches" />
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">단수</label>
-                            <input class="form-control" type="number" step="0.5" @bind="_editing.PostWashRows" />
-                        </div>
-                    </div>
-                    <div class="form-row" style="margin-top:10px;">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">가로 (cm)</label>
-                            <input class="form-control" type="number" step="0.1" @bind="_editing.PostWashWidthCm" />
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">세로 (cm)</label>
-                            <input class="form-control" type="number" step="0.1" @bind="_editing.PostWashHeightCm" />
-                        </div>
-                    </div>
-
-                    @* 변화율 미리보기 *@
-                    @if (pw2.HasValue || ph2.HasValue)
-                    {
-                        <div style="display:flex; gap:8px; margin-top:12px;">
-                            @if (pw2.HasValue)
-                            {
-                                string pwColor = pw2.Value < 0 ? "#c0392b" : "#267848";
-                                <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:8px; text-align:center;">
-                                    <div style="font-size:0.72rem; color:var(--text-light);">가로 변화율</div>
-                                    <div style="font-weight:700; color:@pwColor;">
-                                        @(pw2.Value > 0 ? "+" : "")@pw2.Value%
-                                    </div>
-                                </div>
-                            }
-                            @if (ph2.HasValue)
-                            {
-                                string phColor = ph2.Value < 0 ? "#c0392b" : "#267848";
-                                <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:8px; text-align:center;">
-                                    <div style="font-size:0.72rem; color:var(--text-light);">세로 변화율</div>
-                                    <div style="font-weight:700; color:@phColor;">
-                                        @(ph2.Value > 0 ? "+" : "")@ph2.Value%
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-
                 <div class="form-group">
-                    <label class="form-label">메모</label>
-                    <textarea class="form-control" rows="3" @bind="_editing.Memo" placeholder="세탁 방법, 특이사항 등"></textarea>
+                    <label class="form-label">또는 직접 입력</label>
+                    <input class="form-control" @bind="_editing.YarnNameDirect" placeholder="" />
                 </div>
             </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">연결 프로젝트/위시리스트</label>
+                    <select class="form-control" value="@_editing.ProjectId" @onchange="OnProjectChanged">
+                        <option value="">선택 안 함</option>
+                        @foreach (var p in _projects)
+                        {
+                            <option value="@p.Id">[@p.Status] @p.Title</option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">바늘 굵기 (mm)</label>
+                    <input class="form-control" type="number" step="0.25" @bind="_editing.NeedleSizeMm" placeholder="예: 4.5" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">뜨개 방법</label>
+                    <input class="form-control" @bind="_editing.Stitch" placeholder="예: 메리야스, 가터, 2x2 고무단" />
+                </div>
+            </div>
+
+            @* 세탁 전 *@
+            <div style="background:var(--mint-pale); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
+                <div style="font-size:0.88rem; font-weight:600; color:#267848; margin-bottom:10px;">세탁 전</div>
+                <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">코수</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_editing.PreWashStitches" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">단수</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_editing.PreWashRows" />
+                    </div>
+                </div>
+                <div class="form-row" style="margin-top:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">가로 (cm)</label>
+                        <input class="form-control" type="number" step="0.1" @bind="_editing.PreWashWidthCm" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">세로 (cm)</label>
+                        <input class="form-control" type="number" step="0.1" @bind="_editing.PreWashHeightCm" />
+                    </div>
+                </div>
+            </div>
+
+            @* 세탁 후 *@
+            <div style="background:var(--yellow-pale); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
+                <div style="font-size:0.88rem; font-weight:600; color:#8a6a08; margin-bottom:10px;">세탁 후</div>
+                <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">코수</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_editing.PostWashStitches" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">단수</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_editing.PostWashRows" />
+                    </div>
+                </div>
+                <div class="form-row" style="margin-top:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">가로 (cm)</label>
+                        <input class="form-control" type="number" step="0.1" @bind="_editing.PostWashWidthCm" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">세로 (cm)</label>
+                        <input class="form-control" type="number" step="0.1" @bind="_editing.PostWashHeightCm" />
+                    </div>
+                </div>
+
+                @* 변화율 미리보기 *@
+                @if (pw2.HasValue || ph2.HasValue)
+                {
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        @if (pw2.HasValue)
+                        {
+                            string pwColor = pw2.Value < 0 ? "#c0392b" : "#267848";
+                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:8px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light);">가로 변화율</div>
+                                <div style="font-weight:700; color:@pwColor;">
+                                    @(pw2.Value > 0 ? "+" : "")@pw2.Value%
+                                </div>
+                            </div>
+                        }
+                        @if (ph2.HasValue)
+                        {
+                            string phColor = ph2.Value < 0 ? "#c0392b" : "#267848";
+                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:8px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light);">세로 변화율</div>
+                                <div style="font-weight:700; color:@phColor;">
+                                    @(ph2.Value > 0 ? "+" : "")@ph2.Value%
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">메모</label>
+                <textarea class="form-control" rows="3" @bind="_editing.Memo" placeholder="세탁 방법, 특이사항 등"></textarea>
+            </div>
+
 
             <div class="modal-footer">
                 <button class="btn btn-secondary" @onclick="CloseModal">취소</button>
@@ -296,131 +292,260 @@ else
     </div>
 }
 
+@* ── 게이지 계산기 모달 ── *@
+@{ var csg = _showCalcModal && _calcSwatch != null ? CalcSwatchStitchGauge(_calcSwatch) : 0.0; var crg = _showCalcModal && _calcSwatch != null ? CalcSwatchRowGauge(_calcSwatch) : 0.0; }
+@if (_showCalcModal && _calcSwatch != null)
+{
+    <div class="modal-backdrop">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">🧮 게이지 계산기</h2>
+                <button class="btn btn-ghost btn-sm" @onclick="CloseCalcModal">✕</button>
+            </div>
+            <div style="background:var(--mint-pale); border-radius:var(--radius-sm); padding:12px; margin-bottom:16px; font-size:0.82rem;">
+                <div style="font-weight:600; color:#267848; margin-bottom:6px;">📌 @(string.IsNullOrEmpty(_calcSwatch.Name) ? "이 스와치" : _calcSwatch.Name)의 게이지</div>
+                <div style="display:flex; gap:16px;">
+                    @if (csg > 0)
+                    {
+                        <span>코: <strong>@csg.ToString("F1")</strong> / 10cm</span>
+                    }
+                    @if (crg > 0)
+                    {
+                        <span>단: <strong>@crg.ToString("F1")</strong> / 10cm</span>
+                    }
+                    @if (csg == 0 && crg == 0)
+                    {
+                        <span style="color:#c0392b;">⚠️ 코수/단수와 가로/세로 길이를 모두 입력해야 게이지를 계산할 수 있어요.</span>
+                    }
+                </div>
+            </div>
+
+            <div style="border-radius:var(--radius-sm); padding:14px; margin-bottom:14px; background:var(--lavender-pale); border:1px solid var(--lavender-light);">
+                <div style="font-size:0.88rem; font-weight:600; color:#4e3290; margin-bottom:8px;">① 콧수/단수 수정 계산기</div>
+                <p style="font-size:0.78rem; color:var(--text-mid); margin-bottom:12px;">원작 게이지 + 도안 콧수/단수 → 내 게이지에 맞는 수정 콧수/단수</p>
+                <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">원작 코 게이지 (10cm당)</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_c1OrigStitch" placeholder="예: 20" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">원작 단 게이지 (10cm당)</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_c1OrigRow" placeholder="예: 28" />
+                    </div>
+                </div>
+                <div class="form-row" style="margin-top:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">도안 콧수</label>
+                        <input class="form-control" type="number" step="1" @bind="_c1PatStitch" placeholder="예: 120" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">도안 단수</label>
+                        <input class="form-control" type="number" step="1" @bind="_c1PatRow" placeholder="예: 80" />
+                    </div>
+                </div>
+                @if (Calc1Result != null)
+                {
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        @if (Calc1Result.Value.s.HasValue)
+                        {
+                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">수정 콧수</div>
+                                <div style="font-size:1.3rem; font-weight:700; color:#4e3290;">@Calc1Result.Value.s.Value 코</div>
+                            </div>
+                        }
+                        @if (Calc1Result.Value.r.HasValue)
+                        {
+                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">수정 단수</div>
+                                <div style="font-size:1.3rem; font-weight:700; color:#4e3290;">@Calc1Result.Value.r.Value 단</div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div style="border-radius:var(--radius-sm); padding:14px; margin-bottom:16px; background:var(--sky-pale); border:1px solid var(--sky);">
+                <div style="font-size:0.88rem; font-weight:600; color:#1a5276; margin-bottom:8px;">② 길이 예측 계산기</div>
+                <p style="font-size:0.78rem; color:var(--text-mid); margin-bottom:12px;">도안 콧수/단수 → 내 게이지로 뜨면 나오는 실제 길이</p>
+                <div class="form-row">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">도안 콧수</label>
+                        <input class="form-control" type="number" step="1" @bind="_c2Stitch" placeholder="예: 120" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">도안 단수</label>
+                        <input class="form-control" type="number" step="1" @bind="_c2Row" placeholder="예: 80" />
+                    </div>
+                </div>
+                @if (Calc2Result != null)
+                {
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        @if (Calc2Result.Value.w.HasValue)
+                        {
+                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">예상 가로 길이</div>
+                                <div style="font-size:1.3rem; font-weight:700; color:#1a5276;">@Calc2Result.Value.w.Value cm</div>
+                            </div>
+                        }
+                        @if (Calc2Result.Value.h.HasValue)
+                        {
+                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">예상 세로 길이</div>
+                                <div style="font-size:1.3rem; font-weight:700; color:#1a5276;">@Calc2Result.Value.h.Value cm</div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-ghost" @onclick="CloseCalcModal">닫기</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
-    private bool _loading = false;
-    private bool _showModal = false;
-    private bool _isEditMode = false;
-    
-    private List<SwatchModel> _swatches = new();
-    private List<YarnModel> _yarns = new();
-    private List<ProjectModel> _projects = new();
-    private SwatchModel _editing = new();
+    bool _loading     = true;
+    bool _showModal   = false;
+    bool _showCalcModal = false;
+    Swatch? _calcSwatch;
+    List<Swatch>      _swatches = new();
+    List<Yarn>        _yarns    = new();
+    List<KnitProject> _projects = new();
+    Swatch _editing = new();
 
-    // 데이터 모델 정의 (실제 프로젝트 모델 구조에 맞게 커스텀해 쓰세요)
-    public class SwatchModel {
-        public Guid Id { get; set; } = Guid.Empty;
-        public string Name { get; set; } = "";
-        public Guid? YarnId { get; set; }
-        public string YarnNameDirect { get; set; } = "";
-        public Guid? ProjectId { get; set; }
-        public double NeedleSizeMm { get; set; }
-        public string Stitch { get; set; } = "";
-        public double PreWashStitches { get; set; }
-        public double PostWashStitches { get; set; }
-        public double PreWashRows { get; set; }
-        public double PostWashRows { get; set; }
-        public double PreWashWidthCm { get; set; }
-        public double PostWashWidthCm { get; set; }
-        public double PreWashHeightCm { get; set; }
-        public double PostWashHeightCm { get; set; }
-        public string Memo { get; set; } = "";
+    // 독립 계산기 모달 입력값
+    double _c1OrigStitch = 0;
+    double _c1OrigRow    = 0;
+    int    _c1PatStitch  = 0;
+    int    _c1PatRow     = 0;
+    int    _c2Stitch     = 0;
+    int    _c2Row        = 0;
 
-        // 깊은 복사를 위한 메서드 (수정 취소 시 원본 유지 목적)
-        public SwatchModel Clone() => (SwatchModel)this.MemberwiseClone();
+    // 변화율 계산
+    // - 코/단 기준: 같은 크기에서 코수 감소 = 편물 커짐(+) → 부호 반전
+    // - 길이 기준: 길이 증가 = 편물 커짐(+) → 그대로
+    double? CalcRate(double preStitch, double postStitch, double preCm, double postCm)
+    {
+        if (preStitch > 0 && postStitch > 0 && preStitch != postStitch)
+            return Math.Round(-(postStitch - preStitch) / preStitch * 100, 1);
+        if (preCm > 0 && postCm > 0 && preCm != postCm)
+            return Math.Round((postCm - preCm) / preCm * 100, 1);
+        return null;
     }
-    public class YarnModel { public Guid Id { get; set; } public string Brand { get; set; } = ""; public string Name { get; set; } = ""; public string Color { get; set; } = ""; public string ColorCode { get; set; } = "#cccccc"; }
-    public class ProjectModel { public Guid Id { get; set; } public string Title { get; set; } = ""; public string Status { get; set; } = ""; }
+
+    double CalcSwatchStitchGauge(Swatch s)
+    {
+        if (s.PostWashStitches > 0 && s.PostWashWidthCm > 0) return s.PostWashStitches / s.PostWashWidthCm * 10;
+        if (s.PreWashStitches  > 0 && s.PreWashWidthCm  > 0) return s.PreWashStitches  / s.PreWashWidthCm  * 10;
+        return 0;
+    }
+
+    double CalcSwatchRowGauge(Swatch s)
+    {
+        if (s.PostWashRows > 0 && s.PostWashHeightCm > 0) return s.PostWashRows / s.PostWashHeightCm * 10;
+        if (s.PreWashRows  > 0 && s.PreWashHeightCm  > 0) return s.PreWashRows  / s.PreWashHeightCm  * 10;
+        return 0;
+    }
+
+    (int? s, int? r)? Calc1Result
+    {
+        get
+        {
+            if (_calcSwatch == null) return null;
+            var sg = CalcSwatchStitchGauge(_calcSwatch);
+            var rg = CalcSwatchRowGauge(_calcSwatch);
+            int? s = null, r = null;
+            if (_c1OrigStitch > 0 && _c1PatStitch > 0 && sg > 0)
+                s = (int)Math.Round(_c1PatStitch * sg / _c1OrigStitch);
+            if (_c1OrigRow > 0 && _c1PatRow > 0 && rg > 0)
+                r = (int)Math.Round(_c1PatRow * rg / _c1OrigRow);
+            if (s.HasValue || r.HasValue) return (s, r);
+            return null;
+        }
+    }
+
+    (double? w, double? h)? Calc2Result
+    {
+        get
+        {
+            if (_calcSwatch == null) return null;
+            var sg = CalcSwatchStitchGauge(_calcSwatch);
+            var rg = CalcSwatchRowGauge(_calcSwatch);
+            double? w = null, h = null;
+            if (_c2Stitch > 0 && sg > 0) w = Math.Round(_c2Stitch / sg * 10, 1);
+            if (_c2Row    > 0 && rg > 0) h = Math.Round(_c2Row    / rg * 10, 1);
+            if (w.HasValue || h.HasValue) return (w, h);
+            return null;
+        }
+    }
+
+    void OpenCalcModal(Swatch s)
+    {
+        _calcSwatch = s;
+        _c1OrigStitch = 0; _c1OrigRow = 0;
+        _c1PatStitch  = 0; _c1PatRow  = 0;
+        _c2Stitch     = 0; _c2Row     = 0;
+        _showCalcModal = true;
+    }
+
+    void CloseCalcModal() => _showCalcModal = false;
 
     protected override async Task OnInitializedAsync()
     {
-        _loading = true;
-        try
-        {
-            // 초기 데이터 로딩 예시 (원래 사용하시던 스토리지 로드 코드가 있다면 여기에 넣으세요)
-            // _swatches = await Storage.GetSwatchesAsync() ?? new();
-            // _yarns = await Storage.GetYarnsAsync() ?? new();
-            // _projects = await Storage.GetProjectsAsync() ?? new();
-        }
-        finally
-        {
-            _loading = false;
-        }
+        _swatches = await Storage.GetSwatchesAsync();
+        _yarns    = await Storage.GetYarnsAsync();
+        _projects = await Storage.GetProjectsAsync();
+        _loading  = false;
     }
 
-    private double? CalcRate(double preCount, double postCount, double preCm, double postCm)
+    void OpenAddModal()
     {
-        if (preCount <= 0 || postCount <= 0 || preCm <= 0 || postCm <= 0) return null;
-        
-        double preDensity = preCount / preCm;
-        double postDensity = postCount / postCm;
-        
-        if (preDensity == 0) return null;
-        return Math.Round(((postDensity - preDensity) / preDensity) * 100, 1);
+        _editing = new Swatch();
+        _showModal = true;
     }
 
-    private void OpenAddModal() 
-    { 
-        _isEditMode = false;
-        _editing = new SwatchModel(); 
-        _showModal = true; 
-    }
-
-    private void OpenEditModal(SwatchModel swatch) 
-    { 
-        _isEditMode = true;
-        // 원본 데이터를 직접 수정하면 취소했을 때 엉망이 되므로 Clone(복사본)을 수정합니다.
-        _editing = swatch.Clone(); 
-        _showModal = true; 
-    }
-
-    private void OpenCalcModal(SwatchModel swatch) { /* 게이지 계산기 로직 필요 시 작성 */ }
-    private void CloseModal() => _showModal = false;
-
-    private void SaveSwatch()
+    void OnYarnChanged(ChangeEventArgs e)
     {
-        if (!_isEditMode)
-        {
-            // 1. 신규 추가인 경우
-            _editing.Id = Guid.NewGuid(); // 고유 ID 부여
-            _swatches.Add(_editing);      // 보여줄 목록 리스트에 확실하게 집어넣기! 🌟
-        }
-        else
-        {
-            // 2. 기존 데이터 수정인 경우
-            var index = _swatches.FindIndex(s => s.Id == _editing.Id);
-            if (index != -1)
-            {
-                _swatches[index] = _editing; // 목록 리스트의 아이템 복사본으로 교체
-            }
-        }
+        var val = e.Value?.ToString();
+        _editing.YarnId = !string.IsNullOrEmpty(val) ? Guid.Parse(val) : null;
+    }
 
-        // 실제 브라우저나 파일에 저장하는 비동기 서비스가 있다면 추가하세요
-        // Storage.SaveSwatches(_swatches);
+    void OnProjectChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        _editing.ProjectId = !string.IsNullOrEmpty(val) ? Guid.Parse(val) : null;
+    }
 
+    void OpenEditModal(Swatch s)
+    {
+        _editing = new Swatch
+        {
+            Id = s.Id, Name = s.Name, YarnId = s.YarnId, YarnNameDirect = s.YarnNameDirect,
+            ProjectId = s.ProjectId, NeedleSizeMm = s.NeedleSizeMm, Stitch = s.Stitch,
+            PreWashStitches = s.PreWashStitches, PreWashRows = s.PreWashRows,
+            PreWashWidthCm = s.PreWashWidthCm, PreWashHeightCm = s.PreWashHeightCm,
+            PostWashStitches = s.PostWashStitches, PostWashRows = s.PostWashRows,
+            PostWashWidthCm = s.PostWashWidthCm, PostWashHeightCm = s.PostWashHeightCm,
+            Memo = s.Memo, CreatedAt = s.CreatedAt
+        };
+        _showModal = true;
+    }
+
+    void CloseModal() => _showModal = false;
+
+    async Task SaveSwatch()
+    {
+        if (_editing.Id == Guid.Empty) _editing.Id = Guid.NewGuid();
+        await Storage.SaveSwatchAsync(_editing);
+        _swatches = await Storage.GetSwatchesAsync();
         _showModal = false;
-        StateHasChanged(); // 변경된 리스트로 화면을 강제 갱신합니다. 🔄
     }
 
-    private void DeleteSwatch(Guid id) 
-    { 
-        var swatch = _swatches.Find(s => s.Id == id);
-        if (swatch != null)
-        {
-            _swatches.Remove(swatch);
-            // Storage.SaveSwatches(_swatches);
-            StateHasChanged();
-        }
-    }
-    
-    private void OnYarnChanged(ChangeEventArgs e) 
-    { 
-        if (Guid.TryParse(e.Value?.ToString(), out Guid yarnId)) _editing.YarnId = yarnId;
-        else _editing.YarnId = null;
-    }
-
-    private void OnProjectChanged(ChangeEventArgs e) 
-    { 
-        if (Guid.TryParse(e.Value?.ToString(), out Guid projId)) _editing.ProjectId = projId;
-        else _editing.ProjectId = null;
+    async Task DeleteSwatch(Guid id)
+    {
+        await Storage.DeleteSwatchAsync(id);
+        _swatches = await Storage.GetSwatchesAsync();
     }
 }
