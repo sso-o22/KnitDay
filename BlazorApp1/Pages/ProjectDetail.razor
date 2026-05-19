@@ -32,22 +32,22 @@ else
                 @* <p class="page-subtitle">@_project.PatternName</p> *@
             </div>
         </div>
-        <div style="display:flex; gap:8px;">
-            <button class="btn btn-secondary" @onclick="OpenEditModal">✏️ 수정</button>
-            <button class="btn btn-secondary" @onclick="GoToViewer">📄 도안 뷰어</button>
+        <div style="display:flex; gap:6px; flex-wrap:nowrap; align-items:center;">
+            <button class="btn btn-secondary btn-sm" @onclick="OpenEditModal">✏️ 수정</button>
+            <button class="btn btn-secondary btn-sm" @onclick="GoToViewer">📄 뷰어</button>
             @if (_project.Status == ProjectStatus.진행중)
             {
-                <button class="btn btn-ghost" @onclick="PauseProject">⏸️ 중단</button>
-                <button class="btn btn-sage" @onclick="CompleteProject">✅ 완료</button>
+                <button class="btn btn-ghost btn-sm" @onclick="PauseProject">⏸️</button>
+                <button class="btn btn-sage btn-sm" @onclick="CompleteProject">✅ 완료</button>
             }
             else if (_project.Status == ProjectStatus.일시중단)
             {
-                <button class="btn btn-sage" @onclick="ResumeProject">▶️ 재개</button>
-                <button class="btn btn-sage" @onclick="CompleteProject">✅ 완료</button>
+                <button class="btn btn-ghost btn-sm" @onclick="ResumeProject">▶️</button>
+                <button class="btn btn-sage btn-sm" @onclick="CompleteProject">✅ 완료</button>
             }
             else
             {
-                <button class="btn btn-sage" @onclick="CompleteProject">✅ 완료</button>
+                <button class="btn btn-sage btn-sm" @onclick="CompleteProject">✅ 완료</button>
             }
         </div>
     </div>
@@ -497,7 +497,7 @@ else
 
     <div class="card" style="grid-column: span 2; overflow:hidden;">
         <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
-             @onclick='() => { if (_project.VideoLinks.Count > 0) ToggleCard("video"); }'>
+             @onclick='() => ToggleCard("video")'>
             <div class="card-title" style="margin-bottom:0;">🎬 참고 영상</div>
             @if (_project.VideoLinks.Count > 0)
             {

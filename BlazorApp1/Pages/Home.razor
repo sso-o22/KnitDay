@@ -41,6 +41,16 @@ else
             <div style="font-size:2rem; font-weight:700; color:var(--text-dark);">@_yarns</div>
             <div style="color:var(--text-mid); font-size:0.88rem;">실 창고</div>
         </a>
+        <a href="swatches" class="card" style="text-decoration:none; text-align:center;">
+            <div style="font-size:2.2rem; margin-bottom:8px;">🧪</div>
+            <div style="font-size:2rem; font-weight:700; color:var(--text-dark);">@_swatches</div>
+            <div style="color:var(--text-mid); font-size:0.88rem;">스와치</div>
+        </a>
+        <a href="tools" class="card" style="text-decoration:none; text-align:center;">
+            <div style="font-size:2.2rem; margin-bottom:8px;">⚒️</div>
+            <div style="font-size:2rem; font-weight:700; color:var(--text-dark);">@_tools</div>
+            <div style="color:var(--text-mid); font-size:0.88rem;">도구</div>
+        </a>
     </div>
 
     <!-- 진행중인 프로젝트 미리보기 -->
@@ -79,7 +89,7 @@ else
 
 @code {
     bool _loading = true;
-    int _inProgress, _finished, _wishlist, _yarns;
+    int _inProgress, _finished, _wishlist, _yarns, _swatches, _tools;
     List<KnitProject> _recentProjects = new();
 
     protected override async Task OnInitializedAsync()
@@ -96,6 +106,10 @@ else
 
         var yarns = await Storage.GetYarnsAsync();
         _yarns = yarns.Count;
+        var swatches = await Storage.GetSwatchesAsync();
+        _swatches = swatches.Count;
+        var tools = await Storage.GetToolsAsync();
+        _tools = tools.Count;
 
         _loading = false;
     }
