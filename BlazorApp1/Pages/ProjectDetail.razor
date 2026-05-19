@@ -67,7 +67,7 @@ else
                 @if (_project.EndDate.HasValue)
                 {
                     <div>
-                        <div class="form-label">목표 종료일</div>
+                        <div class="form-label">종료일</div>
                         <div style="font-weight:500;">@_project.EndDate.Value.ToString("yyyy년 M월 d일")</div>
                     </div>
                 }
@@ -757,104 +757,43 @@ else
                 }
                 else
                 {
-                    @foreach (var s in _allSwatches)
+                    <select class="form-control" @onchange="OnSwatchSelectChange">
+                        <option value="">+ 스와치 연결</option>
+                        @foreach (var s in _allSwatches)
+                        {
+                            var sy = _yarns.Find(y => y.Id == s.YarnId);
+                            var isLinked = s.ProjectId == _project!.Id;
+                            <option value="@s.Id" disabled="@isLinked">
+                                @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
+                                @(sy != null ? $" ({sy.Brand} {sy.Name})" : "")
+                                @(isLinked ? " ✓연결됨" : "")
+                            </option>
+                        }
+                    </select>
+                    @if (_allSwatches.Any(s => s.ProjectId == _project!.Id))
                     {
-                        bool linked = s.ProjectId == _project.Id;
-                        var yarn = _yarns.Find(y => y.Id == s.YarnId);
-
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
-                                    border-radius:9px; background:@(linked ? "#f0faf4" : "transparent"); border:1px solid @(linked ? "#b8e0c8" : "#e8e8e8");">
-                            <input type="checkbox" checked="@linked"
-                                   @onchange="() => ToggleSwatchLink(s)"
-                                   style="width:15px; height:15px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
-                            <div style="flex:1; min-width:0;">
-                                <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
-                                @if (yarn != null)
-                                {
-                                    <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
-                                        <span class="color-dot" style="background:@yarn.ColorCode; width:8px; height:8px;"></span>
-                                        @yarn.Brand @yarn.Name
-                                    </div>
-                                }
-                            </div>
-                            @if (s.NeedleSizeMm > 0)
+                        <div style="margin-top:8px;">
+                            @foreach (var s in _allSwatches.Where(s => s.ProjectId == _project!.Id))
                             {
-                                <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
-                            }
-                        </div>
-                    }
-                }
-            </div>
-
-            @* 스와치 연결 *@
-            <div class="form-group">
-                <label class="form-label">연결된 스와치</label>
-                @if (!_allSwatches.Any())
-                {
-                    <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
-                }
-                else
-                {
-                    @foreach (var s in _allSwatches)
-                    {
-                        bool linked = s.ProjectId == _project.Id;
-                        var yarn = _yarns.Find(y => y.Id == s.YarnId);
-
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
-                                    border-radius:9px; background:@(linked ? "#f0faf4" : "transparent"); border:1px solid @(linked ? "#b8e0c8" : "#e8e8e8");">
-                            <input type="checkbox" checked="@linked"
-                                   @onchange="() => ToggleSwatchLink(s)"
-                                   style="width:15px; height:15px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
-                            <div style="flex:1; min-width:0;">
-                                <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
-                                @if (yarn != null)
-                                {
-                                    <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
-                                        <span class="color-dot" style="background:@yarn.ColorCode; width:8px; height:8px;"></span>
-                                        @yarn.Brand @yarn.Name
+                                var sy = _yarns.Find(y => y.Id == s.YarnId);
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                            border-radius:9px; background:#f0faf4; border:1px solid #b8e0c8;">
+                                    <div style="flex:1; min-width:0;">
+                                        <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
+                                        @if (sy != null)
+                                        {
+                                            <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
+                                                <span class="color-dot" style="background:@sy.ColorCode; width:8px; height:8px;"></span>
+                                                @sy.Brand @sy.Name
+                                            </div>
+                                        }
                                     </div>
-                                }
-                            </div>
-                            @if (s.NeedleSizeMm > 0)
-                            {
-                                <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
-                            }
-                        </div>
-                    }
-                }
-            </div>
-
-            @* 연결된 스와치 *@
-            <div class="form-group">
-                <label class="form-label">연결된 스와치</label>
-                @if (!_allSwatches.Any())
-                {
-                    <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
-                }
-                else
-                {
-                    @foreach (var s in _allSwatches)
-                    {
-                        bool linked = s.ProjectId == _project.Id;
-                        var syarn = _yarns.Find(y => y.Id == s.YarnId);
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
-                                    border-radius:9px; background:@(linked ? "#f0faf4" : "transparent"); border:1px solid @(linked ? "#b8e0c8" : "#e8e8e8");">
-                            <input type="checkbox" checked="@linked"
-                                   @onchange="() => ToggleSwatchLink(s)"
-                                   style="width:15px; height:15px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
-                            <div style="flex:1; min-width:0;">
-                                <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
-                                @if (syarn != null)
-                                {
-                                    <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
-                                        <span class="color-dot" style="background:@syarn.ColorCode; width:8px; height:8px;"></span>
-                                        @syarn.Brand @syarn.Name
-                                    </div>
-                                }
-                            </div>
-                            @if (s.NeedleSizeMm > 0)
-                            {
-                                <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
+                                    @if (s.NeedleSizeMm > 0)
+                                    {
+                                        <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
+                                    }
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 8px;" @onclick="() => UnlinkSwatch(s)">✕</button>
+                                </div>
                             }
                         </div>
                     }
@@ -896,7 +835,7 @@ else
                            @onchange="e => _project.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">목표 종료일</label>
+                    <label class="form-label">종료일</label>
                     <input type="date" class="form-control"
                            value="@_project.EndDate?.ToString("yyyy-MM-dd")"
                            @onchange="e => _project.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
@@ -1344,6 +1283,22 @@ else
             s.ProjectId = null;
         else
             s.ProjectId = _project.Id;
+    }
+
+    void OnSwatchSelectChange(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (string.IsNullOrEmpty(val) || _project == null) return;
+        if (!Guid.TryParse(val, out var swatchId)) return;
+        var swatch = _allSwatches.FirstOrDefault(s => s.Id == swatchId);
+        if (swatch == null) return;
+        if (swatch.ProjectId != _project.Id)
+            swatch.ProjectId = _project.Id;
+    }
+
+    void UnlinkSwatch(Swatch s)
+    {
+        s.ProjectId = null;
     }
 
     async Task Save()

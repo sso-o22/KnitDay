@@ -284,15 +284,26 @@ else
                 else
                 {
                     <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem; margin-bottom:8px;">
-                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
+                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
                             <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
                             <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전 (cm)</div>
                             <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후 (cm)</div>
+                            <div style="padding:6px 10px; border-left:0.5px solid var(--border);"></div>
                         </div>
                         @foreach (var m in _measures)
                         {
-                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-top:0.5px solid var(--border);">
-                                <div style="padding:6px 10px; color:var(--text-dark); display:flex; align-items:center;">@m.Label</div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; border-top:0.5px solid var(--border);">
+                                <div style="padding:6px 10px; color:var(--text-dark); display:flex; align-items:center;">
+                                    @if (m.IsCustom)
+                                    {
+                                        <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem; font-weight:500;"
+                                               @bind="m.Label" placeholder="항목명" />
+                                    }
+                                    else
+                                    {
+                                        @m.Label
+                                    }
+                                </div>
                                 <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
                                     <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;"
                                            @bind="m.Before" placeholder="-" />
@@ -301,8 +312,17 @@ else
                                     <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;"
                                            @bind="m.After" placeholder="-" />
                                 </div>
+                                <div style="border-left:0.5px solid var(--border); padding:2px 6px; display:flex; align-items:center;">
+                                    @if (m.IsCustom)
+                                    {
+                                        <button class="btn btn-danger btn-sm" style="padding:2px 6px;" @onclick="() => _measures.Remove(m)">✕</button>
+                                    }
+                                </div>
                             </div>
                         }
+                    </div>
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <button class="btn btn-ghost btn-sm" @onclick="AddCustomMeasure">+ 항목 추가</button>
                     </div>
                     <div style="display:flex; gap:8px;">
                         <button class="btn btn-primary btn-sm" @onclick="SaveMeasurements">저장</button>
@@ -341,8 +361,11 @@ else
         public string Label { get; set; } = "";
         public string Before { get; set; } = "";
         public string After  { get; set; } = "";
+        public bool IsCustom { get; set; } = false;
     }
-    static readonly string[] _measureLabels = { "가슴둘레", "총장", "소매길이", "소매단면", "암홀", "어깨" };
+
+    // 기본 4개 항목만 표시, 나머지는 사용자가 추가
+    static readonly string[] _defaultMeasureLabels = { "가슴둘레", "총장", "소매 길이", "소매 단면" };
     List<MeasureItem> _measures = new();
 
     List<Yarn> _allYarns = new();
@@ -389,7 +412,7 @@ else
     {
         if (_selectedProject == null) return;
         // MeasurementsMemo 형식: "가슴둘레:92:89|총장:58:56|..."
-        var dict = new System.Collections.Generic.Dictionary<string, (string, string)>();
+        var dict = new Dictionary<string, (string, string)>();
         if (!string.IsNullOrEmpty(_selectedProject.MeasurementsMemo))
         {
             foreach (var part in _selectedProject.MeasurementsMemo.Split('|'))
@@ -401,11 +424,27 @@ else
                     dict[seg[0]] = (seg[1], "");
             }
         }
-        _measures = _measureLabels.Select(l =>
+
+        _measures = new List<MeasureItem>();
+
+        // 기본 4개 항목
+        foreach (var label in _defaultMeasureLabels)
         {
-            var (b, a) = dict.TryGetValue(l, out var v) ? v : ("", "");
-            return new MeasureItem { Label = l, Before = b, After = a };
-        }).ToList();
+            var (b, a) = dict.TryGetValue(label, out var v) ? v : ("", "");
+            _measures.Add(new MeasureItem { Label = label, Before = b, After = a, IsCustom = false });
+            dict.Remove(label);
+        }
+
+        // 저장된 추가 항목 (커스텀)
+        foreach (var kv in dict)
+        {
+            _measures.Add(new MeasureItem { Label = kv.Key, Before = kv.Value.Item1, After = kv.Value.Item2, IsCustom = true });
+        }
+    }
+
+    void AddCustomMeasure()
+    {
+        _measures.Add(new MeasureItem { Label = "", Before = "", After = "", IsCustom = true });
     }
 
     void CloseDetail()
@@ -422,10 +461,9 @@ else
     async Task SaveMeasurements()
     {
         if (_selectedProject == null) return;
-        // MeasurementsMemo 직렬화: "가슴둘레:92:89|총장:58:56|..."
         _selectedProject.MeasurementsMemo = string.Join("|",
             _measures
-                .Where(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After))
+                .Where(m => !string.IsNullOrEmpty(m.Label) && (!string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
                 .Select(m => $"{m.Label}:{m.Before}:{m.After}"));
         await Storage.SaveProjectAsync(_selectedProject);
         _editingMeasurements = false;

@@ -193,7 +193,9 @@ else
             <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">바늘 굵기 (mm)</label>
-                    <input class="form-control" type="number" step="0.25" @bind="_editing.NeedleSizeMm" placeholder="예: 4.5" />
+                    <input class="form-control" type="number" step="0.25" placeholder="예: 4.5"
+                                   value="@(_editing.NeedleSizeMm == 0 ? "" : _editing.NeedleSizeMm.ToString())"
+                                   @onchange="e => _editing.NeedleSizeMm = double.TryParse(e.Value?.ToString(), out var d) ? d : 0" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">뜨개 방법</label>

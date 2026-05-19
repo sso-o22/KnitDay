@@ -52,7 +52,8 @@ else
                 {
                     <div style="font-size:0.82rem; color:var(--text-mid);">@yarn.Brand</div>
                 }
-                <div style="font-size:0.82rem; color:var(--text-mid);">@yarn.Color · @yarn.Weight · @yarn.YarnType</div>
+                @* 카드에서 워스티드(굵기 정보) 제거 - YarnType과 색상만 표시 *@
+                <div style="font-size:0.82rem; color:var(--text-mid);">@yarn.Color · @yarn.YarnType</div>
 
                 @if (!string.IsNullOrEmpty(yarn.Material))
                 {
@@ -63,11 +64,25 @@ else
                     <div style="font-size:0.78rem; color:var(--text-light);">Lot: @yarn.LotNumber</div>
                 }
 
-                <div style="display:flex; gap:12px; font-size:0.78rem; color:var(--text-light); margin:8px 0;">
-                    @if (yarn.WeightGram > 0) { <span>@yarn.WeightGram g</span> }
-                    @if (yarn.LengthMeter > 0) { <span>@yarn.LengthMeter m</span> }
+                @{
+                    // 콘사인 경우 콘당 단위, 그 외 볼당 단위
+                    bool isCone = yarn.YarnType == YarnType.콘사;
+                    string weightUnit = isCone ? "g/콘" : "g/볼";
+                    string lengthUnit = isCone ? "m/콘" : "m/볼";
+                    // 총 보유 길이 계산
+                    int totalLength = yarn.LengthMeter * yarn.Quantity;
+                }
+                <div style="display:flex; gap:12px; font-size:0.78rem; color:var(--text-light); margin:6px 0 2px;">
+                    @if (yarn.WeightGram > 0) { <span>@yarn.WeightGram @weightUnit</span> }
+                    @if (yarn.LengthMeter > 0) { <span>@yarn.LengthMeter @lengthUnit</span> }
                     @if (yarn.Price > 0) { <span>₩@yarn.Price.ToString("N0")</span> }
                 </div>
+                @if (totalLength > 0)
+                {
+                    <div style="font-size:0.8rem; color:var(--sage-dark); font-weight:600; margin-bottom:6px;">
+                        총 보유: @totalLength m
+                    </div>
+                }
 
                 @if (!string.IsNullOrEmpty(yarn.PurchasePlace))
                 {
@@ -144,26 +159,66 @@ else
                     <label class="form-label">Lot 번호</label>
                     <input class="form-control" @bind="_editingYarn.LotNumber" placeholder="예: 1234" />
                 </div>
-                <div class="form-group">
-                    <label class="form-label">수량 (볼)</label>
-                    <input type="number" class="form-control" @bind="_editingYarn.Quantity" min="0" />
-                </div>
+                @if (_editingYarn.YarnType == YarnType.콘사)
+                {
+                    <div class="form-group">
+                        <label class="form-label">수량 (콘)</label>
+                        <input type="number" class="form-control" @bind="_editingYarn.Quantity" min="0" />
+                    </div>
+                }
+                else
+                {
+                    <div class="form-group">
+                        <label class="form-label">수량 (볼)</label>
+                        <input type="number" class="form-control" @bind="_editingYarn.Quantity" min="0" />
+                    </div>
+                }
             </div>
 
-            <div class="form-row-3">
-                <div class="form-group">
-                    <label class="form-label">무게 (g/볼)</label>
-                    <input type="number" class="form-control" @bind="_editingYarn.WeightGram" min="0" />
+            @if (_editingYarn.YarnType == YarnType.콘사)
+            {
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="form-label">무게 (g/콘)</label>
+                        <input type="number" class="form-control" @bind="_editingYarn.WeightGram" min="0" placeholder="" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">길이 (m/콘)</label>
+                        <input type="number" class="form-control" @bind="_editingYarn.LengthMeter" min="0" placeholder="" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">가격 (콘당)</label>
+                        <input type="number" class="form-control" @bind="_editingYarn.Price" min="0" placeholder="" />
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">길이 (m/볼)</label>
-                    <input type="number" class="form-control" @bind="_editingYarn.LengthMeter" min="0" />
+            }
+            else
+            {
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="form-label">무게 (g/볼)</label>
+                        <input type="number" class="form-control" @bind="_editingYarn.WeightGram" min="0" placeholder="" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">길이 (m/볼)</label>
+                        <input type="number" class="form-control" @bind="_editingYarn.LengthMeter" min="0" placeholder="" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">가격 (볼당)</label>
+                        <input type="number" class="form-control" @bind="_editingYarn.Price" min="0" placeholder="" />
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label">가격 (볼당)</label>
-                    <input type="number" class="form-control" @bind="_editingYarn.Price" min="0" />
+            }
+
+            @{
+                int previewTotal = _editingYarn.LengthMeter * _editingYarn.Quantity;
+            }
+            @if (previewTotal > 0)
+            {
+                <div style="font-size:0.85rem; color:var(--sage-dark); font-weight:600; margin-bottom:12px; padding:8px 12px; background:var(--mint-pale); border-radius:var(--radius-sm);">
+                    총 보유 길이: @previewTotal m
                 </div>
-            </div>
+            }
 
             <div class="form-row">
                 <div class="form-group">
