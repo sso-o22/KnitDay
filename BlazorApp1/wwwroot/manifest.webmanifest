@@ -1,6 +1,6 @@
 {
-  "name": "BlazorApp1",
-  "short_name": "BlazorApp1",
+  "name": "KnitLog",
+  "short_name": "KnitLog",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
