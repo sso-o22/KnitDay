@@ -234,7 +234,6 @@ else
                                 }
                             </div>
                             <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                                <!-- 세탁 전 -->
                                 <div>
                                     <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:3px;">세탁 전</div>
                                     @if (s.PreWashStitches > 0 || s.PreWashRows > 0)
@@ -246,7 +245,6 @@ else
                                         <div style="color:var(--text-mid);">@(s.PreWashWidthCm)cm × @(s.PreWashHeightCm)cm</div>
                                     }
                                 </div>
-                                <!-- 세탁 후 -->
                                 @if (s.PostWashStitches > 0 || s.PostWashWidthCm > 0)
                                 {
                                     <div>
@@ -288,7 +286,7 @@ else
                     @if (_measures.Any(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
                     {
                         <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem;">
-                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
+                            <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
                                 <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
                                 <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전</div>
                                 <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후</div>
@@ -297,7 +295,7 @@ else
                             {
                                 @if (!string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After))
                                 {
-                                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; border-top:0.5px solid var(--border);">
+                                    <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
                                         <div style="padding:6px 10px; color:var(--text-dark);">@m.Label</div>
                                         <div style="padding:6px 10px; color:var(--text-mid); border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.Before) ? "-" : m.Before + "cm")</div>
                                         <div style="padding:6px 10px; color:var(--text-mid); border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.After) ? "-" : m.After + "cm")</div>
@@ -365,7 +363,7 @@ else
             }
 
             <div class="modal-footer">
-                <button class="btn btn-danger btn-sm" @onclick="() => DeleteProject(_selectedProject.Id)">삭제</button>
+                <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 완성작을 삭제하면 복구할 수 없어요.", async () => await DeleteProject(_selectedProject!.Id))'>삭제</button>
                 <button class="btn btn-secondary btn-sm" @onclick="() => RestoreToSchedule(_selectedProject.Id)">↩ 문어발로 복귀</button>
                 <button class="btn btn-ghost" @onclick="CloseDetail">닫기</button>
             </div>
@@ -373,7 +371,42 @@ else
     </div>
 }
 
+<!-- 삭제 확인 모달 -->
+@if (_showConfirm)
+{
+    <div class="modal-backdrop" style="z-index:9999;">
+        <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
+            <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
+            <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
+            <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="btn btn-ghost" @onclick="() => _showConfirm = false">취소</button>
+                <button class="btn btn-danger" @onclick="ExecuteConfirm">삭제</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
+    bool _showConfirm = false;
+    string _confirmMsg = "";
+    Func<Task>? _confirmAction;
+
+    void Confirm(string msg, Func<Task> action)
+    {
+        _confirmMsg    = msg;
+        _confirmAction = action;
+        _showConfirm   = true;
+    }
+
+    async Task ExecuteConfirm()
+    {
+        _showConfirm = false;
+        if (_confirmAction != null)
+            await _confirmAction();
+        _confirmAction = null;
+    }
+
     bool _loading = true;
     bool _showDetail = false;
     bool _editingMeasurements = false;
@@ -389,7 +422,6 @@ else
         public bool IsCustom { get; set; } = false;
     }
 
-    // 기본 4개 항목만 표시, 나머지는 사용자가 추가
     static readonly string[] _defaultMeasureLabels = { "가슴둘레", "총장", "소매 길이", "소매 단면" };
     List<MeasureItem> _measures = new();
 
@@ -422,12 +454,13 @@ else
     {
         _selectedProject = proj;
         _editingMeasurements = false;
+        _editingBasicInfo = false;
         _selectedYarns = proj.YarnUsages
             .Select(u => (u, _allYarns.FirstOrDefault(y => y.Id == u.YarnId)))
             .Where(x => x.Item2 != null)
             .Select(x => (x.u, x.Item2!))
             .ToList();
-        _selectedTools   = _allTools.Where(t => proj.ToolIds.Contains(t.Id)).ToList();
+        _selectedTools    = _allTools.Where(t => proj.ToolIds.Contains(t.Id)).ToList();
         _selectedSwatches = _allSwatches.Where(s => s.ProjectId == proj.Id).ToList();
         _showDetail = true;
         LoadMeasures();
@@ -436,7 +469,6 @@ else
     void LoadMeasures()
     {
         if (_selectedProject == null) return;
-        // MeasurementsMemo 형식: "가슴둘레:92:89|총장:58:56|..."
         var dict = new Dictionary<string, (string, string)>();
         if (!string.IsNullOrEmpty(_selectedProject.MeasurementsMemo))
         {
@@ -451,16 +483,12 @@ else
         }
 
         _measures = new List<MeasureItem>();
-
-        // 기본 4개 항목
         foreach (var label in _defaultMeasureLabels)
         {
             var (b, a) = dict.TryGetValue(label, out var v) ? v : ("", "");
             _measures.Add(new MeasureItem { Label = label, Before = b, After = a, IsCustom = false });
             dict.Remove(label);
         }
-
-        // 저장된 추가 항목 (커스텀)
         foreach (var kv in dict)
         {
             _measures.Add(new MeasureItem { Label = kv.Key, Before = kv.Value.Item1, After = kv.Value.Item2, IsCustom = true });

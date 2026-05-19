@@ -478,7 +478,7 @@ else
                                     <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:10px; margin-bottom:8px; border:1px solid var(--border); font-size:0.85rem;">
                                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                                             <span style="color:var(--text-mid);">@(session.StartTime.ToString("M월 d일 HH:mm"))</span>
-                                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick="() => RemoveSession(session.Id)">✕</button>
+                                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick='() => Confirm("이 뜨개 기록을 삭제할까요?", async () => await RemoveSession(session.Id))'>✕</button>
                                         </div>
                                         <div style="font-weight:600; color:var(--sage-dark);">
                                             <span>@FormatDuration(session)</span>
@@ -909,7 +909,42 @@ else
     </div>
 }
 
+<!-- 삭제 확인 모달 -->
+@if (_showConfirm)
+{
+    <div class="modal-backdrop" style="z-index:9999;">
+        <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
+            <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
+            <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
+            <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="btn btn-ghost" @onclick="() => _showConfirm = false">취소</button>
+                <button class="btn btn-danger" @onclick="ExecuteConfirm">삭제</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
+    bool _showConfirm = false;
+    string _confirmMsg = "";
+    Func<Task>? _confirmAction;
+
+    void Confirm(string msg, Func<Task> action)
+    {
+        _confirmMsg    = msg;
+        _confirmAction = action;
+        _showConfirm   = true;
+    }
+
+    async Task ExecuteConfirm()
+    {
+        _showConfirm = false;
+        if (_confirmAction != null)
+            await _confirmAction();
+        _confirmAction = null;
+    }
+
     [Parameter] public Guid ProjectId { get; set; }
 
     bool _loading = true;

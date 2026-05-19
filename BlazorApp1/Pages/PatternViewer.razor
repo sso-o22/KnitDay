@@ -57,7 +57,7 @@
                 <span style="font-size:12px; font-weight:600; min-width:35px; text-align:center;">@((int)(_zoom * 100))%</span>
                 <button class="nav-btn" @onclick="ZoomIn">+</button>
             </div>
-            <button class="tool-btn" @onclick="ClearAll" title="전체 삭제">🗑️</button>
+            <button class="tool-btn" @onclick='() => Confirm("모든 도안 내용을 지울까요?", async () => { ClearAll(); await Task.CompletedTask; })' title="전체 삭제">🗑️</button>
         }
         <span style="margin-left:auto; font-size:12px; opacity:0.6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@_projectTitle</span>
     </div>
@@ -261,7 +261,42 @@
     }
 </style>
 
+<!-- 삭제 확인 모달 -->
+@if (_showConfirm)
+{
+    <div class="modal-backdrop" style="z-index:9999;">
+        <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
+            <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
+            <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
+            <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="btn btn-ghost" @onclick="() => _showConfirm = false">취소</button>
+                <button class="btn btn-danger" @onclick="ExecuteConfirm">삭제</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
+    bool _showConfirm = false;
+    string _confirmMsg = "";
+    Func<Task>? _confirmAction;
+
+    void Confirm(string msg, Func<Task> action)
+    {
+        _confirmMsg    = msg;
+        _confirmAction = action;
+        _showConfirm   = true;
+    }
+
+    async Task ExecuteConfirm()
+    {
+        _showConfirm = false;
+        if (_confirmAction != null)
+            await _confirmAction();
+        _confirmAction = null;
+    }
+
     [Parameter] public Guid ProjectId { get; set; }
     string _projectTitle = "", _tool = "select", _penColor = "#000000";
     int _penSize = 10; // 기본 크기를 조금 더 크게 설정
