@@ -330,7 +330,7 @@ else
                 </div>
 
                 @* ── 날짜 ── *@
-                <div class="form-row" style="padding-top:12px; border-top:1px solid var(--border);">
+                <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">시작일</label>
                         <input type="date" class="form-control"
@@ -346,7 +346,7 @@ else
                 </div>
 
                 @* ── 사용 실 ── *@
-                <div class="form-group" style="padding-top:12px; border-top:1px solid var(--border);">
+                <div class="form-group">
                     <label class="form-label">🧵 사용 실</label>
                     <select class="form-control" style="margin-bottom:8px;" @onchange="OnAddYarn">
                         <option value="">+ 실 추가</option>
@@ -375,7 +375,7 @@ else
                 </div>
 
                 @* ── 사용 바늘 ── *@
-                <div class="form-group" style="padding-top:12px; border-top:1px solid var(--border);">
+                <div class="form-group">
                     <label class="form-label">⚒️ 사용 바늘</label>
                     <div style="display:flex; gap:6px; margin-bottom:6px;">
                         <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
@@ -387,7 +387,7 @@ else
                 </div>
 
                 @* ── 스와치 연결 ── *@
-                <div class="form-group" style="padding-top:12px; border-top:1px solid var(--border);">
+                <div class="form-group">
                     <label class="form-label">📐 스와치</label>
                     @if (!_allSwatches.Any())
                     {
@@ -471,7 +471,7 @@ else
                 </div>
 
                 @* ── 카테고리 + 캘린더 색상 ── *@
-                <div class="form-group" style="padding-top:12px; border-top:1px solid var(--border);">
+                <div class="form-group">
                     <label class="form-label">카테고리</label>
                     <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
                         @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
@@ -506,7 +506,7 @@ else
                 </div>
 
                 @* ── 메모 ── *@
-                <div class="form-group" style="padding-top:12px; border-top:1px solid var(--border);">
+                <div class="form-group">
                     <label class="form-label">📝 메모</label>
                     <textarea class="form-control" rows="2" @bind="_editingProject.Memo" placeholder="기타 메모"></textarea>
                 </div>
