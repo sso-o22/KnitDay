@@ -536,7 +536,7 @@ else
                                @onchange="e => _editingProject.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                     </div>
                     <div class="form-group">
-                        <label class="form-label">@(_editingProject!.Status == ProjectStatus.완료 ? "종료일" : "목표 종료일")</label>
+                        <label class="form-label">@(_editingProject!.Status == ProjectStatus.완료 ? "완성일" : "목표 완성일")</label>
                         <input type="date" class="form-control"
                                value="@_editingProject.EndDate?.ToString("yyyy-MM-dd")"
                                @onchange="e => _editingProject.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
@@ -669,7 +669,7 @@ else
                 </div>
 
                 @* ── 카테고리 + 캘린더 색상 ── *@
-                <div class="form-group">
+                <div class="form-group" style="margin-top:16px;">
                     <label class="form-label">카테고리</label>
                     <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
                         @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
@@ -704,7 +704,7 @@ else
                 </div>
 
                 @* ── 메모 ── *@
-                <div class="form-group">
+                <div class="form-group" style="margin-top:16px;">
                     <label class="form-label">📝 메모</label>
                     <textarea class="form-control" rows="2" @bind="_editingProject.Memo" placeholder="기타 메모"></textarea>
                 </div>
@@ -812,7 +812,9 @@ else
 
     void OpenEditModal(KnitProject proj)
     {
-        _editingProject = proj;
+        // 취소 시 복원을 위해 JSON 딥카피
+        var json = System.Text.Json.JsonSerializer.Serialize(proj);
+        _editingProject = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
         _showModal = true;
     }
 

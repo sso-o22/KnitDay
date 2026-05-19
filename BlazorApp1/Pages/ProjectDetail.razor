@@ -730,7 +730,7 @@ else
                            @onchange="e => _project.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                 </div>
                 <div class="form-group">
-                    <label class="form-label">@(_project!.Status == ProjectStatus.완료 ? "종료일" : "목표 종료일")</label>
+                    <label class="form-label">@(_project!.Status == ProjectStatus.완료 ? "완성일" : "목표 완성일")</label>
                     <input type="date" class="form-control"
                            value="@_project.EndDate?.ToString("yyyy-MM-dd")"
                            @onchange="e => _project.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
@@ -863,7 +863,7 @@ else
             </div>
 
             @* ── 카테고리 + 색상 ── *@
-            <div class="form-group">
+            <div class="form-group" style="margin-top:16px;">
                 <label class="form-label">카테고리</label>
                 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
                     @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
@@ -896,7 +896,7 @@ else
             </div>
 
             @* ── 메모 ── *@
-            <div class="form-group">
+            <div class="form-group" style="margin-top:16px;">
                 <label class="form-label">📝 메모</label>
                 <textarea class="form-control" rows="2" @bind="_project.Memo" placeholder="기타 메모"></textarea>
             </div>
@@ -955,6 +955,7 @@ else
     string _sessionMemo = "";
     string _timerDisplay = "00:00:00";
     KnitProject? _project;
+    KnitProject? _editSnapshot;
     ProjectPhoto? _selectedPhoto;
     private PeriodicTimer? _refreshTimer;
     List<Swatch> _linkedSwatches = new();
@@ -1260,8 +1261,35 @@ else
     }
 
     // ── 수정 모달 ────────────────────────────────────────
-    void OpenEditModal() => _showEditModal = true;
-    void CloseEditModal() => _showEditModal = false;
+    void OpenEditModal()
+    {
+        // 취소 시 복원을 위해 JSON 딥카피
+        var json = System.Text.Json.JsonSerializer.Serialize(_project);
+        _editSnapshot = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
+        _showEditModal = true;
+    }
+
+    void CloseEditModal()
+    {
+        // 저장 안 했으면 스냅샷으로 복원
+        if (_editSnapshot != null && _project != null)
+        {
+            _project.PatternName   = _editSnapshot.PatternName;
+            _project.PatternSource = _editSnapshot.PatternSource;
+            _project.PatternMemo   = _editSnapshot.PatternMemo;
+            _project.StartDate     = _editSnapshot.StartDate;
+            _project.EndDate       = _editSnapshot.EndDate;
+            _project.NeedleType    = _editSnapshot.NeedleType;
+            _project.NeedleNote    = _editSnapshot.NeedleNote;
+            _project.Category      = _editSnapshot.Category;
+            _project.ColorCode     = _editSnapshot.ColorCode;
+            _project.Memo          = _editSnapshot.Memo;
+            _project.YarnUsages    = _editSnapshot.YarnUsages;
+            _project.ToolIds       = _editSnapshot.ToolIds;
+            _editSnapshot = null;
+        }
+        _showEditModal = false;
+    }
 
     void AddVideoLink()
     {
