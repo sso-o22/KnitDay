@@ -163,14 +163,18 @@ else
                 {
                     <div class="form-group">
                         <label class="form-label">수량 (콘)</label>
-                        <input type="number" class="form-control" @bind="_editingYarn.Quantity" min="0" />
+                        <input type="number" class="form-control" min="0" placeholder=""
+                               value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
+                               @onchange="e => _editingYarn.Quantity = int.TryParse(e.Value?.ToString(), out var q) ? q : 0" />
                     </div>
                 }
                 else
                 {
                     <div class="form-group">
                         <label class="form-label">수량 (볼)</label>
-                        <input type="number" class="form-control" @bind="_editingYarn.Quantity" min="0" />
+                        <input type="number" class="form-control" min="0" placeholder=""
+                               value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
+                               @onchange="e => _editingYarn.Quantity = int.TryParse(e.Value?.ToString(), out var q) ? q : 0" />
                     </div>
                 }
             </div>
@@ -180,15 +184,21 @@ else
                 <div class="form-row-3">
                     <div class="form-group">
                         <label class="form-label">무게 (g/콘)</label>
-                        <input type="number" class="form-control" @bind="_editingYarn.WeightGram" min="0" placeholder="" />
+                        <input type="number" class="form-control" min="0" placeholder=""
+                               value="@(_editingYarn.WeightGram == 0 ? "" : _editingYarn.WeightGram.ToString())"
+                               @onchange="e => _editingYarn.WeightGram = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">길이 (m/콘)</label>
-                        <input type="number" class="form-control" @bind="_editingYarn.LengthMeter" min="0" placeholder="" />
+                        <input type="number" class="form-control" min="0" placeholder=""
+                               value="@(_editingYarn.LengthMeter == 0 ? "" : _editingYarn.LengthMeter.ToString())"
+                               @onchange="e => _editingYarn.LengthMeter = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">가격 (콘당)</label>
-                        <input type="number" class="form-control" @bind="_editingYarn.Price" min="0" placeholder="" />
+                        <input type="number" class="form-control" min="0" placeholder=""
+                               value="@(_editingYarn.Price == 0 ? "" : _editingYarn.Price.ToString())"
+                               @onchange="e => _editingYarn.Price = decimal.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
                     </div>
                 </div>
             }
@@ -197,15 +207,21 @@ else
                 <div class="form-row-3">
                     <div class="form-group">
                         <label class="form-label">무게 (g/볼)</label>
-                        <input type="number" class="form-control" @bind="_editingYarn.WeightGram" min="0" placeholder="" />
+                        <input type="number" class="form-control" min="0" placeholder=""
+                               value="@(_editingYarn.WeightGram == 0 ? "" : _editingYarn.WeightGram.ToString())"
+                               @onchange="e => _editingYarn.WeightGram = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">길이 (m/볼)</label>
-                        <input type="number" class="form-control" @bind="_editingYarn.LengthMeter" min="0" placeholder="" />
+                        <input type="number" class="form-control" min="0" placeholder=""
+                               value="@(_editingYarn.LengthMeter == 0 ? "" : _editingYarn.LengthMeter.ToString())"
+                               @onchange="e => _editingYarn.LengthMeter = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">가격 (볼당)</label>
-                        <input type="number" class="form-control" @bind="_editingYarn.Price" min="0" placeholder="" />
+                        <input type="number" class="form-control" min="0" placeholder=""
+                               value="@(_editingYarn.Price == 0 ? "" : _editingYarn.Price.ToString())"
+                               @onchange="e => _editingYarn.Price = decimal.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
                     </div>
                 </div>
             }
@@ -267,7 +283,7 @@ else
         _loading = false;
     }
 
-    void OpenAddModal() { _editingYarn = new Yarn { Id = Guid.Empty }; _showModal = true; }
+    void OpenAddModal() { _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 }; _showModal = true; }
     void OpenEditModal(Yarn yarn) { _editingYarn = yarn; _showModal = true; }
     void CloseModal() { _showModal = false; _editingYarn = null; }
 

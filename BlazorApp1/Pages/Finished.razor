@@ -284,24 +284,24 @@ else
                 else
                 {
                     <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem; margin-bottom:8px;">
-                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
+                        <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
                             <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
                             <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전 (cm)</div>
                             <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후 (cm)</div>
-                            <div style="padding:6px 10px; border-left:0.5px solid var(--border);"></div>
                         </div>
                         @foreach (var m in _measures)
                         {
-                            <div style="display:grid; grid-template-columns:1fr 1fr 1fr auto; border-top:0.5px solid var(--border);">
-                                <div style="padding:6px 10px; color:var(--text-dark); display:flex; align-items:center;">
+                            <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
+                                <div style="padding:4px 6px; display:flex; align-items:center; gap:4px;">
                                     @if (m.IsCustom)
                                     {
-                                        <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem; font-weight:500;"
+                                        <input class="form-control" style="border:none; padding:3px 6px; font-size:0.82rem; width:100%;"
                                                @bind="m.Label" placeholder="항목명" />
+                                        <button class="btn btn-danger btn-sm" style="padding:1px 5px; font-size:0.7rem; flex-shrink:0;" @onclick="() => _measures.Remove(m)">✕</button>
                                     }
                                     else
                                     {
-                                        @m.Label
+                                        <span style="padding:3px 4px; color:var(--text-dark);">@m.Label</span>
                                     }
                                 </div>
                                 <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
@@ -311,12 +311,6 @@ else
                                 <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
                                     <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;"
                                            @bind="m.After" placeholder="-" />
-                                </div>
-                                <div style="border-left:0.5px solid var(--border); padding:2px 6px; display:flex; align-items:center;">
-                                    @if (m.IsCustom)
-                                    {
-                                        <button class="btn btn-danger btn-sm" style="padding:2px 6px;" @onclick="() => _measures.Remove(m)">✕</button>
-                                    }
                                 </div>
                             </div>
                         }
@@ -340,6 +334,42 @@ else
                 </div>
             }
 
+            <!-- 기본 정보 편집 -->
+            <div style="margin-bottom:12px;">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <div class="form-label" style="margin-bottom:0;">✏️ 기본 정보 수정</div>
+                    @if (!_editingBasicInfo)
+                    {
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem;" @onclick="() => _editingBasicInfo = true">수정</button>
+                    }
+                </div>
+                @if (_editingBasicInfo && _selectedProject != null)
+                {
+                    <div class="form-row" style="margin-bottom:8px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">시작일</label>
+                            <input type="date" class="form-control"
+                                   value="@_selectedProject.StartDate?.ToString("yyyy-MM-dd")"
+                                   @onchange="e => _selectedProject.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">완성일</label>
+                            <input type="date" class="form-control"
+                                   value="@_selectedProject.EndDate?.ToString("yyyy-MM-dd")"
+                                   @onchange="e => _selectedProject.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-bottom:8px;">
+                        <label class="form-label">메모</label>
+                        <textarea class="form-control" rows="2" @bind="_selectedProject.Memo" placeholder="기타 메모"></textarea>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveBasicInfo">저장</button>
+                        <button class="btn btn-ghost btn-sm" @onclick="() => _editingBasicInfo = false">취소</button>
+                    </div>
+                }
+            </div>
+
             <div class="modal-footer">
                 <button class="btn btn-danger btn-sm" @onclick="() => DeleteProject(_selectedProject.Id)">삭제</button>
                 <button class="btn btn-secondary btn-sm" @onclick="() => RestoreToSchedule(_selectedProject.Id)">↩ 문어발로 복귀</button>
@@ -353,6 +383,7 @@ else
     bool _loading = true;
     bool _showDetail = false;
     bool _editingMeasurements = false;
+    bool _editingBasicInfo = false;
     List<KnitProject> _projects = new();
     KnitProject? _selectedProject;
 
@@ -452,10 +483,18 @@ else
         _showDetail = false;
         _selectedProject = null;
         _editingMeasurements = false;
+        _editingBasicInfo = false;
         _measures.Clear();
         _selectedYarns.Clear();
         _selectedTools.Clear();
         _selectedSwatches.Clear();
+    }
+
+    async Task SaveBasicInfo()
+    {
+        if (_selectedProject == null) return;
+        await Storage.SaveProjectAsync(_selectedProject);
+        _editingBasicInfo = false;
     }
 
     async Task SaveMeasurements()

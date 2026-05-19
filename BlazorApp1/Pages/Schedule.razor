@@ -187,6 +187,73 @@ else
     }
 }
 
+<!-- 완성작 미리보기 팝업 -->
+@if (_showCompletedPopup && _completedPreview != null)
+{
+    <div class="modal-backdrop">
+        <div class="modal" style="max-width:520px;" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">🎉 완성!</h2>
+                <button class="btn btn-ghost btn-sm" @onclick="CloseCompletedPopup">✕</button>
+            </div>
+
+            @if (_completedPreview.Photos.Count > 0)
+            {
+                <img src="@_completedPreview.Photos[0].Base64Data"
+                     style="width:100%; height:200px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:16px;"
+                     alt="완성 사진" />
+            }
+            else
+            {
+                <div style="width:100%; height:80px; background:#e8e8e8; border-radius:var(--radius-sm);
+                            display:flex; align-items:center; justify-content:center; font-size:2.5rem; margin-bottom:16px;">👕</div>
+            }
+
+            <div style="font-size:1.1rem; font-weight:700; margin-bottom:8px;">@_completedPreview.Title</div>
+
+            @if (!string.IsNullOrEmpty(_completedPreview.PatternName))
+            {
+                <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:4px;">📋 @_completedPreview.PatternName</div>
+            }
+
+            <div style="display:flex; gap:16px; flex-wrap:wrap; margin:12px 0; padding:12px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
+                @if (_completedPreview.StartDate.HasValue)
+                {
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">시작일</div>
+                        <div style="font-size:0.88rem; font-weight:600;">@_completedPreview.StartDate.Value.ToString("yyyy.MM.dd")</div>
+                    </div>
+                }
+                @if (_completedPreview.EndDate.HasValue)
+                {
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">완성일</div>
+                        <div style="font-size:0.88rem; font-weight:600;">@_completedPreview.EndDate.Value.ToString("yyyy.MM.dd")</div>
+                    </div>
+                }
+                @if (_completedPreview.StartDate.HasValue && _completedPreview.EndDate.HasValue)
+                {
+                    var days = (_completedPreview.EndDate.Value - _completedPreview.StartDate.Value).Days;
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">소요일</div>
+                        <div style="font-size:0.88rem; font-weight:600; color:#8a6a08;">@days 일</div>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(_completedPreview.Memo))
+            {
+                <p style="white-space:pre-wrap; font-size:0.88rem; color:var(--text-mid); margin-bottom:12px;">@_completedPreview.Memo</p>
+            }
+
+            <div class="modal-footer">
+                <button class="btn btn-ghost" @onclick="CloseCompletedPopup">닫기</button>
+                <button class="btn btn-primary" @onclick="GoToFinished">완성작 목록 보기 →</button>
+            </div>
+        </div>
+    </div>
+}
+
 @if (_showModal)
 {
     <div class="modal-backdrop">
@@ -251,28 +318,43 @@ else
                     }
                     else
                     {
-                        @foreach (var s in _allSwatches)
+                        <select class="form-control" @onchange="OnScheduleSwatchSelect">
+                            <option value="">+ 스와치 연결</option>
+                            @foreach (var s in _allSwatches)
+                            {
+                                var sy = _yarns.Find(y => y.Id == s.YarnId);
+                                bool isLinked = s.ProjectId == _editingProject!.Id && _editingProject.Id != Guid.Empty;
+                                <option value="@s.Id" disabled="@isLinked">
+                                    @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
+                                    @(sy != null ? $" ({sy.Brand} {sy.Name})" : "")
+                                    @(isLinked ? " ✓연결됨" : "")
+                                </option>
+                            }
+                        </select>
+                        @if (_allSwatches.Any(s => s.ProjectId == _editingProject!.Id && _editingProject.Id != Guid.Empty))
                         {
-                            bool linked = s.ProjectId == _editingProject!.Id && _editingProject.Id != Guid.Empty;
-                            var syarn = _yarns.Find(y => y.Id == s.YarnId);
-                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
-                                        border-radius:9px; background:@(linked ? "#f0faf4" : "transparent"); border:1px solid @(linked ? "#b8e0c8" : "#e8e8e8");">
-                                <input type="checkbox" checked="@linked"
-                                       @onchange="() => { if (s.ProjectId == _editingProject!.Id) s.ProjectId = null; else s.ProjectId = _editingProject!.Id; }"
-                                       style="width:15px; height:15px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
-                                <div style="flex:1; min-width:0;">
-                                    <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
-                                    @if (syarn != null)
-                                    {
-                                        <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
-                                            <span class="color-dot" style="background:@syarn.ColorCode; width:8px; height:8px;"></span>
-                                            @syarn.Brand @syarn.Name
-                                        </div>
-                                    }
-                                </div>
-                                @if (s.NeedleSizeMm > 0)
+                            <div style="margin-top:8px;">
+                                @foreach (var s in _allSwatches.Where(s => s.ProjectId == _editingProject!.Id && _editingProject.Id != Guid.Empty))
                                 {
-                                    <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
+                                    var sy = _yarns.Find(y => y.Id == s.YarnId);
+                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                                border-radius:9px; background:#f0faf4; border:1px solid #b8e0c8;">
+                                        <div style="flex:1; min-width:0;">
+                                            <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
+                                            @if (sy != null)
+                                            {
+                                                <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
+                                                    <span class="color-dot" style="background:@sy.ColorCode; width:8px; height:8px;"></span>
+                                                    @sy.Brand @sy.Name
+                                                </div>
+                                            }
+                                        </div>
+                                        @if (s.NeedleSizeMm > 0)
+                                        {
+                                            <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
+                                        }
+                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" @onclick="() => s.ProjectId = null">✕</button>
+                                    </div>
                                 }
                             </div>
                         }
@@ -361,6 +443,8 @@ else
 @code {
     bool _loading = true;
     bool _isListView = false;
+    bool _showCompletedPopup = false;
+    KnitProject? _completedPreview;
     string _sortField = "created";
     bool _sortAsc = false;          // false = 내림차순(기본), true = 오름차순
     string _statusFilter = "all";   // "all" | "진행중" | "일시중단"
@@ -458,6 +542,18 @@ else
             _editingProject.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = 1 });
     }
 
+    void OnScheduleSwatchSelect(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (string.IsNullOrEmpty(val) || _editingProject == null) return;
+        if (!Guid.TryParse(val, out var swatchId)) return;
+        var swatch = _allSwatches.FirstOrDefault(s => s.Id == swatchId);
+        if (swatch == null) return;
+        if (_editingProject.Id == Guid.Empty) return; // 새 프로젝트는 저장 후 연결 가능
+        if (swatch.ProjectId != _editingProject.Id)
+            swatch.ProjectId = _editingProject.Id;
+    }
+
     void ToggleTool(Guid toolId)
     {
         if (_editingProject == null) return;
@@ -492,9 +588,27 @@ else
 
     async Task CompleteProject(Guid id)
     {
+        // 완료 처리 전에 프로젝트 정보 저장
+        var proj = _projects.FirstOrDefault(p => p.Id == id);
         await Storage.CompleteProjectAsync(id);
         await LoadData();
+        // 완성작 팝업 표시
+        if (proj != null)
+        {
+            // 완료 처리 후 EndDate가 설정되므로 Storage에서 다시 읽기
+            var allProjects = await Storage.GetProjectsAsync();
+            _completedPreview = allProjects.FirstOrDefault(p => p.Id == id) ?? proj;
+            _showCompletedPopup = true;
+        }
     }
+
+    void CloseCompletedPopup()
+    {
+        _showCompletedPopup = false;
+        _completedPreview = null;
+    }
+
+    void GoToFinished() => Nav.NavigateTo("finished");
 
     async Task DeleteProject(Guid id)
     {
