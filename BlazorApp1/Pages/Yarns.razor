@@ -248,29 +248,7 @@ else
                     </div>
                 </div>
             }
-            else
-            {
-                <div class="form-row-3">
-                    <div class="form-group">
-                        <label class="form-label">무게 (g/볼)</label>
-                        <input type="number" class="form-control" min="0" placeholder=""
-                               value="@(_editingYarn.WeightGram == 0 ? "" : _editingYarn.WeightGram.ToString())"
-                               @onchange="e => _editingYarn.WeightGram = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">길이 (m/볼)</label>
-                        <input type="number" class="form-control" min="0" placeholder=""
-                               value="@(_editingYarn.LengthMeter == 0 ? "" : _editingYarn.LengthMeter.ToString())"
-                               @onchange="e => _editingYarn.LengthMeter = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">가격 (볼당)</label>
-                        <input type="number" class="form-control" min="0" placeholder=""
-                               value="@(_editingYarn.Price == 0 ? "" : _editingYarn.Price.ToString())"
-                               @onchange="e => _editingYarn.Price = decimal.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
-                    </div>
-                </div>
-            }
+
 
             @{
                 int previewTotal = _editingYarn.LengthMeter * _editingYarn.Quantity;

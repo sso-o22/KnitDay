@@ -154,10 +154,6 @@ else
                                    @onchange="e => _selectedProject.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                         </div>
                     </div>
-                    <div class="form-group" style="margin-bottom:8px;">
-                        <label class="form-label">메모</label>
-                        <textarea class="form-control" rows="2" @bind="_selectedProject.Memo" placeholder="기타 메모"></textarea>
-                    </div>
                     <div style="display:flex; gap:8px;">
                         <button class="btn btn-primary btn-sm" @onclick="SaveBasicInfo">저장</button>
                         <button class="btn btn-ghost btn-sm" @onclick="() => _editingBasicInfo = false">취소</button>
@@ -168,7 +164,7 @@ else
             <!-- 도안 정보 -->
             @if (!string.IsNullOrEmpty(_selectedProject.PatternName))
             {
-                <div style="margin-bottom:12px;">
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
                     <div class="form-label" style="margin-bottom:4px;">📋 도안</div>
                     <div style="font-size:0.92rem;">@_selectedProject.PatternName</div>
                     @if (!string.IsNullOrEmpty(_selectedProject.PatternSource))
@@ -185,7 +181,7 @@ else
             <!-- 사용 실 -->
             @if (_selectedYarns.Count > 0)
             {
-                <div style="margin-bottom:12px;">
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
                     <div class="form-label" style="margin-bottom:6px;">🧵 사용 실</div>
                     @foreach (var (usage, yarn) in _selectedYarns)
                     {
@@ -204,7 +200,7 @@ else
             <!-- 사용 바늘 -->
             @if (_selectedTools.Count > 0 || !string.IsNullOrEmpty(_selectedProject.NeedleNote))
             {
-                <div style="margin-bottom:12px;">
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
                     <div class="form-label" style="margin-bottom:6px;">⚒️ 사용 바늘</div>
                     <div style="display:flex; flex-wrap:wrap; gap:6px;">
                         @foreach (var tool in _selectedTools)
@@ -222,7 +218,7 @@ else
             <!-- 스와치 -->
             @if (_selectedSwatches.Count > 0)
             {
-                <div style="margin-bottom:12px;">
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
                     <div class="form-label" style="margin-bottom:6px;">📐 스와치</div>
                     @foreach (var s in _selectedSwatches)
                     {
@@ -279,7 +275,7 @@ else
             }
 
             <!-- 완성 치수 -->
-            <div style="margin-bottom:12px;">
+            <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
                     <div class="form-label" style="margin-bottom:0;">📏 완성 치수</div>
                     @if (!_editingMeasurements)
@@ -362,7 +358,7 @@ else
             <!-- 메모 -->
             @if (!string.IsNullOrEmpty(_selectedProject.Memo))
             {
-                <div style="margin-bottom:12px;">
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
                     <div class="form-label" style="margin-bottom:4px;">📝 메모</div>
                     <p style="white-space:pre-wrap; font-size:0.9rem; color:var(--text-mid);">@_selectedProject.Memo</p>
                 </div>

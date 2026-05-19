@@ -257,7 +257,7 @@ else
 @if (_showModal)
 {
     <div class="modal-backdrop">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" style="max-width:680px;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingProject?.Id == Guid.Empty ? "새 프로젝트" : "프로젝트 수정")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
@@ -265,6 +265,7 @@ else
 
             @if (_editingProject != null)
             {
+                @* ── 도안명 / 출처 ── *@
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">도안명 *</label>
@@ -281,37 +282,66 @@ else
                     <textarea class="form-control" rows="2" @bind="_editingProject.PatternMemo" placeholder="사이즈, 수정 사항 등"></textarea>
                 </div>
 
-                @* 사용 실 *@
-                <div class="form-group">
-                    <label class="form-label">사용 실 — 실 창고에서 선택</label>
-                    @foreach (var usage in _editingProject.YarnUsages)
-                    {
-                        var yarn = _yarns.Find(y => y.Id == usage.YarnId);
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                            @if (yarn != null)
-                            {
-                                <span class="color-dot" style="background:@yarn.ColorCode;"></span>
-                                <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
-                            }
-                            <input class="form-control" type="number" min="1" style="width:70px;"
-                                   value="@usage.BallsUsed"
-                                   @onchange="e => usage.BallsUsed = int.TryParse(e.Value?.ToString(), out var n) ? n : 1" />
-                            <span style="font-size:0.82rem; color:var(--text-mid);">볼</span>
-                            <button class="btn btn-danger btn-sm" @onclick="() => _editingProject.YarnUsages.Remove(usage)">✕</button>
-                        </div>
-                    }
-                    <select class="form-control" @onchange="OnAddYarn">
+                @* ── 날짜 ── *@
+                <div class="form-row" style="padding-top:12px; border-top:1px solid var(--border);">
+                    <div class="form-group">
+                        <label class="form-label">시작일</label>
+                        <input type="date" class="form-control"
+                               value="@_editingProject.StartDate?.ToString("yyyy-MM-dd")"
+                               @onchange="e => _editingProject.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">@(_editingProject!.Status == ProjectStatus.완료 ? "종료일" : "목표 종료일")</label>
+                        <input type="date" class="form-control"
+                               value="@_editingProject.EndDate?.ToString("yyyy-MM-dd")"
+                               @onchange="e => _editingProject.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
+                    </div>
+                </div>
+
+                @* ── 사용 실 ── *@
+                <div class="form-group" style="padding-top:12px; border-top:1px solid var(--border);">
+                    <label class="form-label">🧵 사용 실</label>
+                    <select class="form-control" style="margin-bottom:8px;" @onchange="OnAddYarn">
                         <option value="">+ 실 추가</option>
                         @foreach (var y in _yarns)
                         {
                             <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
                         }
                     </select>
+                    @foreach (var usage in _editingProject.YarnUsages)
+                    {
+                        var yarn = _yarns.Find(y => y.Id == usage.YarnId);
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                    border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
+                            @if (yarn != null)
+                            {
+                                <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
+                                <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
+                            }
+                            <input class="form-control" type="number" min="1" style="width:64px;"
+                                   value="@usage.BallsUsed"
+                                   @onchange="e => usage.BallsUsed = int.TryParse(e.Value?.ToString(), out var n) ? n : 1" />
+                            <span style="font-size:0.82rem; color:var(--text-mid);">볼</span>
+                            <button class="btn btn-danger btn-sm" @onclick="() => _editingProject.YarnUsages.Remove(usage)">✕</button>
+                        </div>
+                    }
                 </div>
 
-                @* 연결된 스와치 *@
-                <div class="form-group">
-                    <label class="form-label">연결된 스와치</label>
+                @* ── 사용 바늘 ── *@
+                <div class="form-group" style="padding-top:12px; border-top:1px solid var(--border);">
+                    <label class="form-label">⚒️ 사용 바늘</label>
+                    <div style="display:flex; gap:6px; margin-bottom:6px;">
+                        <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
+                                @onclick='() => _editingProject.NeedleType = (_editingProject.NeedleType == NeedleType.대바늘 ? (NeedleType?)null : NeedleType.대바늘)'>대바늘</button>
+                        <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.코바늘 ? "btn-sage" : "btn-ghost")"
+                                @onclick='() => _editingProject.NeedleType = (_editingProject.NeedleType == NeedleType.코바늘 ? (NeedleType?)null : NeedleType.코바늘)'>코바늘</button>
+                    </div>
+                    <input class="form-control" @bind="_editingProject.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
+                </div>
+
+                @* ── 스와치 연결 ── *@
+                <div class="form-group" style="padding-top:12px; border-top:1px solid var(--border);">
+                    <label class="form-label">📐 스와치</label>
                     @if (!_allSwatches.Any())
                     {
                         <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
@@ -327,7 +357,6 @@ else
                                 <option value="@s.Id" disabled="@isLinked">
                                     @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
                                     @(sy != null ? $" ({sy.Brand} {sy.Name})" : "")
-                                    @(isLinked ? " ✓연결됨" : "")
                                 </option>
                             }
                         </select>
@@ -337,23 +366,56 @@ else
                                 @foreach (var s in _allSwatches.Where(s => s.ProjectId == _editingProject!.Id && _editingProject.Id != Guid.Empty))
                                 {
                                     var sy = _yarns.Find(y => y.Id == s.YarnId);
-                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
-                                                border-radius:9px; background:#f0faf4; border:1px solid #b8e0c8;">
+                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:8px 12px;
+                                                border-radius:var(--radius-sm); background:#f0faf4; border:1px solid #b8e0c8;">
                                         <div style="flex:1; min-width:0;">
-                                            <div style="font-size:0.85rem; font-weight:500;">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</div>
+                                            <div style="font-size:0.88rem; font-weight:600;">
+                                                @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
+                                                @if (!string.IsNullOrEmpty(s.Stitch))
+                                                {
+                                                    <span style="font-weight:400; color:var(--text-mid); margin-left:6px;">(@s.Stitch)</span>
+                                                }
+                                                @if (s.NeedleSizeMm > 0)
+                                                {
+                                                    <span style="font-weight:400; color:var(--text-mid); margin-left:4px;">@(s.NeedleSizeMm)mm</span>
+                                                }
+                                            </div>
                                             @if (sy != null)
                                             {
-                                                <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px;">
+                                                <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px; margin-top:3px;">
                                                     <span class="color-dot" style="background:@sy.ColorCode; width:8px; height:8px;"></span>
                                                     @sy.Brand @sy.Name
                                                 </div>
                                             }
+                                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px; font-size:0.8rem;">
+                                                <div>
+                                                    <div style="font-size:0.7rem; color:var(--text-light);">세탁 전</div>
+                                                    @if (s.PreWashStitches > 0 || s.PreWashRows > 0)
+                                                    {
+                                                        <div>@(s.PreWashStitches)코 × @(s.PreWashRows)단</div>
+                                                    }
+                                                    @if (s.PreWashWidthCm > 0 || s.PreWashHeightCm > 0)
+                                                    {
+                                                        <div style="color:var(--text-mid);">@(s.PreWashWidthCm)cm × @(s.PreWashHeightCm)cm</div>
+                                                    }
+                                                </div>
+                                                @if (s.PostWashStitches > 0 || s.PostWashWidthCm > 0)
+                                                {
+                                                    <div>
+                                                        <div style="font-size:0.7rem; color:var(--text-light);">세탁 후</div>
+                                                        @if (s.PostWashStitches > 0 || s.PostWashRows > 0)
+                                                        {
+                                                            <div>@(s.PostWashStitches)코 × @(s.PostWashRows)단</div>
+                                                        }
+                                                        @if (s.PostWashWidthCm > 0 || s.PostWashHeightCm > 0)
+                                                        {
+                                                            <div style="color:var(--text-mid);">@(s.PostWashWidthCm)cm × @(s.PostWashHeightCm)cm</div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
                                         </div>
-                                        @if (s.NeedleSizeMm > 0)
-                                        {
-                                            <span style="font-size:0.75rem; color:var(--text-light);">@(s.NeedleSizeMm)mm</span>
-                                        }
-                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" @onclick="() => s.ProjectId = null">✕</button>
+                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px; flex-shrink:0;" @onclick="() => s.ProjectId = null">✕</button>
                                     </div>
                                 }
                             </div>
@@ -361,22 +423,10 @@ else
                     }
                 </div>
 
-                @* 사용 바늘 *@
-                <div class="form-group">
-                    <label class="form-label">사용 바늘</label>
-                    <div style="display:flex; gap:6px; margin-bottom:6px;">
-                        <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
-                                @onclick='() => _editingProject.NeedleType = (_editingProject.NeedleType == NeedleType.대바늘 ? (NeedleType?)null : NeedleType.대바늘)'>대바늘</button>
-                        <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.코바늘 ? "btn-sage" : "btn-ghost")"
-                                @onclick='() => _editingProject.NeedleType = (_editingProject.NeedleType == NeedleType.코바늘 ? (NeedleType?)null : NeedleType.코바늘)'>코바늘</button>
-                    </div>
-                    <input class="form-control" @bind="_editingProject.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
-                </div>
-
-                @* 카테고리 *@
-                <div class="form-group">
+                @* ── 카테고리 + 캘린더 색상 ── *@
+                <div class="form-group" style="padding-top:12px; border-top:1px solid var(--border);">
                     <label class="form-label">카테고리</label>
-                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
                         @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
                         {
                             <button type="button"
@@ -386,24 +436,6 @@ else
                             </button>
                         }
                     </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">시작일</label>
-                        <input type="date" class="form-control"
-                               value="@_editingProject.StartDate?.ToString("yyyy-MM-dd")"
-                               @onchange="e => _editingProject.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">목표 종료일</label>
-                        <input type="date" class="form-control"
-                               value="@_editingProject.EndDate?.ToString("yyyy-MM-dd")"
-                               @onchange="e => _editingProject.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
-                    </div>
-                </div>
-
-                <div class="form-group">
                     <label class="form-label">캘린더 색상</label>
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         @foreach (var hex in _colorOptions)
@@ -426,8 +458,9 @@ else
                     </div>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">메모</label>
+                @* ── 메모 ── *@
+                <div class="form-group" style="padding-top:12px; border-top:1px solid var(--border);">
+                    <label class="form-label">📝 메모</label>
                     <textarea class="form-control" rows="2" @bind="_editingProject.Memo" placeholder="기타 메모"></textarea>
                 </div>
             }
