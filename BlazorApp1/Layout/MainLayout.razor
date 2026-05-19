@@ -82,7 +82,7 @@
         var h = secs / 3600;
         var m = (secs % 3600) / 60;
         var s = secs % 60;
-        if (h > 0) return $"{h}시간 {m:D2}분";
+        if (h > 0) return $"{h}시간 {m:D2}분 {s:D2}초";
         if (m > 0) return $"{m}분 {s:D2}초";
         return secs > 0 ? $"{s}초" : "0분";
     }
