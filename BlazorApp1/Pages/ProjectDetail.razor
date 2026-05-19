@@ -863,7 +863,7 @@ else
             </div>
 
             @* ── 카테고리 + 색상 ── *@
-            <div class="form-group" style="margin-top:16px;">
+            <div class="form-group" style="margin-top:28px;">
                 <label class="form-label">카테고리</label>
                 <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
                     @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
@@ -875,7 +875,7 @@ else
                         </button>
                     }
                 </div>
-                <label class="form-label">캘린더 색상</label>
+                <label class="form-label" style="margin-top:20px; display:block;">캘린더 색상</label>
                 <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                     @foreach (var hex in _colorOptions)
                     {
@@ -896,7 +896,7 @@ else
             </div>
 
             @* ── 메모 ── *@
-            <div class="form-group" style="margin-top:16px;">
+            <div class="form-group" style="margin-top:28px;">
                 <label class="form-label">📝 메모</label>
                 <textarea class="form-control" rows="2" @bind="_project.Memo" placeholder="기타 메모"></textarea>
             </div>
@@ -956,6 +956,7 @@ else
     string _timerDisplay = "00:00:00";
     KnitProject? _project;
     KnitProject? _editSnapshot;
+    List<Guid>? _swatchSnapshotPD;
     ProjectPhoto? _selectedPhoto;
     private PeriodicTimer? _refreshTimer;
     List<Swatch> _linkedSwatches = new();
@@ -1266,6 +1267,11 @@ else
         // 취소 시 복원을 위해 JSON 딥카피
         var json = System.Text.Json.JsonSerializer.Serialize(_project);
         _editSnapshot = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
+        // 스와치 연결 상태 스냅샷
+        _swatchSnapshotPD = _allSwatches
+            .Where(s => s.ProjectId == _project!.Id)
+            .Select(s => s.Id)
+            .ToList();
         _showEditModal = true;
     }
 
@@ -1286,6 +1292,18 @@ else
             _project.Memo          = _editSnapshot.Memo;
             _project.YarnUsages    = _editSnapshot.YarnUsages;
             _project.ToolIds       = _editSnapshot.ToolIds;
+                // 스와치 연결 복원
+            if (_swatchSnapshotPD != null && _project != null)
+            {
+                foreach (var s in _allSwatches.Where(s => s.ProjectId == _project.Id).ToList())
+                    s.ProjectId = null;
+                foreach (var id in _swatchSnapshotPD)
+                {
+                    var s = _allSwatches.FirstOrDefault(x => x.Id == id);
+                    if (s != null) s.ProjectId = _project.Id;
+                }
+            }
+            _swatchSnapshotPD = null;
             _editSnapshot = null;
         }
         _showEditModal = false;
@@ -1333,6 +1351,8 @@ else
             await Storage.SaveSwatchAsync(s);
         // 연결된 스와치 목록 갱신
         _linkedSwatches = _allSwatches.Where(s => s.ProjectId == _project!.Id).ToList();
+        _swatchSnapshotPD = null;
+        _editSnapshot = null;
         CloseEditModal();
     }
 

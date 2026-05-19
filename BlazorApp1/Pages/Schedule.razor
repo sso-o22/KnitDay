@@ -669,7 +669,7 @@ else
                 </div>
 
                 @* ── 카테고리 + 캘린더 색상 ── *@
-                <div class="form-group" style="margin-top:16px;">
+                <div class="form-group" style="margin-top:28px;">
                     <label class="form-label">카테고리</label>
                     <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
                         @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
@@ -681,7 +681,7 @@ else
                             </button>
                         }
                     </div>
-                    <label class="form-label">캘린더 색상</label>
+                    <label class="form-label" style="margin-top:20px; display:block;">캘린더 색상</label>
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         @foreach (var hex in _colorOptions)
                         {
@@ -704,7 +704,7 @@ else
                 </div>
 
                 @* ── 메모 ── *@
-                <div class="form-group" style="margin-top:16px;">
+                <div class="form-group" style="margin-top:28px;">
                     <label class="form-label">📝 메모</label>
                     <textarea class="form-control" rows="2" @bind="_editingProject.Memo" placeholder="기타 메모"></textarea>
                 </div>
@@ -722,6 +722,7 @@ else
     bool _loading = true;
     bool _isListView = false;
     bool _showCompletedPopup = false;
+    List<Guid>? _swatchSnapshot;
     KnitProject? _completedPreview;
     bool _popupEditingBasicInfo = false;
     bool _popupEditingMeasurements = false;
@@ -815,11 +816,28 @@ else
         // 취소 시 복원을 위해 JSON 딥카피
         var json = System.Text.Json.JsonSerializer.Serialize(proj);
         _editingProject = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
+        // 스와치 연결 상태 스냅샷 (projectId 기준)
+        _swatchSnapshot = _allSwatches
+            .Where(s => s.ProjectId == proj.Id)
+            .Select(s => s.Id)
+            .ToList();
         _showModal = true;
     }
 
     void CloseModal()
     {
+        // 스와치 연결 상태 복원
+        if (_swatchSnapshot != null && _editingProject != null)
+        {
+            foreach (var s in _allSwatches.Where(s => s.ProjectId == _editingProject.Id).ToList())
+                s.ProjectId = null;
+            foreach (var id in _swatchSnapshot)
+            {
+                var s = _allSwatches.FirstOrDefault(x => x.Id == id);
+                if (s != null) s.ProjectId = _editingProject.Id;
+            }
+            _swatchSnapshot = null;
+        }
         _showModal = false;
         _editingProject = null;
     }
@@ -867,6 +885,7 @@ else
         await Storage.SaveProjectAsync(_editingProject);
         foreach (var s in _allSwatches)
             await Storage.SaveSwatchAsync(s);
+        _swatchSnapshot = null;
         await LoadData();
         CloseModal();
     }
