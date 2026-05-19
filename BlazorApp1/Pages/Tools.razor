@@ -162,7 +162,7 @@ else
                 <!-- 케이블: 브랜드, 길이, 사이즈(선택) -->
                 <div class="form-group">
                     <label class="form-label">브랜드</label>
-                    <input class="form-control" @bind="_editingTool.Brand" placeholder="예: 클로버, KnitPro" />
+                    <input class="form-control" @bind="_editingTool.Brand" placeholder="예: 니트프로" />
                 </div>
                 <div class="form-group">
                     <label class="form-label">길이 (cm)</label>
@@ -173,7 +173,7 @@ else
                 </div>
                 <div class="form-group">
                     <label class="form-label">사이즈 (선택)</label>
-                    <input class="form-control" @bind="_editingTool.Material" placeholder="예: S, M, L" />
+                    <input class="form-control" @bind="_editingTool.Material" placeholder="" />
                 </div>
             }
             else if (_editingTool.NeedleType == NeedleType.대바늘)
@@ -182,11 +182,11 @@ else
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">브랜드</label>
-                        <input class="form-control" @bind="_editingTool.Brand" placeholder="예: 클로버, KnitPro" />
+                        <input class="form-control" @bind="_editingTool.Brand" placeholder="예: 치아오구" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">모델명</label>
-                        <input class="form-control" @bind="_editingTool.ModelName" placeholder="예: 랜턴문, 진저, 심포니" />
+                        <input class="form-control" @bind="_editingTool.ModelName" placeholder="예: 밤부" />
                     </div>
                 </div>
 
@@ -244,11 +244,11 @@ else
                         <input type="number" class="form-control"
                                value="@(_editingTool.LengthCm == 0 ? "" : _editingTool.LengthCm.ToString())"
                                @onchange="e => _editingTool.LengthCm = int.TryParse(e.Value?.ToString(), out var v) ? v : 0"
-                               min="0" placeholder="예: 80" />
+                               min="0" placeholder="예: 13" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">소재 (선택)</label>
-                        <input class="form-control" @bind="_editingTool.Material" placeholder="예: 대나무, 알루미늄" />
+                        <input class="form-control" @bind="_editingTool.Material" placeholder="예: 대나무" />
                     </div>
                 </div>
             }
@@ -258,11 +258,11 @@ else
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">브랜드</label>
-                        <input class="form-control" @bind="_editingTool.Brand" placeholder="예: 클로버, KnitPro" />
+                        <input class="form-control" @bind="_editingTool.Brand" placeholder="예: 튤립" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">모델명</label>
-                        <input class="form-control" @bind="_editingTool.ModelName" placeholder="예: 아미코" />
+                        <input class="form-control" @bind="_editingTool.ModelName" placeholder="예: 에티모" />
                     </div>
                 </div>
 
