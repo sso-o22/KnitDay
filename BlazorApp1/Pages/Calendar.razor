@@ -6,6 +6,7 @@
 @using KnitLog.Services
 @inject StorageService Storage
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <div class="page-header">
     <div>
@@ -27,8 +28,8 @@ else
 
             <!-- 뷰 탭 -->
             <div style="display:flex; gap:4px; background:#f5f5f5; border-radius:9px; padding:3px; margin-bottom:20px; width:fit-content;">
-                <button class="btn btn-sm @(_view == "month" ? "btn-sage" : "btn-ghost")" @onclick='() => _view = "month"'>월간</button>
-                <button class="btn btn-sm @(_view == "timeline" ? "btn-sage" : "btn-ghost")" @onclick='() => _view = "timeline"'>타임라인</button>
+                <button class="btn btn-sm @(_view == "month" ? "btn-sage" : "btn-ghost")" @onclick='async () => { _view = "month"; await JS.InvokeVoidAsync("localStorage.setItem", "cal_view", "month"); }'>월간</button>
+                <button class="btn btn-sm @(_view == "timeline" ? "btn-sage" : "btn-ghost")" @onclick='async () => { _view = "timeline"; await JS.InvokeVoidAsync("localStorage.setItem", "cal_view", "timeline"); }'>타임라인</button>
             </div>
 
             <!-- 월 네비게이션 -->
@@ -579,6 +580,9 @@ else
     // ── 초기화 ────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
     {
+        // 마지막 뷰 복원
+        var savedView = await JS.InvokeAsync<string?>("localStorage.getItem", "cal_view");
+        if (!string.IsNullOrEmpty(savedView)) _view = savedView;
         _allProjects = await Storage.GetProjectsAsync();
         _calYarns    = await Storage.GetYarnsAsync();
         _calTools    = await Storage.GetToolsAsync();
