@@ -193,10 +193,11 @@ else
     <div class="modal-backdrop">
         <div class="modal" style="max-width:520px;" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">🎉 완성!</h2>
+                <h2 class="modal-title">🎉 @_completedPreview.Title</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseCompletedPopup">✕</button>
             </div>
 
+            <!-- 사진 -->
             @if (_completedPreview.Photos.Count > 0)
             {
                 <img src="@_completedPreview.Photos[0].Base64Data"
@@ -209,14 +210,21 @@ else
                             display:flex; align-items:center; justify-content:center; font-size:2.5rem; margin-bottom:16px;">👕</div>
             }
 
-            <div style="font-size:1.1rem; font-weight:700; margin-bottom:8px;">@_completedPreview.Title</div>
-
+            <!-- 도안 -->
             @if (!string.IsNullOrEmpty(_completedPreview.PatternName))
             {
-                <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:4px;">📋 @_completedPreview.PatternName</div>
+                <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:4px;">
+                    📋 @_completedPreview.PatternName
+                    @if (!string.IsNullOrEmpty(_completedPreview.PatternSource))
+                    {
+                        <span style="margin-left:6px; color:var(--text-light);">/ @_completedPreview.PatternSource</span>
+                    }
+                </div>
             }
 
-            <div style="display:flex; gap:16px; flex-wrap:wrap; margin:12px 0; padding:12px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
+            <!-- 날짜 바 -->
+            <div style="display:flex; gap:16px; flex-wrap:wrap; margin:12px 0; padding:12px;
+                        background:var(--ivory-dark); border-radius:var(--radius-sm);">
                 @if (_completedPreview.StartDate.HasValue)
                 {
                     <div style="text-align:center;">
@@ -239,8 +247,47 @@ else
                         <div style="font-size:0.88rem; font-weight:600; color:#8a6a08;">@days 일</div>
                     </div>
                 }
+                @{
+                    var popMin = _completedPreview.Sessions
+                        .Where(s => s.EndTime.HasValue)
+                        .Sum(s => (int)(s.EndTime!.Value - s.StartTime).TotalMinutes);
+                }
+                @if (popMin > 0)
+                {
+                    var ph = popMin / 60; var pm = popMin % 60;
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
+                        <div style="font-size:0.88rem; font-weight:600; color:#267848;">@(ph > 0 ? $"{ph}시간 " : "")@(pm > 0 ? $"{pm}분" : "")</div>
+                    </div>
+                }
             </div>
 
+            <!-- 사용 실 -->
+            @{
+                var popYarns = _completedPreview.YarnUsages
+                    .Select(u => (u, _yarns.Find(y => y.Id == u.YarnId)))
+                    .Where(x => x.Item2 != null)
+                    .ToList();
+            }
+            @if (popYarns.Any())
+            {
+                <div style="margin-bottom:12px;">
+                    <div style="font-size:0.8rem; font-weight:600; color:var(--text-dark); margin-bottom:6px;">🧵 사용 실</div>
+                    @foreach (var (usage, yarn) in popYarns)
+                    {
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:0.88rem;">
+                            <span class="color-dot" style="background:@yarn!.ColorCode; flex-shrink:0;"></span>
+                            <span>@yarn.Brand @yarn.Name (@yarn.Color)</span>
+                            @if (usage.BallsUsed > 0)
+                            {
+                                <span style="color:var(--text-light); font-size:0.8rem; margin-left:auto;">@usage.BallsUsed 볼</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- 메모 -->
             @if (!string.IsNullOrEmpty(_completedPreview.Memo))
             {
                 <p style="white-space:pre-wrap; font-size:0.88rem; color:var(--text-mid); margin-bottom:12px;">@_completedPreview.Memo</p>
