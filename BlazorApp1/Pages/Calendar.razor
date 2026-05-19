@@ -207,10 +207,101 @@ else
     </div>
 }
 
+<!-- 완성작 상세 팝업 -->
+@if (_showFinishedPopup && _finishedPopupProject != null)
+{
+    <div class="modal-backdrop">
+        <div class="modal" style="max-width:680px;" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">@_finishedPopupProject.Title</h2>
+                <button class="btn btn-ghost btn-sm" @onclick="CloseFinishedPopup">✕</button>
+            </div>
+
+            @if (_finishedPopupProject.Photos.Count > 0)
+            {
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+                    @foreach (var photo in _finishedPopupProject.Photos)
+                    {
+                        <img src="@photo.Base64Data"
+                             style="width:110px; height:110px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border);"
+                             alt="완성 사진" />
+                    }
+                </div>
+            }
+
+            <!-- 날짜 / 소요일 / 누적시간 -->
+            <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px; padding:12px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
+                @if (_finishedPopupProject.StartDate.HasValue)
+                {
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">시작일</div>
+                        <div style="font-size:0.9rem; font-weight:600;">@_finishedPopupProject.StartDate.Value.ToString("yyyy.MM.dd")</div>
+                    </div>
+                }
+                @if (_finishedPopupProject.EndDate.HasValue)
+                {
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">완성일</div>
+                        <div style="font-size:0.9rem; font-weight:600;">@_finishedPopupProject.EndDate.Value.ToString("yyyy.MM.dd")</div>
+                    </div>
+                }
+                @if (_finishedPopupProject.StartDate.HasValue && _finishedPopupProject.EndDate.HasValue)
+                {
+                    var popDays = (_finishedPopupProject.EndDate.Value - _finishedPopupProject.StartDate.Value).Days;
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">소요일</div>
+                        <div style="font-size:0.9rem; font-weight:600; color:#8a6a08;">@popDays 일</div>
+                    </div>
+                }
+                @{
+                    var popMin = _finishedPopupProject.Sessions
+                        .Where(s => s.EndTime.HasValue)
+                        .Sum(s => (int)(s.EndTime!.Value - s.StartTime).TotalMinutes);
+                }
+                @if (popMin > 0)
+                {
+                    var ph = popMin / 60; var pm = popMin % 60;
+                    <div style="text-align:center;">
+                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
+                        <div style="font-size:0.9rem; font-weight:600; color:#267848;">@(ph > 0 ? $"{ph}시간 " : "")@(pm > 0 ? $"{pm}분" : "")</div>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(_finishedPopupProject.PatternName))
+            {
+                <div style="margin-bottom:10px;">
+                    <div class="form-label" style="margin-bottom:3px;">📋 도안</div>
+                    <div style="font-size:0.9rem;">@_finishedPopupProject.PatternName</div>
+                    @if (!string.IsNullOrEmpty(_finishedPopupProject.PatternSource))
+                    {
+                        <div style="font-size:0.8rem; color:var(--text-mid);">출처: @_finishedPopupProject.PatternSource</div>
+                    }
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(_finishedPopupProject.Memo))
+            {
+                <div style="margin-bottom:10px;">
+                    <div class="form-label" style="margin-bottom:3px;">📝 메모</div>
+                    <p style="white-space:pre-wrap; font-size:0.88rem; color:var(--text-mid);">@_finishedPopupProject.Memo</p>
+                </div>
+            }
+
+            <div class="modal-footer">
+                <button class="btn btn-ghost" @onclick="CloseFinishedPopup">닫기</button>
+                <button class="btn btn-primary" @onclick='() => Nav.NavigateTo("finished")'>완성작 목록 →</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     // ── 상태 ───────────────────────────────────────────────────────────
     bool _loading = true;
     string _view  = "month";
+    bool _showFinishedPopup = false;
+    KnitProject? _finishedPopupProject;
     DateTime _today   = DateTime.Today;
     DateTime _current = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
 
@@ -415,5 +506,23 @@ else
         Rebuild();
     }
 
-    void GoToProject(Guid id) => Nav.NavigateTo("projects/" + id);
+    void GoToProject(Guid id)
+    {
+        var proj = _allProjects.FirstOrDefault(p => p.Id == id);
+        if (proj?.Status == ProjectStatus.완료)
+        {
+            _finishedPopupProject = proj;
+            _showFinishedPopup = true;
+        }
+        else
+        {
+            Nav.NavigateTo("projects/" + id);
+        }
+    }
+
+    void CloseFinishedPopup()
+    {
+        _showFinishedPopup = false;
+        _finishedPopupProject = null;
+    }
 }

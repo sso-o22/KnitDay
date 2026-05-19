@@ -59,9 +59,12 @@ else
                 {
                     <div style="font-size:0.8rem; color:var(--text-light);">@yarn.Material</div>
                 }
-                @if (!string.IsNullOrEmpty(yarn.LotNumber))
+                @if (!string.IsNullOrEmpty(yarn.LotNumber) || yarn.Ply > 0)
                 {
-                    <div style="font-size:0.78rem; color:var(--text-light);">Lot: @yarn.LotNumber</div>
+                    <div style="font-size:0.78rem; color:var(--text-light);">
+                        @if (!string.IsNullOrEmpty(yarn.LotNumber)) { <span>Lot: @yarn.LotNumber</span> }
+                        @if (yarn.Ply > 0) { <span style="margin-left:6px;">@(yarn.Ply)합</span> }
+                    </div>
                 }
 
                 @{
@@ -154,51 +157,94 @@ else
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">Lot 번호</label>
-                    <input class="form-control" @bind="_editingYarn.LotNumber" placeholder="예: 1234" />
-                </div>
-                @if (_editingYarn.YarnType == YarnType.콘사)
-                {
-                    <div class="form-group">
-                        <label class="form-label">수량 (콘)</label>
-                        <input type="number" class="form-control" min="0" placeholder=""
-                               value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
-                               @onchange="e => _editingYarn.Quantity = int.TryParse(e.Value?.ToString(), out var q) ? q : 0" />
-                    </div>
-                }
-                else
-                {
-                    <div class="form-group">
-                        <label class="form-label">수량 (볼)</label>
-                        <input type="number" class="form-control" min="0" placeholder=""
-                               value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
-                               @onchange="e => _editingYarn.Quantity = int.TryParse(e.Value?.ToString(), out var q) ? q : 0" />
-                    </div>
-                }
-            </div>
-
+            @* ── 무게 / 길이 / 가격 ── *@
             @if (_editingYarn.YarnType == YarnType.콘사)
             {
                 <div class="form-row-3">
                     <div class="form-group">
                         <label class="form-label">무게 (g/콘)</label>
-                        <input type="number" class="form-control" min="0" placeholder=""
+                        <input type="number" class="form-control" min="0" placeholder="예: 100"
                                value="@(_editingYarn.WeightGram == 0 ? "" : _editingYarn.WeightGram.ToString())"
                                @onchange="e => _editingYarn.WeightGram = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
                     </div>
                     <div class="form-group">
                         <label class="form-label">길이 (m/콘)</label>
-                        <input type="number" class="form-control" min="0" placeholder=""
+                        <input type="number" class="form-control" min="0" placeholder="예: 225"
                                value="@(_editingYarn.LengthMeter == 0 ? "" : _editingYarn.LengthMeter.ToString())"
                                @onchange="e => _editingYarn.LengthMeter = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
                     </div>
                     <div class="form-group">
-                        <label class="form-label">가격 (콘당)</label>
-                        <input type="number" class="form-control" min="0" placeholder=""
+                        <label class="form-label">가격 (원/콘)</label>
+                        <input type="number" class="form-control" min="0" placeholder="예: 10000"
                                value="@(_editingYarn.Price == 0 ? "" : _editingYarn.Price.ToString())"
                                @onchange="e => _editingYarn.Price = decimal.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="form-label">무게 (g/볼)</label>
+                        <input type="number" class="form-control" min="0" placeholder="예: 100"
+                               value="@(_editingYarn.WeightGram == 0 ? "" : _editingYarn.WeightGram.ToString())"
+                               @onchange="e => _editingYarn.WeightGram = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">길이 (m/볼)</label>
+                        <input type="number" class="form-control" min="0" placeholder="예: 225"
+                               value="@(_editingYarn.LengthMeter == 0 ? "" : _editingYarn.LengthMeter.ToString())"
+                               @onchange="e => _editingYarn.LengthMeter = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">가격 (원/볼)</label>
+                        <input type="number" class="form-control" min="0" placeholder="예: 10000"
+                               value="@(_editingYarn.Price == 0 ? "" : _editingYarn.Price.ToString())"
+                               @onchange="e => _editingYarn.Price = decimal.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
+                    </div>
+                </div>
+            }
+
+            @* ── Lot번호 / 합수 / 수량 ── *@
+            @if (_editingYarn.YarnType == YarnType.콘사)
+            {
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="form-label">Lot 번호</label>
+                        <input class="form-control" @bind="_editingYarn.LotNumber" placeholder="예: 1234" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">합수</label>
+                        <input type="number" class="form-control" min="0" placeholder="예: 2"
+                               value="@(_editingYarn.Ply == 0 ? "" : _editingYarn.Ply.ToString())"
+                               @onchange="e => _editingYarn.Ply = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">수량 (콘)</label>
+                        <input type="number" class="form-control" min="0" placeholder="예: 5"
+                               value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
+                               @onchange="e => _editingYarn.Quantity = int.TryParse(e.Value?.ToString(), out var q) ? q : 0" />
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="form-row-3">
+                    <div class="form-group">
+                        <label class="form-label">Lot 번호</label>
+                        <input class="form-control" @bind="_editingYarn.LotNumber" placeholder="예: 1234" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">합수</label>
+                        <input type="number" class="form-control" min="0" placeholder="예: 2"
+                               value="@(_editingYarn.Ply == 0 ? "" : _editingYarn.Ply.ToString())"
+                               @onchange="e => _editingYarn.Ply = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">수량 (볼)</label>
+                        <input type="number" class="form-control" min="0" placeholder="예: 5"
+                               value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
+                               @onchange="e => _editingYarn.Quantity = int.TryParse(e.Value?.ToString(), out var q) ? q : 0" />
                     </div>
                 </div>
             }

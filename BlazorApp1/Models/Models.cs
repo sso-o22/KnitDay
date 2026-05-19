@@ -25,6 +25,7 @@ namespace KnitLog.Models
         public YarnWeight Weight { get; set; } = YarnWeight.워스티드;
         public YarnType YarnType { get; set; } = YarnType.볼실;
         public string LotNumber { get; set; } = "";
+        public int Ply { get; set; } = 0;          // 합수 (예: 2합, 4합)
         public string Material { get; set; } = "";
         public int WeightGram { get; set; }
         public int LengthMeter { get; set; }

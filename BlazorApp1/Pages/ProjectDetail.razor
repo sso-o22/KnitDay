@@ -1292,8 +1292,10 @@ else
         if (!Guid.TryParse(val, out var swatchId)) return;
         var swatch = _allSwatches.FirstOrDefault(s => s.Id == swatchId);
         if (swatch == null) return;
-        if (swatch.ProjectId != _project.Id)
-            swatch.ProjectId = _project.Id;
+        // 기존 연결 스와치 해제 (단일 연결)
+        foreach (var s in _allSwatches.Where(s => s.ProjectId == _project.Id))
+            s.ProjectId = null;
+        swatch.ProjectId = _project.Id;
     }
 
     void UnlinkSwatch(Swatch s)
