@@ -122,7 +122,7 @@ else
                         <div class="card" style="padding:14px 16px;">
                             <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
                                 <span style="font-size:0.82rem; font-weight:500; color:var(--text-dark);">@proj.Title</span>
-                                <span class="badge @GetStatusBadge(proj.Status)">@proj.Status</span>
+                                <span style="font-size:0.75rem; padding:2px 8px; border-radius:9px; font-weight:500; @GetStatusBadgeStyle(proj.Status)">@proj.Status</span>
                             </div>
                             <!-- 바 트랙 -->
                             <div style="position:relative; height:10px; background:#f0f0f0; border-radius:6px; overflow:hidden;">
@@ -211,80 +211,303 @@ else
 @if (_showFinishedPopup && _finishedPopupProject != null)
 {
     <div class="modal-backdrop">
-        <div class="modal" style="max-width:680px;" @onclick:stopPropagation="true">
+        <div class="modal" style="max-width:740px;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@_finishedPopupProject.Title</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseFinishedPopup">✕</button>
             </div>
 
+            <!-- 사진 갤러리 -->
             @if (_finishedPopupProject.Photos.Count > 0)
             {
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
                     @foreach (var photo in _finishedPopupProject.Photos)
                     {
                         <img src="@photo.Base64Data"
-                             style="width:110px; height:110px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border);"
-                             alt="완성 사진" />
+                             style="width:130px; height:130px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border);"
+                             alt="과정 사진" />
                     }
                 </div>
             }
 
-            <!-- 날짜 / 소요일 / 누적시간 -->
-            <div style="display:flex; gap:16px; flex-wrap:wrap; margin-bottom:14px; padding:12px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
-                @if (_finishedPopupProject.StartDate.HasValue)
+            <!-- 날짜 바 + 인라인 편집 -->
+            <div style="margin-bottom:14px; padding:12px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
+                @if (!_calEditingBasicInfo)
                 {
-                    <div style="text-align:center;">
-                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">시작일</div>
-                        <div style="font-size:0.9rem; font-weight:600;">@_finishedPopupProject.StartDate.Value.ToString("yyyy.MM.dd")</div>
+                    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+                        @if (_finishedPopupProject.StartDate.HasValue)
+                        {
+                            <div style="text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">시작일</div>
+                                <div style="font-size:0.9rem; font-weight:600;">@_finishedPopupProject.StartDate.Value.ToString("yyyy.MM.dd")</div>
+                            </div>
+                        }
+                        @if (_finishedPopupProject.EndDate.HasValue)
+                        {
+                            <div style="text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">완성일</div>
+                                <div style="font-size:0.9rem; font-weight:600;">@_finishedPopupProject.EndDate.Value.ToString("yyyy.MM.dd")</div>
+                            </div>
+                        }
+                        @if (_finishedPopupProject.StartDate.HasValue && _finishedPopupProject.EndDate.HasValue)
+                        {
+                            var popDays = (_finishedPopupProject.EndDate.Value - _finishedPopupProject.StartDate.Value).Days;
+                            <div style="text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">소요일</div>
+                                <div style="font-size:0.9rem; font-weight:600; color:#8a6a08;">@popDays 일</div>
+                            </div>
+                        }
+                        @{
+                            var popMin = _finishedPopupProject.Sessions
+                                .Where(s => s.EndTime.HasValue)
+                                .Sum(s => (int)(s.EndTime!.Value - s.StartTime).TotalMinutes);
+                        }
+                        @if (popMin > 0)
+                        {
+                            var ph = popMin / 60; var pm = popMin % 60;
+                            <div style="text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
+                                <div style="font-size:0.9rem; font-weight:600; color:#267848;">@(ph > 0 ? $"{ph}시간 " : "")@(pm > 0 ? $"{pm}분" : "")</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
+                                <div style="font-size:0.82rem; color:var(--text-light);">기록 없음</div>
+                            </div>
+                        }
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; margin-left:auto;"
+                                @onclick="() => _calEditingBasicInfo = true">✏️ 수정</button>
                     </div>
                 }
-                @if (_finishedPopupProject.EndDate.HasValue)
+                else
                 {
-                    <div style="text-align:center;">
-                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">완성일</div>
-                        <div style="font-size:0.9rem; font-weight:600;">@_finishedPopupProject.EndDate.Value.ToString("yyyy.MM.dd")</div>
+                    <div class="form-row" style="margin-bottom:8px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">시작일</label>
+                            <input type="date" class="form-control"
+                                   value="@_finishedPopupProject.StartDate?.ToString("yyyy-MM-dd")"
+                                   @onchange="e => _finishedPopupProject.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">완성일</label>
+                            <input type="date" class="form-control"
+                                   value="@_finishedPopupProject.EndDate?.ToString("yyyy-MM-dd")"
+                                   @onchange="e => _finishedPopupProject.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
+                        </div>
                     </div>
-                }
-                @if (_finishedPopupProject.StartDate.HasValue && _finishedPopupProject.EndDate.HasValue)
-                {
-                    var popDays = (_finishedPopupProject.EndDate.Value - _finishedPopupProject.StartDate.Value).Days;
-                    <div style="text-align:center;">
-                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">소요일</div>
-                        <div style="font-size:0.9rem; font-weight:600; color:#8a6a08;">@popDays 일</div>
-                    </div>
-                }
-                @{
-                    var popMin = _finishedPopupProject.Sessions
-                        .Where(s => s.EndTime.HasValue)
-                        .Sum(s => (int)(s.EndTime!.Value - s.StartTime).TotalMinutes);
-                }
-                @if (popMin > 0)
-                {
-                    var ph = popMin / 60; var pm = popMin % 60;
-                    <div style="text-align:center;">
-                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
-                        <div style="font-size:0.9rem; font-weight:600; color:#267848;">@(ph > 0 ? $"{ph}시간 " : "")@(pm > 0 ? $"{pm}분" : "")</div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveCalBasicInfo">저장</button>
+                        <button class="btn btn-ghost btn-sm" @onclick="() => _calEditingBasicInfo = false">취소</button>
                     </div>
                 }
             </div>
 
+            <!-- 도안 정보 -->
             @if (!string.IsNullOrEmpty(_finishedPopupProject.PatternName))
             {
-                <div style="margin-bottom:10px;">
-                    <div class="form-label" style="margin-bottom:3px;">📋 도안</div>
-                    <div style="font-size:0.9rem;">@_finishedPopupProject.PatternName</div>
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div class="form-label" style="margin-bottom:4px;">📋 도안</div>
+                    <div style="font-size:0.92rem;">@_finishedPopupProject.PatternName</div>
                     @if (!string.IsNullOrEmpty(_finishedPopupProject.PatternSource))
                     {
-                        <div style="font-size:0.8rem; color:var(--text-mid);">출처: @_finishedPopupProject.PatternSource</div>
+                        <div style="font-size:0.82rem; color:var(--text-mid);">출처: @_finishedPopupProject.PatternSource</div>
+                    }
+                    @if (!string.IsNullOrEmpty(_finishedPopupProject.PatternMemo))
+                    {
+                        <div style="font-size:0.82rem; color:var(--text-mid); margin-top:2px; white-space:pre-wrap;">@_finishedPopupProject.PatternMemo</div>
                     }
                 </div>
             }
 
+            <!-- 사용 실 -->
+            @{
+                var calYarns = _finishedPopupProject.YarnUsages
+                    .Select(u => (u, _calYarns.Find(y => y.Id == u.YarnId)))
+                    .Where(x => x.Item2 != null)
+                    .Select(x => (x.u, x.Item2!))
+                    .ToList();
+            }
+            @if (calYarns.Any())
+            {
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div class="form-label" style="margin-bottom:6px;">🧵 사용 실</div>
+                    @foreach (var (usage, yarn) in calYarns)
+                    {
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:0.88rem;">
+                            <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
+                            <span>@yarn.Brand @yarn.Name (@yarn.Color)</span>
+                            @if (usage.BallsUsed > 0)
+                            {
+                                <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed 볼</span>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- 사용 바늘 -->
+            @{
+                var calTools = _calTools.Where(t => _finishedPopupProject.ToolIds.Contains(t.Id)).ToList();
+            }
+            @if (calTools.Any() || !string.IsNullOrEmpty(_finishedPopupProject.NeedleNote))
+            {
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div class="form-label" style="margin-bottom:6px;">⚒️ 사용 바늘</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                        @foreach (var tool in calTools)
+                        {
+                            <span style="background:var(--ivory-dark); border-radius:4px; padding:3px 8px; font-size:0.8rem;">@tool.NeedleType @tool.SizeDisplay</span>
+                        }
+                        @if (!string.IsNullOrEmpty(_finishedPopupProject.NeedleNote))
+                        {
+                            <span style="background:var(--ivory-dark); border-radius:4px; padding:3px 8px; font-size:0.8rem;">@_finishedPopupProject.NeedleNote</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- 스와치 -->
+            @{
+                var calSwatches = _calSwatches.Where(s => s.ProjectId == _finishedPopupProject.Id).ToList();
+            }
+            @if (calSwatches.Any())
+            {
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div class="form-label" style="margin-bottom:6px;">📐 스와치</div>
+                    @foreach (var s in calSwatches)
+                    {
+                        <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:6px; font-size:0.84rem;">
+                            <div style="font-weight:600; margin-bottom:6px;">@(string.IsNullOrEmpty(s.Name) ? "스와치" : s.Name)
+                                @if (!string.IsNullOrEmpty(s.Stitch))
+                                {
+                                    <span style="font-weight:400; color:var(--text-mid); margin-left:6px;">(@s.Stitch)</span>
+                                }
+                                @if (s.NeedleSizeMm > 0)
+                                {
+                                    <span style="font-weight:400; color:var(--text-mid); margin-left:6px;">@(s.NeedleSizeMm)mm</span>
+                                }
+                            </div>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                                <div>
+                                    <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:3px;">세탁 전</div>
+                                    @if (s.PreWashStitches > 0 || s.PreWashRows > 0)
+                                    {
+                                        <div>@(s.PreWashStitches)코 × @(s.PreWashRows)단</div>
+                                    }
+                                    @if (s.PreWashWidthCm > 0 || s.PreWashHeightCm > 0)
+                                    {
+                                        <div style="color:var(--text-mid);">@(s.PreWashWidthCm)cm × @(s.PreWashHeightCm)cm</div>
+                                    }
+                                </div>
+                                @if (s.PostWashStitches > 0 || s.PostWashWidthCm > 0)
+                                {
+                                    <div>
+                                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:3px;">세탁 후</div>
+                                        @if (s.PostWashStitches > 0 || s.PostWashRows > 0)
+                                        {
+                                            <div>@(s.PostWashStitches)코 × @(s.PostWashRows)단</div>
+                                        }
+                                        @if (s.PostWashWidthCm > 0 || s.PostWashHeightCm > 0)
+                                        {
+                                            <div style="color:var(--text-mid);">@(s.PostWashWidthCm)cm × @(s.PostWashHeightCm)cm</div>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- 완성 치수 -->
+            <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <div class="form-label" style="margin-bottom:0;">📏 완성 치수</div>
+                    @if (!_calEditingMeasurements)
+                    {
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem;" @onclick="() => { LoadCalMeasures(); _calEditingMeasurements = true; }">✏️ 입력</button>
+                    }
+                </div>
+                @if (!_calEditingMeasurements)
+                {
+                    @if (_calMeasures.Any(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
+                    {
+                        <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem;">
+                            <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전</div>
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후</div>
+                            </div>
+                            @foreach (var m in _calMeasures)
+                            {
+                                @if (!string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After))
+                                {
+                                    <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
+                                        <div style="padding:6px 10px; color:var(--text-dark);">@m.Label</div>
+                                        <div style="padding:6px 10px; color:var(--text-mid); border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.Before) ? "-" : m.Before + "cm")</div>
+                                        <div style="padding:6px 10px; color:var(--text-mid); border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.After) ? "-" : m.After + "cm")</div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p style="font-size:0.82rem; color:var(--text-light);">치수 정보가 없어요.</p>
+                    }
+                }
+                else
+                {
+                    <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem; margin-bottom:8px;">
+                        <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
+                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
+                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전 (cm)</div>
+                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후 (cm)</div>
+                        </div>
+                        @foreach (var m in _calMeasures)
+                        {
+                            <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
+                                <div style="padding:4px 6px; display:flex; align-items:center; gap:4px;">
+                                    @if (m.IsCustom)
+                                    {
+                                        <input class="form-control" style="border:none; padding:3px 6px; font-size:0.82rem; width:100%;"
+                                               @bind="m.Label" placeholder="항목명" />
+                                        <button class="btn btn-danger btn-sm" style="padding:1px 5px; font-size:0.7rem; flex-shrink:0;" @onclick="() => _calMeasures.Remove(m)">✕</button>
+                                    }
+                                    else
+                                    {
+                                        <span style="padding:3px 4px; color:var(--text-dark);">@m.Label</span>
+                                    }
+                                </div>
+                                <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
+                                    <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;"
+                                           @bind="m.Before" placeholder="-" />
+                                </div>
+                                <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
+                                    <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;"
+                                           @bind="m.After" placeholder="-" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <button class="btn btn-ghost btn-sm" @onclick="() => _calMeasures.Add(new CalMeasureItem { IsCustom = true })">+ 항목 추가</button>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveCalMeasurements">저장</button>
+                        <button class="btn btn-ghost btn-sm" @onclick="CancelCalMeasurements">취소</button>
+                    </div>
+                }
+            </div>
+
+            <!-- 메모 -->
             @if (!string.IsNullOrEmpty(_finishedPopupProject.Memo))
             {
-                <div style="margin-bottom:10px;">
-                    <div class="form-label" style="margin-bottom:3px;">📝 메모</div>
-                    <p style="white-space:pre-wrap; font-size:0.88rem; color:var(--text-mid);">@_finishedPopupProject.Memo</p>
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div class="form-label" style="margin-bottom:4px;">📝 메모</div>
+                    <p style="white-space:pre-wrap; font-size:0.9rem; color:var(--text-mid);">@_finishedPopupProject.Memo</p>
                 </div>
             }
 
@@ -302,6 +525,21 @@ else
     string _view  = "month";
     bool _showFinishedPopup = false;
     KnitProject? _finishedPopupProject;
+    bool _calEditingBasicInfo = false;
+    bool _calEditingMeasurements = false;
+    List<Yarn> _calYarns = new();
+    List<KnitTool> _calTools = new();
+    List<Swatch> _calSwatches = new();
+
+    class CalMeasureItem
+    {
+        public string Label { get; set; } = "";
+        public string Before { get; set; } = "";
+        public string After  { get; set; } = "";
+        public bool IsCustom { get; set; } = false;
+    }
+    static readonly string[] _calDefaultLabels = { "가슴둘레", "총장", "소매 길이", "소매 단면" };
+    List<CalMeasureItem> _calMeasures = new();
     DateTime _today   = DateTime.Today;
     DateTime _current = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
 
@@ -334,6 +572,9 @@ else
     protected override async Task OnInitializedAsync()
     {
         _allProjects = await Storage.GetProjectsAsync();
+        _calYarns    = await Storage.GetYarnsAsync();
+        _calTools    = await Storage.GetToolsAsync();
+        _calSwatches = await Storage.GetSwatchesAsync();
         Rebuild();
         _loading = false;
     }
@@ -485,12 +726,12 @@ else
         return GetStyle(idx);
     }
 
-    string GetStatusBadge(ProjectStatus s) => s switch
+    string GetStatusBadgeStyle(ProjectStatus s) => s switch
     {
-        ProjectStatus.진행중   => "badge-done",
-        ProjectStatus.일시중단 => "badge-progress",
-        ProjectStatus.완료     => "badge-done",
-        _                      => "badge-wish"
+        ProjectStatus.완료     => "background:#e6f4ea; color:#267848; border:1px solid #b8e0c8;",
+        ProjectStatus.진행중   => "background:#fffbe6; color:#b58a00; border:1px solid #f5d97a;",
+        ProjectStatus.일시중단 => "background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0;",
+        _                      => "background:#f0f0f0; color:#888;"
     };
 
     // ── 네비게이션 ────────────────────────────────────────────────────
@@ -512,6 +753,9 @@ else
         if (proj?.Status == ProjectStatus.완료)
         {
             _finishedPopupProject = proj;
+            _calEditingBasicInfo = false;
+            _calEditingMeasurements = false;
+            LoadCalMeasures();
             _showFinishedPopup = true;
         }
         else
@@ -524,5 +768,58 @@ else
     {
         _showFinishedPopup = false;
         _finishedPopupProject = null;
+        _calEditingBasicInfo = false;
+        _calEditingMeasurements = false;
+        _calMeasures.Clear();
+    }
+
+    void LoadCalMeasures()
+    {
+        if (_finishedPopupProject == null) return;
+        var dict = new Dictionary<string, (string, string)>();
+        if (!string.IsNullOrEmpty(_finishedPopupProject.MeasurementsMemo))
+        {
+            foreach (var part in _finishedPopupProject.MeasurementsMemo.Split('|'))
+            {
+                var seg = part.Split(':');
+                if (seg.Length >= 3) dict[seg[0]] = (seg[1], seg[2]);
+                else if (seg.Length == 2) dict[seg[0]] = (seg[1], "");
+            }
+        }
+        _calMeasures = new List<CalMeasureItem>();
+        foreach (var label in _calDefaultLabels)
+        {
+            var (b, a) = dict.TryGetValue(label, out var v) ? v : ("", "");
+            _calMeasures.Add(new CalMeasureItem { Label = label, Before = b, After = a, IsCustom = false });
+            dict.Remove(label);
+        }
+        foreach (var kv in dict)
+            _calMeasures.Add(new CalMeasureItem { Label = kv.Key, Before = kv.Value.Item1, After = kv.Value.Item2, IsCustom = true });
+    }
+
+    async Task SaveCalBasicInfo()
+    {
+        if (_finishedPopupProject == null) return;
+        await Storage.SaveProjectAsync(_finishedPopupProject);
+        _calEditingBasicInfo = false;
+        _allProjects = await Storage.GetProjectsAsync();
+        Rebuild();
+    }
+
+    async Task SaveCalMeasurements()
+    {
+        if (_finishedPopupProject == null) return;
+        _finishedPopupProject.MeasurementsMemo = string.Join("|",
+            _calMeasures
+                .Where(m => !string.IsNullOrEmpty(m.Label) && (!string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
+                .Select(m => $"{m.Label}:{m.Before}:{m.After}"));
+        await Storage.SaveProjectAsync(_finishedPopupProject);
+        _calEditingMeasurements = false;
+    }
+
+    void CancelCalMeasurements()
+    {
+        LoadCalMeasures();
+        _calEditingMeasurements = false;
     }
 }

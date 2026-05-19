@@ -737,6 +737,18 @@ else
                 </div>
             </div>
 
+            @* ── 사용 바늘 ── *@
+            <div class="form-group">
+                <label class="form-label">⚒️ 사용 바늘</label>
+                <div style="display:flex; gap:6px; margin-bottom:6px;">
+                    <button type="button" class="btn btn-sm @(_project.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
+                            @onclick='() => _project.NeedleType = (_project.NeedleType == NeedleType.대바늘 ? (NeedleType?)null : NeedleType.대바늘)'>대바늘</button>
+                    <button type="button" class="btn btn-sm @(_project.NeedleType == NeedleType.코바늘 ? "btn-sage" : "btn-ghost")"
+                            @onclick='() => _project.NeedleType = (_project.NeedleType == NeedleType.코바늘 ? (NeedleType?)null : NeedleType.코바늘)'>코바늘</button>
+                </div>
+                <input class="form-control" @bind="_project.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
+            </div>
+
             @* ── 사용 실 ── *@
             <div class="form-group">
                 <label class="form-label">🧵 사용 실</label>
@@ -764,18 +776,6 @@ else
                         <button class="btn btn-danger btn-sm" @onclick="() => _project.YarnUsages.Remove(usage)">✕</button>
                     </div>
                 }
-            </div>
-
-            @* ── 사용 바늘 ── *@
-            <div class="form-group">
-                <label class="form-label">⚒️ 사용 바늘</label>
-                <div style="display:flex; gap:6px; margin-bottom:6px;">
-                    <button type="button" class="btn btn-sm @(_project.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
-                            @onclick='() => _project.NeedleType = (_project.NeedleType == NeedleType.대바늘 ? (NeedleType?)null : NeedleType.대바늘)'>대바늘</button>
-                    <button type="button" class="btn btn-sm @(_project.NeedleType == NeedleType.코바늘 ? "btn-sage" : "btn-ghost")"
-                            @onclick='() => _project.NeedleType = (_project.NeedleType == NeedleType.코바늘 ? (NeedleType?)null : NeedleType.코바늘)'>코바늘</button>
-                </div>
-                <input class="form-control" @bind="_project.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
             </div>
 
             @* ── 스와치 연결 ── *@
