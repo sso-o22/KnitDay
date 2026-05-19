@@ -213,7 +213,7 @@ else
                                         <span style="font-weight:600; font-size:0.92rem; flex:1;">@counter.Label</span>
                                         <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="이름 수정"
                                                 @onclick="() => { _editingCounterId = counter.Id; _editingCounterLabel = counter.Label; }">✏️</button>
-                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" disabled="@IsPaused" @onclick="() => RemoveCounter(counter.Id)">✕</button>
+                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" disabled="@IsPaused" @onclick='() => Confirm($"\"{counter.Label}\" 카운터를 삭제할까요?", async () => await RemoveCounter(counter.Id))'>✕</button>
                                     }
                                 </div>
                                 <!-- 원형 게이지 + 카운터 버튼 -->
@@ -328,7 +328,7 @@ else
                                     <span style="flex:1; font-size:0.88rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "")">@item.Text</span>
                                     <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="이름 수정"
                                             @onclick="() => { _editingCheckId = item.Id; _editingCheckText = item.Text; }">✏️</button>
-                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;" disabled="@IsPaused" @onclick="() => RemoveCheckItem(item.Id)">✕</button>
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;" disabled="@IsPaused" @onclick='() => Confirm($"\"{item.Text}\" 항목을 삭제할까요?", async () => await RemoveCheckItem(item.Id))'>✕</button>
                                 }
                             </div>
                         }
@@ -527,7 +527,7 @@ else
                         
                         <div style="display:flex; align-items:center; gap:8px;">
                             <a href="@link" target="_blank" style="flex:1; font-size:0.8rem; color:var(--text-mid);">🔗 원문 링크 보기</a>
-                            <button class="btn btn-danger btn-sm" @onclick="() => RemoveVideoLink(link)">✕</button>
+                            <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveVideoLink(link))'>✕</button>
                         </div>
                     </div>
                 }
@@ -909,6 +909,24 @@ else
     </div>
 }
 
+<!-- 다른 프로젝트 타이머 충돌 모달 -->
+@if (_showTimerConflict && _conflictProject != null)
+{
+    <div class="modal-backdrop" style="z-index:9999;">
+        <div class="modal" style="max-width:380px; text-align:center;" @onclick:stopPropagation="true">
+            <div style="font-size:2rem; margin-bottom:12px;">⏱️</div>
+            <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">다른 프로젝트 타이머가 진행 중이에요</div>
+            <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">
+                <strong>@_conflictProject.Title</strong> 프로젝트의 타이머를 종료하고<br/>이 프로젝트를 시작할까요?
+            </div>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button class="btn btn-ghost" @onclick="() => _showTimerConflict = false">취소</button>
+                <button class="btn btn-primary" @onclick="ForceStartSession">종료하고 시작</button>
+            </div>
+        </div>
+    </div>
+}
+
 <!-- 삭제 확인 모달 -->
 @if (_showConfirm)
 {
@@ -989,6 +1007,8 @@ else
     string _newCheckText = "";
     string _sessionMemo = "";
     string _timerDisplay = "00:00:00";
+    bool _showTimerConflict = false;
+    KnitProject? _conflictProject;
     KnitProject? _project;
     KnitProject? _editSnapshot;
     List<Guid>? _swatchSnapshotPD;
@@ -1177,22 +1197,58 @@ else
     async Task StartSession()
     {
         if (_project == null) return;
-        
-        // 진행 중인 세션이 있으면 먼저 종료
+
+        // 다른 프로젝트에 진행 중인 세션 확인
+        var allProjects = await Storage.GetProjectsAsync();
+        _conflictProject = allProjects.FirstOrDefault(p =>
+            p.Id != _project.Id &&
+            p.Sessions.Any(s => s.IsActive));
+
+        if (_conflictProject != null)
+        {
+            _showTimerConflict = true;
+            return;
+        }
+
+        await DoStartSession();
+    }
+
+    async Task ForceStartSession()
+    {
+        _showTimerConflict = false;
+        if (_project == null || _conflictProject == null) return;
+
+        // 다른 프로젝트 세션 강제 종료
+        var allProjects = await Storage.GetProjectsAsync();
+        var conflict = allProjects.FirstOrDefault(p => p.Id == _conflictProject.Id);
+        if (conflict != null)
+        {
+            foreach (var s in conflict.Sessions.Where(s => s.IsActive))
+                s.EndTime = DateTime.Now;
+            await Storage.SaveProjectAsync(conflict);
+        }
+        _conflictProject = null;
+
+        await DoStartSession();
+    }
+
+    async Task DoStartSession()
+    {
+        if (_project == null) return;
+
+        // 이 프로젝트에 진행 중인 세션이 있으면 먼저 종료
         var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
-        if (_activeSession != null)
+        if (activeSession != null)
         {
             activeSession.EndTime = DateTime.Now;
             if (!string.IsNullOrEmpty(_sessionMemo))
                 activeSession.Memo = _sessionMemo;
         }
-        
+
         // 새 세션 시작
         _project.Sessions.Add(new KnitSession { StartTime = DateTime.Now });
         _sessionMemo = "";
         await Save();
-        
-        // 진행 중인 표시를 위해 UI 새로 고침
         StartRefreshTimer();
     }
 

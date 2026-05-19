@@ -64,17 +64,48 @@
     bool _isDark = false;
     int _finished;
     string _todayTime = "0분";
+    private PeriodicTimer? _sidebarTimer;
 
     protected override async Task OnInitializedAsync()
+    {
+        await RefreshStats();
+        StartSidebarTimer();
+    }
+
+    async Task RefreshStats()
     {
         var projects = await Storage.GetProjectsAsync();
         _finished = projects.Count(p => p.Status == ProjectStatus.완료);
 
+        // 완료된 세션 + 현재 진행 중인 세션(실시간) 합산
         var todaySecs = projects
             .SelectMany(p => p.Sessions)
-            .Where(s => s.EndTime.HasValue && s.StartTime.Date == DateTime.Today)
-            .Sum(s => (int)((s.EndTime!.Value - s.StartTime).TotalSeconds));
+            .Where(s => s.StartTime.Date == DateTime.Today)
+            .Sum(s =>
+            {
+                var end = s.EndTime ?? (s.IsActive ? DateTime.Now : s.StartTime);
+                return (int)((end - s.StartTime).TotalSeconds);
+            });
         _todayTime = FormatTime(todaySecs);
+    }
+
+    void StartSidebarTimer()
+    {
+        _sidebarTimer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+        _ = RunSidebarTimerAsync();
+    }
+
+    async Task RunSidebarTimerAsync()
+    {
+        try
+        {
+            while (_sidebarTimer is not null && await _sidebarTimer.WaitForNextTickAsync())
+            {
+                await RefreshStats();
+                StateHasChanged();
+            }
+        }
+        catch (OperationCanceledException) { }
     }
 
     string FormatTime(int secs)
@@ -114,5 +145,10 @@
     async Task ApplyDark(bool dark) =>
         await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark','{dark.ToString().ToLower()}')");
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public ValueTask DisposeAsync()
+    {
+        _sidebarTimer?.Dispose();
+        _sidebarTimer = null;
+        return ValueTask.CompletedTask;
+    }
 }
