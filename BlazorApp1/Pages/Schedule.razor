@@ -82,7 +82,7 @@ else
                     @if (proj.Photos.Count > 0)
                     {
                         <img src="@proj.Photos[0].Base64Data" class="photo-thumb"
-                             style="width:100%; height:160px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px;"
+                             style="width:100%; aspect-ratio:1/1; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px;"
                              alt="프로젝트 사진" />
                     }
 
@@ -149,8 +149,9 @@ else
                                 <span class="badge" style="background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0; flex-shrink:0;">일시중단</span>
                             }
                         </div>
-                        <div style="font-size:0.78rem; color:var(--text-mid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                            @if (proj.StartDate.HasValue) { <span>· @proj.StartDate.Value.ToString("yy.MM.dd") 시작</span> }
+                        <div style="font-size:0.78rem; color:var(--text-light); display:flex; gap:8px; flex-wrap:wrap;">
+                            @if (proj.StartDate.HasValue) { <span>시작 @proj.StartDate.Value.ToString("yy.MM.dd")</span> }
+                            @if (proj.EndDate.HasValue) { <span>→ @proj.EndDate.Value.ToString("yy.MM.dd") 목표</span> }
                         </div>
                     </div>
 
