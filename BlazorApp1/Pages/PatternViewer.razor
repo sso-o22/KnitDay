@@ -47,49 +47,56 @@
         }
     </div>
 
-    <div style="flex:1; overflow:auto; background:#c8c8c8; display:flex; justify-content:center; padding:16px;">
-        <div id="pdf-wrapper" style="display:flex; flex-direction:column; align-items:center; width:100%;">
+    <div style="flex:1; overflow:auto; background:#c8c8c8; display:flex; justify-content:center; padding:16px;" id="scroll-container">
+        <div id="pdf-wrapper" style="display:flex; flex-direction:column; align-items:center; gap:12px;">
             @if (_pdfLoaded)
             {
                 @for (int pg = 1; pg <= _totalPages; pg++)
                 {
                     var pageNum = pg;
-                    @foreach (var ruler in _rulers.Where(r => r.Page == pageNum))
-                    {
-                        var isSelected = _selectedRuler == ruler && _tool == "ruler";
-                        <div class="ruler-item @(isSelected ? "ruler-selected" : "")"
-                             style="position:absolute; left:@(ruler.X)px; top:@(ruler.Y)px; width:@(ruler.Width)px; height:@(ruler.Height)px;
-                                    background:rgba(@(ruler.ColorRgb), @(ruler.Opacity.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
-                                    border:2px solid rgba(@(ruler.ColorRgb), @(isSelected ? "1.0" : "0.8"));
-                                    cursor:@(_tool == "ruler" ? (isSelected ? "move" : "pointer") : "default");
-                                    pointer-events:@(_tool == "ruler" ? "auto" : "none");"
-                             @onclick:stopPropagation="true"
-                             @onclick="() => OnRulerClick(ruler)"
-                             @onmousedown="e => OnRulerMouseDown(e, ruler)"
-                             @onmousedown:stopPropagation="true"
-                             @ontouchstart="e => OnRulerTouchStart(e, ruler)"
-                             @ontouchstart:stopPropagation="true">
-                            @if (isSelected)
-                            {
-                                <div class="ruler-ctrl" @onmousedown:stopPropagation="true" @onclick:stopPropagation="true">
-                                    <input type="color" value="@RgbToHex(ruler.ColorRgb)" @oninput="e => UpdateRulerColor(ruler, e)" />
-                                    <input type="range" min="10" max="90" step="5" value="@((int)(ruler.Opacity * 100))" @oninput="e => ChangeRulerOpacity(ruler, e)" style="width:50px;" />
-                                    <button class="ctrl-btn" @onclick="() => { ruler.Y -= ruler.Height; }">▲</button>
-                                    <button class="ctrl-btn" @onclick="() => { ruler.Y += ruler.Height; }">▼</button>
-                                    <button class="ctrl-btn del" @onclick="() => { _rulers.Remove(ruler); _selectedRuler = null; }">✕</button>
-                                </div>
-                                <div class="resize-handle"
-                                     @onmousedown="e => OnResizeMouseDown(e, ruler)"
-                                     @onmousedown:stopPropagation="true"
-                                     @ontouchstart="e => OnResizeTouchStart(e, ruler)"
-                                     @ontouchstart:stopPropagation="true"></div>
-                            }
-                        </div>
-                    }
-                    @if (_isDrawingRuler && _rulerPage == pageNum)
-                    {
-                        <div style="position:absolute; left:@(Math.Min(_rulerStartX, _rulerStartX + _previewW))px; top:@(Math.Min(_rulerStartY, _rulerStartY + _previewH))px; width:@(Math.Abs(_previewW))px; height:@(Math.Abs(_previewH))px; border:2px dashed rgba(255,255,255,0.7); pointer-events:none; z-index:20;"></div>
-                    }
+                    <div class="page-container" id="page-container-@pageNum" style="position:relative; display:inline-block;">
+                        <canvas id="pdf-canvas-@pageNum" style="display:block;"></canvas>
+                        <canvas id="anno-canvas-@pageNum" style="position:absolute; top:0; left:0; cursor:@GetCursor();"
+                                @onclick="DeselectRuler"></canvas>
+
+                        @foreach (var ruler in _rulers.Where(r => r.Page == pageNum))
+                        {
+                            var isSelected = _selectedRuler == ruler && _tool == "ruler";
+                            <div class="ruler-item @(isSelected ? "ruler-selected" : "")"
+                                 style="position:absolute; left:@(ruler.X)px; top:@(ruler.Y)px; width:@(ruler.Width)px; height:@(ruler.Height)px;
+                                        background:rgba(@(ruler.ColorRgb), @(ruler.Opacity.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
+                                        border:2px solid rgba(@(ruler.ColorRgb), @(isSelected ? "1.0" : "0.8"));
+                                        cursor:@(_tool == "ruler" ? (isSelected ? "move" : "pointer") : "default");
+                                        pointer-events:@(_tool == "ruler" ? "auto" : "none");"
+                                 @onclick:stopPropagation="true"
+                                 @onclick="() => OnRulerClick(ruler)"
+                                 @onmousedown="e => OnRulerMouseDown(e, ruler)"
+                                 @onmousedown:stopPropagation="true"
+                                 @ontouchstart="e => OnRulerTouchStart(e, ruler)"
+                                 @ontouchstart:stopPropagation="true">
+                                @if (isSelected)
+                                {
+                                    <div class="ruler-ctrl" @onmousedown:stopPropagation="true" @onclick:stopPropagation="true">
+                                        <input type="color" value="@RgbToHex(ruler.ColorRgb)" @oninput="e => UpdateRulerColor(ruler, e)" />
+                                        <input type="range" min="10" max="90" step="5" value="@((int)(ruler.Opacity * 100))" @oninput="e => ChangeRulerOpacity(ruler, e)" style="width:50px;" />
+                                        <button class="ctrl-btn" @onclick="() => { ruler.Y -= ruler.Height; }">▲</button>
+                                        <button class="ctrl-btn" @onclick="() => { ruler.Y += ruler.Height; }">▼</button>
+                                        <button class="ctrl-btn del" @onclick="() => { _rulers.Remove(ruler); _selectedRuler = null; }">✕</button>
+                                    </div>
+                                    <div class="resize-handle"
+                                         @onmousedown="e => OnResizeMouseDown(e, ruler)"
+                                         @onmousedown:stopPropagation="true"
+                                         @ontouchstart="e => OnResizeTouchStart(e, ruler)"
+                                         @ontouchstart:stopPropagation="true"></div>
+                                }
+                            </div>
+                        }
+
+                        @if (_isDrawingRuler && _rulerPage == pageNum)
+                        {
+                            <div style="position:absolute; left:@(Math.Min(_rulerStartX, _rulerStartX + _previewW))px; top:@(Math.Min(_rulerStartY, _rulerStartY + _previewH))px; width:@(Math.Abs(_previewW))px; height:@(Math.Abs(_previewH))px; border:2px dashed rgba(255,255,255,0.7); pointer-events:none; z-index:20;"></div>
+                        }
+                    </div>
                 }
             }
         </div>
@@ -365,9 +372,9 @@
     }
 
     [JSInvokable]
-    public void OnCanvasPointerDown(double x, double y)
+    public void OnCanvasPointerDown(double x, double y, int pageNum)
     {
-        if (_tool == "ruler") { _isDrawingRuler = true; _rulerStartX = x; _rulerStartY = y; _rulerPage = _currentPage; _previewW = 0; _previewH = 0; StateHasChanged(); }
+        if (_tool == "ruler") { _isDrawingRuler = true; _rulerStartX = x; _rulerStartY = y; _rulerPage = pageNum; _previewW = 0; _previewH = 0; StateHasChanged(); }
     }
 
     [JSInvokable]
@@ -397,7 +404,8 @@
     {
         if (_isDrawingRuler || _draggingRuler != null || _resizingRuler != null)
         {
-            var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect");
+            var pg = _draggingRuler?.Page ?? _resizingRuler?.Page ?? _rulerPage;
+            var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect", pg);
             double curX = e.ClientX - rect[0]; double curY = e.ClientY - rect[1];
             if (_isDrawingRuler) { _previewW = curX - _rulerStartX; _previewH = curY - _rulerStartY; }
             else if (_draggingRuler != null) { _draggingRuler.X = curX - _dragOffsetX; _draggingRuler.Y = curY - _dragOffsetY; }
@@ -435,25 +443,23 @@
     async Task OnRulerMouseDown(MouseEventArgs e, RulerOverlay ruler)
     {
         if (_tool != "ruler" || _selectedRuler != ruler) return;
-        var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect");
+        var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect", ruler.Page);
         _draggingRuler = ruler;
         _dragOffsetX = (e.ClientX - rect[0]) - ruler.X;
         _dragOffsetY = (e.ClientY - rect[1]) - ruler.Y;
     }
 
-    // 터치: ruler 도구일 때만. 미선택이면 선택, 선택된 상태면 이동 시작
     async Task OnRulerTouchStart(TouchEventArgs e, RulerOverlay ruler)
     {
         if (_tool != "ruler") return;
         if (_selectedRuler != ruler) { _selectedRuler = ruler; StateHasChanged(); return; }
-        var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect");
+        var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect", ruler.Page);
         var t = e.Touches[0];
         _draggingRuler = ruler;
         _dragOffsetX = (t.ClientX - rect[0]) - ruler.X;
         _dragOffsetY = (t.ClientY - rect[1]) - ruler.Y;
     }
 
-    // resize handle — ruler 도구 + 선택된 상태에서만 표시되므로 조건 불필요
     void OnResizeMouseDown(MouseEventArgs e, RulerOverlay ruler) => _resizingRuler = ruler;
     void OnResizeTouchStart(TouchEventArgs e, RulerOverlay ruler) => _resizingRuler = ruler;
 
@@ -461,9 +467,9 @@
     {
         if (_draggingRuler != null || _resizingRuler != null)
         {
-            // 이동/리사이즈 중 페이지 스크롤 방지
+            var pg = _draggingRuler?.Page ?? _resizingRuler?.Page ?? _currentPage;
             await JS.InvokeVoidAsync("patternViewer.preventScroll");
-            var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect");
+            var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect", pg);
             var t = e.Touches[0];
             double curX = t.ClientX - rect[0]; double curY = t.ClientY - rect[1];
             if (_draggingRuler != null) { _draggingRuler.X = curX - _dragOffsetX; _draggingRuler.Y = curY - _dragOffsetY; }

@@ -10,13 +10,9 @@ window.patternViewer = (() => {
     let paths = [];
     let isDrawing = false;
     let currentPath = null;
-
-    // 페이지별 canvas 요소 관리
-    let pageCanvases = []; // [{pdfCanvas, annoCanvas, pdfCtx, annoCtx}]
-    let _scrollEl = null;
     let _pinchStartDist = 0;
     let _pinchStartZoom = 1.0;
-    let _renderQueue = Promise.resolve();
+    let _pageHandlers = {}; // pageNum -> handlers added flag
 
     async function ensurePdfJs() {
         if (window.pdfjsLib) return;
@@ -26,6 +22,13 @@ window.patternViewer = (() => {
         await new Promise(r => s.onload = r);
         window.pdfjsLib.GlobalWorkerOptions.workerSrc =
             'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+
+    function getAnnoCanvas(pageNum) {
+        return document.getElementById('anno-canvas-' + pageNum);
+    }
+    function getPdfCanvas(pageNum) {
+        return document.getElementById('pdf-canvas-' + pageNum);
     }
 
     function getCanvasPos(annoCanvas, e) {
@@ -39,70 +42,58 @@ window.patternViewer = (() => {
         };
     }
 
-    function redrawPage(pageIdx) {
-        const c = pageCanvases[pageIdx];
-        if (!c || !c.annoCtx) return;
-        const pageNum = pageIdx + 1;
-        c.annoCtx.clearRect(0, 0, c.annoCanvas.width, c.annoCanvas.height);
+    function redrawPage(pageNum) {
+        const anno = getAnnoCanvas(pageNum);
+        if (!anno) return;
+        const ctx = anno.getContext('2d');
+        ctx.clearRect(0, 0, anno.width, anno.height);
         paths.filter(p => p.page === pageNum).forEach(p => {
             if (p.points.length === 0) return;
-            c.annoCtx.beginPath();
-            c.annoCtx.lineWidth = p.size * (currentZoom / p.originZoom);
-            c.annoCtx.lineCap = 'round';
-            c.annoCtx.lineJoin = 'round';
-            c.annoCtx.strokeStyle = p.color;
-            c.annoCtx.globalCompositeOperation = p.isEraser ? 'destination-out' : 'source-over';
-            c.annoCtx.moveTo(p.points[0].x * currentZoom, p.points[0].y * currentZoom);
+            ctx.beginPath();
+            ctx.lineWidth = p.size * (currentZoom / p.originZoom);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = p.color;
+            ctx.globalCompositeOperation = p.isEraser ? 'destination-out' : 'source-over';
+            ctx.moveTo(p.points[0].x * currentZoom, p.points[0].y * currentZoom);
             for (let i = 1; i < p.points.length; i++)
-                c.annoCtx.lineTo(p.points[i].x * currentZoom, p.points[i].y * currentZoom);
-            c.annoCtx.stroke();
+                ctx.lineTo(p.points[i].x * currentZoom, p.points[i].y * currentZoom);
+            ctx.stroke();
         });
-        c.annoCtx.globalCompositeOperation = 'source-over';
+        ctx.globalCompositeOperation = 'source-over';
     }
 
-    async function renderOnePage(pageNum, zoom) {
-        const idx = pageNum - 1;
-        const c = pageCanvases[idx];
-        if (!c || !pdfDoc) return;
-        const page = await pdfDoc.getPage(pageNum);
-        const viewport = page.getViewport({ scale: zoom });
-        c.pdfCanvas.width = c.annoCanvas.width = viewport.width;
-        c.pdfCanvas.height = c.annoCanvas.height = viewport.height;
-        await page.render({ canvasContext: c.pdfCtx, viewport }).promise;
-        redrawPage(idx);
-        addPageHandlers(idx);
-    }
-
-    function addPageHandlers(idx) {
-        const c = pageCanvases[idx];
-        if (!c || c._handlersAdded) return;
-        c._handlersAdded = true;
-        const anno = c.annoCanvas;
+    function addPageHandlers(pageNum) {
+        if (_pageHandlers[pageNum]) return;
+        _pageHandlers[pageNum] = true;
+        const anno = getAnnoCanvas(pageNum);
+        if (!anno) return;
 
         function onDown(e) {
             if (_tool === 'ruler') {
                 const pos = getCanvasPos(anno, e);
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', pos.x, pos.y);
+                if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', pos.x, pos.y, pageNum);
                 if (e.touches) e.preventDefault();
                 return;
             }
             if (_tool !== 'pen' && _tool !== 'eraser') return;
             if (e.touches) e.preventDefault();
             const pos = getCanvasPos(anno, e);
-            currentPageNum = idx + 1;
+            currentPageNum = pageNum;
             isDrawing = true;
+            const ctx = anno.getContext('2d');
             currentPath = {
-                page: currentPageNum, color: _color, size: _size,
+                page: pageNum, color: _color, size: _size,
                 isEraser: _isEraser, originZoom: currentZoom,
                 points: [{ x: pos.x / currentZoom, y: pos.y / currentZoom }]
             };
-            c.annoCtx.beginPath();
-            c.annoCtx.moveTo(pos.x, pos.y);
-            c.annoCtx.lineWidth = _size;
-            c.annoCtx.lineCap = 'round';
-            c.annoCtx.lineJoin = 'round';
-            c.annoCtx.strokeStyle = _isEraser ? 'rgba(0,0,0,1)' : _color;
-            c.annoCtx.globalCompositeOperation = _isEraser ? 'destination-out' : 'source-over';
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            ctx.lineWidth = _size;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.strokeStyle = _isEraser ? 'rgba(0,0,0,1)' : _color;
+            ctx.globalCompositeOperation = _isEraser ? 'destination-out' : 'source-over';
         }
 
         function onMove(e) {
@@ -112,12 +103,14 @@ window.patternViewer = (() => {
                 if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove', pos.x, pos.y);
                 return;
             }
-            if (!isDrawing || (_tool !== 'pen' && _tool !== 'eraser')) return;
+            if (!isDrawing || currentPageNum !== pageNum) return;
+            if (_tool !== 'pen' && _tool !== 'eraser') return;
             if (e.touches) e.preventDefault();
             const pos = getCanvasPos(anno, e);
+            const ctx = anno.getContext('2d');
             if (currentPath) currentPath.points.push({ x: pos.x / currentZoom, y: pos.y / currentZoom });
-            c.annoCtx.lineTo(pos.x, pos.y);
-            c.annoCtx.stroke();
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
         }
 
         function onUp(e) {
@@ -125,9 +118,9 @@ window.patternViewer = (() => {
                 if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd');
                 return;
             }
-            if (!isDrawing) return;
+            if (!isDrawing || currentPageNum !== pageNum) return;
             isDrawing = false;
-            c.annoCtx.globalCompositeOperation = 'source-over';
+            anno.getContext('2d').globalCompositeOperation = 'source-over';
             if (currentPath) { paths.push(currentPath); currentPath = null; }
         }
 
@@ -139,39 +132,62 @@ window.patternViewer = (() => {
         anno.addEventListener('touchend', onUp);
     }
 
-    function setupScrollTracking() {
-        if (!_scrollEl || _scrollEl._scrollTracked) return;
-        _scrollEl._scrollTracked = true;
+    async function renderOnePage(pageNum, zoom) {
+        if (!pdfDoc) return;
+        const pdfCanvas = getPdfCanvas(pageNum);
+        const annoCanvas = getAnnoCanvas(pageNum);
+        if (!pdfCanvas || !annoCanvas) return;
+        const page = await pdfDoc.getPage(pageNum);
+        const viewport = page.getViewport({ scale: zoom });
+        pdfCanvas.width = annoCanvas.width = viewport.width;
+        pdfCanvas.height = annoCanvas.height = viewport.height;
+        // CSS 크기를 내부 해상도와 일치시켜서 ruler 좌표 어긋남 방지
+        pdfCanvas.style.width = viewport.width + 'px';
+        pdfCanvas.style.height = viewport.height + 'px';
+        annoCanvas.style.width = viewport.width + 'px';
+        annoCanvas.style.height = viewport.height + 'px';
+        annoCanvas.style.cursor = _tool === 'pen' ? 'crosshair' : _tool === 'eraser' ? 'cell' : _tool === 'ruler' ? 'crosshair' : 'default';
+        const pdfCtx = pdfCanvas.getContext('2d');
+        await page.render({ canvasContext: pdfCtx, viewport }).promise;
+        redrawPage(pageNum);
+        _pageHandlers[pageNum] = false;
+        addPageHandlers(pageNum);
+    }
 
-        // 스크롤 위치로 현재 페이지 추적
-        _scrollEl.addEventListener('scroll', () => {
-            const containers = _scrollEl.querySelectorAll('.page-container');
-            let visiblePage = 1;
-            for (let i = 0; i < containers.length; i++) {
-                const rect = containers[i].getBoundingClientRect();
-                const scrollRect = _scrollEl.getBoundingClientRect();
-                if (rect.top <= scrollRect.top + scrollRect.height / 2) {
-                    visiblePage = i + 1;
-                }
+    function setupScrollAndZoom() {
+        const scrollEl = document.getElementById('scroll-container');
+        if (!scrollEl || scrollEl._bound) return;
+        scrollEl._bound = true;
+
+        // 스크롤 → 현재 페이지 추적
+        scrollEl.addEventListener('scroll', () => {
+            const wrapperRect = scrollEl.getBoundingClientRect();
+            const mid = wrapperRect.top + wrapperRect.height / 2;
+            let found = 1;
+            for (let i = 1; i <= totalPages; i++) {
+                const el = document.getElementById('page-container-' + i);
+                if (!el) continue;
+                const r = el.getBoundingClientRect();
+                if (r.top <= mid) found = i;
             }
-            if (visiblePage !== currentPageNum) {
-                currentPageNum = visiblePage;
-                if (dotNetRef) dotNetRef.invokeMethodAsync('UpdatePageFromJS', currentPageNum);
+            if (found !== currentPageNum) {
+                currentPageNum = found;
+                if (dotNetRef) dotNetRef.invokeMethodAsync('UpdatePageFromJS', found);
             }
         }, { passive: true });
 
-        // PC: Ctrl+휠 = 확대/축소, 일반 휠 = 스크롤
-        _scrollEl.addEventListener('wheel', e => {
+        // PC: Ctrl+휠 = 확대/축소
+        scrollEl.addEventListener('wheel', e => {
             if (e.ctrlKey) {
                 e.preventDefault();
                 const delta = e.deltaY > 0 ? -0.1 : 0.1;
-                const newZoom = Math.min(3.0, Math.max(0.5, currentZoom + delta));
-                if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', Math.round(newZoom * 10) / 10);
+                const newZoom = Math.round(Math.min(3.0, Math.max(0.5, currentZoom + delta)) * 10) / 10;
+                if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', newZoom);
             }
         }, { passive: false });
 
         // 모바일: 핀치 줌
-        _scrollEl.addEventListener('touchstart', e => {
+        scrollEl.addEventListener('touchstart', e => {
             if (e.touches.length === 2) {
                 _pinchStartDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
@@ -181,7 +197,7 @@ window.patternViewer = (() => {
             }
         }, { passive: true });
 
-        _scrollEl.addEventListener('touchmove', e => {
+        scrollEl.addEventListener('touchmove', e => {
             if (_tool === 'ruler') { e.preventDefault(); return; }
             if (e.touches.length === 2) {
                 e.preventDefault();
@@ -189,10 +205,8 @@ window.patternViewer = (() => {
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
-                const scale = dist / _pinchStartDist;
-                const newZoom = Math.min(3.0, Math.max(0.5, _pinchStartZoom * scale));
-                const rounded = Math.round(newZoom * 10) / 10;
-                if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', rounded);
+                const newZoom = Math.round(Math.min(3.0, Math.max(0.5, _pinchStartZoom * dist / _pinchStartDist)) * 10) / 10;
+                if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', newZoom);
             }
         }, { passive: false });
     }
@@ -206,60 +220,21 @@ window.patternViewer = (() => {
             pdfDoc = await window.pdfjsLib.getDocument({ data: bytes }).promise;
             totalPages = pdfDoc.numPages;
             currentZoom = zoom;
-
-            // 페이지별 컨테이너 생성
-            const wrapper = document.getElementById('pdf-wrapper');
-            if (!wrapper) return totalPages;
-            wrapper.innerHTML = '';
-            pageCanvases = [];
-
-            for (let i = 0; i < totalPages; i++) {
-                const container = document.createElement('div');
-                container.className = 'page-container';
-                container.style.cssText = 'position:relative; display:inline-block; margin-bottom:12px;';
-
-                const pdfCanvas = document.createElement('canvas');
-                pdfCanvas.style.display = 'block';
-
-                const annoCanvas = document.createElement('canvas');
-                annoCanvas.style.cssText = 'position:absolute; top:0; left:0;';
-                annoCanvas.style.cursor = 'crosshair';
-
-                container.appendChild(pdfCanvas);
-                container.appendChild(annoCanvas);
-                wrapper.appendChild(container);
-
-                const pdfCtx = pdfCanvas.getContext('2d');
-                const annoCtx = annoCanvas.getContext('2d');
-                pageCanvases.push({ pdfCanvas, annoCanvas, pdfCtx, annoCtx, _handlersAdded: false });
-            }
-
-            _scrollEl = wrapper.parentElement;
-            setupScrollTracking();
-
-            // 모든 페이지 렌더링
+            _pageHandlers = {};
+            // Blazor가 이미 canvas 요소를 DOM에 만들어뒀으므로 바로 렌더링
             for (let i = 1; i <= totalPages; i++) {
                 await renderOnePage(i, zoom);
             }
+            setupScrollAndZoom();
             return totalPages;
         },
 
         async renderAllPages(zoom) {
             if (!pdfDoc) return;
             currentZoom = zoom;
+            _pageHandlers = {};
             for (let i = 1; i <= totalPages; i++) {
-                pageCanvases[i-1]._handlersAdded = false;
                 await renderOnePage(i, zoom);
-            }
-        },
-
-        // 특정 페이지로 스크롤
-        scrollToPage(pageNum) {
-            const wrapper = document.getElementById('pdf-wrapper');
-            if (!wrapper) return;
-            const containers = wrapper.querySelectorAll('.page-container');
-            if (containers[pageNum - 1]) {
-                containers[pageNum - 1].scrollIntoView({ behavior: 'smooth', block: 'start' });
             }
         },
 
@@ -270,32 +245,34 @@ window.patternViewer = (() => {
             }
             _color = color; _size = size; _isEraser = isEraser;
             if (tool !== undefined) _tool = tool;
-            // 커서 업데이트
             const cursor = tool === 'pen' ? 'crosshair' : tool === 'eraser' ? 'cell' : tool === 'ruler' ? 'crosshair' : 'default';
-            pageCanvases.forEach(c => { if (c.annoCanvas) c.annoCanvas.style.cursor = cursor; });
+            for (let i = 1; i <= totalPages; i++) {
+                const a = getAnnoCanvas(i);
+                if (a) a.style.cursor = cursor;
+            }
         },
 
         undo() {
             paths.pop();
-            pageCanvases.forEach((_, i) => redrawPage(i));
+            for (let i = 1; i <= totalPages; i++) redrawPage(i);
         },
 
-        getRect() {
-            // ruler용 — 현재 페이지 canvas 기준
-            const idx = currentPageNum - 1;
-            const c = pageCanvases[idx];
-            if (!c) return [0, 0, 0, 0];
-            const r = c.annoCanvas.getBoundingClientRect();
+        // ruler 드래그용: 해당 페이지 anno canvas 기준 rect 반환
+        getRect(pageNum) {
+            const pg = pageNum || currentPageNum;
+            const container = document.getElementById('page-container-' + pg);
+            if (!container) return [0, 0, 0, 0];
+            const r = container.getBoundingClientRect();
             return [r.left, r.top, r.width, r.height];
         },
 
         clearAnnotations() {
             paths = [];
-            pageCanvases.forEach((_, i) => redrawPage(i));
+            for (let i = 1; i <= totalPages; i++) redrawPage(i);
         },
 
         dispose() {
-            pdfDoc = null; paths = []; pageCanvases = [];
+            pdfDoc = null; paths = []; _pageHandlers = {};
             isDrawing = false; currentPath = null;
         },
 
