@@ -78,14 +78,13 @@ else
         <div class="grid-2">
             @foreach (var proj in FilteredSortedProjects)
             {
-                <div class="card" style="cursor:pointer; padding:0; overflow:hidden;" @onclick="() => GoToDetail(proj.Id)">
+                <div class="card" style="cursor:pointer;" @onclick="() => GoToDetail(proj.Id)">
                     @if (proj.Photos.Count > 0)
                     {
                         <img src="@proj.Photos[0].Base64Data" class="photo-thumb"
-                             style="width:100%; aspect-ratio:1/1; object-fit:contain; display:block; background:#f8f8f8;"
+                             style="width:100%; height:160px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px;"
                              alt="프로젝트 사진" />
                     }
-                    <div style="padding:14px 16px;">
                     <div class="flex-between mb-1">
                         <div class="card-title" style="margin-bottom:0;">@proj.Title</div>
                         @if (proj.Status == ProjectStatus.일시중단)
@@ -128,7 +127,6 @@ else
                         }
                         <button class="btn btn-sm btn-sage" @onclick="() => CompleteProject(proj.Id)">✅ 완료</button>
                         <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'>🗑️</button>
-                    </div>
                     </div>
                 </div>
             }
