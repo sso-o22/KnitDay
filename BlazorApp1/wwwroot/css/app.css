@@ -649,6 +649,19 @@ body {
         display: flex;
         flex-direction: column;
         gap: 16px;
+        width: 100%;
+    }
+
+    /* 메인 캘린더 영역: 항상 전체 너비 */
+    .calendar-mobile-layout > div:first-child {
+        width: 100% !important;
+        min-width: 0 !important;
+        flex: none !important;
+    }
+
+    /* 달력 그리드 컨테이너도 전체 너비 */
+    .calendar-mobile-layout > div:first-child > div[style*="border:1px solid"] {
+        width: 100%;
     }
 
     .calendar-mobile-layout .calendar-sidebar-panel {

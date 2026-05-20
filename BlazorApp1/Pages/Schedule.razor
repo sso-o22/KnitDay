@@ -44,7 +44,7 @@ else
             <!-- 정렬 기준 + 오름/내림 묶음 -->
             <div style="display:flex; align-items:center; gap:4px;">
                 <span style="font-size:0.82rem; color:var(--text-mid);">정렬</span>
-                <select class="form-control" style="width:auto; padding:6px 10px; font-size:0.8rem;" @bind="_sortField"
+                <select class="form-control" style="width:auto; padding:5px 10px; font-size:0.75rem;" @bind="_sortField"
                             @bind:after="SaveSchedulePrefs">
                     <option value="created">등록일</option>
                     <option value="start">시작일</option>
@@ -123,7 +123,7 @@ else
                         <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)">✏️ 수정</button>
                         @if (proj.Status == ProjectStatus.진행중)
                         {
-                            <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a;"
+                            <button class="btn btn-sm" style="background:#ffffff; color:#666; border:1px solid #ddd;"
                                     @onclick="() => ToggleSuspend(proj)">⏸️ 일시중단</button>
                         }
                         else
@@ -175,7 +175,7 @@ else
                         <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)">✏️</button>
                         @if (proj.Status == ProjectStatus.진행중)
                         {
-                            <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a; padding:4px 8px;"
+                            <button class="btn btn-sm" style="background:#ffffff; color:#666; border:1px solid #ddd; padding:4px 8px;"
                                     @onclick="() => ToggleSuspend(proj)">⏸</button>
                         }
                         else
@@ -725,7 +725,7 @@ else
 <!-- 삭제 확인 모달 -->
 @if (_showConfirm)
 {
-    <div class="modal-backdrop" style="z-index:9999;">
+    <div class="modal-backdrop modal-confirm" style="z-index:9999;">
         <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
             <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
