@@ -61,13 +61,13 @@ else
                             var isToday = cell.Date == _today;
                             var isOther = cell.Date.Month != _current.Month;
                             var events  = GetEventsForDate(cell.Date);
-                            string numColor = isToday ? "#fff" : isOther ? "#9a9a9a" : "#111111";
+                            string numColor = isToday ? "#fff" : isOther ? "#9a9a9a" : "var(--black)";
                             <div style="min-height:80px; border-right:0.5px solid var(--border); border-bottom:0.5px solid var(--border);
-                                        padding:5px; overflow:hidden; background:@(isToday?"#f0faf4":"transparent");">
+                                        padding:5px; overflow:hidden; background:@(isToday?"var(--ivory-mid)":"transparent");">
                                 <!-- 날짜 숫자 -->
                                 <div style="width:22px; height:22px; display:flex; align-items:center; justify-content:center;
                                             border-radius:50%; font-size:0.75rem; font-weight:500; margin-bottom:3px;
-                                            background:@(isToday?"#5a8a6a":"transparent");
+                                            background:@(isToday?"var(--text-dark)":"transparent");
                                             color:@numColor;">
                                     @cell.Date.Day
                                 </div>

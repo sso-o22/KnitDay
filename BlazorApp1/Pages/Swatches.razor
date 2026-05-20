@@ -204,8 +204,8 @@ else
             </div>
 
             @* 세탁 전 *@
-            <div style="background:var(--mint-pale); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
-                <div style="font-size:0.88rem; font-weight:600; color:#267848; margin-bottom:10px;">세탁 전</div>
+            <div style="border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--text-dark); margin-bottom:10px;">세탁 전</div>
                 <div class="form-row">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">코수</label>
@@ -229,8 +229,8 @@ else
             </div>
 
             @* 세탁 후 *@
-            <div style="background:var(--yellow-pale); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
-                <div style="font-size:0.88rem; font-weight:600; color:#8a6a08; margin-bottom:10px;">세탁 후</div>
+            <div style="border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--text-dark); margin-bottom:10px;">세탁 후</div>
                 <div class="form-row">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">코수</label>
@@ -259,7 +259,7 @@ else
                         @if (pw2.HasValue)
                         {
                             string pwColor = pw2.Value < 0 ? "#c0392b" : "#267848";
-                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:8px; text-align:center;">
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px; text-align:center;">
                                 <div style="font-size:0.72rem; color:var(--text-light);">가로 변화율</div>
                                 <div style="font-weight:700; color:@pwColor;">
                                     @(pw2.Value > 0 ? "+" : "")@pw2.Value%
@@ -269,7 +269,7 @@ else
                         @if (ph2.HasValue)
                         {
                             string phColor = ph2.Value < 0 ? "#c0392b" : "#267848";
-                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:8px; text-align:center;">
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px; text-align:center;">
                                 <div style="font-size:0.72rem; color:var(--text-light);">세로 변화율</div>
                                 <div style="font-weight:700; color:@phColor;">
                                     @(ph2.Value > 0 ? "+" : "")@ph2.Value%
@@ -322,8 +322,8 @@ else
                 </div>
             </div>
 
-            <div style="border-radius:var(--radius-sm); padding:14px; margin-bottom:14px; background:var(--lavender-pale); border:1px solid var(--lavender-light);">
-                <div style="font-size:0.88rem; font-weight:600; color:#4e3290; margin-bottom:8px;">① 콧수/단수 수정 계산기</div>
+            <div style="border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:14px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--text-dark); margin-bottom:8px;">① 콧수/단수 수정 계산기</div>
                 <p style="font-size:0.78rem; color:var(--text-mid); margin-bottom:12px;">원작 게이지 + 도안 콧수/단수 → 내 게이지에 맞는 수정 콧수/단수</p>
                 <div class="form-row">
                     <div class="form-group" style="margin-bottom:0;">
@@ -350,14 +350,14 @@ else
                     <div style="display:flex; gap:8px; margin-top:12px;">
                         @if (Calc1Result.Value.s.HasValue)
                         {
-                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
                                 <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">수정 콧수</div>
                                 <div style="font-size:1.3rem; font-weight:700; color:#4e3290;">@Calc1Result.Value.s.Value 코</div>
                             </div>
                         }
                         @if (Calc1Result.Value.r.HasValue)
                         {
-                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
                                 <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">수정 단수</div>
                                 <div style="font-size:1.3rem; font-weight:700; color:#4e3290;">@Calc1Result.Value.r.Value 단</div>
                             </div>
@@ -366,8 +366,8 @@ else
                 }
             </div>
 
-            <div style="border-radius:var(--radius-sm); padding:14px; margin-bottom:16px; background:var(--sky-pale); border:1px solid var(--sky);">
-                <div style="font-size:0.88rem; font-weight:600; color:#1a5276; margin-bottom:8px;">② 길이 예측 계산기</div>
+            <div style="border:1px solid var(--border); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--text-dark); margin-bottom:8px;">② 길이 예측 계산기</div>
                 <p style="font-size:0.78rem; color:var(--text-mid); margin-bottom:12px;">도안 콧수/단수 → 내 게이지로 뜨면 나오는 실제 길이</p>
                 <div class="form-row">
                     <div class="form-group" style="margin-bottom:0;">
@@ -384,14 +384,14 @@ else
                     <div style="display:flex; gap:8px; margin-top:12px;">
                         @if (Calc2Result.Value.w.HasValue)
                         {
-                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
                                 <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">예상 가로 길이</div>
                                 <div style="font-size:1.3rem; font-weight:700; color:#1a5276;">@Calc2Result.Value.w.Value cm</div>
                             </div>
                         }
                         @if (Calc2Result.Value.h.HasValue)
                         {
-                            <div style="flex:1; background:white; border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
                                 <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">예상 세로 길이</div>
                                 <div style="font-size:1.3rem; font-weight:700; color:#1a5276;">@Calc2Result.Value.h.Value cm</div>
                             </div>

@@ -949,10 +949,6 @@ body {
 [data-dark="true"] [style*="background:#ffffff"],
 [data-dark="true"] [style*="background: #ffffff"] { background: #232323 !important; }
 
-/* 캘린더 오늘 날짜 배경만 다크 처리 */
-[data-dark="true"] [style*="background:#f0faf4"],
-[data-dark="true"] [style*="background: #f0faf4"] { background: #1a3028 !important; }
-
 /* 인라인 하드코딩 텍스트색 오버라이드 — 캘린더 칩 TextColor(#111111)는 건드리지 않도록
    칩 안 글자는 배경 밝기에 따라 결정되므로 CSS 오버라이드 제외 */
 [data-dark="true"] [style*="color:#333333"],
