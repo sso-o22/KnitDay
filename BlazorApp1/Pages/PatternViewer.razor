@@ -196,11 +196,13 @@
 
     .ruler-item {
         z-index: 50;
+        touch-action: none; /* ruler 도구일 때 pointer-events:auto이므로 스크롤 방지 */
     }
 
     .ruler-selected {
         outline: 2px dashed rgba(255,255,255,0.8);
         outline-offset: 2px;
+        touch-action: none;
     }
 
     .ruler-ctrl {
@@ -458,6 +460,8 @@
     {
         if (_draggingRuler != null || _resizingRuler != null)
         {
+            // 이동/리사이즈 중 페이지 스크롤 방지
+            await JS.InvokeVoidAsync("patternViewer.preventScroll");
             var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect");
             var t = e.Touches[0];
             double curX = t.ClientX - rect[0]; double curY = t.ClientY - rect[1];

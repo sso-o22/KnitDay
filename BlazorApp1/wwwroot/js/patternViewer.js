@@ -181,6 +181,10 @@ window.patternViewer = (() => {
                     if (_tool === 'ruler' || _tool === 'pen' || _tool === 'eraser') return;
                     touchStartY = e.touches[0].clientY;
                 }, { passive: true });
+                scrollEl.addEventListener('touchmove', e => {
+                    // ruler 도구이면 스크롤 완전 차단 (도형 이동/그리기 중)
+                    if (_tool === 'ruler') { e.preventDefault(); return; }
+                }, { passive: false });
                 scrollEl.addEventListener('touchend', e => {
                     if (_tool === 'ruler' || _tool === 'pen' || _tool === 'eraser') return;
                     const deltaY = touchStartY - e.changedTouches[0].clientY;
@@ -248,6 +252,11 @@ window.patternViewer = (() => {
             pdfDoc = null;
             isDrawing = false;
             currentPath = null;
+        },
+
+        preventScroll() {
+            // 도형 이동/리사이즈 중 터치 스크롤 방지
+            // touch-action:none CSS로 이미 처리되지만 혹시 모를 경우 대비
         }
     };
 })();
