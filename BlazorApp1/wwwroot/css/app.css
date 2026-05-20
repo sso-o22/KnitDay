@@ -918,7 +918,7 @@ body {
 [data-dark="true"] td { border-color: var(--border); color: var(--text-dark); }
 [data-dark="true"] tr:hover td { background: #282828; }
 
-/* 인라인 하드코딩 배경들 다크 오버라이드 */
+/* 인라인 하드코딩 배경들 — 흰색/밝은회색만 오버라이드 (파스텔 포인트색은 건드리지 않음) */
 [data-dark="true"] [style*="background:#f8f8f8"],
 [data-dark="true"] [style*="background: #f8f8f8"] { background: #232323 !important; }
 [data-dark="true"] [style*="background:#f5f5f5"],
@@ -927,28 +927,10 @@ body {
 [data-dark="true"] [style*="background: white"] { background: #232323 !important; }
 [data-dark="true"] [style*="background:#ffffff"],
 [data-dark="true"] [style*="background: #ffffff"] { background: #232323 !important; }
-[data-dark="true"] [style*="background:#fdfaee"],
-[data-dark="true"] [style*="background: #fdfaee"] { background: #1a180a !important; }
+
+/* 캘린더 오늘 날짜 배경만 다크 처리 */
 [data-dark="true"] [style*="background:#f0faf4"],
-[data-dark="true"] [style*="background: #f0faf4"] { background: #0f1e18 !important; }
-[data-dark="true"] [style*="background:#fef0f3"],
-[data-dark="true"] [style*="background: #fef0f3"] { background: #1e0f14 !important; }
-[data-dark="true"] [style*="background:#faf0c8"],
-[data-dark="true"] [style*="background: #faf0c8"] { background: #2a2410 !important; }
-[data-dark="true"] [style*="background:#dff2d8"],
-[data-dark="true"] [style*="background: #dff2d8"] { background: #1a2a1a !important; }
-[data-dark="true"] [style*="background:#fffbe6"],
-[data-dark="true"] [style*="background: #fffbe6"] { background: #2a2410 !important; }
-[data-dark="true"] [style*="background:#fef0f0"],
-[data-dark="true"] [style*="background: #fef0f0"] { background: #2a1010 !important; }
-[data-dark="true"] [style*="background:#e8f5ee"],
-[data-dark="true"] [style*="background: #e8f5ee"] { background: #1a2a1a !important; }
-[data-dark="true"] [style*="background:#f5e6c0"],
-[data-dark="true"] [style*="background: #f5e6c0"] { background: #2a2010 !important; }
-[data-dark="true"] [style*="background:#c8e6be"],
-[data-dark="true"] [style*="background: #c8e6be"] { background: #1a2e1a !important; }
-[data-dark="true"] [style*="background:#eef3f8"],
-[data-dark="true"] [style*="background: #eef3f8"] { background: #0a1820 !important; }
+[data-dark="true"] [style*="background: #f0faf4"] { background: #1a3028 !important; }
 
 /* 인라인 하드코딩 텍스트색 오버라이드 */
 [data-dark="true"] [style*="color:#111111"],
@@ -967,13 +949,6 @@ body {
 [data-dark="true"] [style*="color: #267848"] { color: #70c878 !important; }
 [data-dark="true"] [style*="color:#8a6010"],
 [data-dark="true"] [style*="color: #8a6010"] { color: #c8a040 !important; }
-
-/* 캘린더 오늘 날짜 배경 다크 */
-[data-dark="true"] [style*="background:#f0faf4"] { background: #1a3028 !important; }
-[data-dark="true"] [style*="background: #f0faf4"] { background: #1a3028 !important; }
-
-/* 캘린더 이벤트 칩 — 어두운 배경에서 글자 보이도록 */
-[data-dark="true"] [style*="background:#"] { color: inherit; }
 
 /* ── 다크모드 버튼 오버라이드 ───────────────────────────── */
 [data-dark="true"] .btn-primary,
