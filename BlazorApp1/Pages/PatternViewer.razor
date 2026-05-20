@@ -47,11 +47,7 @@
         @if (_pdfLoaded)
         {
             <div class="divider"></div>
-            <div class="compact-box">
-                <button class="nav-btn" @onclick="PrevPage" disabled="@(_currentPage <= 1)">‹</button>
-                <span style="font-size:12px; font-weight:600;">@_currentPage/@_totalPages</span>
-                <button class="nav-btn" @onclick="NextPage" disabled="@(_currentPage >= _totalPages)">›</button>
-            </div>
+            <span style="font-size:12px; font-weight:600;">@_currentPage / @_totalPages</span>
             <div class="compact-box">
                 <button class="nav-btn" @onclick="ZoomOut">−</button>
                 <span style="font-size:12px; font-weight:600; min-width:35px; text-align:center;">@((int)(_zoom * 100))%</span>
@@ -368,6 +364,29 @@
         if (_tool == "ruler") { _isDrawingRuler = true; _rulerStartX = x; _rulerStartY = y; _previewW = 0; _previewH = 0; StateHasChanged(); }
     }
 
+    [JSInvokable]
+    public void OnRulerTouchMove(double x, double y)
+    {
+        if (_isDrawingRuler) { _previewW = x - _rulerStartX; _previewH = y - _rulerStartY; StateHasChanged(); }
+    }
+
+    [JSInvokable]
+    public void OnRulerTouchEnd()
+    {
+        if (_isDrawingRuler && Math.Abs(_previewW) > 5)
+        {
+            _rulers.Add(new RulerOverlay {
+                X = _previewW > 0 ? _rulerStartX : _rulerStartX + _previewW,
+                Y = _previewH > 0 ? _rulerStartY : _rulerStartY + _previewH,
+                Width = Math.Abs(_previewW),
+                Height = Math.Abs(_previewH),
+                Page = _currentPage
+            });
+        }
+        _isDrawingRuler = false;
+        StateHasChanged();
+    }
+
     async Task OnGlobalMouseMove(MouseEventArgs e)
     {
         if (_isDrawingRuler || _draggingRuler != null || _resizingRuler != null)
@@ -421,7 +440,7 @@
     }
     string GetCursor() => _tool switch { "select" => "default", "pen" => "crosshair", "eraser" => "cell", _ => "crosshair" };
     void ClearAll() { _rulers.Clear(); _ = JS.InvokeVoidAsync("patternViewer.clearAnnotations"); }
-    void GoBack() => Nav.NavigateTo("projects/" + ProjectId);
+    void GoBack() => Nav.NavigateTo("schedule/" + ProjectId);
     public async ValueTask DisposeAsync()
     {
         _dotNetRef?.Dispose();

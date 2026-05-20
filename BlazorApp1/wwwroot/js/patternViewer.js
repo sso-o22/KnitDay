@@ -63,8 +63,9 @@ window.patternViewer = (() => {
 
     function onDown(e) {
         if (_tool === 'ruler') {
-            if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown',
-                getCanvasPos(e).x, getCanvasPos(e).y);
+            const pos = getCanvasPos(e);
+            if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', pos.x, pos.y);
+            if (e.touches) e.preventDefault();
             return;
         }
         if (_tool !== 'pen' && _tool !== 'eraser') return;
@@ -86,6 +87,13 @@ window.patternViewer = (() => {
     }
 
     function onMove(e) {
+        if (_tool === 'ruler') {
+            if (e.touches) e.preventDefault();
+            // ruler 터치 드래그 → Blazor OnGlobalMouseMove 대신 JS에서 직접 preview 업데이트
+            const pos = getCanvasPos(e);
+            if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove', pos.x, pos.y);
+            return;
+        }
         if (!isDrawing) return;
         if (_tool !== 'pen' && _tool !== 'eraser') return;
         if (e.touches) e.preventDefault();
@@ -95,7 +103,11 @@ window.patternViewer = (() => {
         annoCtx.stroke();
     }
 
-    function onUp() {
+    function onUp(e) {
+        if (_tool === 'ruler') {
+            if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd');
+            return;
+        }
         if (!isDrawing) return;
         isDrawing = false;
         annoCtx.globalCompositeOperation = 'source-over';
@@ -160,6 +172,21 @@ window.patternViewer = (() => {
                     if (e.deltaY > 0) dotNetRef.invokeMethodAsync('NextPageFromJS');
                     else dotNetRef.invokeMethodAsync('PrevPageFromJS');
                 }, { passive: false });
+
+                // 터치 스와이프로 페이지 이동 (상하 스와이프)
+                let touchStartY = 0;
+                scrollEl.addEventListener('touchstart', e => {
+                    if (_tool === 'ruler' || _tool === 'pen' || _tool === 'eraser') return;
+                    touchStartY = e.touches[0].clientY;
+                }, { passive: true });
+                scrollEl.addEventListener('touchend', e => {
+                    if (_tool === 'ruler' || _tool === 'pen' || _tool === 'eraser') return;
+                    const deltaY = touchStartY - e.changedTouches[0].clientY;
+                    if (Math.abs(deltaY) > 50 && dotNetRef) {
+                        if (deltaY > 0) dotNetRef.invokeMethodAsync('NextPageFromJS');
+                        else dotNetRef.invokeMethodAsync('PrevPageFromJS');
+                    }
+                }, { passive: true });
             }
         },
 
