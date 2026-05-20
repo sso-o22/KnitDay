@@ -541,13 +541,50 @@ body {
     input[type="date"] {
         width: 100%;
         max-width: 100%;
+        min-width: 0;
         box-sizing: border-box;
         font-size: 16px; /* iOS에서 줌 방지 */
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    /* form-control 전체도 넘치지 않도록 */
+    .form-control {
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
     }
 
     /* 모든 input/select/textarea 에서 iOS 줌 방지 */
     input, select, textarea {
         font-size: 16px !important;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+
+    /* 삭제 확인 모달은 작게 유지 (전체화면 X) — 일반 modal-backdrop보다 먼저 선언 */
+    .modal-backdrop.modal-confirm {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        min-height: unset !important;
+        align-items: center !important;
+        justify-content: center !important;
+        padding: 20px !important;
+        background: rgba(0,0,0,0.45) !important;
+    }
+
+    .modal-backdrop.modal-confirm .modal {
+        border-radius: 16px !important;
+        min-height: unset !important;
+        max-height: unset !important;
+        max-width: 320px !important;
+        width: 100% !important;
+        padding: 24px 20px !important;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18) !important;
     }
 
     .modal-backdrop {
@@ -566,25 +603,6 @@ body {
         border-radius: 0;
         min-height: 100%;
         box-shadow: none;
-    }
-
-    /* 삭제 확인 모달은 작게 유지 (전체화면 X) */
-    .modal-backdrop.modal-confirm {
-        position: fixed;
-        align-items: center;
-        justify-content: center;
-        padding: 20px;
-        background: rgba(0,0,0,0.45);
-    }
-
-    .modal-backdrop.modal-confirm .modal {
-        border-radius: 16px;
-        min-height: unset;
-        max-height: unset;
-        max-width: 320px;
-        width: 100%;
-        padding: 24px 20px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
     }
 
     /* 하단 탭바 활성화 */
