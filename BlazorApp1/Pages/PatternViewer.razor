@@ -421,7 +421,7 @@
     }
     string GetCursor() => _tool switch { "select" => "default", "pen" => "crosshair", "eraser" => "cell", _ => "crosshair" };
     void ClearAll() { _rulers.Clear(); _ = JS.InvokeVoidAsync("patternViewer.clearAnnotations"); }
-    void GoBack() => Nav.NavigateTo("schedule/" + ProjectId);
+    void GoBack() => Nav.NavigateTo("projects/" + ProjectId);
     public async ValueTask DisposeAsync()
     {
         _dotNetRef?.Dispose();
