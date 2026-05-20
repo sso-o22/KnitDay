@@ -174,16 +174,20 @@ else
                 {
                     var daysLeft = (int)(proj.EndDate!.Value.Date - _today).TotalDays;
                     var isUrgent = daysLeft <= 7;
+                    var cardBg = isUrgent ? "#fef0f3" : "#fdfaee";
+                    var badgeBg = isUrgent ? "#fad5de" : "#faf0c8";
+                    var cardText = ContrastText(cardBg);
+                    var badgeText = ContrastText(badgeBg);
                     <div @onclick="() => GoToProject(proj.Id)" style="display:flex; align-items:center; gap:8px;
                                 padding:8px 10px; border-radius:9px; margin-bottom:6px; cursor:pointer;
-                                background:@(isUrgent?"#fef0f3":"#fdfaee");">
+                                background:@cardBg;">
                         <div style="flex:1; min-width:0;">
-                            <div style="font-size:0.78rem; font-weight:500; color:var(--text-dark);
+                            <div style="font-size:0.78rem; font-weight:500; color:@cardText;
                                         white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@proj.Title</div>
-                            <div style="font-size:0.7rem; color:var(--text-light);">@proj.EndDate.Value.ToString("M월 d일")</div>
+                            <div style="font-size:0.7rem; color:@cardText; opacity:0.7;">@proj.EndDate.Value.ToString("M월 d일")</div>
                         </div>
                         <span style="font-size:0.68rem; padding:2px 6px; border-radius:4px; white-space:nowrap;
-                                     background:@(isUrgent?"#fad5de":"#faf0c8"); color:@(isUrgent?"#8a3a4a":"#7a6020"); font-weight:500;">
+                                     background:@badgeBg; color:@badgeText; font-weight:500;">
                             @(daysLeft == 0 ? "오늘" : daysLeft < 0 ? $"{-daysLeft}일 지남" : $"{daysLeft}일")
                         </span>
                     </div>
