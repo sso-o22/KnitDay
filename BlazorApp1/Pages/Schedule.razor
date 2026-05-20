@@ -82,7 +82,7 @@ else
                     @if (proj.Photos.Count > 0)
                     {
                         <img src="@proj.Photos[0].Base64Data" class="photo-thumb"
-                             style="width:100%; aspect-ratio:1/1; object-fit:cover; display:block;"
+                             style="width:100%; aspect-ratio:1/1; object-fit:contain; display:block; background:#f8f8f8;"
                              alt="프로젝트 사진" />
                     }
                     <div style="padding:14px 16px;">
