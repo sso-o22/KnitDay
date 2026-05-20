@@ -59,12 +59,13 @@
 
                 @foreach (var ruler in _rulers.Where(r => r.Page == _currentPage))
                 {
-                    var isSelected = _selectedRuler == ruler;
+                    var isSelected = _selectedRuler == ruler && _tool == "ruler";
                     <div class="ruler-item @(isSelected ? "ruler-selected" : "")"
                          style="position:absolute; left:@(ruler.X)px; top:@(ruler.Y)px; width:@(ruler.Width)px; height:@(ruler.Height)px;
                                 background:rgba(@(ruler.ColorRgb), @(ruler.Opacity.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)));
                                 border:2px solid rgba(@(ruler.ColorRgb), @(isSelected ? "1.0" : "0.8"));
-                                cursor:@(_tool == "select" ? "move" : "default");"
+                                cursor:@(_tool == "ruler" ? (isSelected ? "move" : "pointer") : "default");
+                                pointer-events:@(_tool == "ruler" ? "auto" : "none");"
                          @onclick:stopPropagation="true"
                          @onclick="() => OnRulerClick(ruler)"
                          @onmousedown="e => OnRulerMouseDown(e, ruler)"
@@ -408,7 +409,7 @@
         {
             var newRuler = new RulerOverlay { X = _previewW > 0 ? _rulerStartX : _rulerStartX + _previewW, Y = _previewH > 0 ? _rulerStartY : _rulerStartY + _previewH, Width = Math.Abs(_previewW), Height = Math.Abs(_previewH), Page = _currentPage };
             _rulers.Add(newRuler);
-            _selectedRuler = newRuler; // 생성 직후 바로 선택 상태
+            _selectedRuler = newRuler;
         }
         _isDrawingRuler = false; _draggingRuler = null; _resizingRuler = null;
         if (_isDrawing && _pdfLoaded && (_tool == "pen" || _tool == "eraser"))
@@ -417,26 +418,30 @@
         StateHasChanged();
     }
 
-    void DeselectRuler() { if (_tool == "select") _selectedRuler = null; }
+    // 캔버스 빈 곳 클릭 → 선택 해제 (ruler 도구일 때만)
+    void DeselectRuler() { if (_tool == "ruler") _selectedRuler = null; }
 
+    // 도형 클릭 → 선택/해제 토글 (ruler 도구일 때만)
     void OnRulerClick(RulerOverlay ruler)
     {
-        if (_tool == "select")
-            _selectedRuler = _selectedRuler == ruler ? null : ruler; // 토글
+        if (_tool == "ruler")
+            _selectedRuler = _selectedRuler == ruler ? null : ruler;
     }
 
+    // 선택된 도형 mousedown → 이동 시작 (ruler 도구 + 이미 선택된 도형만)
     async Task OnRulerMouseDown(MouseEventArgs e, RulerOverlay ruler)
     {
-        // 선택된 도형만 드래그 이동
-        if (_tool != "select" || _selectedRuler != ruler) return;
+        if (_tool != "ruler" || _selectedRuler != ruler) return;
         var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect");
-        _draggingRuler = ruler; _dragOffsetX = (e.ClientX - rect[0]) - ruler.X; _dragOffsetY = (e.ClientY - rect[1]) - ruler.Y;
+        _draggingRuler = ruler;
+        _dragOffsetX = (e.ClientX - rect[0]) - ruler.X;
+        _dragOffsetY = (e.ClientY - rect[1]) - ruler.Y;
     }
 
+    // 터치: ruler 도구일 때만. 미선택이면 선택, 선택된 상태면 이동 시작
     async Task OnRulerTouchStart(TouchEventArgs e, RulerOverlay ruler)
     {
-        if (_tool != "select") return;
-        // 터치: 첫 터치면 선택, 이미 선택된 상태면 드래그
+        if (_tool != "ruler") return;
         if (_selectedRuler != ruler) { _selectedRuler = ruler; StateHasChanged(); return; }
         var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect");
         var t = e.Touches[0];
@@ -445,6 +450,7 @@
         _dragOffsetY = (t.ClientY - rect[1]) - ruler.Y;
     }
 
+    // resize handle — ruler 도구 + 선택된 상태에서만 표시되므로 조건 불필요
     void OnResizeMouseDown(MouseEventArgs e, RulerOverlay ruler) => _resizingRuler = ruler;
     void OnResizeTouchStart(TouchEventArgs e, RulerOverlay ruler) => _resizingRuler = ruler;
 
