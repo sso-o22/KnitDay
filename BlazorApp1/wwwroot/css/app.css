@@ -668,9 +668,45 @@ body {
         width: 100% !important;
         flex-shrink: unset !important;
     }
+
+    /* 문어발 카드: 모바일에서 정보/버튼 2행 */
+    .project-card {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .project-card-info {
+        flex: 1;
+    }
+
+    .project-card-actions {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        border-top: 1px solid var(--border);
+        padding-top: 10px;
+    }
 }
 
 
+
+/* ── 문어발 프로젝트 카드 레이아웃 ──────────────────────── */
+.project-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.project-card-info {
+    flex: 1;
+    margin-bottom: 14px;
+}
+
+.project-card-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
 
 /* ── 사이드바 하단 통계 ──────────────────────────────────── */
 .sidebar-stats {
