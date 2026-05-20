@@ -75,13 +75,7 @@
     --shadow-md:  rgba(0,0,0,0.7);
 }
 
-/* 다크모드 + 각 테마 조합 */
-[data-dark="true"][data-theme="green"]  { --theme-pale:#0f1a0f; --theme-light:#1e3a1e; --theme-mid:#243024; --theme-muted:#4a8a4a; --theme-btn:#1e2e1e; --theme-active:#88e888; }
-[data-dark="true"][data-theme="yellow"] { --theme-pale:#1a180a; --theme-light:#2e2a10; --theme-mid:#383210; --theme-muted:#8a7820; --theme-btn:#242010; --theme-active:#f0d858; }
-[data-dark="true"][data-theme="sky"]    { --theme-pale:#0a1820; --theme-light:#102438; --theme-mid:#142c40; --theme-muted:#3a7898; --theme-btn:#0e2030; --theme-active:#70d8f8; }
-[data-dark="true"][data-theme="pink"]   { --theme-pale:#1a0e0e; --theme-light:#2e1414; --theme-mid:#381818; --theme-muted:#8a4848; --theme-btn:#241010; --theme-active:#f89898; }
-[data-dark="true"][data-theme="purple"] { --theme-pale:#120e1a; --theme-light:#1e1428; --theme-mid:#261a34; --theme-muted:#6858a8; --theme-btn:#1a1228; --theme-active:#c0a8f8; }
-[data-dark="true"][data-theme="mono"]   { --theme-pale:#0e0e0e; --theme-light:#242424; --theme-mid:#1e1e1e; --theme-muted:#585858; --theme-btn:#1a1a1a; --theme-active:#c0c0c0; }
+/* 다크모드에서는 테마 무관하게 흑백 팔레트로 통일 (아래 버튼 오버라이드 섹션에서 처리) */
 
 /* ── 리셋 & 기본 ────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -932,9 +926,8 @@ body {
 [data-dark="true"] [style*="background:#f0faf4"],
 [data-dark="true"] [style*="background: #f0faf4"] { background: #1a3028 !important; }
 
-/* 인라인 하드코딩 텍스트색 오버라이드 */
-[data-dark="true"] [style*="color:#111111"],
-[data-dark="true"] [style*="color: #111111"] { color: #f0f0f0 !important; }
+/* 인라인 하드코딩 텍스트색 오버라이드 — 캘린더 칩 TextColor(#111111)는 건드리지 않도록
+   칩 안 글자는 배경 밝기에 따라 결정되므로 CSS 오버라이드 제외 */
 [data-dark="true"] [style*="color:#333333"],
 [data-dark="true"] [style*="color: #333333"] { color: #e0e0e0 !important; }
 [data-dark="true"] [style*="color:#1a1a1a"],
@@ -949,6 +942,22 @@ body {
 [data-dark="true"] [style*="color: #267848"] { color: #70c878 !important; }
 [data-dark="true"] [style*="color:#8a6010"],
 [data-dark="true"] [style*="color: #8a6010"] { color: #c8a040 !important; }
+
+/* 다크모드에서는 테마색 무관하게 항상 흑백(mono) 팔레트 적용 */
+[data-dark="true"],
+[data-dark="true"][data-theme="green"],
+[data-dark="true"][data-theme="yellow"],
+[data-dark="true"][data-theme="sky"],
+[data-dark="true"][data-theme="pink"],
+[data-dark="true"][data-theme="purple"],
+[data-dark="true"][data-theme="mono"] {
+    --theme-pale:   #0e0e0e;
+    --theme-light:  #2a2a2a;
+    --theme-mid:    #383838;
+    --theme-muted:  #666666;
+    --theme-btn:    #2a2a2a;
+    --theme-active: #e0e0e0;
+}
 
 /* ── 다크모드 버튼 오버라이드 ───────────────────────────── */
 [data-dark="true"] .btn-primary,
