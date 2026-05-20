@@ -53,7 +53,7 @@
 
 /* ── 테마 정의 ───────────────────────────────────────────── */
 [data-theme="green"]  { --theme-pale:#f0f9ec; --theme-light:#c8e6be; --theme-mid:#d4eccc; --theme-muted:#a8c8a0; --theme-btn:#dff2d8; --theme-active:#3a7a4a; }
-[data-theme="yellow"] { --theme-pale:#fffde4; --theme-light:#fdf0a0; --theme-mid:#ddc840; --theme-muted:#a08828; --theme-btn:#fae768; --theme-active:#6a4e00; }
+[data-theme="yellow"] { --theme-pale:#fffde4; --theme-light:#fdf8d0; --theme-mid:#e8d870; --theme-muted:#a08828; --theme-btn:#fdf8d0; --theme-active:#6a4e00; }
 [data-theme="sky"]    { --theme-pale:#eaf7ff; --theme-light:#d3f4ff; --theme-mid:#a8dff5; --theme-muted:#6aaac8; --theme-btn:#eaf7ff; --theme-active:#1a6a8a; }
 [data-theme="pink"]   { --theme-pale:#fff1f1; --theme-light:#ffe7e7; --theme-mid:#f5c0c0; --theme-muted:#c88888; --theme-btn:#fff1f1; --theme-active:#8a3a3a; }
 [data-theme="purple"] { --theme-pale:#f3efff; --theme-light:#e9e1ff; --theme-mid:#c8b8e8; --theme-muted:#8878b8; --theme-btn:#f3efff; --theme-active:#5a3a8a; }
