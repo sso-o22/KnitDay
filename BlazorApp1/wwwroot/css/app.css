@@ -218,13 +218,13 @@ body {
 
 .btn-primary {
     background: var(--theme-btn);
-    color: #1a1a1a;
+    color: var(--theme-active);
     border: 1px solid var(--theme-mid);
 }
 
 .btn-primary:hover {
     background: var(--theme-light);
-    color: #1a1a1a;
+    color: var(--theme-active);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     opacity: 1;
@@ -239,10 +239,10 @@ body {
 
 .btn-sage {
     background: var(--theme-btn);
-    color: #1a1a1a;
+    color: var(--theme-active);
     border: 1px solid var(--theme-mid);
 }
-.btn-sage:hover { background: var(--theme-light); color: #1a1a1a; }
+.btn-sage:hover { background: var(--theme-light); color: var(--theme-active); }
 
 .btn-mint {
     background: var(--theme-light);
@@ -262,7 +262,7 @@ body {
     color: #c0392b;
     border: 1px solid #f0c0c0;
 }
-.btn-danger:hover { background: #fdf0f0; }
+.btn-danger:hover { background: var(--pink-pale); }
 
 .btn-sm { padding: 6px 12px; font-size: 0.8rem; }
 
@@ -328,7 +328,7 @@ body {
 
 .form-control:focus {
     border-color: var(--mint);
-    background: white;
+    background: var(--ivory);
     box-shadow: 0 0 0 3px rgba(184, 224, 200, 0.3);
 }
 
@@ -785,7 +785,7 @@ body {
 .theme-dot.active {
     transform: scale(1.15);
     border-color: rgba(0,0,0,0.4);
-    box-shadow: 0 0 0 2px white, 0 0 0 4px rgba(0,0,0,0.25);
+    box-shadow: 0 0 0 2px var(--ivory), 0 0 0 4px rgba(0,0,0,0.25);
 }
 
 
@@ -848,7 +848,7 @@ body {
     width: 22px;
     height: 22px;
     border-radius: 50%;
-    background: white;
+    background: var(--white);
     position: absolute;
     top: 3px;
     left: 3px;
@@ -887,6 +887,35 @@ body {
     background: #1e1e1e;
     color: var(--text-dark);
 }
+
+/* pale 섹션 배경 다크 오버라이드 */
+[data-dark="true"] .section-mint     { background: #0f1e18; }
+[data-dark="true"] .section-pink     { background: #1e0f14; }
+[data-dark="true"] .section-yellow   { background: #1a180a; }
+[data-dark="true"] .section-lavender { background: #120e1a; }
+
+/* 인라인 style로 쓰인 pale 변수 다크 오버라이드 */
+[data-dark="true"] { --mint-pale: #0f1e18; --pink-pale: #1e0f14; --yellow-pale: #1a180a; --lavender-pale: #120e1a; }
+[data-dark="true"] { --sage-light: #1e2e1e; }
+
+/* btn-danger hover 다크 */
+[data-dark="true"] .btn-danger:hover { background: #2a1010; }
+
+/* 테이블 다크 */
+[data-dark="true"] table { color: var(--text-dark); }
+[data-dark="true"] th { background: #242424; color: var(--text-mid); border-color: var(--border); }
+[data-dark="true"] td { border-color: var(--border); }
+[data-dark="true"] tr:hover td { background: #1e1e1e; }
+
+/* 인라인 하드코딩 배경들 다크 오버라이드 */
+[data-dark="true"] [style*="background:#f8f8f8"],
+[data-dark="true"] [style*="background: #f8f8f8"] { background: #1e1e1e !important; }
+[data-dark="true"] [style*="background:#f5f5f5"],
+[data-dark="true"] [style*="background: #f5f5f5"] { background: #1a1a1a !important; }
+[data-dark="true"] [style*="background:white"],
+[data-dark="true"] [style*="background: white"] { background: #1e1e1e !important; }
+[data-dark="true"] [style*="background:#ffffff"],
+[data-dark="true"] [style*="background: #ffffff"] { background: #1e1e1e !important; }
 
 /* ── 다크모드 버튼 오버라이드 ───────────────────────────── */
 [data-dark="true"] .btn-primary,
