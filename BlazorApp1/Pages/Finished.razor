@@ -90,7 +90,8 @@ else
                 @if (!_editingBasicInfo)
                 {
                     <!-- 보기 모드 -->
-                    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+                    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:space-between;">
+                        <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
                         @if (_selectedProject.StartDate.HasValue)
                         {
                             <div style="text-align:center;">
@@ -133,7 +134,8 @@ else
                                 <div style="font-size:0.82rem; color:var(--text-light);">기록 없음</div>
                             </div>
                         }
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; margin-left:auto;"
+                        </div>
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; flex-shrink:0;"
                                 @onclick="() => _editingBasicInfo = true">✏️ 수정</button>
                     </div>
                 }

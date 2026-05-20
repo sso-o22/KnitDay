@@ -41,20 +41,22 @@ else
                         @onclick='async () => { _statusFilter = "일시중단"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>⏸ 중단</button>
             </div>
 
-            <!-- 정렬 기준 -->
-            <span style="font-size:0.82rem; color:var(--text-mid);">정렬</span>
-            <select class="form-control" style="width:auto; padding:5px 10px; font-size:0.82rem;" @bind="_sortField"
-                        @bind:after="SaveSchedulePrefs">
-                <option value="created">등록일</option>
-                <option value="start">시작일</option>
-                <option value="updated">수정일</option>
-                <option value="title">이름순</option>
-            </select>
+            <!-- 정렬 기준 + 오름/내림 묶음 -->
+            <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-size:0.82rem; color:var(--text-mid);">정렬</span>
+                <select class="form-control" style="width:auto; padding:5px 10px; font-size:0.82rem;" @bind="_sortField"
+                            @bind:after="SaveSchedulePrefs">
+                    <option value="created">등록일</option>
+                    <option value="start">시작일</option>
+                    <option value="updated">수정일</option>
+                    <option value="title">이름순</option>
+                </select>
 
-            <!-- 오름/내림차순 -->
-            <button class="btn btn-sm btn-ghost" @onclick="ToggleSortDir" title="@(_sortAsc ? "오름차순" : "내림차순")">
-                @(_sortAsc ? "↑ 오름" : "↓ 내림")
-            </button>
+                <!-- 오름/내림차순 -->
+                <button class="btn btn-sm btn-ghost" @onclick="ToggleSortDir" title="@(_sortAsc ? "오름차순" : "내림차순")">
+                    @(_sortAsc ? "↑ 오름" : "↓ 내림")
+                </button>
+            </div>
         </div>
 
         <!-- 오른쪽: 뷰 전환 -->
@@ -160,12 +162,12 @@ else
                             <span style="font-weight:700; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@proj.Title</span>
                             @if (proj.Status == ProjectStatus.일시중단)
                             {
-                                <span class="badge" style="background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0; flex-shrink:0;">일시중단</span>
+                                <span class="badge" style="background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0; flex-shrink:0;">⏸️ 일시중단</span>
                             }
                         </div>
                         <div style="font-size:0.78rem; color:var(--text-mid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                             @if (!string.IsNullOrEmpty(proj.PatternName)) { <span>@proj.PatternName</span> }
-                            @if (proj.StartDate.HasValue) { <span style="margin-left:8px;">· @proj.StartDate.Value.ToString("yy.MM.dd") 시작</span> }
+                            @if (proj.StartDate.HasValue) { <span style="margin-left:8px;">· @proj.StartDate.Value.ToString("yy.MM.dd")▶️ 시작</span> }
                         </div>
                     </div>
 
@@ -174,11 +176,11 @@ else
                         @if (proj.Status == ProjectStatus.진행중)
                         {
                             <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a; padding:4px 8px;"
-                                    @onclick="() => ToggleSuspend(proj)">⏸️ 일시중단</button>
+                                    @onclick="() => ToggleSuspend(proj)">⏸</button>
                         }
                         else
                         {
-                            <button class="btn btn-sm btn-ghost" @onclick="() => ToggleSuspend(proj)">▶️ 재개</button>
+                            <button class="btn btn-sm btn-ghost" @onclick="() => ToggleSuspend(proj)">▶</button>
                         }
                         <button class="btn btn-sage btn-sm" @onclick="() => CompleteProject(proj.Id)">✅</button>
                         <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'>🗑️</button>

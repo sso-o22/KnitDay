@@ -517,7 +517,7 @@ body {
 
     .main-content {
         padding: 16px 14px;
-        padding-bottom: 76px; /* 하단 탭바 높이 확보 */
+        padding-bottom: 90px; /* 하단 탭바 높이 확보 (높아진 탭바 반영) */
         max-width: 100%;
     }
 
@@ -537,6 +537,18 @@ body {
 
     .detail-grid .card { grid-column: span 1 !important; }
 
+    /* 날짜 input이 화면을 벗어나지 않도록 */
+    input[type="date"] {
+        width: 100%;
+        max-width: 100%;
+        box-sizing: border-box;
+        font-size: 16px; /* iOS에서 줌 방지 */
+    }
+
+    /* 모든 input/select/textarea 에서 iOS 줌 방지 */
+    input, select, textarea {
+        font-size: 16px !important;
+    }
 
     .modal-backdrop {
         position: absolute;
@@ -554,6 +566,25 @@ body {
         border-radius: 0;
         min-height: 100%;
         box-shadow: none;
+    }
+
+    /* 삭제 확인 모달은 작게 유지 (전체화면 X) */
+    .modal-backdrop.modal-confirm {
+        position: fixed;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(0,0,0,0.45);
+    }
+
+    .modal-backdrop.modal-confirm .modal {
+        border-radius: 16px;
+        min-height: unset;
+        max-height: unset;
+        max-width: 320px;
+        width: 100%;
+        padding: 24px 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
     }
 
     /* 하단 탭바 활성화 */
@@ -576,11 +607,11 @@ body {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 8px 4px;
+        padding: 12px 4px; /* 높이 증가: 8px → 12px */
         text-decoration: none;
         color: var(--text-light);
         font-size: 0.65rem;
-        gap: 3px;
+        gap: 4px;
         transition: color 0.15s;
     }
 
@@ -592,8 +623,20 @@ body {
         color: var(--theme-active);
     }
 
-    .bottom-nav-icon { font-size: 1.2rem; line-height: 1; }
+    .bottom-nav-icon { font-size: 1.35rem; line-height: 1; }
     .bottom-nav-label { font-weight: 500; line-height: 1; }
+
+    /* 캘린더 모바일: 세로 레이아웃 */
+    .calendar-mobile-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .calendar-mobile-layout .calendar-sidebar-panel {
+        width: 100% !important;
+        flex-shrink: unset !important;
+    }
 }
 
 
