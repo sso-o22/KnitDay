@@ -12,12 +12,22 @@
 
     <!-- 테마 -->
     <div class="card">
-        <div class="card-title" style="margin-bottom:16px;">🎨 테마 색상</div>
+        <div class="card-title" style="margin-bottom:4px;">🎨 테마 색상</div>
+        @if (_isDark)
+        {
+            <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:12px;">다크 모드에서는 흑백 테마만 적용돼요</p>
+        }
+        else
+        {
+            <div style="margin-bottom:12px;"></div>
+        }
         <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:12px;">
             @foreach (var t in _themes)
             {
-                <button class="settings-theme-btn @(_currentTheme == t.Id ? "active" : "")"
-                        @onclick="() => SetTheme(t.Id)">
+                var isDisabled = _isDark && t.Id != "mono";
+                <button class="settings-theme-btn @((!_isDark && _currentTheme == t.Id) || (_isDark && t.Id == "mono") ? "active" : "")"
+                        style="@(isDisabled ? "opacity:0.3; cursor:not-allowed;" : "")"
+                        @onclick="() => { if (!isDisabled) SetTheme(t.Id); }">
                     <div class="settings-theme-dot" style="background:@t.DotColor;"></div>
                     <span class="settings-theme-name">@t.Name</span>
                 </button>
@@ -30,7 +40,7 @@
         <div style="display:flex; align-items:center; justify-content:space-between;">
             <div>
                 <div class="card-title" style="margin-bottom:4px;">@(_isDark ? "🌙 다크 모드" : "☀️ 라이트 모드")</div>
-                <p style="font-size:0.85rem; color:var(--text-mid);">테마 색상은 유지되고 배경/글자가 반전돼요</p>
+                <p style="font-size:0.85rem; color:var(--text-mid);">@(_isDark ? "배경/글자가 반전되고 흑백 테마로 표시돼요" : "테마 색상이 적용된 라이트 모드예요")</p>
             </div>
             <button class="dark-toggle-btn @(_isDark ? "on" : "")" @onclick="ToggleDark">
                 <div class="dark-toggle-thumb"></div>
