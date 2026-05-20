@@ -122,12 +122,12 @@ else
                         @if (proj.Status == ProjectStatus.진행중)
                         {
                             <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a;"
-                                    @onclick="() => ToggleSuspend(proj)">⏸ 일시중단</button>
+                                    @onclick="() => ToggleSuspend(proj)">⏸️ 일시중단</button>
                         }
                         else
                         {
                             <button class="btn btn-sm btn-ghost"
-                                    @onclick="() => ToggleSuspend(proj)">▶ 재개</button>
+                                    @onclick="() => ToggleSuspend(proj)">▶️ 재개</button>
                         }
                         <button class="btn btn-sm btn-sage" @onclick="() => CompleteProject(proj.Id)">✅ 완료</button>
                         <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'>🗑️</button>
@@ -174,11 +174,11 @@ else
                         @if (proj.Status == ProjectStatus.진행중)
                         {
                             <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a; padding:4px 8px;"
-                                    @onclick="() => ToggleSuspend(proj)">⏸</button>
+                                    @onclick="() => ToggleSuspend(proj)">⏸️ 일시중단</button>
                         }
                         else
                         {
-                            <button class="btn btn-sm btn-ghost" @onclick="() => ToggleSuspend(proj)">▶</button>
+                            <button class="btn btn-sm btn-ghost" @onclick="() => ToggleSuspend(proj)">▶️ 재개</button>
                         }
                         <button class="btn btn-sage btn-sm" @onclick="() => CompleteProject(proj.Id)">✅</button>
                         <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'>🗑️</button>
