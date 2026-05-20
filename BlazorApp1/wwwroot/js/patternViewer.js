@@ -68,6 +68,7 @@ window.patternViewer = (() => {
             if (e.touches) e.preventDefault();
             return;
         }
+        if (_tool === 'select') return;
         if (_tool !== 'pen' && _tool !== 'eraser') return;
         if (e.touches) e.preventDefault();
         const pos = getCanvasPos(e);
@@ -89,11 +90,11 @@ window.patternViewer = (() => {
     function onMove(e) {
         if (_tool === 'ruler') {
             if (e.touches) e.preventDefault();
-            // ruler 터치 드래그 → Blazor OnGlobalMouseMove 대신 JS에서 직접 preview 업데이트
             const pos = getCanvasPos(e);
             if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove', pos.x, pos.y);
             return;
         }
+        if (_tool === 'select') return;
         if (!isDrawing) return;
         if (_tool !== 'pen' && _tool !== 'eraser') return;
         if (e.touches) e.preventDefault();
@@ -108,6 +109,7 @@ window.patternViewer = (() => {
             if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd');
             return;
         }
+        if (_tool === 'select') return;
         if (!isDrawing) return;
         isDrawing = false;
         annoCtx.globalCompositeOperation = 'source-over';

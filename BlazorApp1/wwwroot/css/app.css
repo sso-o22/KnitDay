@@ -888,20 +888,46 @@ body {
 [data-dark="true"] .section-yellow   { background: #1a180a; }
 [data-dark="true"] .section-lavender { background: #120e1a; }
 
-/* CSS 변수 재정의 — 인라인 style로 쓰인 pale 변수들 → 다크에서 무채색으로 */
+/* CSS 변수 재정의 — 인라인 style로 쓰인 pale 변수들 → 다크에서 테두리 있는 무채색 */
 [data-dark="true"] {
     --mint-pale:      #252525;
     --pink-pale:      #252525;
     --yellow-pale:    #252525;
     --lavender-pale:  #252525;
     --sage-light:     #252525;
-    --mint-light:     #2a2a2a;
-    --yellow-light:   #2a2a2a;
-    --pink-light:     #2a2a2a;
+    --mint-light:     #343434;
+    --yellow-light:   #343434;
+    --pink-light:     #343434;
     --lavender-light: #343434;
     --sky-pale:       #252525;
     --sky:            #343434;
     --ivory-dark:     #1c1c1c;
+}
+
+/* 스와치 바늘/뜨개방법 칩 다크모드 — 배경색 유지하되 어두운 파스텔로 */
+[data-dark="true"] [style*="background:var(--sky-pale)"],
+[data-dark="true"] [style*="background: var(--sky-pale)"] {
+    background: #1a2a38 !important;
+    border: 1px solid #2a4058 !important;
+}
+[data-dark="true"] [style*="background:var(--lavender-pale)"],
+[data-dark="true"] [style*="background: var(--lavender-pale)"] {
+    background: #221a38 !important;
+    border: 1px solid #382a58 !important;
+}
+[data-dark="true"] [style*="color:#1a5276"],
+[data-dark="true"] [style*="color: #1a5276"] { color: #70b8e8 !important; }
+[data-dark="true"] [style*="color:#4e3290"],
+[data-dark="true"] [style*="color: #4e3290"] { color: #b0a0e8 !important; }
+
+/* pale 섹션(mint/sage/yellow) — 테두리로 구분감 */
+[data-dark="true"] [style*="background:var(--mint-pale)"],
+[data-dark="true"] [style*="background: var(--mint-pale)"],
+[data-dark="true"] [style*="background:var(--sage-light)"],
+[data-dark="true"] [style*="background: var(--sage-light)"],
+[data-dark="true"] [style*="background:var(--yellow-pale)"],
+[data-dark="true"] [style*="background: var(--yellow-pale)"] {
+    border: 1px solid #383838 !important;
 }
 
 /* btn-danger hover 다크 */

@@ -8,9 +8,11 @@
 
 <div style="display:flex; flex-direction:column; height:100vh; overflow:hidden;"
      @onmousemove="OnGlobalMouseMove"
-     @onmouseup="OnGlobalMouseUp">
+     @onmouseup="OnGlobalMouseUp"
+     @ontouchmove="OnGlobalTouchMove"
+     @ontouchend="OnGlobalTouchEnd">
 
-    <div style="background:#111111; color:white; padding:6px 12px; display:flex; align-items:center; gap:8px; flex-shrink:0; z-index:100;">
+    <div style="background:#111111; color:white; padding:6px 10px; display:flex; align-items:center; gap:6px; flex-shrink:0; z-index:100; overflow:hidden;">
         <button class="btn-main" @onclick="GoBack" title="뒤로가기">←</button>
         <div class="divider"></div>
 
@@ -23,39 +25,28 @@
 
         <button class="tool-btn" @onclick="UndoLastPath" title="그리기 취소" style="font-size:14px;">↩️</button>
 
-        @if (_tool == "pen" || _tool == "eraser")
+        @if (_tool == "pen")
         {
             <div class="divider"></div>
-            <div style="display:flex; align-items:center; gap:5px;">
-                <span style="font-size:10px;">Size</span>
-                <input type="range" min="2" max="50" @bind="_penSize" @bind:after="SyncTool" style="width:60px; cursor:pointer;" />
-                <span style="font-size:10px; min-width:15px;">@_penSize</span>
-            </div>
-            @if (_tool == "pen")
-            {
-                <div class="divider"></div>
-                <input type="color" value="@_penColor" @oninput="OnColorChange"
-                       style="width:28px; height:28px; border:none; border-radius:50%; padding:2px; cursor:pointer; background:transparent;" title="펜 색상" />
-            }
+            <input type="color" value="@_penColor" @oninput="OnColorChange"
+                   style="width:26px; height:26px; border:none; border-radius:50%; padding:2px; cursor:pointer; background:transparent; flex-shrink:0;" title="펜 색상" />
         }
 
         <div class="divider"></div>
-        <label class="btn-sub" title="PDF 불러오기">
+        <label class="btn-sub" title="PDF 불러오기" style="flex-shrink:0;">
             📄+ <InputFile OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
         </label>
 
         @if (_pdfLoaded)
         {
             <div class="divider"></div>
-            <span style="font-size:12px; font-weight:600;">@_currentPage / @_totalPages</span>
-            <div class="compact-box">
+            <span style="font-size:12px; font-weight:600; flex-shrink:0;">@_currentPage / @_totalPages</span>
+            <div class="compact-box" style="flex-shrink:0;">
                 <button class="nav-btn" @onclick="ZoomOut">−</button>
-                <span style="font-size:12px; font-weight:600; min-width:35px; text-align:center;">@((int)(_zoom * 100))%</span>
+                <span style="font-size:11px; font-weight:600; min-width:30px; text-align:center;">@((int)(_zoom * 100))%</span>
                 <button class="nav-btn" @onclick="ZoomIn">+</button>
             </div>
-            <button class="tool-btn" @onclick='() => Confirm("모든 도안 내용을 지울까요?", async () => { ClearAll(); await Task.CompletedTask; })' title="전체 삭제">🗑️</button>
         }
-        <span style="margin-left:auto; font-size:12px; opacity:0.6; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@_projectTitle</span>
     </div>
 
     <div style="flex:1; overflow:auto; background:#444; display:flex; justify-content:center; padding:20px;">
@@ -72,7 +63,9 @@
                     <div class="ruler-item"
                          style="position:absolute; left:@(ruler.X)px; top:@(ruler.Y)px; width:@(ruler.Width)px; height:@(ruler.Height)px; background:rgba(@(ruler.ColorRgb), @(ruler.Opacity.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))); border:2px solid rgba(@(ruler.ColorRgb), 0.8);"
                          @onmousedown="e => OnRulerMouseDown(e, ruler)"
-                         @onmousedown:stopPropagation="true">
+                         @onmousedown:stopPropagation="true"
+                         @ontouchstart="e => OnRulerTouchStart(e, ruler)"
+                         @ontouchstart:stopPropagation="true">
 
                         <div class="ruler-ctrl" @onmousedown:stopPropagation="true" @onclick:stopPropagation="true">
                             <input type="color" value="@RgbToHex(ruler.ColorRgb)" @oninput="e => UpdateRulerColor(ruler, e)" />
@@ -84,7 +77,11 @@
 
                         @if (_tool == "select")
                         {
-                            <div class="resize-handle" @onmousedown="e => OnResizeMouseDown(e, ruler)" @onmousedown:stopPropagation="true"></div>
+                            <div class="resize-handle"
+                                 @onmousedown="e => OnResizeMouseDown(e, ruler)"
+                                 @onmousedown:stopPropagation="true"
+                                 @ontouchstart="e => OnResizeTouchStart(e, ruler)"
+                                 @ontouchstart:stopPropagation="true"></div>
                         }
                     </div>
                 }
@@ -417,7 +414,38 @@
         _draggingRuler = ruler; _dragOffsetX = (e.ClientX - rect[0]) - ruler.X; _dragOffsetY = (e.ClientY - rect[1]) - ruler.Y;
     }
 
+    async Task OnRulerTouchStart(TouchEventArgs e, RulerOverlay ruler)
+    {
+        if (_tool != "select") return;
+        var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect");
+        var t = e.Touches[0];
+        _draggingRuler = ruler;
+        _dragOffsetX = (t.ClientX - rect[0]) - ruler.X;
+        _dragOffsetY = (t.ClientY - rect[1]) - ruler.Y;
+    }
+
     void OnResizeMouseDown(MouseEventArgs e, RulerOverlay ruler) => _resizingRuler = ruler;
+    void OnResizeTouchStart(TouchEventArgs e, RulerOverlay ruler) => _resizingRuler = ruler;
+
+    async Task OnGlobalTouchMove(TouchEventArgs e)
+    {
+        if (_draggingRuler != null || _resizingRuler != null)
+        {
+            var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect");
+            var t = e.Touches[0];
+            double curX = t.ClientX - rect[0]; double curY = t.ClientY - rect[1];
+            if (_draggingRuler != null) { _draggingRuler.X = curX - _dragOffsetX; _draggingRuler.Y = curY - _dragOffsetY; }
+            else if (_resizingRuler != null) { _resizingRuler.Width = Math.Max(30, curX - _resizingRuler.X); _resizingRuler.Height = Math.Max(10, curY - _resizingRuler.Y); }
+            StateHasChanged();
+        }
+    }
+
+    Task OnGlobalTouchEnd(TouchEventArgs e)
+    {
+        _draggingRuler = null; _resizingRuler = null;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
     void UpdateRulerColor(RulerOverlay r, ChangeEventArgs e) => r.ColorRgb = HexToRgb(e.Value?.ToString() ?? "#ffffff");
     void ChangeRulerOpacity(RulerOverlay r, ChangeEventArgs e) => r.Opacity = (double.TryParse(e.Value?.ToString(), out var v) ? v : 35) / 100.0;
     string HexToRgb(string hex) { hex = hex.TrimStart('#'); return $"{Convert.ToInt32(hex[..2], 16)},{Convert.ToInt32(hex[2..4], 16)},{Convert.ToInt32(hex[4..6], 16)}"; }
@@ -440,7 +468,7 @@
     }
     string GetCursor() => _tool switch { "select" => "default", "pen" => "crosshair", "eraser" => "cell", _ => "crosshair" };
     void ClearAll() { _rulers.Clear(); _ = JS.InvokeVoidAsync("patternViewer.clearAnnotations"); }
-    void GoBack() => Nav.NavigateTo("schedule/" + ProjectId);
+    void GoBack() => Nav.NavigateTo("projects/" + ProjectId);
     public async ValueTask DisposeAsync()
     {
         _dotNetRef?.Dispose();
