@@ -63,7 +63,7 @@ else
                             var events  = GetEventsForDate(cell.Date);
                             string numColor = isToday ? "#fff" : isOther ? "#9a9a9a" : "#111111";
                             <div style="min-height:80px; border-right:0.5px solid var(--border); border-bottom:0.5px solid var(--border);
-                                        padding:5px; background:@(isToday?"#f0faf4":"transparent");">
+                                        padding:5px; overflow:hidden; background:@(isToday?"#f0faf4":"transparent");">
                                 <!-- 날짜 숫자 -->
                                 <div style="width:22px; height:22px; display:flex; align-items:center; justify-content:center;
                                             border-radius:50%; font-size:0.75rem; font-weight:500; margin-bottom:3px;
@@ -80,7 +80,8 @@ else
                                 {
                                     <div @onclick="() => GoToProject(ev.Id)" title="@ev.Title"
                                          style="font-size:0.65rem; border-radius:4px; padding:1px 5px; margin-bottom:2px;
-                                                white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer;
+                                                white-space:normal; word-break:break-word; overflow-wrap:break-word;
+                                                cursor:pointer; display:block; width:100%; box-sizing:border-box;
                                                 background:@ev.AccentColor; color:@ev.TextColor;">
                                         @ev.Label @ev.Title
                                     </div>
