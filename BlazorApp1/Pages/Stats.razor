@@ -56,18 +56,18 @@ else
         else
         {
             <div style="display:flex; align-items:flex-end; gap:6px; height:160px; padding-bottom:8px;">
-                @{ var maxVal = _chartData.Max(d => d.Minutes); maxVal = maxVal == 0 ? 1 : maxVal; }
+                @{ var maxVal = _chartData.Max(d => d.Seconds); maxVal = maxVal == 0 ? 1 : maxVal; }
                 @foreach (var d in _chartData)
                 {
-                    var heightPct = maxVal > 0 ? (double)d.Minutes / maxVal * 100 : 0;
+                    var heightPct = maxVal > 0 ? (double)d.Seconds / maxVal * 100 : 0;
                     <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%;">
                         <div style="flex:1; display:flex; align-items:flex-end; width:100%;">
-                            <div style="width:100%; height:@(heightPct)%; background:var(--theme-light); border-radius:4px 4px 0 0; min-height:@(d.Minutes > 0 ? "4px" : "0"); transition:height 0.3s;"></div>
+                            <div style="width:100%; height:@(heightPct.ToString("F1"))%; background:var(--theme-active); opacity:0.7; border-radius:4px 4px 0 0; min-height:@(d.Seconds > 0 ? "3px" : "0"); transition:height 0.3s;"></div>
                         </div>
-                        @if (d.Minutes > 0)
+                        @if (d.Seconds > 0)
                         {
-                            <div style="font-size:0.65rem; color:var(--theme-active); font-weight:600;">
-                                @(d.Minutes >= 60 ? $"{d.Minutes/60}h{d.Minutes%60:D2}m" : $"{d.Minutes}m")
+                            <div style="font-size:0.6rem; color:var(--theme-active); font-weight:600; text-align:center; line-height:1.2;">
+                                @FormatTime(d.Seconds)
                             </div>
                         }
                         <div style="font-size:0.65rem; color:var(--text-light); white-space:nowrap;">@d.Label</div>
@@ -108,7 +108,7 @@ else
     string _period = "week";
     int _totalFinished, _totalInProgress;
     string _totalTimeStr = "0분";
-    List<(string Label, int Minutes)> _chartData = new();
+    List<(string Label, int Seconds)> _chartData = new();
     List<(KnitSession Session, string ProjectTitle)> _recentSessions = new();
     List<KnitProject> _projects = new();
 
@@ -148,7 +148,7 @@ else
             {
                 var from = now.Date.AddHours(h);
                 var to   = from.AddHours(2);
-                var mins = GetMinutes(from, to);
+                var mins = GetSeconds(from, to);
                 _chartData.Add(($"{h:D2}", mins));
             }
         }
@@ -160,7 +160,7 @@ else
             for (int i = 0; i < 7; i++)
             {
                 var day = monday.AddDays(i);
-                var mins = GetMinutes(day, day.AddDays(1));
+                var mins = GetSeconds(day, day.AddDays(1));
                 _chartData.Add((dayNames[i], mins));
             }
         }
@@ -174,17 +174,17 @@ else
             while (cur < lastDay)
             {
                 var end = new DateTime[] { cur.AddDays(7), lastDay }.Min();
-                var mins = GetMinutes(cur, end);
+                var mins = GetSeconds(cur, end);
                 _chartData.Add(($"{week}주", mins));
                 cur = end; week++;
             }
         }
     }
 
-    int GetMinutes(DateTime from, DateTime to) =>
+    int GetSeconds(DateTime from, DateTime to) =>
         _projects.SelectMany(p => p.Sessions)
             .Where(s => s.EndTime.HasValue && s.StartTime >= from && s.StartTime < to)
-            .Sum(s => (int)((s.EndTime!.Value - s.StartTime).TotalMinutes));
+            .Sum(s => (int)(s.EndTime!.Value - s.StartTime).TotalSeconds);
 
     void BuildRecentSessions()
     {

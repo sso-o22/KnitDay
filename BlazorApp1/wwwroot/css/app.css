@@ -974,15 +974,19 @@ body {
 [data-dark="true"][data-theme="pink"],
 [data-dark="true"][data-theme="purple"],
 [data-dark="true"][data-theme="mono"] {
-    --theme-pale:   #0e0e0e;
-    --theme-light:  #2a2a2a;
-    --theme-mid:    #383838;
-    --theme-muted:  #666666;
-    --theme-btn:    #2a2a2a;
-    --theme-active: #e0e0e0;
+    --theme-pale:   #1e1e1e;   /* 사이드바 — 카드보다 밝게 */
+    --theme-light:  #323232;   /* 활성 메뉴 배경 */
+    --theme-mid:    #444444;   /* 구분선 */
+    --theme-muted:  #888888;
+    --theme-btn:    #323232;
+    --theme-active: #e8e8e8;
 }
 
 /* ── 다크모드 버튼 오버라이드 ───────────────────────────── */
+/* 그래프 막대 — theme-light가 어두워서 별도로 밝게 */
+[data-dark="true"] [style*="background:var(--theme-light)"][style*="border-radius:4px 4px"] {
+    background: #888888 !important;
+}
 [data-dark="true"] .btn-primary,
 [data-dark="true"] .btn-sage {
     color: var(--theme-active);
