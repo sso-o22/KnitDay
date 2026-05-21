@@ -13,31 +13,41 @@ window.patternViewer = (() => {
     let _pinchStartDist = 0;
     let _pinchStartZoom = 1.0;
     let _pageHandlers = {};
-    let _renderTasks = {};   // pageNum -> ongoing renderTask
+    let _renderTasks = {};
 
-    // ── PDF.js 로컬 모듈 로드 ──────────────────────────────────
-    let _pdfjsReady = null;
-
-    // Blazor GitHub Pages 환경에서 base href를 기준으로 pdfjs 경로를 동적 계산
+    // ── base href 기준 절대경로 계산 (GitHub Pages 대응) ─────
     function getPdfjsBase() {
-        // <base href="/KnitLog/"> 등 index.html의 base 태그를 따름
-        const base = document.querySelector('base')
-            ? document.querySelector('base').href
-            : (window.location.origin + '/');
-        return base.replace(/\/$/, ''); // 끝 슬래시 제거
+        const baseEl = document.querySelector('base');
+        const href = baseEl ? baseEl.href : (window.location.origin + '/');
+        return href.replace(/\/$/, '');
     }
 
+    // ── PDF.js: inline module script으로 로드 (dynamic import 경로 문제 우회) ──
+    let _pdfjsReady = null;
     async function ensurePdfJs() {
         if (_pdfjsReady) return _pdfjsReady;
-        _pdfjsReady = (async () => {
-            if (!window.pdfjsLib) {
-                const base = getPdfjsBase();
-                const mod = await import(base + '/pdfjs/build/pdf.mjs');
-                window.pdfjsLib = mod;
-            }
+        _pdfjsReady = new Promise((resolve, reject) => {
+            if (window.pdfjsLib) { resolve(); return; }
             const base = getPdfjsBase();
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + '/pdfjs/build/pdf.worker.mjs';
-        })();
+            const scriptSrc = base + '/pdfjs/build/pdf.mjs';
+            const workerSrc = base + '/pdfjs/build/pdf.worker.mjs';
+            // 콜백 이름을 고유하게
+            const cbName = '_pdfjsLoaded_' + Date.now();
+            window[cbName] = function(lib) {
+                window.pdfjsLib = lib;
+                window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+                delete window[cbName];
+                resolve();
+            };
+            const s = document.createElement('script');
+            s.type = 'module';
+            // template literal 대신 문자열 연결로 안전하게
+            s.textContent =
+                'import * as pdfjsLib from "' + scriptSrc + '";' +
+                'window["' + cbName + '"](pdfjsLib);';
+            s.onerror = function(e) { delete window[cbName]; reject(e); };
+            document.head.appendChild(s);
+        });
         return _pdfjsReady;
     }
 
@@ -167,7 +177,6 @@ window.patternViewer = (() => {
         const annoCanvas = getAnnoCanvas(pageNum);
         if (!pdfCanvas || !annoCanvas) return;
 
-        // 이전 렌더 작업 취소
         if (_renderTasks[pageNum]) {
             try { _renderTasks[pageNum].cancel(); } catch (_) {}
             _renderTasks[pageNum] = null;
@@ -177,7 +186,6 @@ window.patternViewer = (() => {
         const dpr  = window.devicePixelRatio || 1;
         const viewport = page.getViewport({ scale: zoom });
 
-        // 실제 픽셀 크기 (DPR 반영)
         const cssW = Math.floor(viewport.width);
         const cssH = Math.floor(viewport.height);
         const bufW = Math.floor(cssW * dpr);
@@ -188,17 +196,14 @@ window.patternViewer = (() => {
         annoCanvas.width  = bufW;
         annoCanvas.height = bufH;
 
-        // CSS 크기는 viewport 기준 (선명하게 보임)
         pdfCanvas.style.width  = annoCanvas.style.width  = cssW + 'px';
         pdfCanvas.style.height = annoCanvas.style.height = cssH + 'px';
 
-        // cursor 설정
         const cursor = _tool === 'pen' ? 'crosshair'
                      : _tool === 'eraser' ? 'cell'
                      : _tool === 'ruler'  ? 'crosshair' : 'default';
         annoCanvas.style.cursor = cursor;
 
-        // PDF 렌더 (DPR 스케일 transform 적용)
         const pdfCtx = pdfCanvas.getContext('2d');
         pdfCtx.save();
         pdfCtx.scale(dpr, dpr);
@@ -226,7 +231,6 @@ window.patternViewer = (() => {
         if (!scrollEl || scrollEl._bound) return;
         scrollEl._bound = true;
 
-        // 스크롤 → 현재 페이지 추적
         scrollEl.addEventListener('scroll', () => {
             const wrapperRect = scrollEl.getBoundingClientRect();
             const mid = wrapperRect.top + wrapperRect.height / 2;
@@ -243,7 +247,6 @@ window.patternViewer = (() => {
             }
         }, { passive: true });
 
-        // PC: Ctrl+휠 = 확대/축소
         scrollEl.addEventListener('wheel', e => {
             if (e.ctrlKey) {
                 e.preventDefault();
@@ -253,7 +256,6 @@ window.patternViewer = (() => {
             }
         }, { passive: false });
 
-        // 모바일: 핀치 줌
         scrollEl.addEventListener('touchstart', e => {
             if (e.touches.length === 2) {
                 _pinchStartDist = Math.hypot(
@@ -283,13 +285,12 @@ window.patternViewer = (() => {
     async function calcFitZoom(page) {
         const scrollEl = document.getElementById('scroll-container');
         if (!scrollEl) return 1.0;
-        const padding = 32; // 양쪽 16px 패딩
+        const padding = 32;
         const availW  = scrollEl.clientWidth  - padding;
         const availH  = scrollEl.clientHeight - padding;
         const vp1     = page.getViewport({ scale: 1.0 });
         const zoomByW = availW  / vp1.width;
         const zoomByH = availH  / vp1.height;
-        // 전체 페이지가 화면 안에 딱 맞게 (가로/세로 중 작은 값 선택)
         const fit = Math.min(zoomByW, zoomByH);
         return Math.round(Math.max(0.5, Math.min(3.0, fit)) * 100) / 100;
     }
@@ -300,30 +301,27 @@ window.patternViewer = (() => {
 
         async loadPdfFromStream(streamRef, _ignoredZoom) {
             await ensurePdfJs();
+            const base  = getPdfjsBase();
             const bytes = new Uint8Array(await streamRef.arrayBuffer());
-            const _base = getPdfjsBase();
             pdfDoc = await window.pdfjsLib.getDocument({
                 data: bytes,
-                cMapUrl:        _base + '/pdfjs/web/cmaps/',
-                cMapPacked:     true,
-                standardFontDataUrl: _base + '/pdfjs/web/standard_fonts/'
+                cMapUrl:             base + '/pdfjs/web/cmaps/',
+                cMapPacked:          true,
+                standardFontDataUrl: base + '/pdfjs/web/standard_fonts/'
             }).promise;
-            totalPages   = pdfDoc.numPages;
+            totalPages    = pdfDoc.numPages;
             _pageHandlers = {};
-            paths        = [];
+            paths         = [];
 
-            // 1페이지 기준으로 fit-zoom 계산
             const firstPage = await pdfDoc.getPage(1);
             const fitZoom   = await calcFitZoom(firstPage);
             currentZoom     = fitZoom;
 
-            // 모든 페이지 렌더
             for (let i = 1; i <= totalPages; i++) {
                 await renderOnePage(i, currentZoom);
             }
             setupScrollAndZoom();
 
-            // Blazor에 zoom 값 동기화
             if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', currentZoom);
             return totalPages;
         },
@@ -332,7 +330,6 @@ window.patternViewer = (() => {
             if (!pdfDoc) return;
             currentZoom   = zoom;
             _pageHandlers = {};
-            // 병렬이 아닌 순차 렌더 (메모리 안정성)
             for (let i = 1; i <= totalPages; i++) {
                 await renderOnePage(i, zoom);
             }
@@ -380,8 +377,7 @@ window.patternViewer = (() => {
         },
 
         dispose() {
-            // 진행 중인 렌더 취소
-            Object.values(_renderTasks).forEach(t => { try { if(t) t.cancel(); } catch(_){} });
+            Object.values(_renderTasks).forEach(t => { try { if (t) t.cancel(); } catch (_) {} });
             _renderTasks  = {};
             pdfDoc        = null;
             paths         = [];
