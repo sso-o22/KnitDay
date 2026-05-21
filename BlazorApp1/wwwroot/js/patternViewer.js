@@ -576,7 +576,8 @@ window.patternViewer = (() => {
 
         // DotNetStreamReference 방식 (기존, 일부 환경)
         async loadPdfBytes(streamRef) {
-            const bytes = new Uint8Array(await streamRef.arrayBuffer());
+            const raw = await streamRef.arrayBuffer();
+            const bytes = new Uint8Array(raw);
             return await this._loadPdfData(bytes);
         },
 

@@ -33,7 +33,7 @@
                         {
                             var isSelected = _selectedRuler == ruler && _tool == "ruler";
                             <div class="ruler-item @(isSelected ? "ruler-selected" : "")"
-                                 style="position:absolute;left:@(ruler.X)px;top:@(ruler.Y)px;width:@(ruler.Width)px;height:@(ruler.Height)px;
+                                 style="position:absolute;left:@(ruler.X * _zoom)px;top:@(ruler.Y * _zoom)px;width:@(ruler.Width * _zoom)px;height:@(ruler.Height * _zoom)px;
                                         background:rgba(@(ruler.ColorRgb),@(ruler.Opacity.ToString("F2",System.Globalization.CultureInfo.InvariantCulture)));
                                         border:2px solid rgba(@(ruler.ColorRgb),@(isSelected?"1.0":"0.8"));
                                         cursor:@(_tool=="ruler"?(isSelected?"move":"pointer"):"default");
@@ -738,14 +738,15 @@
         {
             // 파일을 byte[]로 읽어서 Base64로 JS에 전달
             // (DotNetStreamReference.arrayBuffer()가 iOS Safari에서 404 오류 발생)
-            using var stream = e.File.OpenReadStream(50 * 1024 * 1024);
+            // MemoryStream 경유 (iOS Safari의 DotNetStreamReference 불안정 우회)
+            using var stream = e.File.OpenReadStream(100 * 1024 * 1024); // 100MB
             using var ms = new System.IO.MemoryStream();
             await stream.CopyToAsync(ms);
             var bytes = ms.ToArray();
-            var base64 = Convert.ToBase64String(bytes);
 
-            // JS에서 페이지 수 받기
-            var pages = await JS.InvokeAsync<int>("patternViewer.loadPdfBase64", base64);
+            // JS에 byte[] 직접 전달 (Base64 변환 없이 → 메모리 절약)
+            using var streamRef = new DotNetStreamReference(new System.IO.MemoryStream(bytes), leaveOpen: false);
+            var pages = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", streamRef);
             if (pages <= 0) return;
 
             // Blazor DOM에 캔버스 생성
@@ -814,7 +815,7 @@
     // ── 자 ──
     [JSInvokable] public void OnCanvasPointerDown(double x,double y,int pageNum){if(_tool=="ruler"){_isDrawingRuler=true;_rulerStartX=x;_rulerStartY=y;_rulerPage=pageNum;_previewW=0;_previewH=0;StateHasChanged();}}
     [JSInvokable] public void OnRulerTouchMove(double x,double y){if(_isDrawingRuler){_previewW=x-_rulerStartX;_previewH=y-_rulerStartY;StateHasChanged();}}
-    [JSInvokable] public void OnRulerTouchEnd(){if(_isDrawingRuler&&Math.Abs(_previewW)>5)_rulers.Add(new RulerOverlay{X=_previewW>0?_rulerStartX:_rulerStartX+_previewW,Y=_previewH>0?_rulerStartY:_rulerStartY+_previewH,Width=Math.Abs(_previewW),Height=Math.Abs(_previewH),Page=_rulerPage});_isDrawingRuler=false;StateHasChanged();}
+    [JSInvokable] public void OnRulerTouchEnd(){if(_isDrawingRuler&&Math.Abs(_previewW)>5)_rulers.Add(new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage});_isDrawingRuler=false;StateHasChanged();}
 
     async Task OnGlobalMouseMove(MouseEventArgs e)
     {
@@ -826,15 +827,15 @@
             var rect=await JS.InvokeAsync<double[]>("patternViewer.getRect",pg);
             double curX=e.ClientX-rect[0];double curY=e.ClientY-rect[1];
             if(_isDrawingRuler){_previewW=curX-_rulerStartX;_previewH=curY-_rulerStartY;}
-            else if(_draggingRuler!=null){_draggingRuler.X=curX-_dragOffsetX;_draggingRuler.Y=curY-_dragOffsetY;}
-            else if(_resizingRuler!=null){_resizingRuler.Width=Math.Max(30,curX-_resizingRuler.X);_resizingRuler.Height=Math.Max(10,curY-_resizingRuler.Y);}
+            else if(_draggingRuler!=null){_draggingRuler.X=(curX-_dragOffsetX)/_zoom;_draggingRuler.Y=(curY-_dragOffsetY)/_zoom;}
+            else if(_resizingRuler!=null){_resizingRuler.Width=Math.Max(30/_zoom,curX/_zoom-_resizingRuler.X);_resizingRuler.Height=Math.Max(10/_zoom,curY/_zoom-_resizingRuler.Y);}
             StateHasChanged();
         }
     }
     async Task OnGlobalMouseUp(MouseEventArgs e)
     {
         _cwDragging=false;
-        if(_isDrawingRuler&&Math.Abs(_previewW)>5){var r=new RulerOverlay{X=_previewW>0?_rulerStartX:_rulerStartX+_previewW,Y=_previewH>0?_rulerStartY:_rulerStartY+_previewH,Width=Math.Abs(_previewW),Height=Math.Abs(_previewH),Page=_rulerPage};_rulers.Add(r);_selectedRuler=r;}
+        if(_isDrawingRuler&&Math.Abs(_previewW)>5){var r=new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage};_rulers.Add(r);_selectedRuler=r;}
         _isDrawingRuler=false;_draggingRuler=null;_resizingRuler=null;
         if(_isDrawing&&_pdfLoaded&&(_tool=="pen"||_tool=="eraser"))await JS.InvokeVoidAsync("patternViewer.endDraw");
         _isDrawing=false;StateHasChanged();
@@ -860,10 +861,10 @@
         // 이미 선택된 경우 드래그
         var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect", ruler.Page);
         _draggingRuler = ruler;
-        _dragOffsetX = (e.ClientX - rect[0]) - ruler.X;
-        _dragOffsetY = (e.ClientY - rect[1]) - ruler.Y;
+        _dragOffsetX = (e.ClientX - rect[0]) - ruler.X * _zoom;
+        _dragOffsetY = (e.ClientY - rect[1]) - ruler.Y * _zoom;
     }
-    async Task OnRulerTouchStart(TouchEventArgs e,RulerOverlay ruler){if(_tool!="ruler")return;if(_selectedRuler!=ruler){_selectedRuler=ruler;StateHasChanged();return;}var rect=await JS.InvokeAsync<double[]>("patternViewer.getRect",ruler.Page);var t=e.Touches[0];_draggingRuler=ruler;_dragOffsetX=(t.ClientX-rect[0])-ruler.X;_dragOffsetY=(t.ClientY-rect[1])-ruler.Y;}
+    async Task OnRulerTouchStart(TouchEventArgs e,RulerOverlay ruler){if(_tool!="ruler")return;if(_selectedRuler!=ruler){_selectedRuler=ruler;StateHasChanged();return;}var rect=await JS.InvokeAsync<double[]>("patternViewer.getRect",ruler.Page);var t=e.Touches[0];_draggingRuler=ruler;_dragOffsetX=(t.ClientX-rect[0])-ruler.X*_zoom;_dragOffsetY=(t.ClientY-rect[1])-ruler.Y*_zoom;}
     void OnResizeMouseDown(MouseEventArgs e,RulerOverlay ruler)=>_resizingRuler=ruler;
     void OnResizeTouchStart(TouchEventArgs e,RulerOverlay ruler)=>_resizingRuler=ruler;
 
@@ -922,5 +923,5 @@
         _dotNetRef?.Dispose();
         try { await JS.InvokeVoidAsync("patternViewer.dispose"); } catch { }
     }
-    class RulerOverlay{public double X,Y,Width,Height,Opacity=0.35;public string ColorRgb="180,220,190";public int Page;}
+    class RulerOverlay{public double X,Y,Width,Height,Opacity=0.35;public string ColorRgb="180,220,190";public int Page;public double SavedAtZoom=0;}
 }
