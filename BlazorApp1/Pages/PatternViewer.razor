@@ -218,7 +218,7 @@
                    @oninput="e => ChangeRulerOpacity(_sr, e)" style="width:48px;" title="투명도" />
             <button class="ctrl-btn" @onclick="() => { _sr.Y -= _sr.Height; StateHasChanged(); }">▲</button>
             <button class="ctrl-btn" @onclick="() => { _sr.Y += _sr.Height; StateHasChanged(); }">▼</button>
-            <button class="ctrl-btn del" @onclick="() => { _rulers.Remove(_sr); _selectedRuler = null; _ = SaveViewerStateAsync(); StateHasChanged(); }">✕</button>
+            <button class="ctrl-btn del" @onclick="() => { _rulers.Remove(_sr); _selectedRuler = null; _ = SaveRulersAsync(); StateHasChanged(); }">✕</button>
         </div>
     }
 </div>
@@ -606,6 +606,18 @@
     async Task DecrementCounter(ProjectCounter c){c.Value=Math.Max(0,c.Value-c.Step);c.LastUpdatedAt=DateTime.Now;await SaveProject();StateHasChanged();}
     async Task SaveProject(){if(_project is KnitProject p)await Storage.SaveProjectAsync(p);}
 
+    // 도형만 즉시 저장 (디바운스 없이)
+    async Task SaveRulersAsync()
+    {
+        if (_project == null) return;
+        try
+        {
+            _project.ViewerRulers = System.Text.Json.JsonSerializer.Serialize(_rulers);
+            await SaveProject();
+        }
+        catch { }
+    }
+
     // 필기+도형+줌+페이지 자동 저장 (디바운스)
     System.Threading.CancellationTokenSource? _saveCts;
     async Task SaveViewerStateAsync()
@@ -815,7 +827,7 @@
     // ── 자 ──
     [JSInvokable] public void OnCanvasPointerDown(double x,double y,int pageNum){if(_tool=="ruler"){_isDrawingRuler=true;_rulerStartX=x;_rulerStartY=y;_rulerPage=pageNum;_previewW=0;_previewH=0;StateHasChanged();}}
     [JSInvokable] public void OnRulerTouchMove(double x,double y){if(_isDrawingRuler){_previewW=x-_rulerStartX;_previewH=y-_rulerStartY;StateHasChanged();}}
-    [JSInvokable] public void OnRulerTouchEnd(){if(_isDrawingRuler&&Math.Abs(_previewW)>5)_rulers.Add(new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage});_isDrawingRuler=false;_=SaveViewerStateAsync();StateHasChanged();}
+    [JSInvokable] public void OnRulerTouchEnd(){if(_isDrawingRuler&&Math.Abs(_previewW)>5)_rulers.Add(new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage});_isDrawingRuler=false;_=SaveRulersAsync();StateHasChanged();}
 
     async Task OnGlobalMouseMove(MouseEventArgs e)
     {
@@ -835,12 +847,12 @@
     async Task OnGlobalMouseUp(MouseEventArgs e)
     {
         _cwDragging=false;
-        if(_isDrawingRuler&&Math.Abs(_previewW)>5){var r=new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage};_rulers.Add(r);_selectedRuler=r;_=SaveViewerStateAsync();}
+        if(_isDrawingRuler&&Math.Abs(_previewW)>5){var r=new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage};_rulers.Add(r);_selectedRuler=r;_=SaveRulersAsync();}
         bool _hadRulerAction = _isDrawingRuler || _draggingRuler!=null || _resizingRuler!=null;
         _isDrawingRuler=false;_draggingRuler=null;_resizingRuler=null;
         if(_isDrawing&&_pdfLoaded&&(_tool=="pen"||_tool=="eraser"))await JS.InvokeVoidAsync("patternViewer.endDraw");
         _isDrawing=false;
-        if(_hadRulerAction)_=SaveViewerStateAsync();
+        if(_hadRulerAction)_=SaveRulersAsync();
         StateHasChanged();
     }
     void DeselectRuler(){if(_tool=="ruler")_selectedRuler=null;}
@@ -880,7 +892,7 @@
             StateHasChanged();
         }
     }
-    async Task OnGlobalTouchEnd(TouchEventArgs e){_cwDragging=false;bool _hadRuler=_draggingRuler!=null||_resizingRuler!=null;_draggingRuler=null;_resizingRuler=null;if(_hadRuler)await SaveViewerStateAsync();StateHasChanged();}
+    Task OnGlobalTouchEnd(TouchEventArgs e){_cwDragging=false;bool _hadRuler=_draggingRuler!=null||_resizingRuler!=null;_draggingRuler=null;_resizingRuler=null;if(_hadRuler)_=SaveRulersAsync();StateHasChanged();return Task.CompletedTask;}
 
     void UpdateRulerColor(RulerOverlay r,ChangeEventArgs e)=>r.ColorRgb=HexToRgb(e.Value?.ToString()??"#ffffff");
     void ChangeRulerOpacity(RulerOverlay r,ChangeEventArgs e)=>r.Opacity=(double.TryParse(e.Value?.ToString(),out var v)?v:35)/100.0;

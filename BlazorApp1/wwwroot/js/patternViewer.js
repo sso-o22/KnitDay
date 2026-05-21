@@ -652,8 +652,6 @@ window.patternViewer = (() => {
             if (tool !== undefined) _tool = tool;
             const cursor = (tool === 'pen' || tool === 'ruler') ? 'crosshair' : tool === 'eraser' ? 'cell' : 'default';
             for (let i = 1; i <= totalPages; i++) { const a = getAnnoCanvas(i); if (a) a.style.cursor = cursor; }
-            // 도구 변경 시 현재 zoom 기준으로 모든 페이지 다시 그리기
-            for (let i = 1; i <= totalPages; i++) redrawPage(i);
         },
 
         undo() { paths.pop(); for (let i = 1; i <= totalPages; i++) redrawPage(i); },
