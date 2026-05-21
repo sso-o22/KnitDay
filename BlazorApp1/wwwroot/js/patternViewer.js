@@ -90,24 +90,44 @@ window.patternViewer = (() => {
     }
 
     // ── placeholder 크기 설정 (렌더 전 높이 확보) ───────────
-    async function setPlaceholderSize(pageNum, zoom) {
-        if (!pdfDoc) return;
+    // 페이지 크기 캐시 (같은 크기 PDF는 1페이지만 파싱)
+    let _pageSizeCache = {}; // pageNum -> {cssW, cssH}
+
+    async function getPageSize(pageNum, zoom) {
+        const key = pageNum + '_' + zoom;
+        if (_pageSizeCache[key]) return _pageSizeCache[key];
+        const page = await pdfDoc.getPage(pageNum);
+        const vp = page.getViewport({ scale: zoom });
+        const size = { cssW: Math.floor(vp.width), cssH: Math.floor(vp.height) };
+        _pageSizeCache[key] = size;
+        return size;
+    }
+
+    function applyPlaceholderSize(pageNum, cssW, cssH) {
         const pdfCanvas  = getPdfCanvas(pageNum);
         const annoCanvas = getAnnoCanvas(pageNum);
         if (!pdfCanvas || !annoCanvas) return;
-        const page = await pdfDoc.getPage(pageNum);
-        const viewport = page.getViewport({ scale: zoom });
-        const cssW = Math.floor(viewport.width);
-        const cssH = Math.floor(viewport.height);
-        // 크기만 설정, 렌더는 하지 않음
-        if (pdfCanvas.width === 1 || pdfCanvas.clientWidth !== cssW) {
-            pdfCanvas.style.width   = annoCanvas.style.width  = cssW + 'px';
-            pdfCanvas.style.height  = annoCanvas.style.height = cssH + 'px';
-            pdfCanvas.width  = 1; // 최소 크기 (메모리 절약)
-            pdfCanvas.height = 1;
-            annoCanvas.width  = 1;
-            annoCanvas.height = 1;
+        pdfCanvas.style.width   = annoCanvas.style.width  = cssW + 'px';
+        pdfCanvas.style.height  = annoCanvas.style.height = cssH + 'px';
+        pdfCanvas.width  = 1;
+        pdfCanvas.height = 1;
+        annoCanvas.width  = 1;
+        annoCanvas.height = 1;
+    }
+
+    // 1페이지 크기 기준으로 전체 placeholder 일괄 설정 (137번 getPage 호출 방지)
+    async function setAllPlaceholders(zoom) {
+        if (!pdfDoc) return;
+        const { cssW, cssH } = await getPageSize(1, zoom);
+        for (let i = 1; i <= totalPages; i++) {
+            applyPlaceholderSize(i, cssW, cssH);
         }
+    }
+
+    async function setPlaceholderSize(pageNum, zoom) {
+        if (!pdfDoc) return;
+        const { cssW, cssH } = await getPageSize(pageNum, zoom);
+        applyPlaceholderSize(pageNum, cssW, cssH);
     }
 
     // ── 어노테이션 다시 그리기 ───────────────────────────────
@@ -339,10 +359,8 @@ window.patternViewer = (() => {
             // 줌 변경 시 모든 렌더 캐시 무효화
             _renderedPages.clear();
             _pageHandlers = {};
-            // placeholder 크기 업데이트
-            for (let i = 1; i <= totalPages; i++) {
-                await setPlaceholderSize(i, targetZoom);
-            }
+            // placeholder 크기 업데이트 (1페이지 기준 일괄)
+            await setAllPlaceholders(targetZoom);
             // 현재 보이는 페이지만 렌더
             await virtualizeRender(targetZoom);
             if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', targetZoom);
@@ -450,10 +468,8 @@ window.patternViewer = (() => {
             currentZoom     = fitZoom;
             currentPageNum  = 1;
 
-            // 모든 페이지 placeholder 크기 설정
-            for (let i = 1; i <= totalPages; i++) {
-                await setPlaceholderSize(i, currentZoom);
-            }
+            // 1페이지 기준으로 전체 placeholder 일괄 설정
+            await setAllPlaceholders(currentZoom);
             // 처음엔 1~RENDER_AHEAD+1 페이지만 렌더
             await virtualizeRender(currentZoom);
             setupScrollAndZoom();
@@ -468,9 +484,7 @@ window.patternViewer = (() => {
             currentZoom    = zoom;
             _renderedPages = new Set();
             _pageHandlers  = {};
-            for (let i = 1; i <= totalPages; i++) {
-                await setPlaceholderSize(i, zoom);
-            }
+            await setAllPlaceholders(zoom);
             await virtualizeRender(zoom);
         },
 
@@ -527,6 +541,7 @@ window.patternViewer = (() => {
             isDrawing      = false;
             currentPath    = null;
             _isPinching    = false;
+            _pageSizeCache = {};
         },
 
         preventScroll() {}
