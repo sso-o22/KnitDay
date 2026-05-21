@@ -178,7 +178,7 @@
         @if (_showCounterWidget)
         {
             <div class="cw-wrap"
-                 style="position:fixed;left:@(_cwX)px;top:@(_cwY)px;z-index:500;touch-action:none;cursor:grab;"
+                 style="position:fixed;left:@(_cwX)px;top:@(_cwY)px;z-index:600;touch-action:none;cursor:grab;"
                  @onmousedown="CwDragStart">
                 <div class="cw-inner" @onmousedown:stopPropagation="true" @ontouchstart:stopPropagation="true">
                     <!-- 드래그 핸들 -->
@@ -209,7 +209,7 @@
         else
         {
             <button class="cw-fab" @onclick="()=>_showCounterWidget=true"
-                    style="position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);z-index:500;">🧶</button>
+                    style="position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);z-index:600;">🧶</button>
         }
     }
 </div>
@@ -217,18 +217,21 @@
 <style>
     /* ── 뷰어 루트: PC는 main-content 안, 모바일은 fixed fullscreen ── */
     .pv-root {
+        /* PC: 사이드바 오른쪽 main-content 안에서 전체 높이 차지 */
         position: relative;
         width: 100%;
-        height: calc(100vh - 0px);
+        height: 100vh;
+        height: 100dvh; /* 모바일 주소창 대응 */
         overflow: hidden;
         background: #aaa;
     }
-    /* 모바일: fixed로 전체 차지 */
-    @@media (max-width: 640px) {
+    /* 태블릿+모바일(1024px 이하): 사이드바 없으므로 fixed fullscreen */
+    @@media (max-width: 1024px) {
         .pv-root {
             position: fixed;
             inset: 0;
             z-index: 50;
+            height: 100dvh;
         }
     }
 
@@ -322,7 +325,7 @@
         transition: max-height 0.25s cubic-bezier(0.4,0,0.2,1);
         margin-top: 4px;
     }
-    .draw-panel-open { max-height: 400px; }
+    .draw-panel-open { max-height: 600px; }
     .draw-panel-inner {
         display: flex;
         flex-direction: column;
@@ -592,11 +595,11 @@
     {
         if(firstRender)
         {
-            // 카운터 위젯 초기 위치: 우측 하단 (하단탭 위)
+            // 카운터 위젯 초기 위치: 우측 하단
             var w=await JS.InvokeAsync<double>("eval","window.innerWidth");
             var h=await JS.InvokeAsync<double>("eval","window.innerHeight");
-            _cwX=w-192; // 위젯 너비 약 176px + 여백
-            _cwY=h-220; // 하단탭(72px)+위젯 높이(140px)+여백
+            _cwX=Math.Max(16, w-192); // 위젯 너비 약 176px + 여백
+            _cwY=Math.Max(80, h-220); // 하단(72px)+위젯 높이(140px)+여백
             _dotNetRef=DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("patternViewer.init",_dotNetRef);
             await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,false,_tool,_penOpacity);
