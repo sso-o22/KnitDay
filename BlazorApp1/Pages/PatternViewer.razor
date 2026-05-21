@@ -1,4 +1,4 @@
-@page "/pattern-viewer/{ProjectId:guid}"
+rncl@page "/pattern-viewer/{ProjectId:guid}"
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
@@ -100,8 +100,10 @@
                 </div>
                 <div class="tb-div"></div>
             }
-            <label class="tb-label">
-                📄 <InputFile OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
+            <label id="pdf-label" class="tb-label" style="cursor:pointer;"
+                   @onclick:preventDefault="@_pdfLoaded"
+                   @onclick="OnLoadPatternClick">
+                📄 <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
             </label>
         </div>
     </div>
@@ -532,6 +534,21 @@
     }
 </style>
 
+@if (_showLoadWarning)
+{
+    <div class="modal-backdrop" style="z-index:9999;">
+        <div class="modal" style="max-width:360px;text-align:center;" @onclick:stopPropagation="true">
+            <div style="font-size:2rem;margin-bottom:12px;">📄</div>
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">도안을 교체할까요?</div>
+            <div style="font-size:0.88rem;color:var(--text-mid);margin-bottom:20px;">이미 불러온 도안이 있어요.<br/>새 파일로 교체하면 기존 필기와 도형이 모두 사라져요.</div>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button class="btn btn-ghost" @onclick="()=>_showLoadWarning=false">취소</button>
+                <button class="btn btn-primary" @onclick="ConfirmLoadPattern">교체</button>
+            </div>
+        </div>
+    </div>
+}
+
 @if (_showConfirm)
 {
     <div class="modal-backdrop" style="z-index:9999;">
@@ -548,6 +565,7 @@
 }
 
 @code {
+    bool _showLoadWarning=false;
     bool _showConfirm=false; string _confirmMsg=""; Func<Task>? _confirmAction;
     void Confirm(string msg,Func<Task> action){_confirmMsg=msg;_confirmAction=action;_showConfirm=true;}
     async Task ExecuteConfirm(){_showConfirm=false;if(_confirmAction!=null)await _confirmAction();_confirmAction=null;}
@@ -744,6 +762,26 @@
 
     // ── PDF ──
     async Task UndoLastPath()=>await JS.InvokeVoidAsync("patternViewer.undo");
+    // 도안 불러오기 버튼 클릭 → 이미 있으면 경고, 없으면 바로 파일 선택
+    void OnLoadPatternClick()
+    {
+        if (_pdfLoaded)
+        {
+            _showLoadWarning = true;
+            StateHasChanged();
+        }
+        // _pdfLoaded == false 일 때는 label 기본 동작으로 InputFile 클릭됨
+    }
+
+    async Task ConfirmLoadPattern()
+    {
+        _showLoadWarning = false;
+        // 기존 필기/도형 지우기
+        _rulers.Clear();
+        await JS.InvokeVoidAsync("patternViewer.clearAnnotations");
+        await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
+    }
+
     async Task OnPdfSelected(InputFileChangeEventArgs e)
     {
         try
@@ -801,6 +839,11 @@
         StateHasChanged();
         _ = SaveViewerStateAsync();
     }
+    [JSInvokable] public void NotifyAnnotationChanged()
+    {
+        _ = SaveViewerStateAsync();
+    }
+
     [JSInvokable] public void ZoomToFromJS(double zoom)
     {
         _zoom = zoom;

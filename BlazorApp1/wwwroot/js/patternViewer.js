@@ -263,7 +263,12 @@ window.patternViewer = (() => {
             const _ctx = anno.getContext('2d');
             _ctx.globalCompositeOperation = 'source-over';
             _ctx.globalAlpha = 1.0;
-            if (currentPath) { paths.push(currentPath); currentPath = null; }
+            if (currentPath) {
+                paths.push(currentPath);
+                currentPath = null;
+                // 필기 완료 → Blazor에 저장 트리거
+                if (dotNetRef) dotNetRef.invokeMethodAsync('NotifyAnnotationChanged');
+            }
         }
 
         anno.addEventListener('mousedown',  onDown);
@@ -654,7 +659,11 @@ window.patternViewer = (() => {
             for (let i = 1; i <= totalPages; i++) { const a = getAnnoCanvas(i); if (a) a.style.cursor = cursor; }
         },
 
-        undo() { paths.pop(); for (let i = 1; i <= totalPages; i++) redrawPage(i); },
+        undo() {
+            paths.pop();
+            for (let i = 1; i <= totalPages; i++) redrawPage(i);
+            if (dotNetRef) dotNetRef.invokeMethodAsync('NotifyAnnotationChanged');
+        },
 
         getRect(pageNum) {
             const el = document.getElementById('page-container-' + (pageNum || currentPageNum));
@@ -697,6 +706,11 @@ window.patternViewer = (() => {
         },
 
         preventScroll() {},
+
+        triggerFileInput() {
+            const inp = document.getElementById('pdf-file-input');
+            if (inp) inp.click();
+        },
 
         // ── IndexedDB PDF 저장/불러오기 ──────────────────────
         async savePdfToProject(projectId, fileName) {
