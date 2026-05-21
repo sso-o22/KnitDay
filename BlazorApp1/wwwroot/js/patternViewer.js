@@ -73,13 +73,25 @@ window.patternViewer = (() => {
         };
     }
 
-    // ── CSS transform scale (즉각 시각 반응) ─────────────────
-    function applyScaleTransform(zoom) {
+    // ── CSS transform scale (즉각 시각 반응, 핀치 중심점 기준) ──
+    let _pinchOriginX = 0, _pinchOriginY = 0; // 핀치 중심점 (scroll-container 기준)
+
+    function applyScaleTransform(zoom, originX, originY) {
         const wrapper = document.getElementById('pdf-wrapper');
-        if (!wrapper) return;
+        const scrollEl = document.getElementById('scroll-container');
+        if (!wrapper || !scrollEl) return;
         const ratio = zoom / currentZoom;
+
+        if (originX !== undefined && originY !== undefined) {
+            // 핀치 중심점을 wrapper 내부 좌표로 변환
+            const wRect = wrapper.getBoundingClientRect();
+            const ox = originX - wRect.left;
+            const oy = originY - wRect.top;
+            wrapper.style.transformOrigin = ox + 'px ' + oy + 'px';
+        } else {
+            wrapper.style.transformOrigin = 'top center';
+        }
         wrapper.style.transform = 'scale(' + ratio + ')';
-        wrapper.style.transformOrigin = 'top center';
     }
 
     function clearScaleTransform() {
@@ -321,7 +333,8 @@ window.patternViewer = (() => {
     }
 
     // ── 스크롤 후 가상화 갱신 (디바운스) ────────────────────
-    let _scrollDebounce = null;
+    let _intersectionObserver = null;
+
     function onScroll() {
         if (_isPinching) return;
         const scrollEl = document.getElementById('scroll-container');
@@ -339,11 +352,37 @@ window.patternViewer = (() => {
             currentPageNum = found;
             if (dotNetRef) dotNetRef.invokeMethodAsync('UpdatePageFromJS', found);
         }
-        // 스크롤 멈추면 가상화 갱신
-        if (_scrollDebounce) clearTimeout(_scrollDebounce);
-        _scrollDebounce = setTimeout(() => {
-            virtualizeRender(currentZoom);
-        }, 150);
+    }
+
+    // IntersectionObserver: 페이지가 뷰포트에 들어오는 순간 즉시 렌더
+    function setupIntersectionObserver() {
+        if (_intersectionObserver) {
+            _intersectionObserver.disconnect();
+            _intersectionObserver = null;
+        }
+        const scrollEl = document.getElementById('scroll-container');
+        if (!scrollEl) return;
+
+        _intersectionObserver = new IntersectionObserver((entries) => {
+            if (_isPinching) return;
+            entries.forEach(entry => {
+                if (!entry.isIntersecting) return;
+                const id = entry.target.id; // 'page-container-N'
+                const pageNum = parseInt(id.replace('page-container-', ''), 10);
+                if (!isNaN(pageNum) && !_renderedPages.has(pageNum)) {
+                    renderOnePage(pageNum, currentZoom);
+                }
+            });
+        }, {
+            root: scrollEl,
+            rootMargin: '200px 0px 200px 0px', // 뷰포트 위아래 200px 미리 렌더
+            threshold: 0
+        });
+
+        for (let i = 1; i <= totalPages; i++) {
+            const el = document.getElementById('page-container-' + i);
+            if (el) _intersectionObserver.observe(el);
+        }
     }
 
     // ── 디바운스된 줌 재렌더 ────────────────────────────────
@@ -361,8 +400,9 @@ window.patternViewer = (() => {
             _pageHandlers = {};
             // placeholder 크기 업데이트 (1페이지 기준 일괄)
             await setAllPlaceholders(targetZoom);
-            // 현재 보이는 페이지만 렌더
+            // 현재 보이는 페이지 렌더 + Observer 재초기화
             await virtualizeRender(targetZoom);
+            setupIntersectionObserver(); // 줌 변경 후 Observer 재등록
             if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', targetZoom);
         }, 350);
     }
@@ -374,14 +414,16 @@ window.patternViewer = (() => {
         scrollEl._bound = true;
 
         scrollEl.addEventListener('scroll', onScroll, { passive: true });
+        setupIntersectionObserver();
 
-        // PC: Ctrl+휠
+        // PC: Ctrl+휠 → 마우스 커서 위치 기준 확대
         scrollEl.addEventListener('wheel', e => {
             if (e.ctrlKey) {
                 e.preventDefault();
                 const delta = e.deltaY > 0 ? -0.1 : 0.1;
                 const newZ  = Math.round(Math.min(3.0, Math.max(0.5, currentZoom + delta)) * 10) / 10;
-                applyScaleTransform(newZ);
+                // 마우스 커서 위치를 중심점으로 전달
+                applyScaleTransform(newZ, e.clientX, e.clientY);
                 scheduleRerender(newZ);
             }
         }, { passive: false });
@@ -396,11 +438,14 @@ window.patternViewer = (() => {
                     e.touches[0].clientY - e.touches[1].clientY
                 );
                 _pinchStartZoom = currentZoom;
+                // 핀치 중심점 기록 (화면 좌표)
+                _pinchOriginX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                _pinchOriginY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
                 e.preventDefault();
             }
         }, { passive: false });
 
-        // 모바일: 핀치 중 → CSS scale만
+        // 모바일: 핀치 중 → CSS scale만 (중심점 기준)
         scrollEl.addEventListener('touchmove', e => {
             if (_tool === 'ruler' && e.touches.length === 1) { e.preventDefault(); return; }
             if (e.touches.length === 2) {
@@ -410,7 +455,10 @@ window.patternViewer = (() => {
                     e.touches[0].clientY - e.touches[1].clientY
                 );
                 const newZ = Math.min(3.0, Math.max(0.5, _pinchStartZoom * dist / _pinchStartDist));
-                applyScaleTransform(newZ);
+                // 현재 핀치 중심점 (움직이는 동안 업데이트)
+                const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+                const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                applyScaleTransform(newZ, cx, cy);
                 _pendingZoom = Math.round(newZ * 10) / 10;
             }
         }, { passive: false });
@@ -418,10 +466,15 @@ window.patternViewer = (() => {
         // 모바일: 핀치 끝 → 디바운스 재렌더
         scrollEl.addEventListener('touchend', e => {
             if (_isPinching && e.touches.length < 2) {
-                _isPinching = false;
-                if (_pendingZoom !== null) {
-                    scheduleRerender(_pendingZoom);
-                }
+                const zoomToApply = _pendingZoom;
+                // _isPinching 해제를 약간 지연: canvas touchend가 먼저 실행된 후
+                // isPinching=false가 되어야 이후 그리기 터치가 정상 인식됨
+                setTimeout(() => {
+                    _isPinching = false;
+                    if (zoomToApply !== null) {
+                        scheduleRerender(zoomToApply);
+                    }
+                }, 50);
             }
         }, { passive: true });
     }
@@ -472,7 +525,7 @@ window.patternViewer = (() => {
             await setAllPlaceholders(currentZoom);
             // 처음엔 1~RENDER_AHEAD+1 페이지만 렌더
             await virtualizeRender(currentZoom);
-            setupScrollAndZoom();
+            setupScrollAndZoom(); // scroll/zoom/pinch 이벤트 + IntersectionObserver 초기화
             if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', currentZoom);
         },
 
@@ -486,6 +539,8 @@ window.patternViewer = (() => {
             _pageHandlers  = {};
             await setAllPlaceholders(zoom);
             await virtualizeRender(zoom);
+            setupIntersectionObserver();
+            setupIntersectionObserver();
         },
 
         setTool(color, size, isEraser, tool) {
@@ -531,7 +586,7 @@ window.patternViewer = (() => {
 
         dispose() {
             if (_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
-            if (_scrollDebounce) clearTimeout(_scrollDebounce);
+            if (_intersectionObserver) { _intersectionObserver.disconnect(); _intersectionObserver = null; }
             Object.values(_renderTasks).forEach(t => { try { if (t) t.cancel(); } catch (_) {} });
             _renderTasks   = {};
             _renderedPages = new Set();
