@@ -367,7 +367,6 @@
         display: flex; flex-direction: column; align-items: center; gap: 3px;
     }
     .dp-range-v {
-        -webkit-appearance: slider-vertical;
         writing-mode: vertical-lr;
         direction: rtl;
         width: 22px; height: 80px;
@@ -617,11 +616,12 @@
     {
         if(firstRender)
         {
-            // 카운터 위젯 초기 위치: 우측 하단
-            var w=await JS.InvokeAsync<double>("eval","window.innerWidth");
-            var h=await JS.InvokeAsync<double>("eval","window.innerHeight");
-            _cwX=Math.Max(16, w-192); // 위젯 너비 약 176px + 여백
-            _cwY=Math.Max(80, h-220); // 하단(72px)+위젯 높이(140px)+여백
+            // 카운터 위젯 초기 위치: 뷰포트 기준 우측 하단
+            // (사이드바 등 레이아웃 무관하게 항상 화면 우하단에 표시)
+            var vw = await JS.InvokeAsync<double>("eval", "window.innerWidth");
+            var vh = await JS.InvokeAsync<double>("eval", "window.innerHeight");
+            _cwX = Math.Max(16, vw - 196);
+            _cwY = Math.Max(80, vh - 230);
             _dotNetRef=DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("patternViewer.init",_dotNetRef);
             await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,false,_tool,_penOpacity);
@@ -635,25 +635,26 @@
     {
         try
         {
-            // 1단계: 파일 읽기 (iOS Safari: MemoryStream 경유)
+            // 파일을 byte[]로 읽어서 Base64로 JS에 전달
+            // (DotNetStreamReference.arrayBuffer()가 iOS Safari에서 404 오류 발생)
             using var stream = e.File.OpenReadStream(50 * 1024 * 1024);
             using var ms = new System.IO.MemoryStream();
             await stream.CopyToAsync(ms);
-            ms.Position = 0;
-            using var streamRef = new DotNetStreamReference(ms, leaveOpen: false);
+            var bytes = ms.ToArray();
+            var base64 = Convert.ToBase64String(bytes);
 
-            // 2단계: JS에서 페이지 수 받기
-            var pages = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", streamRef);
+            // JS에서 페이지 수 받기
+            var pages = await JS.InvokeAsync<int>("patternViewer.loadPdfBase64", base64);
             if (pages <= 0) return;
 
-            // 3단계: Blazor DOM에 캔버스 생성 (페이지수 확정 후 한 번만 렌더)
+            // Blazor DOM에 캔버스 생성
             _totalPages = pages;
             _pdfLoaded = true;
             _currentPage = 1;
             StateHasChanged();
-            await Task.Delay(100); // DOM 생성 대기
+            await Task.Delay(100);
 
-            // 4단계: JS 렌더링
+            // JS 렌더링
             await JS.InvokeVoidAsync("patternViewer.renderPdf");
         }
         catch (Exception ex)
