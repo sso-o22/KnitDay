@@ -525,10 +525,24 @@ window.patternViewer = (() => {
     return {
         init(ref) { dotNetRef = ref; },
 
+        // DotNetStreamReference 방식 (기존, 일부 환경)
         async loadPdfBytes(streamRef) {
-            await ensurePdfJs();
-            const base  = getPdfjsBase();
             const bytes = new Uint8Array(await streamRef.arrayBuffer());
+            return await this._loadPdfData(bytes);
+        },
+
+        // Base64 방식 - iOS Safari 호환 (arrayBuffer 내부 URL 404 우회)
+        async loadPdfBase64(base64String) {
+            const binaryStr = atob(base64String);
+            const bytes = new Uint8Array(binaryStr.length);
+            for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+            return await this._loadPdfData(bytes);
+        },
+
+        // 공통 로드 로직
+        async _loadPdfData(bytes) {
+            await ensurePdfJs();
+            const base = getPdfjsBase();
             pdfDoc = await window.pdfjsLib.getDocument({
                 data: bytes,
                 cMapUrl:             base + '/pdfjs/web/cmaps/',
@@ -541,9 +555,8 @@ window.patternViewer = (() => {
             _pageSizes     = {};
             paths          = [];
 
-            // 페이지 원본 크기 캐시 (zoom=1 기준, 1페이지 값으로 전체 통일)
-            const p1   = await pdfDoc.getPage(1);
-            const vp1  = p1.getViewport({ scale: 1.0 });
+            const p1  = await pdfDoc.getPage(1);
+            const vp1 = p1.getViewport({ scale: 1.0 });
             const size = { w: vp1.width, h: vp1.height };
             for (let i = 1; i <= totalPages; i++) _pageSizes[i] = size;
 
