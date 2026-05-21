@@ -13,6 +13,7 @@ window.patternViewer = (() => {
     let _pageHandlers = {};
     let _renderTasks = {};
     let _renderedPages = new Set();
+    let _opacity = 1.0; // 펜 투명도
 
     // 줌 상태 플래그
     let _fitZoom      = 1.0;
@@ -119,8 +120,17 @@ window.patternViewer = (() => {
             ctx.lineWidth   = p.size * dpr * (currentZoom / p.originZoom);
             ctx.lineCap     = 'round';
             ctx.lineJoin    = 'round';
-            ctx.strokeStyle = p.color;
-            ctx.globalCompositeOperation = p.isEraser ? 'destination-out' : 'source-over';
+            if (p.isEraser) {
+                ctx.strokeStyle = 'rgba(0,0,0,1)';
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                const op = (p.opacity !== undefined) ? p.opacity : 1.0;
+                const r = parseInt(p.color.slice(1,3),16);
+                const g = parseInt(p.color.slice(3,5),16);
+                const b = parseInt(p.color.slice(5,7),16);
+                ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + op + ')';
+                ctx.globalCompositeOperation = 'source-over';
+            }
             ctx.moveTo(p.points[0].x * currentZoom * dpr, p.points[0].y * currentZoom * dpr);
             for (let i = 1; i < p.points.length; i++)
                 ctx.lineTo(p.points[i].x * currentZoom * dpr, p.points[i].y * currentZoom * dpr);
@@ -156,7 +166,7 @@ window.patternViewer = (() => {
             currentPageNum = pageNum;
             isDrawing = true;
             currentPath = {
-                page: pageNum, color: _color, size: _size,
+                page: pageNum, color: _color, opacity: _opacity, size: _size,
                 isEraser: _isEraser, originZoom: currentZoom,
                 points: [{ x: pos.x / (currentZoom * dpr), y: pos.y / (currentZoom * dpr) }]
             };
@@ -166,8 +176,17 @@ window.patternViewer = (() => {
             ctx.lineWidth   = _size * dpr;
             ctx.lineCap     = 'round';
             ctx.lineJoin    = 'round';
-            ctx.strokeStyle = _isEraser ? 'rgba(0,0,0,1)' : _color;
-            ctx.globalCompositeOperation = _isEraser ? 'destination-out' : 'source-over';
+            if (_isEraser) {
+                ctx.strokeStyle = 'rgba(0,0,0,1)';
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                // opacity 적용: hex 색상을 rgba로 변환
+                const r = parseInt(_color.slice(1,3),16);
+                const g = parseInt(_color.slice(3,5),16);
+                const b = parseInt(_color.slice(5,7),16);
+                ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + _opacity + ')';
+                ctx.globalCompositeOperation = 'source-over';
+            }
         }
 
         function onMove(e) {
@@ -563,9 +582,10 @@ window.patternViewer = (() => {
             setupIntersectionObserver();
         },
 
-        setTool(color, size, isEraser, tool) {
+        setTool(color, size, isEraser, tool, opacity) {
             if (isDrawing) { isDrawing = false; if (currentPath) { paths.push(currentPath); currentPath = null; } }
             _color = color; _size = size; _isEraser = isEraser;
+            _opacity = (opacity !== undefined) ? Math.max(0.1, Math.min(1.0, opacity / 100)) : 1.0;
             if (tool !== undefined) _tool = tool;
             const cursor = (tool === 'pen' || tool === 'ruler') ? 'crosshair' : tool === 'eraser' ? 'cell' : 'default';
             for (let i = 1; i <= totalPages; i++) { const a = getAnnoCanvas(i); if (a) a.style.cursor = cursor; }
