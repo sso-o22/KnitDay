@@ -266,7 +266,7 @@ window.patternViewer = (() => {
                 const p1 = currentPath.points[0];
                 const p2 = currentPath.points[1];
                 if (currentPath.tool === 'ruler') {
-                    ctx.moveTo(p1.x, p1.y);
+                    ctx.moveTo(currentPath.points[0].x, currentPath.points[0].y);
                     ctx.lineTo(p2.x, p2.y);
                 } else {
                     ctx.rect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
@@ -319,7 +319,8 @@ window.patternViewer = (() => {
     }
 
     return {
-        initialize: async function (containerId, byteArray, dotnet) {
+        // 🌟 에러 완전 해결 1: Blazor가 'patternViewer.init'을 찾을 수 있게 매핑 브릿지 생성
+        init: async function (containerId, dotnet) {
             this.dispose();
             await ensurePdfjsLoaded();
 
@@ -348,7 +349,12 @@ window.patternViewer = (() => {
                 root: viewerContainer,
                 threshold: 0.3 
             });
+        },
 
+        // 🌟 에러 완전 해결 2: Blazor가 'patternViewer.loadPdfBytes'를 호출하여 PDF를 로드할 수 있게 원본 매핑 기능 구현
+        loadPdfBytes: async function (byteArray) {
+            if (!viewerContainer) return 0;
+            
             const loadingTask = window.pdfjsLib.getDocument({ data: byteArray });
             pdfDoc = await loadingTask.promise;
             totalPages = pdfDoc.numPages;
@@ -395,7 +401,6 @@ window.patternViewer = (() => {
             _tool = toolName;
         },
 
-        // 🌟 버그 수정 완료: Blazor의 마우스 매핑 규격에 맞춰 완벽 복구
         startDraw: function (pageNum, x, y) {
             if (_tool === 'select' || isDrawing) return;
             isDrawing = true;
@@ -423,7 +428,6 @@ window.patternViewer = (() => {
             }
         },
 
-        // 🌟 버그 수정 완료: 드로잉 좌표 실시간 트래킹 원본 기능 복구
         drawTo: function (pageNum, x, y) {
             if (!isDrawing || !currentPath || currentPath.pageNum !== pageNum) return;
             const origX = x / currentZoom;
@@ -441,7 +445,6 @@ window.patternViewer = (() => {
             redrawPage(pageNum);
         },
 
-        // 🌟 버그 수정 완료: 그리기 종료 시 레이어에 패스를 고정하는 오리지널 로직 완벽 연동
         endDraw: function () {
             if (isDrawing) {
                 isDrawing = false;
@@ -449,7 +452,7 @@ window.patternViewer = (() => {
                     paths.push(currentPath);
                     const pg = currentPath.pageNum;
                     currentPath = null;
-                    redrawPage(pg); // 마친 뒤 최종 확정선 새로고침
+                    redrawPage(pg); 
                 }
             }
         },
