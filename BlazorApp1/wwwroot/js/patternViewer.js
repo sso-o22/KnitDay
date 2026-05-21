@@ -592,7 +592,8 @@ window.patternViewer = (() => {
         async _loadPdfData(bytes) {
             await ensurePdfJs();
             const base = getPdfjsBase();
-            _lastPdfBytes = bytes; // IDB 저장용 캐싱
+            // PDF.js가 bytes의 ArrayBuffer 소유권을 transfer함 → 복사본을 IDB용으로 먼저 저장
+            _lastPdfBytes = bytes.slice(0); // slice()로 독립 복사본 생성
             pdfDoc = await window.pdfjsLib.getDocument({
                 data: bytes,
                 cMapUrl:             base + '/pdfjs/web/cmaps/',
