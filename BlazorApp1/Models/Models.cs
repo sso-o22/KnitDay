@@ -148,6 +148,14 @@ namespace KnitLog.Models
         // 완성 치수 (세탁 전/후)
         public string MeasurementsMemo { get; set; } = ""; // 자유 입력 치수 메모
         public List<string> VideoLinks { get; set; } = new();  // 참고 영상 링크
+
+        // ── 도안 뷰어 저장 데이터 ──────────────────────────────
+        public bool HasSavedPattern { get; set; } = false;       // 저장된 PDF 있는지
+        public string PatternFileName { get; set; } = "";        // 원본 파일명
+        public string ViewerAnnotations { get; set; } = "";      // 필기 paths JSON
+        public string ViewerRulers { get; set; } = "";           // 도형 rulers JSON
+        public int ViewerLastPage { get; set; } = 1;             // 마지막 페이지
+        public double ViewerLastZoom { get; set; } = 0;          // 마지막 줌 (0=fit)
     }
 
     public class ProjectYarnUsage
