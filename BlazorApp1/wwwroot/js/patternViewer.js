@@ -409,10 +409,16 @@ window.patternViewer = (() => {
         scrollEl.addEventListener('wheel', e => {
             if (!e.ctrlKey) return;
             e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            const maxZ  = Math.max(3.0, _fitZoom * 5);
-            const minZ  = _fitZoom * 0.3;
-            const newZ  = Math.round(Math.min(maxZ, Math.max(minZ, currentZoom + delta)) * 10) / 10;
+            const maxZ = Math.max(3.0, _fitZoom * 5);
+            const minZ = _fitZoom * 0.3;
+
+            // deltaY를 비례값으로 변환 → 부드러운 연속 확대 (픽셀/라인/페이지 단위 통일)
+            let dy = e.deltaY;
+            if (e.deltaMode === 1) dy *= 20;       // 라인 단위 → 픽셀
+            if (e.deltaMode === 2) dy *= 300;      // 페이지 단위 → 픽셀
+            const factor = Math.exp(-dy * 0.003);  // 지수 스케일: 자연스러운 배율 변화
+            const rawZ   = (_pendingZoom !== null ? _pendingZoom : currentZoom) * factor;
+            const newZ   = Math.min(maxZ, Math.max(minZ, rawZ));
 
             // 첫 휠: 앵커 기록
             if (!_isZooming && _pendingZoom === null) {
@@ -438,9 +444,19 @@ window.patternViewer = (() => {
             const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
             const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
             const scRect = scrollEl.getBoundingClientRect();
-            // 핀치 앵커 기록
             scrollEl._pinchAnchorViewY = cy - scRect.top;
             scrollEl._pinchAnchorDocY  = scrollEl.scrollTop + scrollEl._pinchAnchorViewY;
+
+            // 핀치 시작 시 canvas 픽셀 버퍼 즉시 해제 (iOS 메모리 절약)
+            // CSS 크기는 유지 → 레이아웃 안 깨짐, transform으로 시각 피드백
+            for (let i = 1; i <= totalPages; i++) {
+                const pc = getPdfCanvas(i);
+                const ac = getAnnoCanvas(i);
+                if (pc && pc.width > 1) { pc.width = 1; pc.height = 1; }
+                if (ac && ac.width > 1) { ac.width = 1; ac.height = 1; }
+            }
+            _renderedPages.clear();
+
             e.preventDefault();
         }, { passive: false });
 
