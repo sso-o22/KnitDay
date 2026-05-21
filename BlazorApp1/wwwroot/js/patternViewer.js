@@ -759,6 +759,8 @@ window.patternViewer = (() => {
 
         setPaths(json) {
             try { paths = JSON.parse(json) || []; } catch(_) { paths = []; }
+            // 복원 후 모든 페이지 다시 그리기
+            for (let i = 1; i <= totalPages; i++) redrawPage(i);
         }
     };
 })();
