@@ -17,14 +17,26 @@ window.patternViewer = (() => {
 
     // ── PDF.js 로컬 모듈 로드 ──────────────────────────────────
     let _pdfjsReady = null;
+
+    // Blazor GitHub Pages 환경에서 base href를 기준으로 pdfjs 경로를 동적 계산
+    function getPdfjsBase() {
+        // <base href="/KnitLog/"> 등 index.html의 base 태그를 따름
+        const base = document.querySelector('base')
+            ? document.querySelector('base').href
+            : (window.location.origin + '/');
+        return base.replace(/\/$/, ''); // 끝 슬래시 제거
+    }
+
     async function ensurePdfJs() {
         if (_pdfjsReady) return _pdfjsReady;
         _pdfjsReady = (async () => {
             if (!window.pdfjsLib) {
-                const mod = await import('./pdfjs/build/pdf.mjs');
+                const base = getPdfjsBase();
+                const mod = await import(base + '/pdfjs/build/pdf.mjs');
                 window.pdfjsLib = mod;
             }
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc = './pdfjs/build/pdf.worker.mjs';
+            const base = getPdfjsBase();
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + '/pdfjs/build/pdf.worker.mjs';
         })();
         return _pdfjsReady;
     }
@@ -289,11 +301,12 @@ window.patternViewer = (() => {
         async loadPdfFromStream(streamRef, _ignoredZoom) {
             await ensurePdfJs();
             const bytes = new Uint8Array(await streamRef.arrayBuffer());
+            const _base = getPdfjsBase();
             pdfDoc = await window.pdfjsLib.getDocument({
                 data: bytes,
-                cMapUrl:        './pdfjs/web/cmaps/',
+                cMapUrl:        _base + '/pdfjs/web/cmaps/',
                 cMapPacked:     true,
-                standardFontDataUrl: './pdfjs/web/standard_fonts/'
+                standardFontDataUrl: _base + '/pdfjs/web/standard_fonts/'
             }).promise;
             totalPages   = pdfDoc.numPages;
             _pageHandlers = {};
