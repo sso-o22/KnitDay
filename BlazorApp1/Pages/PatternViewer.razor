@@ -306,7 +306,7 @@
     int _penSize = 10; // 기본 크기를 조금 더 크게 설정
     int _currentPage = 1, _totalPages = 1;
     double _zoom = 1.0;
-    bool _pdfLoaded = false, _isDrawing = false, _isDrawingRuler = false;
+    bool _pdfLoaded = false, _pdfLoading = false, _isDrawing = false, _isDrawingRuler = false;
     double _rulerStartX, _rulerStartY, _previewW, _previewH, _dragOffsetX, _dragOffsetY;
     int _rulerPage = 1; // 현재 그리고 있는 ruler가 속한 페이지
 
@@ -336,9 +336,12 @@
     {
         using var stream = e.File.OpenReadStream(25 * 1024 * 1024);
         using var streamRef = new DotNetStreamReference(stream);
-        _pdfLoaded = true; StateHasChanged();
-        await Task.Delay(100);
+        _pdfLoaded = true;
+        _pdfLoading = true;
+        StateHasChanged();
+        await Task.Delay(80);
         _totalPages = await JS.InvokeAsync<int>("patternViewer.loadPdfFromStream", streamRef, _zoom);
+        _pdfLoading = false;
         StateHasChanged();
     }
 
@@ -350,12 +353,20 @@
     [JSInvokable]
     public void UpdatePageFromJS(int page) { _currentPage = page; StateHasChanged(); }
 
-    // JS 핀치/Ctrl+휠로 zoom 변경
+    // JS 핀치/Ctrl+휠로 zoom 변경 (loadPdfFromStream 완료 후 fit-zoom 동기화 포함)
     [JSInvokable]
     public async Task ZoomToFromJS(double zoom)
     {
         _zoom = zoom;
-        await RenderAllPages();
+        if (!_pdfLoading)
+        {
+            await RenderAllPages();
+        }
+        else
+        {
+            // 로드 직후 fit-zoom 값만 UI에 반영 (JS가 이미 렌더 완료)
+            StateHasChanged();
+        }
     }
 
     async Task OnCanvasMouseDown(MouseEventArgs e)
