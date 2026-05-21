@@ -363,20 +363,13 @@
     [JSInvokable]
     public void UpdatePageFromJS(int page) { _currentPage = page; StateHasChanged(); }
 
-    // JS 핀치/Ctrl+휠로 zoom 변경 (loadPdfFromStream 완료 후 fit-zoom 동기화 포함)
+    // JS에서 zoom 값 동기화 (핀치/휠 완료 후, 또는 초기 fit-zoom)
+    // JS가 직접 재렌더하므로 Blazor는 UI 표시값만 업데이트
     [JSInvokable]
-    public async Task ZoomToFromJS(double zoom)
+    public void ZoomToFromJS(double zoom)
     {
         _zoom = zoom;
-        if (!_pdfLoading)
-        {
-            await RenderAllPages();
-        }
-        else
-        {
-            // 로드 직후 fit-zoom 값만 UI에 반영 (JS가 이미 렌더 완료)
-            StateHasChanged();
-        }
+        StateHasChanged();
     }
 
     async Task OnCanvasMouseDown(MouseEventArgs e)

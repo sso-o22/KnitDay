@@ -10,19 +10,24 @@ window.patternViewer = (() => {
     let paths = [];
     let isDrawing = false;
     let currentPath = null;
-    let _pinchStartDist = 0;
-    let _pinchStartZoom = 1.0;
     let _pageHandlers = {};
     let _renderTasks = {};
 
-    // ── base href 기준 절대경로 계산 (GitHub Pages 대응) ─────
+    // 핀치/휠 줌 상태
+    let _pinchStartDist = 0;
+    let _pinchStartZoom = 1.0;
+    let _isPinching = false;
+    let _renderDebounceTimer = null;
+    let _pendingZoom = null;
+
+    // ── base href 기준 절대경로 (GitHub Pages 대응) ──────────
     function getPdfjsBase() {
         const baseEl = document.querySelector('base');
         const href = baseEl ? baseEl.href : (window.location.origin + '/');
         return href.replace(/\/$/, '');
     }
 
-    // ── PDF.js: inline module script으로 로드 (dynamic import 경로 문제 우회) ──
+    // ── PDF.js inline module script 로드 ────────────────────
     let _pdfjsReady = null;
     async function ensurePdfJs() {
         if (_pdfjsReady) return _pdfjsReady;
@@ -31,7 +36,6 @@ window.patternViewer = (() => {
             const base = getPdfjsBase();
             const scriptSrc = base + '/pdfjs/build/pdf.mjs';
             const workerSrc = base + '/pdfjs/build/pdf.worker.mjs';
-            // 콜백 이름을 고유하게
             const cbName = '_pdfjsLoaded_' + Date.now();
             window[cbName] = function(lib) {
                 window.pdfjsLib = lib;
@@ -41,7 +45,6 @@ window.patternViewer = (() => {
             };
             const s = document.createElement('script');
             s.type = 'module';
-            // template literal 대신 문자열 연결로 안전하게
             s.textContent =
                 'import * as pdfjsLib from "' + scriptSrc + '";' +
                 'window["' + cbName + '"](pdfjsLib);';
@@ -51,7 +54,7 @@ window.patternViewer = (() => {
         return _pdfjsReady;
     }
 
-    // ── 캔버스 헬퍼 ───────────────────────────────────────────
+    // ── 캔버스 헬퍼 ─────────────────────────────────────────
     function getAnnoCanvas(p) { return document.getElementById('anno-canvas-' + p); }
     function getPdfCanvas(p)  { return document.getElementById('pdf-canvas-'  + p); }
 
@@ -66,7 +69,23 @@ window.patternViewer = (() => {
         };
     }
 
-    // ── 어노테이션 다시 그리기 ────────────────────────────────
+    // ── pdf-wrapper에 CSS transform scale 적용 (즉각 반응) ──
+    function applyScaleTransform(zoom) {
+        const wrapper = document.getElementById('pdf-wrapper');
+        if (!wrapper) return;
+        const ratio = zoom / currentZoom;
+        wrapper.style.transform = 'scale(' + ratio + ')';
+        wrapper.style.transformOrigin = 'top center';
+    }
+
+    function clearScaleTransform() {
+        const wrapper = document.getElementById('pdf-wrapper');
+        if (!wrapper) return;
+        wrapper.style.transform = '';
+        wrapper.style.transformOrigin = '';
+    }
+
+    // ── 어노테이션 다시 그리기 ───────────────────────────────
     function redrawPage(pageNum) {
         const anno = getAnnoCanvas(pageNum);
         if (!anno) return;
@@ -93,7 +112,7 @@ window.patternViewer = (() => {
         });
     }
 
-    // ── 페이지 핸들러 등록 ────────────────────────────────────
+    // ── 페이지 핸들러 등록 ───────────────────────────────────
     function addPageHandlers(pageNum) {
         if (_pageHandlers[pageNum]) return;
         _pageHandlers[pageNum] = true;
@@ -102,6 +121,7 @@ window.patternViewer = (() => {
         const dpr = window.devicePixelRatio || 1;
 
         function onDown(e) {
+            if (_isPinching) return;
             if (_tool === 'ruler') {
                 const pos = getCanvasPos(anno, e);
                 if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown',
@@ -131,6 +151,7 @@ window.patternViewer = (() => {
         }
 
         function onMove(e) {
+            if (_isPinching) return;
             if (_tool === 'ruler') {
                 if (e.touches) e.preventDefault();
                 const pos = getCanvasPos(anno, e);
@@ -152,6 +173,7 @@ window.patternViewer = (() => {
         }
 
         function onUp(e) {
+            if (_isPinching) return;
             if (_tool === 'ruler') {
                 if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd');
                 return;
@@ -170,7 +192,7 @@ window.patternViewer = (() => {
         anno.addEventListener('touchend',   onUp);
     }
 
-    // ── 단일 페이지 렌더 (고해상도 DPR 지원) ─────────────────
+    // ── 단일 페이지 렌더 (고해상도 DPR) ─────────────────────
     async function renderOnePage(pageNum, zoom) {
         if (!pdfDoc) return;
         const pdfCanvas  = getPdfCanvas(pageNum);
@@ -207,8 +229,7 @@ window.patternViewer = (() => {
         const pdfCtx = pdfCanvas.getContext('2d');
         pdfCtx.save();
         pdfCtx.scale(dpr, dpr);
-        const renderViewport = page.getViewport({ scale: zoom });
-        const task = page.render({ canvasContext: pdfCtx, viewport: renderViewport });
+        const task = page.render({ canvasContext: pdfCtx, viewport: page.getViewport({ scale: zoom }) });
         _renderTasks[pageNum] = task;
         try {
             await task.promise;
@@ -225,13 +246,33 @@ window.patternViewer = (() => {
         addPageHandlers(pageNum);
     }
 
-    // ── 스크롤 & 줌 초기화 ───────────────────────────────────
+    // ── 디바운스된 전체 재렌더 (줌 조작 끝난 후) ────────────
+    function scheduleRerender(zoom) {
+        _pendingZoom = zoom;
+        if (_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
+        _renderDebounceTimer = setTimeout(async () => {
+            if (!pdfDoc || _pendingZoom === null) return;
+            const targetZoom = _pendingZoom;
+            _pendingZoom = null;
+            currentZoom = targetZoom;
+            clearScaleTransform();
+            _pageHandlers = {};
+            for (let i = 1; i <= totalPages; i++) {
+                await renderOnePage(i, targetZoom);
+            }
+            if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', targetZoom);
+        }, 300); // 300ms 후 재렌더
+    }
+
+    // ── 스크롤 & 줌 초기화 ──────────────────────────────────
     function setupScrollAndZoom() {
         const scrollEl = document.getElementById('scroll-container');
         if (!scrollEl || scrollEl._bound) return;
         scrollEl._bound = true;
 
+        // 스크롤 → 현재 페이지 추적
         scrollEl.addEventListener('scroll', () => {
+            if (_isPinching) return;
             const wrapperRect = scrollEl.getBoundingClientRect();
             const mid = wrapperRect.top + wrapperRect.height / 2;
             let found = 1;
@@ -247,41 +288,58 @@ window.patternViewer = (() => {
             }
         }, { passive: true });
 
+        // PC: Ctrl+휠 → CSS scale 즉각 반응 + 디바운스 재렌더
         scrollEl.addEventListener('wheel', e => {
             if (e.ctrlKey) {
                 e.preventDefault();
-                const delta  = e.deltaY > 0 ? -0.1 : 0.1;
-                const newZ   = Math.round(Math.min(3.0, Math.max(0.5, currentZoom + delta)) * 10) / 10;
-                if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', newZ);
+                const delta = e.deltaY > 0 ? -0.1 : 0.1;
+                const newZ  = Math.round(Math.min(3.0, Math.max(0.5, currentZoom + delta)) * 10) / 10;
+                applyScaleTransform(newZ);
+                scheduleRerender(newZ);
             }
         }, { passive: false });
 
+        // 모바일: 핀치 줌 시작
         scrollEl.addEventListener('touchstart', e => {
             if (e.touches.length === 2) {
+                _isPinching = true;
+                isDrawing = false; // 혹시 그리던 것 중단
                 _pinchStartDist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
                 _pinchStartZoom = currentZoom;
+                e.preventDefault();
             }
-        }, { passive: true });
+        }, { passive: false });
 
+        // 모바일: 핀치 줌 중 → CSS scale만 (렌더 없음)
         scrollEl.addEventListener('touchmove', e => {
-            if (_tool === 'ruler') { e.preventDefault(); return; }
+            if (_tool === 'ruler' && e.touches.length === 1) { e.preventDefault(); return; }
             if (e.touches.length === 2) {
                 e.preventDefault();
                 const dist = Math.hypot(
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
-                const newZ = Math.round(
-                    Math.min(3.0, Math.max(0.5, _pinchStartZoom * dist / _pinchStartDist)) * 10) / 10;
-                if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', newZ);
+                const newZ = Math.min(3.0, Math.max(0.5, _pinchStartZoom * dist / _pinchStartDist));
+                applyScaleTransform(newZ);
+                _pendingZoom = Math.round(newZ * 10) / 10;
             }
         }, { passive: false });
+
+        // 모바일: 핀치 줌 끝 → 디바운스 재렌더
+        scrollEl.addEventListener('touchend', e => {
+            if (_isPinching && e.touches.length < 2) {
+                _isPinching = false;
+                if (_pendingZoom !== null) {
+                    scheduleRerender(_pendingZoom);
+                }
+            }
+        }, { passive: true });
     }
 
-    // ── 최초 로드 시 화면에 꽉 맞는 zoom 계산 ────────────────
+    // ── fit-zoom 계산 ────────────────────────────────────────
     async function calcFitZoom(page) {
         const scrollEl = document.getElementById('scroll-container');
         if (!scrollEl) return 1.0;
@@ -289,17 +347,15 @@ window.patternViewer = (() => {
         const availW  = scrollEl.clientWidth  - padding;
         const availH  = scrollEl.clientHeight - padding;
         const vp1     = page.getViewport({ scale: 1.0 });
-        const zoomByW = availW  / vp1.width;
-        const zoomByH = availH  / vp1.height;
-        const fit = Math.min(zoomByW, zoomByH);
+        const fit = Math.min(availW / vp1.width, availH / vp1.height);
         return Math.round(Math.max(0.5, Math.min(3.0, fit)) * 100) / 100;
     }
 
-    // ── 공개 API ─────────────────────────────────────────────
+    // ── 공개 API ────────────────────────────────────────────
     return {
         init(ref) { dotNetRef = ref; },
 
-        // 1단계: 바이트 로드 + 페이지 수 반환 (DOM 생성 전)
+        // 1단계: 바이트 로드 + 페이지 수 반환
         async loadPdfBytes(streamRef) {
             await ensurePdfJs();
             const base  = getPdfjsBase();
@@ -316,7 +372,7 @@ window.patternViewer = (() => {
             return totalPages;
         },
 
-        // 2단계: Blazor가 캔버스 DOM 생성 후 실제 렌더링
+        // 2단계: DOM 준비 후 실제 렌더
         async renderPdf() {
             if (!pdfDoc) return;
             const firstPage = await pdfDoc.getPage(1);
@@ -327,12 +383,14 @@ window.patternViewer = (() => {
                 await renderOnePage(i, currentZoom);
             }
             setupScrollAndZoom();
-
             if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', currentZoom);
         },
 
+        // Blazor +/- 버튼용 (디바운스 없이 바로 재렌더)
         async renderAllPages(zoom) {
             if (!pdfDoc) return;
+            if (_renderDebounceTimer) { clearTimeout(_renderDebounceTimer); _renderDebounceTimer = null; }
+            clearScaleTransform();
             currentZoom   = zoom;
             _pageHandlers = {};
             for (let i = 1; i <= totalPages; i++) {
@@ -382,6 +440,7 @@ window.patternViewer = (() => {
         },
 
         dispose() {
+            if (_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
             Object.values(_renderTasks).forEach(t => { try { if (t) t.cancel(); } catch (_) {} });
             _renderTasks  = {};
             pdfDoc        = null;
@@ -389,6 +448,7 @@ window.patternViewer = (() => {
             _pageHandlers = {};
             isDrawing     = false;
             currentPath   = null;
+            _isPinching   = false;
         },
 
         preventScroll() {}
