@@ -43,13 +43,6 @@
                                  @ontouchstart="e => OnRulerTouchStart(e, ruler)" @ontouchstart:stopPropagation="true">
                                 @if (isSelected)
                                 {
-                                    <div class="ruler-ctrl" @onmousedown:stopPropagation="true" @onclick:stopPropagation="true">
-                                        <input type="color" value="@RgbToHex(ruler.ColorRgb)" @oninput="e => UpdateRulerColor(ruler, e)" />
-                                        <input type="range" min="10" max="90" step="5" value="@((int)(ruler.Opacity*100))" @oninput="e => ChangeRulerOpacity(ruler,e)" style="width:50px;" />
-                                        <button class="ctrl-btn" @onclick="() => { ruler.Y -= ruler.Height; }">▲</button>
-                                        <button class="ctrl-btn" @onclick="() => { ruler.Y += ruler.Height; }">▼</button>
-                                        <button class="ctrl-btn del" @onclick="() => { _rulers.Remove(ruler); _selectedRuler = null; }">✕</button>
-                                    </div>
                                     <div class="resize-handle"
                                          @onmousedown="e => OnResizeMouseDown(e,ruler)" @onmousedown:stopPropagation="true"
                                          @ontouchstart="e => OnResizeTouchStart(e,ruler)" @ontouchstart:stopPropagation="true"></div>
@@ -90,7 +83,7 @@
 
         <!-- 가운데: 페이지수만 -->
         <div class="tb-center">
-            @if (_pdfLoaded)
+            @if (_totalPages > 0)
             {
                 <span class="tb-txt">@_currentPage / @_totalPages</span>
             }
@@ -98,7 +91,7 @@
 
         <!-- 오른쪽: 줌 + 도안 불러오기 -->
         <div class="tb-right">
-            @if (_pdfLoaded)
+            @if (_totalPages > 0)
             {
                 <div class="tb-zoom">
                     <button class="tb-zoom-btn" @onclick="ZoomOut">−</button>
@@ -210,6 +203,23 @@
         {
             <button class="cw-fab" @onclick="()=>_showCounterWidget=true">🧶</button>
         }
+    }
+    <!-- ── 도형 컨트롤 팝업 (마우스 위치 기준 fixed) ── -->
+    @if (_selectedRuler != null && _tool == "ruler")
+    {
+        var _sr = _selectedRuler;
+        <div class="ruler-popup"
+             style="position:fixed; left:@(_rulerPopupX)px; top:@(_rulerPopupY)px; z-index:800;"
+             @onmousedown:stopPropagation="true"
+             @onclick:stopPropagation="true"
+             @ontouchstart:stopPropagation="true">
+            <input type="color" value="@RgbToHex(_sr.ColorRgb)" @oninput="e => UpdateRulerColor(_sr, e)" title="색상" />
+            <input type="range" min="10" max="90" step="5" value="@((int)(_sr.Opacity*100))"
+                   @oninput="e => ChangeRulerOpacity(_sr, e)" style="width:48px;" title="투명도" />
+            <button class="ctrl-btn" @onclick="() => { _sr.Y -= _sr.Height; StateHasChanged(); }">▲</button>
+            <button class="ctrl-btn" @onclick="() => { _sr.Y += _sr.Height; StateHasChanged(); }">▼</button>
+            <button class="ctrl-btn del" @onclick="() => { _rulers.Remove(_sr); _selectedRuler = null; StateHasChanged(); }">✕</button>
+        </div>
     }
 </div>
 
@@ -506,14 +516,14 @@
     /* ── 자 ── */
     .ruler-item { z-index: 50; touch-action: none; }
     .ruler-selected { outline: 2px dashed rgba(0,0,0,0.5); outline-offset: 2px; touch-action: none; }
-    .ruler-ctrl {
-        position: absolute; top: -48px; left: 50%; transform: translateX(-50%);
-        background: #fff; padding: 4px 8px; display: flex; gap: 6px;
-        border-radius: 6px; align-items: center;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100;
+    /* 도형 컨트롤은 이제 fixed popup으로 → ruler-ctrl 미사용 */
+    .ruler-popup {
+        background: #fff; padding: 5px 10px; display: flex; gap: 6px;
+        border-radius: 8px; align-items: center;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
         border: 1px solid rgba(0,0,0,0.1);
+        pointer-events: all;
     }
-    .ruler-ctrl::after { content:''; position:absolute; bottom:-12px; left:0; width:100%; height:12px; }
     .ctrl-btn { background: #f0f0f0; border: none; color: #333; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
     .ctrl-btn.del { background: #ffe0e0; color: #c00; }
     .resize-handle {
@@ -550,10 +560,11 @@
     int _penOpacity=100; // 투명도 (100=불투명, 낮을수록 형광펜)
     int _currentPage=1, _totalPages=1;
     double _zoom=1.0;
-    bool _pdfLoaded=false, _pdfLoading=false, _isDrawing=false, _isDrawingRuler=false;
+    bool _pdfLoaded=false, _isDrawing=false, _isDrawingRuler=false;
     bool _drawMode=false, _showCounterWidget=true;
     int _activeCounterIndex=0;
     double _rulerStartX,_rulerStartY,_previewW,_previewH,_dragOffsetX,_dragOffsetY;
+    double _rulerPopupX=200, _rulerPopupY=200; // 도형 컨트롤 팝업 위치
     int _rulerPage=1;
     List<RulerOverlay> _rulers=new();
     RulerOverlay? _draggingRuler,_resizingRuler,_selectedRuler;
@@ -624,23 +635,33 @@
     {
         try
         {
-            _pdfLoading=true; _pdfLoaded=false; StateHasChanged();
-            // iOS Safari: 스트림을 먼저 메모리로 읽어서 전달 (스트림 직접 전달 불안정)
-            using var stream=e.File.OpenReadStream(50*1024*1024);
-            using var ms=new System.IO.MemoryStream();
+            // 1단계: 파일 읽기 (iOS Safari: MemoryStream 경유)
+            using var stream = e.File.OpenReadStream(50 * 1024 * 1024);
+            using var ms = new System.IO.MemoryStream();
             await stream.CopyToAsync(ms);
-            ms.Position=0;
-            using var streamRef=new DotNetStreamReference(ms, leaveOpen:false);
-            _totalPages=await JS.InvokeAsync<int>("patternViewer.loadPdfBytes",streamRef);
-            _pdfLoaded=true; _pdfLoading=true; StateHasChanged();
-            await Task.Delay(80);
+            ms.Position = 0;
+            using var streamRef = new DotNetStreamReference(ms, leaveOpen: false);
+
+            // 2단계: JS에서 페이지 수 받기
+            var pages = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", streamRef);
+            if (pages <= 0) return;
+
+            // 3단계: Blazor DOM에 캔버스 생성 (페이지수 확정 후 한 번만 렌더)
+            _totalPages = pages;
+            _pdfLoaded = true;
+            _currentPage = 1;
+            StateHasChanged();
+            await Task.Delay(100); // DOM 생성 대기
+
+            // 4단계: JS 렌더링
             await JS.InvokeVoidAsync("patternViewer.renderPdf");
-            _pdfLoading=false; StateHasChanged();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            _pdfLoading=false; _pdfLoaded=false; StateHasChanged();
-            await JS.InvokeVoidAsync("console.error","PDF load error: "+ex.Message);
+            _pdfLoaded = false;
+            _totalPages = 0;
+            StateHasChanged();
+            await JS.InvokeVoidAsync("console.error", "PDF load error: " + ex.Message);
         }
     }
     async Task ZoomIn(){_zoom=Math.Round(_zoom+0.1,1);await RenderAllPages();}
@@ -694,8 +715,29 @@
         _isDrawing=false;StateHasChanged();
     }
     void DeselectRuler(){if(_tool=="ruler")_selectedRuler=null;}
-    void OnRulerClick(RulerOverlay ruler){if(_tool=="ruler")_selectedRuler=_selectedRuler==ruler?null:ruler;}
-    async Task OnRulerMouseDown(MouseEventArgs e,RulerOverlay ruler){if(_tool!="ruler"||_selectedRuler!=ruler)return;var rect=await JS.InvokeAsync<double[]>("patternViewer.getRect",ruler.Page);_draggingRuler=ruler;_dragOffsetX=(e.ClientX-rect[0])-ruler.X;_dragOffsetY=(e.ClientY-rect[1])-ruler.Y;}
+    void OnRulerClick(RulerOverlay ruler)
+    {
+        if (_tool != "ruler") return;
+        _selectedRuler = _selectedRuler == ruler ? null : ruler;
+    }
+    async Task OnRulerMouseDown(MouseEventArgs e, RulerOverlay ruler)
+    {
+        if (_tool != "ruler") return;
+        if (_selectedRuler != ruler)
+        {
+            _selectedRuler = ruler;
+            // 팝업을 마우스 위치 기준으로 (화면 경계 고려)
+            _rulerPopupX = Math.Min(e.ClientX + 8, e.ClientX - 20);
+            _rulerPopupY = Math.Max(e.ClientY - 60, 60);
+            StateHasChanged();
+            return;
+        }
+        // 이미 선택된 경우 드래그
+        var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect", ruler.Page);
+        _draggingRuler = ruler;
+        _dragOffsetX = (e.ClientX - rect[0]) - ruler.X;
+        _dragOffsetY = (e.ClientY - rect[1]) - ruler.Y;
+    }
     async Task OnRulerTouchStart(TouchEventArgs e,RulerOverlay ruler){if(_tool!="ruler")return;if(_selectedRuler!=ruler){_selectedRuler=ruler;StateHasChanged();return;}var rect=await JS.InvokeAsync<double[]>("patternViewer.getRect",ruler.Page);var t=e.Touches[0];_draggingRuler=ruler;_dragOffsetX=(t.ClientX-rect[0])-ruler.X;_dragOffsetY=(t.ClientY-rect[1])-ruler.Y;}
     void OnResizeMouseDown(MouseEventArgs e,RulerOverlay ruler)=>_resizingRuler=ruler;
     void OnResizeTouchStart(TouchEventArgs e,RulerOverlay ruler)=>_resizingRuler=ruler;
