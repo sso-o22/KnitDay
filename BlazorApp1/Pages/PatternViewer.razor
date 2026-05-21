@@ -12,38 +12,18 @@
      @ontouchmove="OnGlobalTouchMove"
      @ontouchend="OnGlobalTouchEnd">
 
-    <!-- ── 상단 툴바 ── -->
-    <div style="background:#111111; color:white; padding:5px 8px; display:flex; align-items:center; gap:4px; flex-shrink:0; z-index:100; flex-wrap:wrap;">
+    <!-- ── 상단 메인 툴바 (항상 표시) ── -->
+    <div style="background:#111111; color:white; padding:5px 8px; display:flex; align-items:center; gap:4px; flex-shrink:0; z-index:100;">
         <button class="btn-main" @onclick="GoBack" title="뒤로가기">←</button>
         <div class="divider"></div>
 
-        <!-- 도구 선택 -->
-        <div class="tool-group">
-            <button class="tool-btn @(_tool == "select" ? "active" : "")" @onclick='() => SetTool("select")' title="선택">🖱️</button>
-            <button class="tool-btn @(_tool == "pen"    ? "active" : "")" @onclick='() => SetTool("pen")' title="펜">✏️</button>
-            <button class="tool-btn @(_tool == "eraser" ? "active" : "")" @onclick='() => SetTool("eraser")' title="지우개">🧽</button>
-            <button class="tool-btn @(_tool == "ruler"  ? "active" : "")" @onclick='() => SetTool("ruler")' title="자">📏</button>
-        </div>
-
-        <!-- 펜 선택 시 색상 + 굵기 -->
-        @if (_tool == "pen" || _tool == "eraser")
-        {
-            @if (_tool == "pen")
-            {
-                <input type="color" value="@_penColor" @oninput="OnColorChange"
-                       style="width:24px; height:24px; border:none; border-radius:50%; padding:2px; cursor:pointer; background:transparent; flex-shrink:0;" title="펜 색상" />
-            }
-            <!-- 굵기 슬라이더 -->
-            <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
-                <span style="font-size:10px; opacity:0.6;">굵기</span>
-                <input type="range" min="1" max="40" step="1" value="@_penSize"
-                       @oninput="OnSizeChange"
-                       style="width:64px; accent-color:white; cursor:pointer;" />
-                <span style="font-size:10px; min-width:16px;">@_penSize</span>
-            </div>
-        }
-
-        <button class="tool-btn" @onclick="UndoLastPath" title="그리기 취소" style="font-size:14px;">↩️</button>
+        <!-- 필기모드 토글 버튼 -->
+        <button class="tool-btn @(_drawMode ? "active" : "")"
+                @onclick="ToggleDrawMode"
+                title="@(_drawMode ? "필기모드 닫기" : "필기모드")"
+                style="font-size:15px; width:36px;">
+            ✏️
+        </button>
 
         <div class="divider"></div>
         <label class="btn-sub" title="PDF 불러오기" style="flex-shrink:0;">
@@ -52,13 +32,51 @@
 
         @if (_pdfLoaded)
         {
-            <span style="font-size:11px; font-weight:600; flex-shrink:0;">@_currentPage / @_totalPages</span>
+            <span style="font-size:11px; font-weight:600; flex-shrink:0; margin-left:4px;">@_currentPage / @_totalPages</span>
             <div class="compact-box" style="flex-shrink:0;">
                 <button class="nav-btn" @onclick="ZoomOut">−</button>
                 <span style="font-size:11px; font-weight:600; min-width:28px; text-align:center;">@((int)(_zoom * 100))%</span>
                 <button class="nav-btn" @onclick="ZoomIn">+</button>
             </div>
         }
+    </div>
+
+    <!-- ── 필기 도구 띠 (필기모드일 때만 슬라이드 다운) ── -->
+    <div class="drawing-toolbar @(_drawMode ? "drawing-toolbar-open" : "")">
+        <div style="display:flex; align-items:center; gap:6px; padding:0 8px; flex-wrap:nowrap; overflow-x:auto;">
+            <!-- 도구 선택 -->
+            <div class="tool-group" style="flex-shrink:0;">
+                <button class="tool-btn @(_tool == "select" ? "active" : "")" @onclick='() => SetTool("select")' title="선택">🖱️</button>
+                <button class="tool-btn @(_tool == "pen"    ? "active" : "")" @onclick='() => SetTool("pen")' title="펜">✏️</button>
+                <button class="tool-btn @(_tool == "eraser" ? "active" : "")" @onclick='() => SetTool("eraser")' title="지우개">🧽</button>
+                <button class="tool-btn @(_tool == "ruler"  ? "active" : "")" @onclick='() => SetTool("ruler")' title="자">📏</button>
+            </div>
+
+            <div class="divider"></div>
+
+            <!-- 펜 색상 -->
+            @if (_tool == "pen")
+            {
+                <input type="color" value="@_penColor" @oninput="OnColorChange"
+                       style="width:28px; height:28px; border:none; border-radius:50%; padding:2px; cursor:pointer; background:transparent; flex-shrink:0;" title="색상" />
+            }
+
+            <!-- 굵기 슬라이더 (펜/지우개) -->
+            @if (_tool == "pen" || _tool == "eraser")
+            {
+                <div style="display:flex; align-items:center; gap:4px; flex-shrink:0;">
+                    <span style="font-size:10px; opacity:0.55; white-space:nowrap;">굵기</span>
+                    <input type="range" min="1" max="40" step="1" value="@_penSize"
+                           @oninput="OnSizeChange"
+                           style="width:72px; accent-color:white; cursor:pointer;" />
+                    <span style="font-size:11px; font-weight:600; min-width:18px; text-align:right;">@_penSize</span>
+                </div>
+                <div class="divider"></div>
+            }
+
+            <!-- 실행 취소 -->
+            <button class="tool-btn" @onclick="UndoLastPath" title="실행 취소" style="font-size:15px; flex-shrink:0;">↩️</button>
+        </div>
     </div>
 
     <!-- ── 타이머 + 카운터 요약 띠 ── -->
@@ -204,6 +222,28 @@
 </div>
 
 <style>
+    /* ── 필기 도구 띠 ── */
+    .drawing-toolbar {
+        background:#1c1c1c;
+        color:white;
+        overflow:hidden;
+        max-height:0;
+        transition:max-height 0.22s cubic-bezier(0.4,0,0.2,1), padding 0.22s;
+        padding:0 0;
+        flex-shrink:0;
+        z-index:99;
+        border-bottom:1px solid rgba(255,255,255,0.06);
+        display:flex;
+        align-items:center;
+    }
+    .drawing-toolbar-open {
+        max-height:52px;
+        padding:6px 0;
+    }
+    /* 스크롤바 숨기기 */
+    .drawing-toolbar > div::-webkit-scrollbar { display:none; }
+    .drawing-toolbar > div { scrollbar-width:none; }
+
     .divider { width:1px; height:16px; background:rgba(255,255,255,0.15); margin:0 4px; }
 
     .tool-group { display:flex; background:rgba(0,0,0,0.4); border-radius:6px; padding:2px; gap:1px; }
@@ -362,6 +402,7 @@
     int _currentPage = 1, _totalPages = 1;
     double _zoom = 1.0;
     bool _pdfLoaded = false, _pdfLoading = false, _isDrawing = false, _isDrawingRuler = false;
+    bool _drawMode = false; // 필기 도구 띠 표시 여부
     double _rulerStartX, _rulerStartY, _previewW, _previewH, _dragOffsetX, _dragOffsetY;
     int _rulerPage = 1;
     List<RulerOverlay> _rulers = new();
@@ -630,6 +671,14 @@
     }
 
     // ── 도구 ─────────────────────────────────────────────────
+    void ToggleDrawMode()
+    {
+        _drawMode = !_drawMode;
+        // 필기모드 켤 때 마지막 도구로, 끌 때 select로
+        if (_drawMode && _tool == "select") SetTool("pen");
+        else if (!_drawMode) SetTool("select");
+    }
+
     void SetTool(string t)
     {
         _tool = t;
