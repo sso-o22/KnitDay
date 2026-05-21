@@ -712,6 +712,13 @@
             }
 
             StateHasChanged();
+
+            // 마지막으로 보던 페이지로 스크롤
+            if (_currentPage > 1)
+            {
+                await Task.Delay(150); // 렌더 완료 대기
+                await JS.InvokeVoidAsync("patternViewer.scrollToPage", _currentPage);
+            }
         }
         catch (Exception ex)
         {
@@ -878,29 +885,39 @@
     string HexToRgb(string hex){hex=hex.TrimStart('#');return $"{Convert.ToInt32(hex[..2],16)},{Convert.ToInt32(hex[2..4],16)},{Convert.ToInt32(hex[4..6],16)}";}
     string RgbToHex(string rgb){var p=rgb.Split(',');return $"#{int.Parse(p[0]):X2}{int.Parse(p[1]):X2}{int.Parse(p[2]):X2}";}
     string GetCursor()=>_tool switch{"select"=>"default","pen"=>"crosshair","eraser"=>"cell",_=>"crosshair"};
-    void GoBack()=>Nav.NavigateTo("projects/"+ProjectId);
+    async Task GoBack()
+    {
+        // 뒤로가기 전 즉시 저장 (디바운스 기다리지 않고)
+        await ForceSaveViewerStateAsync();
+        Nav.NavigateTo("projects/" + ProjectId);
+    }
+
+    async Task ForceSaveViewerStateAsync()
+    {
+        if (_project == null || !_pdfLoaded) return;
+        try
+        {
+            _saveCts?.Cancel(); // 진행 중인 디바운스 취소
+            var pathsJson = await JS.InvokeAsync<string>("patternViewer.getPaths");
+            _project.ViewerAnnotations = pathsJson;
+            _project.ViewerRulers      = System.Text.Json.JsonSerializer.Serialize(_rulers);
+            _project.ViewerLastZoom    = _zoom;
+            _project.ViewerLastPage    = _currentPage;
+            await SaveProject();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", "ForceSave error: " + ex.Message);
+        }
+    }
 
     public async ValueTask DisposeAsync()
     {
-        // 페이지 나가기 전 마지막 저장
-        if (_project != null && _pdfLoaded)
-        {
-            try
-            {
-                var pathsJson = await JS.InvokeAsync<string>("patternViewer.getPaths");
-                _project.ViewerAnnotations = pathsJson;
-                _project.ViewerRulers = System.Text.Json.JsonSerializer.Serialize(_rulers);
-                _project.ViewerLastZoom = _zoom;
-                _project.ViewerLastPage = _currentPage;
-                await SaveProject();
-            }
-            catch { }
-        }
         _saveCts?.Cancel();
         _saveCts?.Dispose();
         StopRefreshTimer();
         _dotNetRef?.Dispose();
-        await JS.InvokeVoidAsync("patternViewer.dispose");
+        try { await JS.InvokeVoidAsync("patternViewer.dispose"); } catch { }
     }
     class RulerOverlay{public double X,Y,Width,Height,Opacity=0.35;public string ColorRgb="180,220,190";public int Page;}
 }

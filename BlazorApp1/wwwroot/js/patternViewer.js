@@ -684,6 +684,17 @@ window.patternViewer = (() => {
             _isZooming     = false;
         },
 
+        scrollToPage(pageNum) {
+            const scrollEl = getScrollEl();
+            const el = document.getElementById('page-container-' + pageNum);
+            if (!scrollEl || !el) return;
+            const scrollRect = scrollEl.getBoundingClientRect();
+            const elRect     = el.getBoundingClientRect();
+            // 페이지가 scroll-container 상단에 오도록
+            scrollEl.scrollTop += elRect.top - scrollRect.top - 8;
+            currentPageNum = pageNum;
+        },
+
         preventScroll() {},
 
         // ── IndexedDB PDF 저장/불러오기 ──────────────────────
