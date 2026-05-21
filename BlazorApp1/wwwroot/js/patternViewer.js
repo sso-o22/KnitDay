@@ -121,14 +121,12 @@ window.patternViewer = (() => {
             ctx.lineCap     = 'round';
             ctx.lineJoin    = 'round';
             if (p.isEraser) {
+                ctx.globalAlpha = 1.0;
                 ctx.strokeStyle = 'rgba(0,0,0,1)';
                 ctx.globalCompositeOperation = 'destination-out';
             } else {
-                const op = (p.opacity !== undefined) ? p.opacity : 1.0;
-                const r = parseInt(p.color.slice(1,3),16);
-                const g = parseInt(p.color.slice(3,5),16);
-                const b = parseInt(p.color.slice(5,7),16);
-                ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + op + ')';
+                ctx.globalAlpha = (p.opacity !== undefined) ? p.opacity : 1.0;
+                ctx.strokeStyle = p.color;
                 ctx.globalCompositeOperation = 'source-over';
             }
             ctx.moveTo(p.points[0].x * currentZoom * dpr, p.points[0].y * currentZoom * dpr);
@@ -177,14 +175,12 @@ window.patternViewer = (() => {
             ctx.lineCap     = 'round';
             ctx.lineJoin    = 'round';
             if (_isEraser) {
+                ctx.globalAlpha = 1.0;
                 ctx.strokeStyle = 'rgba(0,0,0,1)';
                 ctx.globalCompositeOperation = 'destination-out';
             } else {
-                // opacity 적용: hex 색상을 rgba로 변환
-                const r = parseInt(_color.slice(1,3),16);
-                const g = parseInt(_color.slice(3,5),16);
-                const b = parseInt(_color.slice(5,7),16);
-                ctx.strokeStyle = 'rgba(' + r + ',' + g + ',' + b + ',' + _opacity + ')';
+                ctx.globalAlpha = _opacity;
+                ctx.strokeStyle = _color;
                 ctx.globalCompositeOperation = 'source-over';
             }
         }
@@ -215,7 +211,9 @@ window.patternViewer = (() => {
             if (_tool === 'ruler') { if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd'); return; }
             if (!isDrawing || currentPageNum !== pageNum) return;
             isDrawing = false;
-            anno.getContext('2d').globalCompositeOperation = 'source-over';
+            const _ctx = anno.getContext('2d');
+            _ctx.globalCompositeOperation = 'source-over';
+            _ctx.globalAlpha = 1.0;
             if (currentPath) { paths.push(currentPath); currentPath = null; }
         }
 
