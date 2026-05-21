@@ -299,7 +299,8 @@ window.patternViewer = (() => {
     return {
         init(ref) { dotNetRef = ref; },
 
-        async loadPdfFromStream(streamRef, _ignoredZoom) {
+        // 1단계: 바이트 로드 + 페이지 수 반환 (DOM 생성 전)
+        async loadPdfBytes(streamRef) {
             await ensurePdfJs();
             const base  = getPdfjsBase();
             const bytes = new Uint8Array(await streamRef.arrayBuffer());
@@ -312,7 +313,12 @@ window.patternViewer = (() => {
             totalPages    = pdfDoc.numPages;
             _pageHandlers = {};
             paths         = [];
+            return totalPages;
+        },
 
+        // 2단계: Blazor가 캔버스 DOM 생성 후 실제 렌더링
+        async renderPdf() {
+            if (!pdfDoc) return;
             const firstPage = await pdfDoc.getPage(1);
             const fitZoom   = await calcFitZoom(firstPage);
             currentZoom     = fitZoom;
@@ -323,7 +329,6 @@ window.patternViewer = (() => {
             setupScrollAndZoom();
 
             if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', currentZoom);
-            return totalPages;
         },
 
         async renderAllPages(zoom) {

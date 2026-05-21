@@ -336,11 +336,21 @@
     {
         using var stream = e.File.OpenReadStream(25 * 1024 * 1024);
         using var streamRef = new DotNetStreamReference(stream);
+
+        // 1단계: JS에 바이트 전달 + 페이지 수만 먼저 받기
+        _pdfLoading = true;
+        _pdfLoaded = false;
+        StateHasChanged();
+        _totalPages = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", streamRef);
+
+        // 2단계: Blazor가 _totalPages 기준으로 캔버스 DOM을 생성하도록 렌더
         _pdfLoaded = true;
         _pdfLoading = true;
         StateHasChanged();
-        await Task.Delay(80);
-        _totalPages = await JS.InvokeAsync<int>("patternViewer.loadPdfFromStream", streamRef, _zoom);
+        await Task.Delay(80); // DOM 생성 대기
+
+        // 3단계: 모든 캔버스가 준비된 상태에서 PDF 렌더링
+        await JS.InvokeVoidAsync("patternViewer.renderPdf");
         _pdfLoading = false;
         StateHasChanged();
     }
