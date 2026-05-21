@@ -79,34 +79,19 @@
         </div>
     </div>
 
-    <!-- ── 타이머 + 카운터 요약 띠 ── -->
-    @if (_project != null)
+    <!-- ── 타이머 띠 (타이머만) ── -->
+    @if (_project is not null)
     {
-        <div style="background:#1a1a1a; color:white; padding:4px 12px; display:flex; align-items:center; gap:10px; flex-shrink:0; z-index:99; border-top:1px solid rgba(255,255,255,0.08); flex-wrap:wrap;">
-            <div style="display:flex; align-items:center; gap:5px;">
-                <span style="font-size:12px; opacity:0.5;">⏱</span>
-                <span style="font-size:13px; font-weight:700; font-variant-numeric:tabular-nums;">@_timerDisplay</span>
-                @if (_activeSession == null)
-                {
-                    <button class="timer-btn" @onclick="StartSession">▶</button>
-                }
-                else
-                {
-                    <button class="timer-btn" @onclick="EndSession">⏸</button>
-                }
-            </div>
-
-            @if (_project.Counters.Any())
+        <div style="background:#1a1a1a; color:white; padding:4px 12px; display:flex; align-items:center; gap:8px; flex-shrink:0; z-index:99; border-top:1px solid rgba(255,255,255,0.08);">
+            <span style="font-size:12px; opacity:0.5;">⏱</span>
+            <span style="font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; letter-spacing:0.5px;">@_timerDisplay</span>
+            @if (_activeSession == null)
             {
-                <div style="width:1px; height:14px; background:rgba(255,255,255,0.15);"></div>
-                @foreach (var c in _project.Counters.Take(3))
-                {
-                    <div style="display:flex; align-items:center; gap:3px; font-size:12px;">
-                        <span style="opacity:0.6;">@c.Label</span>
-                        <span style="font-weight:700;">@c.Value</span>
-                        <button class="counter-quick-btn" @onclick="() => QuickIncrement(c)">+</button>
-                    </div>
-                }
+                <button class="timer-btn" @onclick="StartSession" title="타이머 시작">▶</button>
+            }
+            else
+            {
+                <button class="timer-btn" @onclick="EndSession" title="타이머 정지">⏸</button>
             }
         </div>
     }

@@ -140,8 +140,13 @@ window.patternViewer = (() => {
         function onDown(e) {
             if (_isPinching || _isZooming) return;
             if (_tool === 'ruler') {
-                const pos = getCanvasPos(anno, e);
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', pos.x / dpr, pos.y / dpr, pageNum);
+                // canvas 픽셀 → CSS px (DPR 제거)
+                // anno canvas의 CSS 크기 기준 좌표로 변환
+                const annoRect = anno.getBoundingClientRect();
+                const src = e.touches ? e.touches[0] : e;
+                const cssX = src.clientX - annoRect.left;
+                const cssY = src.clientY - annoRect.top;
+                if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', cssX, cssY, pageNum);
                 if (e.touches) e.preventDefault();
                 return;
             }
@@ -169,8 +174,11 @@ window.patternViewer = (() => {
             if (_isPinching || _isZooming) return;
             if (_tool === 'ruler') {
                 if (e.touches) e.preventDefault();
-                const pos = getCanvasPos(anno, e);
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove', pos.x / dpr, pos.y / dpr);
+                const annoRect = anno.getBoundingClientRect();
+                const src = e.touches ? e.touches[0] : e;
+                const cssX = src.clientX - annoRect.left;
+                const cssY = src.clientY - annoRect.top;
+                if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove', cssX, cssY);
                 return;
             }
             if (!isDrawing || currentPageNum !== pageNum || (_tool !== 'pen' && _tool !== 'eraser')) return;
@@ -340,7 +348,14 @@ window.patternViewer = (() => {
             const wrapper = document.getElementById('pdf-wrapper');
             if (wrapper) { wrapper.style.transform = ''; wrapper.style.transformOrigin = ''; wrapper.style.opacity = '1'; }
 
-            // 렌더 캐시 무효화
+            // 렌더 캐시 무효화 + canvas 버퍼 즉시 해제 (축소 시 메모리 급증 방지)
+            for (let i = 1; i <= totalPages; i++) {
+                if (_renderTasks[i]) { try { _renderTasks[i].cancel(); } catch(_){} _renderTasks[i] = null; }
+                const pc = getPdfCanvas(i);
+                const ac = getAnnoCanvas(i);
+                if (pc && pc.width > 1) { pc.width = 1; pc.height = 1; }
+                if (ac && ac.width > 1) { ac.width = 1; ac.height = 1; }
+            }
             _renderedPages.clear();
             _pageHandlers = {};
 
