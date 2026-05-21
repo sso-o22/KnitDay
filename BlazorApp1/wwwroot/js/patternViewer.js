@@ -317,9 +317,7 @@ window.patternViewer = (() => {
     // 스크롤 비율(%) 저장 → 컨테이너 크기 즉시 동기화 → 스크롤 복원 → 디바운스 렌더
     function changeZoom(newZoom, anchorDocY, anchorViewY) {
         if (!pdfDoc) return;
-
-        // 줌 플래그 ON → Observer·스크롤 감지 차단
-        _isZooming = true;
+        _isZooming = true;   // Observer·스크롤 감지 차단
         _pendingZoom = newZoom;
 
         const scrollEl = getScrollEl();
@@ -371,7 +369,7 @@ window.patternViewer = (() => {
             setTimeout(() => { _isZooming = false; }, 50);
 
             if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', targetZoom);
-        }, 200);
+        }, 180);
     }
 
     // ── CSS transform (핀치/휠 중 시각 피드백) ──────────────
@@ -438,7 +436,6 @@ window.patternViewer = (() => {
         scrollEl.addEventListener('touchstart', e => {
             if (e.touches.length !== 2) return;
             _isPinching    = true;
-            _isZooming     = true;
             isDrawing      = false;
             _pinchStartDist = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
@@ -483,7 +480,10 @@ window.patternViewer = (() => {
                 if (finalZoom !== null) {
                     changeZoom(finalZoom, scrollEl._pinchAnchorDocY, scrollEl._pinchAnchorViewY);
                 } else {
+                    // 줌 변화 없이 핀치 끝 → 플래그 해제
                     _isZooming = false;
+                    const w = document.getElementById('pdf-wrapper');
+                    if (w) { w.style.transform = ''; w.style.transformOrigin = ''; w.style.opacity = '1'; }
                 }
             }, 50);
         }, { passive: true });
