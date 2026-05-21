@@ -6,32 +6,34 @@
 @inject IJSRuntime JS
 @implements IAsyncDisposable
 
-<!-- 전체가 PDF 뷰어 자체 → 상단 오버레이 툴바 + 뷰어가 꽉 차게 -->
-<div style="position:fixed; inset:0; background:#888; overflow:hidden;"
+<!--
+  PC:  사이드바(220px) 오른쪽 main-content 안에서 전체 차지
+  모바일: 사이드바 없으므로 position:fixed로 전체화면
+-->
+<div class="pv-root"
      @onmousemove="OnGlobalMouseMove"
      @onmouseup="OnGlobalMouseUp"
      @ontouchmove="OnGlobalTouchMove"
      @ontouchend="OnGlobalTouchEnd">
 
-    <!-- ── PDF 스크롤 영역 (전체 화면) ── -->
-    <div id="scroll-container"
-         style="position:absolute; inset:0; overflow:auto; display:flex; justify-content:center;">
-        <div id="pdf-wrapper" style="display:flex; flex-direction:column; align-items:center; gap:8px; padding:8px 0;">
+    <!-- PDF 스크롤 영역 (꽉 차게) -->
+    <div id="scroll-container" class="pv-scroll">
+        <div id="pdf-wrapper" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 0;">
             @if (_pdfLoaded)
             {
                 @for (int pg = 1; pg <= _totalPages; pg++)
                 {
                     var pageNum = pg;
-                    <div class="page-container" id="page-container-@pageNum" style="position:relative; display:inline-block;">
+                    <div class="page-container" id="page-container-@pageNum" style="position:relative;display:inline-block;">
                         <canvas id="pdf-canvas-@pageNum" style="display:block;"></canvas>
-                        <canvas id="anno-canvas-@pageNum" style="position:absolute; top:0; left:0; cursor:@GetCursor();"
+                        <canvas id="anno-canvas-@pageNum" style="position:absolute;top:0;left:0;cursor:@GetCursor();"
                                 @onclick="DeselectRuler"></canvas>
 
                         @foreach (var ruler in _rulers.Where(r => r.Page == pageNum))
                         {
                             var isSelected = _selectedRuler == ruler && _tool == "ruler";
                             <div class="ruler-item @(isSelected ? "ruler-selected" : "")"
-                                 style="position:absolute; left:@(ruler.X)px; top:@(ruler.Y)px; width:@(ruler.Width)px; height:@(ruler.Height)px;
+                                 style="position:absolute;left:@(ruler.X)px;top:@(ruler.Y)px;width:@(ruler.Width)px;height:@(ruler.Height)px;
                                         background:rgba(@(ruler.ColorRgb),@(ruler.Opacity.ToString("F2",System.Globalization.CultureInfo.InvariantCulture)));
                                         border:2px solid rgba(@(ruler.ColorRgb),@(isSelected?"1.0":"0.8"));
                                         cursor:@(_tool=="ruler"?(isSelected?"move":"pointer"):"default");
@@ -49,14 +51,14 @@
                                         <button class="ctrl-btn del" @onclick="() => { _rulers.Remove(ruler); _selectedRuler = null; }">✕</button>
                                     </div>
                                     <div class="resize-handle"
-                                         @onmousedown="e => OnResizeMouseDown(e, ruler)" @onmousedown:stopPropagation="true"
-                                         @ontouchstart="e => OnResizeTouchStart(e, ruler)" @ontouchstart:stopPropagation="true"></div>
+                                         @onmousedown="e => OnResizeMouseDown(e,ruler)" @onmousedown:stopPropagation="true"
+                                         @ontouchstart="e => OnResizeTouchStart(e,ruler)" @ontouchstart:stopPropagation="true"></div>
                                 }
                             </div>
                         }
                         @if (_isDrawingRuler && _rulerPage == pageNum)
                         {
-                            <div style="position:absolute; left:@(Math.Min(_rulerStartX,_rulerStartX+_previewW))px; top:@(Math.Min(_rulerStartY,_rulerStartY+_previewH))px; width:@(Math.Abs(_previewW))px; height:@(Math.Abs(_previewH))px; border:2px dashed rgba(255,255,255,0.7); pointer-events:none; z-index:20;"></div>
+                            <div style="position:absolute;left:@(Math.Min(_rulerStartX,_rulerStartX+_previewW))px;top:@(Math.Min(_rulerStartY,_rulerStartY+_previewH))px;width:@(Math.Abs(_previewW))px;height:@(Math.Abs(_previewH))px;border:2px dashed rgba(0,0,0,0.5);pointer-events:none;z-index:20;"></div>
                         }
                     </div>
                 }
@@ -66,100 +68,97 @@
 
     <!-- ── 상단 오버레이 툴바 ── -->
     <div class="top-bar">
-        <button class="bar-btn" @onclick="GoBack">←</button>
-        <div class="bar-divider"></div>
+        <button class="tb-btn" @onclick="GoBack">←</button>
+        <div class="tb-div"></div>
 
-        <label class="bar-label" title="PDF 불러오기">
+        <label class="tb-label">
             📄 <InputFile OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
         </label>
 
         @if (_pdfLoaded)
         {
-            <span class="bar-text">@_currentPage / @_totalPages</span>
-            <div class="bar-zoom">
-                <button class="zoom-btn" @onclick="ZoomOut">−</button>
-                <span class="bar-text" style="min-width:36px; text-align:center;">@((int)(_zoom*100))%</span>
-                <button class="zoom-btn" @onclick="ZoomIn">+</button>
+            <span class="tb-txt">@_currentPage / @_totalPages</span>
+            <div class="tb-zoom">
+                <button class="tb-zoom-btn" @onclick="ZoomOut">−</button>
+                <span class="tb-txt" style="min-width:36px;text-align:center;">@((int)(_zoom*100))%</span>
+                <button class="tb-zoom-btn" @onclick="ZoomIn">+</button>
             </div>
         }
 
         @if (_project is not null)
         {
-            <div class="bar-divider"></div>
-            <span style="font-size:11px; opacity:0.5;">⏱</span>
-            <span class="bar-text" style="font-variant-numeric:tabular-nums; letter-spacing:0.3px;">@_timerDisplay</span>
+            <div class="tb-div"></div>
+            <span style="font-size:11px;opacity:0.4;">⏱</span>
+            <span class="tb-txt" style="font-variant-numeric:tabular-nums;letter-spacing:0.3px;">@_timerDisplay</span>
             @if (_activeSession == null)
             {
-                <button class="bar-icon-btn" @onclick="StartSession">▶</button>
+                <button class="tb-icon-btn" @onclick="StartSession">▶</button>
             }
             else
             {
-                <button class="bar-icon-btn" @onclick="EndSession">⏸</button>
+                <button class="tb-icon-btn" @onclick="EndSession">⏸</button>
             }
         }
     </div>
 
-    <!-- ── 필기 도구 플로팅 위젯 (좌측, 툴바 아래) ── -->
-    <div class="draw-widget-wrap">
-        <!-- 동그라미 토글 버튼 -->
-        <button class="draw-fab @(_drawMode ? "draw-fab-active" : "")"
-                @onclick="ToggleDrawMode"
-                title="@(_drawMode ? "닫기" : "필기")">
-            ✏️
-        </button>
-
-        <!-- 펼쳐지는 도구 패널 (오른쪽으로) -->
+    <!-- ── 필기 도구 플로팅 위젯 (좌측 상단, 툴바 아래) ── -->
+    <div class="draw-wrap">
+        <button class="draw-fab @(_drawMode ? "draw-fab-on" : "")" @onclick="ToggleDrawMode">✏️</button>
         <div class="draw-panel @(_drawMode ? "draw-panel-open" : "")">
             <div class="draw-panel-inner">
-                <button class="dp-btn @(_tool=="pen"?"dp-active":"")"    @onclick='()=>SetTool("pen")'>✏️</button>
-                <button class="dp-btn @(_tool=="eraser"?"dp-active":"")" @onclick='()=>SetTool("eraser")'>🧽</button>
-                <button class="dp-btn @(_tool=="ruler"?"dp-active":"")"  @onclick='()=>SetTool("ruler")'>📏</button>
-                <button class="dp-btn @(_tool=="select"?"dp-active":"")" @onclick='()=>SetTool("select")'>🖱️</button>
+                <button class="dp-btn @(_tool=="pen"?"dp-on":"")"    @onclick='()=>SetTool("pen")'>✏️</button>
+                <button class="dp-btn @(_tool=="eraser"?"dp-on":"")" @onclick='()=>SetTool("eraser")'>🧽</button>
+                <button class="dp-btn @(_tool=="ruler"?"dp-on":"")"  @onclick='()=>SetTool("ruler")'>📏</button>
+                <button class="dp-btn @(_tool=="select"?"dp-on":"")" @onclick='()=>SetTool("select")'>🖱️</button>
 
                 @if (_tool == "pen")
                 {
-                    <div class="dp-divider"></div>
+                    <div class="dp-div"></div>
                     <input type="color" value="@_penColor" @oninput="OnColorChange"
-                           style="width:26px;height:26px;border:none;border-radius:50%;padding:2px;cursor:pointer;background:transparent;flex-shrink:0;" />
+                           style="width:24px;height:24px;border:none;border-radius:50%;padding:2px;cursor:pointer;background:transparent;flex-shrink:0;" />
                 }
 
                 @if (_tool == "pen" || _tool == "eraser")
                 {
-                    <div class="dp-divider"></div>
-                    <div style="display:flex;align-items:center;gap:3px;flex-shrink:0;">
-                        <span style="font-size:9px;opacity:0.55;">굵기</span>
-                        <input type="range" min="1" max="40" step="1" value="@_penSize"
-                               @oninput="OnSizeChange"
-                               style="width:60px;accent-color:white;cursor:pointer;" />
-                        <span style="font-size:10px;font-weight:600;min-width:16px;">@_penSize</span>
-                    </div>
+                    <div class="dp-div"></div>
+                    <!-- 굵기: -/+ 버튼 + 슬라이더 -->
+                    <button class="dp-size-btn" @onclick="SizeDown">−</button>
+                    <input type="range" min="1" max="40" step="1" value="@_penSize"
+                           @oninput="OnSizeChange"
+                           style="width:52px;accent-color:#555;cursor:pointer;flex-shrink:0;" />
+                    <button class="dp-size-btn" @onclick="SizeUp">+</button>
+                    <span style="font-size:10px;font-weight:600;min-width:16px;color:#333;">@_penSize</span>
                 }
 
-                <div class="dp-divider"></div>
+                <div class="dp-div"></div>
                 <button class="dp-btn" @onclick="UndoLastPath" title="실행취소">↩️</button>
             </div>
         </div>
     </div>
 
-    <!-- ── 카운터 플로팅 위젯 (우측 하단 고정) ── -->
+    <!-- ── 카운터 플로팅 위젯 (드래그 가능) ── -->
     @if (_project is not null && _project.Counters.Any())
     {
         @if (_showCounterWidget)
         {
-            <div class="counter-widget">
-                <div class="cw-inner">
-                    <div class="cw-header">
-                        <span style="font-size:11px;font-weight:700;opacity:0.7;">🧶 카운터</span>
-                        <button class="cw-close" @onclick="()=>_showCounterWidget=false">✕</button>
+            <div class="cw-wrap"
+                 style="position:fixed;left:@(_cwX)px;top:@(_cwY)px;z-index:500;touch-action:none;cursor:grab;"
+                 @onmousedown="CwDragStart">
+                <div class="cw-inner" @onmousedown:stopPropagation="true" @ontouchstart:stopPropagation="true">
+                    <!-- 드래그 핸들 -->
+                    <div class="cw-header"
+                         style="cursor:grab;"
+                         @onmousedown="CwDragStart"
+                         @ontouchstart="CwTouchStart">
+                        <span style="font-size:11px;font-weight:700;color:#444;">🧶 카운터</span>
+                        <button class="cw-close" @onclick="()=>_showCounterWidget=false" @onmousedown:stopPropagation="true">✕</button>
                     </div>
-                    @{
-                        var c = _project.Counters[_activeCounterIndex];
-                    }
+                    @{var c = _project.Counters[_activeCounterIndex];}
                     <div class="cw-nav">
                         <button class="cw-nav-btn" @onclick="PrevCounter" disabled="@(_project.Counters.Count<=1)">‹</button>
                         <div style="text-align:center;flex:1;">
-                            <div style="font-size:11px;opacity:0.65;">@c.Label</div>
-                            <div style="font-size:10px;opacity:0.35;">@(_activeCounterIndex+1) / @_project.Counters.Count</div>
+                            <div style="font-size:12px;color:#333;font-weight:600;">@c.Label</div>
+                            <div style="font-size:10px;color:#aaa;">@(_activeCounterIndex+1)/@_project.Counters.Count</div>
                         </div>
                         <button class="cw-nav-btn" @onclick="NextCounter" disabled="@(_project.Counters.Count<=1)">›</button>
                     </div>
@@ -173,143 +172,161 @@
         }
         else
         {
-            <button class="cw-fab" @onclick="()=>_showCounterWidget=true">🧶</button>
+            <button class="cw-fab" @onclick="()=>_showCounterWidget=true"
+                    style="position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);z-index:500;">🧶</button>
         }
     }
 </div>
 
 <style>
-    /* ── 상단 오버레이 툴바 ── */
+    /* ── 뷰어 루트: PC는 main-content 안, 모바일은 fixed fullscreen ── */
+    .pv-root {
+        position: relative;
+        width: 100%;
+        height: calc(100vh - 0px);
+        overflow: hidden;
+        background: #aaa;
+    }
+    /* 모바일: fixed로 전체 차지 */
+    @@media (max-width: 640px) {
+        .pv-root {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+        }
+    }
+
+    .pv-scroll {
+        position: absolute;
+        inset: 0;
+        overflow: auto;
+        display: flex;
+        justify-content: center;
+    }
+
+    /* ── 상단 툴바: 라이트 화이트 계열 ── */
     .top-bar {
         position: absolute;
         top: 0; left: 0; right: 0;
-        background: rgba(17,17,17,0.88);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        color: white;
+        background: rgba(255,255,255,0.88);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        color: #222;
         padding: 5px 10px;
         display: flex;
         align-items: center;
         gap: 6px;
         z-index: 200;
+        border-bottom: 1px solid rgba(0,0,0,0.08);
         flex-wrap: nowrap;
+        box-shadow: 0 1px 8px rgba(0,0,0,0.1);
     }
-    .bar-btn {
-        background: rgba(255,255,255,0.12);
-        border: 1px solid rgba(255,255,255,0.2);
-        color: white; width: 32px; height: 28px;
-        border-radius: 6px; cursor: pointer; flex-shrink: 0;
+    .tb-btn {
+        background: rgba(0,0,0,0.07); border: 1px solid rgba(0,0,0,0.12);
+        color: #222; width: 32px; height: 28px; border-radius: 6px; cursor: pointer; flex-shrink: 0;
+        font-size: 14px;
     }
-    .bar-btn:hover { background: rgba(255,255,255,0.22); }
-    .bar-label {
-        background: rgba(255,255,255,0.08);
-        border: 1px solid rgba(255,255,255,0.12);
-        color: white; padding: 0 10px; height: 28px;
+    .tb-btn:hover { background: rgba(0,0,0,0.13); }
+    .tb-label {
+        background: rgba(0,0,0,0.06); border: 1px solid rgba(0,0,0,0.1);
+        color: #333; padding: 0 10px; height: 28px;
         display: flex; align-items: center;
         border-radius: 14px; font-size: 12px; cursor: pointer; flex-shrink: 0;
     }
-    .bar-text { font-size: 11px; font-weight: 600; flex-shrink: 0; }
-    .bar-divider { width: 1px; height: 14px; background: rgba(255,255,255,0.15); flex-shrink: 0; }
-    .bar-zoom {
+    .tb-txt { font-size: 11px; font-weight: 600; flex-shrink: 0; color: #222; }
+    .tb-div { width: 1px; height: 14px; background: rgba(0,0,0,0.12); flex-shrink: 0; }
+    .tb-zoom {
         display: flex; align-items: center;
-        background: rgba(0,0,0,0.3); border-radius: 12px;
-        padding: 0 8px; height: 28px; gap: 4px; flex-shrink: 0;
+        background: rgba(0,0,0,0.06); border-radius: 12px;
+        padding: 0 6px; height: 28px; gap: 4px; flex-shrink: 0;
     }
-    .zoom-btn { background: transparent; border: none; color: white; cursor: pointer; font-size: 18px; padding: 0 2px; }
-    .bar-icon-btn {
-        background: rgba(255,255,255,0.1); border: none; color: white;
-        width: 22px; height: 22px; border-radius: 4px; cursor: pointer;
-        font-size: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    .tb-zoom-btn { background: transparent; border: none; color: #333; cursor: pointer; font-size: 18px; padding: 0 2px; }
+    .tb-icon-btn {
+        background: rgba(0,0,0,0.07); border: none; color: #333;
+        width: 24px; height: 24px; border-radius: 4px; cursor: pointer;
+        font-size: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .bar-icon-btn:hover { background: rgba(255,255,255,0.2); }
+    .tb-icon-btn:hover { background: rgba(0,0,0,0.14); }
 
-    /* ── 필기 도구 플로팅 위젯 ── */
-    .draw-widget-wrap {
+    /* ── 필기 위젯: 라이트 계열 ── */
+    .draw-wrap {
         position: absolute;
-        top: 48px; /* 툴바 높이 아래 */
+        top: 46px;
         left: 10px;
         z-index: 300;
         display: flex;
         align-items: center;
-        gap: 0;
     }
     .draw-fab {
-        width: 40px; height: 40px;
-        border-radius: 50%;
-        background: rgba(17,17,17,0.82);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border: 1.5px solid rgba(255,255,255,0.18);
-        color: white; font-size: 18px;
-        cursor: pointer; flex-shrink: 0;
-        box-shadow: 0 2px 12px rgba(0,0,0,0.35);
-        transition: background 0.15s, transform 0.15s;
+        width: 40px; height: 40px; border-radius: 50%;
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        border: 1.5px solid rgba(0,0,0,0.12);
+        color: #333; font-size: 18px; cursor: pointer; flex-shrink: 0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        transition: background 0.15s, transform 0.12s;
         display: flex; align-items: center; justify-content: center;
     }
     .draw-fab:active { transform: scale(0.9); }
-    .draw-fab-active {
-        background: rgba(255,255,255,0.18);
-        border-color: rgba(255,255,255,0.4);
+    .draw-fab-on {
+        background: #f0f0f0;
+        border-color: rgba(0,0,0,0.25);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
 
     /* 펼쳐지는 패널 */
-    .draw-panel {
-        overflow: hidden;
-        max-width: 0;
-        transition: max-width 0.22s cubic-bezier(0.4,0,0.2,1);
-        margin-left: 0;
-    }
-    .draw-panel-open { max-width: 360px; margin-left: 6px; }
+    .draw-panel { overflow: hidden; max-width: 0; transition: max-width 0.22s cubic-bezier(0.4,0,0.2,1); margin-left: 0; }
+    .draw-panel-open { max-width: 420px; margin-left: 6px; }
     .draw-panel-inner {
-        display: flex; align-items: center; gap: 4px;
-        background: rgba(17,17,17,0.88);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        border: 1.5px solid rgba(255,255,255,0.13);
-        border-radius: 20px;
-        padding: 5px 10px;
+        display: flex; align-items: center; gap: 3px;
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1.5px solid rgba(0,0,0,0.1);
+        border-radius: 20px; padding: 5px 10px;
         white-space: nowrap;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        flex-wrap: nowrap;
     }
     .dp-btn {
-        background: transparent; border: none; color: white;
+        background: transparent; border: none; color: #333;
         width: 32px; height: 32px; border-radius: 8px;
         cursor: pointer; font-size: 15px;
-        display: flex; align-items: center; justify-content: center;
-        flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
     }
-    .dp-btn:hover { background: rgba(255,255,255,0.12); }
-    .dp-active { background: rgba(255,255,255,0.2); }
-    .dp-divider { width: 1px; height: 18px; background: rgba(255,255,255,0.15); flex-shrink: 0; margin: 0 2px; }
+    .dp-btn:hover { background: rgba(0,0,0,0.07); }
+    .dp-on { background: rgba(0,0,0,0.1); }
+    .dp-div { width: 1px; height: 18px; background: rgba(0,0,0,0.1); flex-shrink: 0; margin: 0 2px; }
+    .dp-size-btn {
+        background: rgba(0,0,0,0.07); border: none; color: #333;
+        width: 24px; height: 24px; border-radius: 6px; cursor: pointer;
+        font-size: 16px; display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; line-height: 1;
+    }
+    .dp-size-btn:hover { background: rgba(0,0,0,0.14); }
+    .dp-size-btn:active { background: rgba(0,0,0,0.2); }
 
-    /* ── 카운터 플로팅 위젯 ── */
-    .counter-widget {
-        position: fixed;
-        right: 16px;
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
-        z-index: 400;
-    }
+    /* ── 카운터 위젯: 라이트 계열 ── */
+    .cw-wrap { user-select: none; }
     .cw-inner {
-        background: rgba(18,18,18,0.92);
-        backdrop-filter: blur(14px);
-        -webkit-backdrop-filter: blur(14px);
-        border: 1px solid rgba(255,255,255,0.13);
-        border-radius: 16px; padding: 10px 12px;
-        min-width: 160px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.5);
-        color: white;
+        background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: 16px; padding: 10px 12px; min-width: 160px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+        color: #222;
     }
-    .cw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-    .cw-close { background: transparent; border: none; color: rgba(255,255,255,0.4); cursor: pointer; font-size: 13px; }
-    .cw-close:hover { color: white; }
+    .cw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; cursor: grab; }
+    .cw-header:active { cursor: grabbing; }
+    .cw-close { background: transparent; border: none; color: #aaa; cursor: pointer; font-size: 13px; }
+    .cw-close:hover { color: #333; }
     .cw-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
     .cw-nav-btn {
-        background: rgba(255,255,255,0.08); border: none; color: white;
+        background: rgba(0,0,0,0.07); border: none; color: #333;
         width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 18px;
         display: flex; align-items: center; justify-content: center;
     }
-    .cw-nav-btn:hover { background: rgba(255,255,255,0.18); }
-    .cw-nav-btn:disabled { opacity: 0.2; cursor: default; }
+    .cw-nav-btn:hover { background: rgba(0,0,0,0.13); }
+    .cw-nav-btn:disabled { opacity: 0.25; cursor: default; }
     .cw-controls { display: flex; align-items: center; justify-content: center; gap: 8px; }
     .cw-btn {
         border: none; border-radius: 10px; cursor: pointer;
@@ -318,40 +335,39 @@
         transition: transform 0.08s;
     }
     .cw-btn:active { transform: scale(0.88); }
-    .cw-btn.plus  { background: rgba(255,255,255,0.15); color: white; }
-    .cw-btn.plus:hover  { background: rgba(255,255,255,0.25); }
-    .cw-btn.minus { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.7); }
-    .cw-btn.minus:hover { background: rgba(255,255,255,0.16); }
-    .cw-val { font-size: 28px; font-weight: 700; min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; }
+    .cw-btn.plus  { background: #eee; color: #222; }
+    .cw-btn.plus:hover  { background: #e0e0e0; }
+    .cw-btn.minus { background: #f5f5f5; color: #555; }
+    .cw-btn.minus:hover { background: #e8e8e8; }
+    .cw-val { font-size: 28px; font-weight: 700; min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; color: #111; }
     .cw-fab {
-        position: fixed; right: 16px;
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
-        z-index: 400;
-        background: rgba(18,18,18,0.88);
+        background: rgba(255,255,255,0.92);
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.15);
+        border: 1px solid rgba(0,0,0,0.12);
         border-radius: 50%; width: 48px; height: 48px;
         font-size: 22px; cursor: pointer;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.15);
         display: flex; align-items: center; justify-content: center;
     }
     .cw-fab:active { transform: scale(0.9); }
 
     /* ── 자 ── */
     .ruler-item { z-index: 50; touch-action: none; }
-    .ruler-selected { outline: 2px dashed rgba(255,255,255,0.8); outline-offset: 2px; touch-action: none; }
+    .ruler-selected { outline: 2px dashed rgba(0,0,0,0.5); outline-offset: 2px; touch-action: none; }
     .ruler-ctrl {
         position: absolute; top: -48px; left: 50%; transform: translateX(-50%);
-        background: #1e1e1e; padding: 4px 8px; display: flex; gap: 6px;
-        border-radius: 6px; align-items: center; box-shadow: 0 4px 12px rgba(0,0,0,0.6); z-index: 100;
+        background: #fff; padding: 4px 8px; display: flex; gap: 6px;
+        border-radius: 6px; align-items: center;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 100;
+        border: 1px solid rgba(0,0,0,0.1);
     }
     .ruler-ctrl::after { content:''; position:absolute; bottom:-12px; left:0; width:100%; height:12px; }
-    .ctrl-btn { background: #333; border: none; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
-    .ctrl-btn.del { background: rgba(255,255,255,0.18); }
+    .ctrl-btn { background: #f0f0f0; border: none; color: #333; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+    .ctrl-btn.del { background: #ffe0e0; color: #c00; }
     .resize-handle {
         position: absolute; right: -7px; bottom: -7px; width: 14px; height: 14px;
-        background: white; border: 2px solid #555; border-radius: 50%;
-        cursor: nwse-resize; box-shadow: 0 1px 4px rgba(0,0,0,0.4); touch-action: none;
+        background: white; border: 2px solid #999; border-radius: 50%;
+        cursor: nwse-resize; box-shadow: 0 1px 4px rgba(0,0,0,0.2); touch-action: none;
     }
 </style>
 
@@ -378,7 +394,8 @@
     [Parameter] public Guid ProjectId { get; set; }
     KnitProject? _project;
     string _tool="select", _penColor="#000000";
-    int _penSize=10, _currentPage=1, _totalPages=1;
+    int _penSize=4; // 모바일 기본값 얇게
+    int _currentPage=1, _totalPages=1;
     double _zoom=1.0;
     bool _pdfLoaded=false, _pdfLoading=false, _isDrawing=false, _isDrawingRuler=false;
     bool _drawMode=false, _showCounterWidget=true;
@@ -388,6 +405,25 @@
     List<RulerOverlay> _rulers=new();
     RulerOverlay? _draggingRuler,_resizingRuler,_selectedRuler;
     DotNetObjectReference<PatternViewer>? _dotNetRef;
+
+    // ── 카운터 위젯 드래그 ──
+    double _cwX=0, _cwY=0;
+    bool _cwDragging=false;
+    double _cwOffX=0, _cwOffY=0;
+
+    void CwDragStart(MouseEventArgs e)
+    {
+        _cwDragging=true;
+        _cwOffX=e.ClientX-_cwX;
+        _cwOffY=e.ClientY-_cwY;
+    }
+    void CwTouchStart(TouchEventArgs e)
+    {
+        if(e.Touches.Length==0)return;
+        _cwDragging=true;
+        _cwOffX=e.Touches[0].ClientX-_cwX;
+        _cwOffY=e.Touches[0].ClientY-_cwY;
+    }
 
     // ── 타이머 ──
     KnitSession? _activeSession => _project?.Sessions.FirstOrDefault(s=>s.IsActive);
@@ -417,9 +453,15 @@
     {
         if(firstRender)
         {
+            // 카운터 위젯 초기 위치: 우측 하단 (하단탭 위)
+            var w=await JS.InvokeAsync<double>("eval","window.innerWidth");
+            var h=await JS.InvokeAsync<double>("eval","window.innerHeight");
+            _cwX=w-192; // 위젯 너비 약 176px + 여백
+            _cwY=h-220; // 하단탭(72px)+위젯 높이(140px)+여백
             _dotNetRef=DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("patternViewer.init",_dotNetRef);
             await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,false,_tool);
+            StateHasChanged();
         }
     }
 
@@ -442,16 +484,13 @@
     [JSInvokable] public void UpdatePageFromJS(int page){_currentPage=page;StateHasChanged();}
     [JSInvokable] public void ZoomToFromJS(double zoom){_zoom=zoom;StateHasChanged();}
 
-    // ── 필기 도구 ──
-    void ToggleDrawMode()
-    {
-        _drawMode=!_drawMode;
-        if(_drawMode&&_tool=="select")SetTool("pen");
-        else if(!_drawMode)SetTool("select");
-    }
+    // ── 필기 ──
+    void ToggleDrawMode(){_drawMode=!_drawMode;if(_drawMode&&_tool=="select")SetTool("pen");else if(!_drawMode)SetTool("select");}
     void SetTool(string t){_tool=t;_=JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,t=="eraser",t);}
     async Task OnColorChange(ChangeEventArgs e){_penColor=e.Value?.ToString()??_penColor;await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool);}
     async Task OnSizeChange(ChangeEventArgs e){if(int.TryParse(e.Value?.ToString(),out var v))_penSize=v;await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool);}
+    async Task SizeDown(){_penSize=Math.Max(1,_penSize-1);await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool);}
+    async Task SizeUp(){_penSize=Math.Min(40,_penSize+1);await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool);}
 
     // ── 자 ──
     [JSInvokable] public void OnCanvasPointerDown(double x,double y,int pageNum){if(_tool=="ruler"){_isDrawingRuler=true;_rulerStartX=x;_rulerStartY=y;_rulerPage=pageNum;_previewW=0;_previewH=0;StateHasChanged();}}
@@ -460,6 +499,8 @@
 
     async Task OnGlobalMouseMove(MouseEventArgs e)
     {
+        // 카운터 위젯 드래그
+        if(_cwDragging){_cwX=e.ClientX-_cwOffX;_cwY=e.ClientY-_cwOffY;StateHasChanged();return;}
         if(_isDrawingRuler||_draggingRuler!=null||_resizingRuler!=null)
         {
             var pg=_draggingRuler?.Page??_resizingRuler?.Page??_rulerPage;
@@ -473,6 +514,7 @@
     }
     async Task OnGlobalMouseUp(MouseEventArgs e)
     {
+        _cwDragging=false;
         if(_isDrawingRuler&&Math.Abs(_previewW)>5){var r=new RulerOverlay{X=_previewW>0?_rulerStartX:_rulerStartX+_previewW,Y=_previewH>0?_rulerStartY:_rulerStartY+_previewH,Width=Math.Abs(_previewW),Height=Math.Abs(_previewH),Page=_rulerPage};_rulers.Add(r);_selectedRuler=r;}
         _isDrawingRuler=false;_draggingRuler=null;_resizingRuler=null;
         if(_isDrawing&&_pdfLoaded&&(_tool=="pen"||_tool=="eraser"))await JS.InvokeVoidAsync("patternViewer.endDraw");
@@ -484,8 +526,10 @@
     async Task OnRulerTouchStart(TouchEventArgs e,RulerOverlay ruler){if(_tool!="ruler")return;if(_selectedRuler!=ruler){_selectedRuler=ruler;StateHasChanged();return;}var rect=await JS.InvokeAsync<double[]>("patternViewer.getRect",ruler.Page);var t=e.Touches[0];_draggingRuler=ruler;_dragOffsetX=(t.ClientX-rect[0])-ruler.X;_dragOffsetY=(t.ClientY-rect[1])-ruler.Y;}
     void OnResizeMouseDown(MouseEventArgs e,RulerOverlay ruler)=>_resizingRuler=ruler;
     void OnResizeTouchStart(TouchEventArgs e,RulerOverlay ruler)=>_resizingRuler=ruler;
+
     async Task OnGlobalTouchMove(TouchEventArgs e)
     {
+        if(_cwDragging&&e.Touches.Length>0){_cwX=e.Touches[0].ClientX-_cwOffX;_cwY=e.Touches[0].ClientY-_cwOffY;StateHasChanged();return;}
         if(_draggingRuler!=null||_resizingRuler!=null)
         {
             var pg=_draggingRuler?.Page??_resizingRuler?.Page??_currentPage;
@@ -497,9 +541,8 @@
             StateHasChanged();
         }
     }
-    Task OnGlobalTouchEnd(TouchEventArgs e){_draggingRuler=null;_resizingRuler=null;StateHasChanged();return Task.CompletedTask;}
+    Task OnGlobalTouchEnd(TouchEventArgs e){_cwDragging=false;_draggingRuler=null;_resizingRuler=null;StateHasChanged();return Task.CompletedTask;}
 
-    // ── 헬퍼 ──
     void UpdateRulerColor(RulerOverlay r,ChangeEventArgs e)=>r.ColorRgb=HexToRgb(e.Value?.ToString()??"#ffffff");
     void ChangeRulerOpacity(RulerOverlay r,ChangeEventArgs e)=>r.Opacity=(double.TryParse(e.Value?.ToString(),out var v)?v:35)/100.0;
     string HexToRgb(string hex){hex=hex.TrimStart('#');return $"{Convert.ToInt32(hex[..2],16)},{Convert.ToInt32(hex[2..4],16)},{Convert.ToInt32(hex[4..6],16)}";}
@@ -513,6 +556,5 @@
         _dotNetRef?.Dispose();
         await JS.InvokeVoidAsync("patternViewer.dispose");
     }
-
     class RulerOverlay{public double X,Y,Width,Height,Opacity=0.35;public string ColorRgb="180,220,190";public int Page;}
 }
