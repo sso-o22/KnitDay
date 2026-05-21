@@ -1,4 +1,52 @@
 window.patternViewer = (() => {
+    // ── IndexedDB: PDF 파일 저장/불러오기 ───────────────────
+    const IDB_NAME = 'KnitLogPatternDB';
+    const IDB_VER  = 1;
+    const IDB_STORE = 'patterns';
+
+    function openDB() {
+        return new Promise((resolve, reject) => {
+            const req = indexedDB.open(IDB_NAME, IDB_VER);
+            req.onupgradeneeded = e => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(IDB_STORE))
+                    db.createObjectStore(IDB_STORE, { keyPath: 'projectId' });
+            };
+            req.onsuccess = e => resolve(e.target.result);
+            req.onerror   = e => reject(e.target.error);
+        });
+    }
+
+    async function savePdfToIDB(projectId, bytes, fileName) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).put({ projectId, bytes, fileName, savedAt: Date.now() });
+            tx.oncomplete = resolve;
+            tx.onerror    = e => reject(e.target.error);
+        });
+    }
+
+    async function loadPdfFromIDB(projectId) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx  = db.transaction(IDB_STORE, 'readonly');
+            const req = tx.objectStore(IDB_STORE).get(projectId);
+            req.onsuccess = e => resolve(e.target.result || null);
+            req.onerror   = e => reject(e.target.error);
+        });
+    }
+
+    async function deletePdfFromIDB(projectId) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IDB_STORE, 'readwrite');
+            tx.objectStore(IDB_STORE).delete(projectId);
+            tx.oncomplete = resolve;
+            tx.onerror    = e => reject(e.target.error);
+        });
+    }
+
     let pdfDoc = null, dotNetRef = null;
     let currentZoom = 1.0;
     let currentPageNum = 1;
@@ -14,6 +62,7 @@ window.patternViewer = (() => {
     let _renderTasks = {};
     let _renderedPages = new Set();
     let _opacity = 1.0; // 펜 투명도
+    let _lastPdfBytes = null; // 마지막 로드한 PDF bytes (IDB 저장용)
 
     // 줌 상태 플래그
     let _fitZoom      = 1.0;
@@ -543,6 +592,7 @@ window.patternViewer = (() => {
         async _loadPdfData(bytes) {
             await ensurePdfJs();
             const base = getPdfjsBase();
+            _lastPdfBytes = bytes; // IDB 저장용 캐싱
             pdfDoc = await window.pdfjsLib.getDocument({
                 data: bytes,
                 cMapUrl:             base + '/pdfjs/web/cmaps/',
@@ -633,6 +683,70 @@ window.patternViewer = (() => {
             _isZooming     = false;
         },
 
-        preventScroll() {}
+        preventScroll() {},
+
+        // ── IndexedDB PDF 저장/불러오기 ──────────────────────
+        async savePdfToProject(projectId, fileName) {
+            if (!_lastPdfBytes) return false;
+            try {
+                await savePdfToIDB(projectId, _lastPdfBytes, fileName);
+                return true;
+            } catch (e) {
+                console.error('savePdfToProject error:', e);
+                return false;
+            }
+        },
+
+        async loadPdfFromProject(projectId) {
+            try {
+                const record = await loadPdfFromIDB(projectId);
+                if (!record) return null;
+                return record.fileName || '';
+            } catch (e) {
+                console.error('loadPdfFromProject error:', e);
+                return null;
+            }
+        },
+
+        async renderSavedPdf(projectId) {
+            try {
+                const record = await loadPdfFromIDB(projectId);
+                if (!record || !record.bytes) return 0;
+                await ensurePdfJs();
+                const base = getPdfjsBase();
+                pdfDoc = await window.pdfjsLib.getDocument({
+                    data: record.bytes,
+                    cMapUrl:             base + '/pdfjs/web/cmaps/',
+                    cMapPacked:          true,
+                    standardFontDataUrl: base + '/pdfjs/web/standard_fonts/'
+                }).promise;
+                totalPages     = pdfDoc.numPages;
+                _pageHandlers  = {};
+                _renderedPages = new Set();
+                _pageSizes     = {};
+                _lastPdfBytes  = record.bytes;
+                const p1  = await pdfDoc.getPage(1);
+                const vp1 = p1.getViewport({ scale: 1.0 });
+                for (let i = 1; i <= totalPages; i++)
+                    _pageSizes[i] = { w: vp1.width, h: vp1.height };
+                return totalPages;
+            } catch (e) {
+                console.error('renderSavedPdf error:', e);
+                return 0;
+            }
+        },
+
+        async deleteSavedPdf(projectId) {
+            try { await deletePdfFromIDB(projectId); return true; }
+            catch (e) { return false; }
+        },
+
+        getPaths() {
+            return JSON.stringify(paths);
+        },
+
+        setPaths(json) {
+            try { paths = JSON.parse(json) || []; } catch(_) { paths = []; }
+        }
     };
 })();

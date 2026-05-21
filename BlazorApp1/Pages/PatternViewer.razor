@@ -606,18 +606,53 @@
     async Task DecrementCounter(ProjectCounter c){c.Value=Math.Max(0,c.Value-c.Step);c.LastUpdatedAt=DateTime.Now;await SaveProject();StateHasChanged();}
     async Task SaveProject(){if(_project is KnitProject p)await Storage.SaveProjectAsync(p);}
 
+    // 필기+도형+줌+페이지 자동 저장 (디바운스)
+    System.Threading.CancellationTokenSource? _saveCts;
+    async Task SaveViewerStateAsync()
+    {
+        if (_project == null || !_pdfLoaded) return;
+        // 디바운스: 2초 내 연속 호출은 마지막 것만 실행
+        _saveCts?.Cancel();
+        _saveCts = new System.Threading.CancellationTokenSource();
+        var token = _saveCts.Token;
+        try
+        {
+            await Task.Delay(2000, token);
+            if (token.IsCancellationRequested) return;
+
+            // 필기 paths를 JS에서 가져와서 저장
+            var pathsJson = await JS.InvokeAsync<string>("patternViewer.getPaths");
+            _project.ViewerAnnotations = pathsJson;
+
+            // 도형 저장
+            _project.ViewerRulers = System.Text.Json.JsonSerializer.Serialize(_rulers);
+
+            // 줌/페이지 저장
+            _project.ViewerLastZoom = _zoom;
+            _project.ViewerLastPage = _currentPage;
+
+            await SaveProject();
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", "SaveViewerState error: " + ex.Message);
+        }
+    }
+
     // ── 초기화 ──
     protected override async Task OnInitializedAsync()
     {
         _project=(await Storage.GetProjectsAsync()).FirstOrDefault(p=>p.Id==ProjectId);
         if(_project?.Sessions.Any(s=>s.IsActive)==true)StartRefreshTimer();
     }
+
+    // OnAfterRenderAsync 첫 렌더 후 저장된 데이터 복원
+    bool _restoredOnce = false;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if(firstRender)
         {
-            // 카운터 위젯 초기 위치: 뷰포트 기준 우측 하단
-            // (사이드바 등 레이아웃 무관하게 항상 화면 우하단에 표시)
             var vw = await JS.InvokeAsync<double>("eval", "window.innerWidth");
             var vh = await JS.InvokeAsync<double>("eval", "window.innerHeight");
             _cwX = Math.Max(16, vw - 196);
@@ -627,7 +662,63 @@
             await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,false,_tool,_penOpacity);
             StateHasChanged();
         }
+
+        // 첫 렌더 후 저장 데이터 복원 (한 번만)
+        if (!_restoredOnce && _project != null)
+        {
+            _restoredOnce = true;
+            await RestoreSavedPatternAsync();
+        }
     }
+
+    async Task RestoreSavedPatternAsync()
+    {
+        if (_project == null || !_project.HasSavedPattern) return;
+        try
+        {
+            var savedFileName = await JS.InvokeAsync<string?>("patternViewer.loadPdfFromProject", ProjectId.ToString());
+            if (string.IsNullOrEmpty(savedFileName)) return;
+
+            var pages = await JS.InvokeAsync<int>("patternViewer.renderSavedPdf", ProjectId.ToString());
+            if (pages <= 0) return;
+
+            _totalPages = pages;
+            _pdfLoaded = true;
+            _currentPage = _project.ViewerLastPage > 0 ? _project.ViewerLastPage : 1;
+            StateHasChanged();
+            await Task.Delay(100);
+
+            await JS.InvokeVoidAsync("patternViewer.renderPdf");
+
+            if (_project.ViewerLastZoom > 0)
+            {
+                _zoom = _project.ViewerLastZoom;
+                await JS.InvokeVoidAsync("patternViewer.renderAllPages", _zoom);
+            }
+
+            if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
+                await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
+
+            if (!string.IsNullOrEmpty(_project.ViewerRulers))
+            {
+                try
+                {
+                    var rulers = System.Text.Json.JsonSerializer.Deserialize<List<RulerOverlay>>(
+                        _project.ViewerRulers,
+                        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                    if (rulers != null) _rulers = rulers;
+                }
+                catch { }
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("console.error", "RestoreSavedPattern error: " + ex.Message);
+        }
+    }
+
 
     // ── PDF ──
     async Task UndoLastPath()=>await JS.InvokeVoidAsync("patternViewer.undo");
@@ -656,6 +747,19 @@
 
             // JS 렌더링
             await JS.InvokeVoidAsync("patternViewer.renderPdf");
+
+            // IndexedDB에 저장
+            if (_project != null)
+            {
+                var saved = await JS.InvokeAsync<bool>("patternViewer.savePdfToProject",
+                    ProjectId.ToString(), e.File.Name);
+                if (saved)
+                {
+                    _project.HasSavedPattern = true;
+                    _project.PatternFileName = e.File.Name;
+                    await SaveProject();
+                }
+            }
         }
         catch (Exception ex)
         {
@@ -668,8 +772,18 @@
     async Task ZoomIn(){_zoom=Math.Round(_zoom+0.1,1);await RenderAllPages();}
     async Task ZoomOut(){_zoom=Math.Round(_zoom-0.1,1);await RenderAllPages();}
     async Task RenderAllPages(){await JS.InvokeVoidAsync("patternViewer.renderAllPages",_zoom);StateHasChanged();}
-    [JSInvokable] public void UpdatePageFromJS(int page){_currentPage=page;StateHasChanged();}
-    [JSInvokable] public void ZoomToFromJS(double zoom){_zoom=zoom;StateHasChanged();}
+    [JSInvokable] public void UpdatePageFromJS(int page)
+    {
+        _currentPage = page;
+        StateHasChanged();
+        _ = SaveViewerStateAsync();
+    }
+    [JSInvokable] public void ZoomToFromJS(double zoom)
+    {
+        _zoom = zoom;
+        StateHasChanged();
+        _ = SaveViewerStateAsync(); // 줌 변경 시 자동 저장 (fire-and-forget)
+    }
 
     // ── 필기 ──
     void ToggleDrawMode()
@@ -768,6 +882,22 @@
 
     public async ValueTask DisposeAsync()
     {
+        // 페이지 나가기 전 마지막 저장
+        if (_project != null && _pdfLoaded)
+        {
+            try
+            {
+                var pathsJson = await JS.InvokeAsync<string>("patternViewer.getPaths");
+                _project.ViewerAnnotations = pathsJson;
+                _project.ViewerRulers = System.Text.Json.JsonSerializer.Serialize(_rulers);
+                _project.ViewerLastZoom = _zoom;
+                _project.ViewerLastPage = _currentPage;
+                await SaveProject();
+            }
+            catch { }
+        }
+        _saveCts?.Cancel();
+        _saveCts?.Dispose();
         StopRefreshTimer();
         _dotNetRef?.Dispose();
         await JS.InvokeVoidAsync("patternViewer.dispose");
