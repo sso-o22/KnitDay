@@ -25,23 +25,16 @@ window.patternViewer = window.patternViewer || {};
 
     const RENDER_AHEAD = 1;
 
-    // GitHub Pages 안전 경로 계산
+    // 🌟 복잡한 계산 다 버리고, GitHub Pages 저장소 경로인 /KnitLog를 명확하게 고정합니다.
     function getPdfjsBase() {
-        const baseEl = document.querySelector('base');
-        if (baseEl && baseEl.href) {
-            return baseEl.href.replace(/\/$/, ''); 
-        }
-        const pathSegments = window.location.pathname.split('/');
-        const repoName = pathSegments[1] ? '/' + pathSegments[1] : '';
-        return window.location.origin + repoName;
+        return window.location.origin + '/KnitLog';
     }
 
-    // 🌟 꼬임 없는 전역 런타임 스크립트 인젝터
+    // 🌟 404 에러를 원천 차단하기 위해 순수 js와 worker 경로를 하드코딩 방식으로 안전하게 로드합니다.
     let _pdfjsReady = null;
     async function ensurePdfjsLoaded() {
         if (_pdfjsReady) return _pdfjsReady;
         _pdfjsReady = (async () => {
-            // 이미 로드된 경우 패스
             if (window.pdfjsLib || window['pdfjs-dist/build/pdf']) {
                 window.pdfjsLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
                 return;
@@ -49,9 +42,8 @@ window.patternViewer = window.patternViewer || {};
             
             const base = getPdfjsBase();
             
-            // 🌟 모듈 스코프 꼬임을 막기 위해 일반 비동기 스크립트로 안전 로드
             const script = document.createElement('script');
-            script.src = base + '/pdfjs/build/pdf.js'; // mjs가 아닌 순수 js 본으로 타겟팅
+            script.src = base + '/pdfjs/build/pdf.js'; // 🌟 /KnitLog/pdfjs/build/pdf.js 경로 고정
             document.head.appendChild(script);
 
             await new Promise((resolve) => {
@@ -241,8 +233,6 @@ window.patternViewer = window.patternViewer || {};
 
     exports.init = async function (containerId, dotnet) {
         this.dispose();
-        
-        // 🌟 Blazor가 부를 때 조용히 비동기로 PDF 엔진을 무조건 확보해 둡니다.
         await ensurePdfjsLoaded();
 
         viewerContainer = document.getElementById(containerId);
@@ -267,7 +257,7 @@ window.patternViewer = window.patternViewer || {};
 
     const loadCore = async function (byteArray) {
         if (!viewerContainer) return 0;
-        await ensurePdfjsLoaded(); // 한 번 더 가드 안전화
+        await ensurePdfjsLoaded();
         
         if (!window.pdfjsLib) return 0;
         
