@@ -1,4 +1,9 @@
+// Blazor 전역 네임스페이스 확보
 window.patternViewer = window.patternViewer || {};
+
+// 🌟 최신 PDF.js 모듈을 직접 import하여 window 전역 객체에 강제로 주입합니다.
+import * as pdfjsModule from '../pdfjs/build/pdf.mjs';
+window.pdfjsLib = pdfjsModule;
 
 ((exports) => {
     let pdfDoc = null, dotNetRef = null;
@@ -25,7 +30,6 @@ window.patternViewer = window.patternViewer || {};
 
     const RENDER_AHEAD = 1;
 
-    // 🌟 base href 기준 절대경로 계산기
     function getPdfjsBase() {
         const baseEl = document.querySelector('base');
         if (baseEl && baseEl.href) {
@@ -205,11 +209,9 @@ window.patternViewer = window.patternViewer || {};
     function handleTouchMove(e) { if (_isPinching && e.touches.length === 2) { e.preventDefault(); const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); if (_pinchStartDist > 0) changeZoom(_pinchStartZoom * (dist / _pinchStartDist)); } }
     function handleTouchEnd(e) { if (_isPinching && e.touches.length < 2) _isPinching = false; }
 
-    // ── 인터페이스 초기화 구역 ────────────────────
     exports.init = async function (containerId, dotnet) {
         this.dispose();
 
-        // 🌟 index.html에서 로드된 전역 pdfjsLib 인지 및 워커 절대경로 바인딩
         if (window.pdfjsLib) {
             const base = getPdfjsBase();
             window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + '/pdfjs/build/pdf.worker.mjs';
