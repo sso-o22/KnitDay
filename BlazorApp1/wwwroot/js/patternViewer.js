@@ -1,9 +1,4 @@
-// Blazor 전역 네임스페이스 확보
 window.patternViewer = window.patternViewer || {};
-
-// 🌟 최신 PDF.js 모듈을 직접 import하여 window 전역 객체에 강제로 주입합니다.
-import * as pdfjsModule from '../pdfjs/build/pdf.mjs';
-window.pdfjsLib = pdfjsModule;
 
 ((exports) => {
     let pdfDoc = null, dotNetRef = null;
@@ -30,6 +25,7 @@ window.pdfjsLib = pdfjsModule;
 
     const RENDER_AHEAD = 1;
 
+    // GitHub Pages 안전 경로 계산
     function getPdfjsBase() {
         const baseEl = document.querySelector('base');
         if (baseEl && baseEl.href) {
@@ -38,6 +34,40 @@ window.pdfjsLib = pdfjsModule;
         const pathSegments = window.location.pathname.split('/');
         const repoName = pathSegments[1] ? '/' + pathSegments[1] : '';
         return window.location.origin + repoName;
+    }
+
+    // 🌟 꼬임 없는 전역 런타임 스크립트 인젝터
+    let _pdfjsReady = null;
+    async function ensurePdfjsLoaded() {
+        if (_pdfjsReady) return _pdfjsReady;
+        _pdfjsReady = (async () => {
+            // 이미 로드된 경우 패스
+            if (window.pdfjsLib || window['pdfjs-dist/build/pdf']) {
+                window.pdfjsLib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+                return;
+            }
+            
+            const base = getPdfjsBase();
+            
+            // 🌟 모듈 스코프 꼬임을 막기 위해 일반 비동기 스크립트로 안전 로드
+            const script = document.createElement('script');
+            script.src = base + '/pdfjs/build/pdf.js'; // mjs가 아닌 순수 js 본으로 타겟팅
+            document.head.appendChild(script);
+
+            await new Promise((resolve) => {
+                const check = setInterval(() => {
+                    const lib = window.pdfjsLib || window['pdfjs-dist/build/pdf'];
+                    if (lib) {
+                        clearInterval(check);
+                        window.pdfjsLib = lib;
+                        resolve();
+                    }
+                }, 50);
+            });
+            
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + '/pdfjs/build/pdf.worker.js';
+        })();
+        return _pdfjsReady;
     }
 
     let viewerContainer = null;
@@ -211,11 +241,9 @@ window.pdfjsLib = pdfjsModule;
 
     exports.init = async function (containerId, dotnet) {
         this.dispose();
-
-        if (window.pdfjsLib) {
-            const base = getPdfjsBase();
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + '/pdfjs/build/pdf.worker.mjs';
-        }
+        
+        // 🌟 Blazor가 부를 때 조용히 비동기로 PDF 엔진을 무조건 확보해 둡니다.
+        await ensurePdfjsLoaded();
 
         viewerContainer = document.getElementById(containerId);
         if (!viewerContainer) return;
@@ -238,7 +266,10 @@ window.pdfjsLib = pdfjsModule;
     };
 
     const loadCore = async function (byteArray) {
-        if (!viewerContainer || !window.pdfjsLib) return 0;
+        if (!viewerContainer) return 0;
+        await ensurePdfjsLoaded(); // 한 번 더 가드 안전화
+        
+        if (!window.pdfjsLib) return 0;
         
         const loadingTask = window.pdfjsLib.getDocument({ data: byteArray });
         pdfDoc = await loadingTask.promise;
