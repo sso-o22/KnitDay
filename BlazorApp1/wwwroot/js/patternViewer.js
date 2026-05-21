@@ -19,6 +19,7 @@ window.patternViewer = (() => {
     let _pinchStartDist = 0;
     let _pinchStartZoom = 1.0;
     let _isPinching = false;
+    let _isZooming = false;     // 🌟 추가: 휠/제스처 줌 전체를 감시하여 IntersectionObserver 오작동을 막는 플래그
     let _renderDebounceTimer = null;
     let _pendingZoom = null;
 
@@ -34,571 +35,457 @@ window.patternViewer = (() => {
 
     // ── PDF.js inline module script 로드 ────────────────────
     let _pdfjsReady = null;
-    async function ensurePdfJs() {
+    async function ensurePdfjsLoaded() {
         if (_pdfjsReady) return _pdfjsReady;
-        _pdfjsReady = new Promise((resolve, reject) => {
-            if (window.pdfjsLib) { resolve(); return; }
+        _pdfjsReady = (async () => {
+            if (window.pdfjsLib) return;
             const base = getPdfjsBase();
-            const scriptSrc = base + '/pdfjs/build/pdf.mjs';
-            const workerSrc = base + '/pdfjs/build/pdf.worker.mjs';
-            const cbName = '_pdfjsLoaded_' + Date.now();
-            window[cbName] = function(lib) {
-                window.pdfjsLib = lib;
-                window.pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
-                delete window[cbName];
-                resolve();
-            };
-            const s = document.createElement('script');
-            s.type = 'module';
-            s.textContent =
-                'import * as pdfjsLib from "' + scriptSrc + '";' +
-                'window["' + cbName + '"](pdfjsLib);';
-            s.onerror = function(e) { delete window[cbName]; reject(e); };
-            document.head.appendChild(s);
-        });
+            window.pdfjsWebAppOptions = { workerSrc: base + '/pdfjs/build/pdf.worker.mjs' };
+            
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = base + '/pdfjs/build/pdf.mjs';
+            document.head.appendChild(script);
+
+            await new Promise((resolve) => {
+                const check = setInterval(() => {
+                    if (window.pdfjsLib) {
+                        clearInterval(check);
+                        resolve();
+                    }
+                }, 50);
+            });
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + '/pdfjs/build/pdf.worker.mjs';
+        })();
         return _pdfjsReady;
     }
 
-    // ── 캔버스 헬퍼 ─────────────────────────────────────────
-    function getAnnoCanvas(p) { return document.getElementById('anno-canvas-' + p); }
-    function getPdfCanvas(p)  { return document.getElementById('pdf-canvas-'  + p); }
+    // ── 전역 상태 관리 ───────────────────────────────────────
+    let viewerContainer = null;
+    let _intersectionObserver = null;
+    let _pageSizes = {};      // {pageNum: {width, height}} 원본 사이즈 캐시
+    let _pageSizeCache = {};  // {pageNum: {width, height}} currentZoom 반영 사이즈 캐시
 
-    function getCanvasPos(canvas, e) {
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        const src = e.touches ? e.touches[0] : e;
-        return {
-            x: (src.clientX - rect.left) * scaleX,
-            y: (src.clientY - rect.top)  * scaleY
-        };
-    }
+    // 🌟 대통합 줌 기능 (확대/축소 시 튕김 방지 및 레이아웃 강제 고정 핵심 엔진)
+    function changeZoom(newZoom) {
+        if (!pdfDoc || !viewerContainer) return;
 
-    // ── CSS transform scale (핀치/휠 중 시각 피드백) ──────────
-    let _pinchOriginX = 0, _pinchOriginY = 0;
-    // 확대 시작 시점의 스크롤 위치와 중심점 문서 좌표 기록
-    let _zoomAnchorDocY = 0;   // 확대 기준점의 문서 내 Y 좌표 (scrollTop + 화면Y)
-    let _zoomAnchorViewY = 0;  // 확대 기준점의 뷰포트 내 Y 좌표
+        // 1. 줌 동작 시작을 알려 IntersectionObserver 스스크롤 감지를 잠시 차단
+        _isZooming = true; 
 
-    function applyScaleTransform(zoom, originX, originY) {
-        const wrapper = document.getElementById('pdf-wrapper');
-        const scrollEl = document.getElementById('scroll-container');
-        if (!wrapper || !scrollEl) return;
-        const ratio = zoom / currentZoom;
+        // 2. 현재 유저가 스크롤해서 보고 있던 위치의 퍼센트(%) 비율 저장
+        const scrollTop = viewerContainer.scrollTop;
+        const scrollHeight = viewerContainer.scrollHeight;
+        const scrollPercent = scrollTop / (scrollHeight || 1);
 
-        if (originX !== undefined && originY !== undefined) {
-            const wRect = wrapper.getBoundingClientRect();
-            const ox = originX - wRect.left;
-            const oy = originY - wRect.top;
-            wrapper.style.transformOrigin = ox + 'px ' + oy + 'px';
-        } else {
-            wrapper.style.transformOrigin = 'top center';
-        }
-        wrapper.style.transform = 'scale(' + ratio + ')';
-    }
+        // 배율 제약 조건 (최소 0.5배 ~ 최대 4.0배)
+        currentZoom = Math.max(0.5, Math.min(newZoom, 4.0));
+        _pageSizeCache = {}; // 줌 배율이 바뀌었으므로 렌더링용 사이즈 캐시 초기화
 
-    function clearScaleTransform() {
-        const wrapper = document.getElementById('pdf-wrapper');
-        if (!wrapper) return;
-        wrapper.style.transform = '';
-        wrapper.style.transformOrigin = '';
-    }
-
-    // 재렌더 후 스크롤 위치 보정: 확대 기준점이 화면의 같은 위치에 오도록
-    function restoreScrollAfterZoom(oldZoom, newZoom, anchorDocY, anchorViewY) {
-        const scrollEl = document.getElementById('scroll-container');
-        if (!scrollEl) return;
-        // 문서 내 앵커 Y를 새 줌 비율로 환산
-        const scaledAnchorDocY = anchorDocY * (newZoom / oldZoom);
-        // 앵커가 뷰포트에서 같은 위치(anchorViewY)에 오도록 scrollTop 설정
-        const newScrollTop = scaledAnchorDocY - anchorViewY;
-        scrollEl.scrollTop = Math.max(0, newScrollTop);
-    }
-
-    // ── placeholder 크기 설정 (렌더 전 높이 확보) ───────────
-    // 페이지 크기 캐시 (같은 크기 PDF는 1페이지만 파싱)
-    let _pageSizeCache = {}; // pageNum -> {cssW, cssH}
-
-    async function getPageSize(pageNum, zoom) {
-        const key = pageNum + '_' + zoom;
-        if (_pageSizeCache[key]) return _pageSizeCache[key];
-        const page = await pdfDoc.getPage(pageNum);
-        const vp = page.getViewport({ scale: zoom });
-        const size = { cssW: Math.floor(vp.width), cssH: Math.floor(vp.height) };
-        _pageSizeCache[key] = size;
-        return size;
-    }
-
-    function applyPlaceholderSize(pageNum, cssW, cssH) {
-        const pdfCanvas  = getPdfCanvas(pageNum);
-        const annoCanvas = getAnnoCanvas(pageNum);
-        if (!pdfCanvas || !annoCanvas) return;
-        pdfCanvas.style.width   = annoCanvas.style.width  = cssW + 'px';
-        pdfCanvas.style.height  = annoCanvas.style.height = cssH + 'px';
-        pdfCanvas.width  = 1;
-        pdfCanvas.height = 1;
-        annoCanvas.width  = 1;
-        annoCanvas.height = 1;
-    }
-
-    // 1페이지 크기 기준으로 전체 placeholder 일괄 설정 (137번 getPage 호출 방지)
-    async function setAllPlaceholders(zoom) {
-        if (!pdfDoc) return;
-        const { cssW, cssH } = await getPageSize(1, zoom);
+        // 3. 렌더링 타임아웃 대기 시간 동안 컨테이너 및 모든 그리기 레이어 크기를 즉시 선변경
         for (let i = 1; i <= totalPages; i++) {
-            applyPlaceholderSize(i, cssW, cssH);
+            const container = document.getElementById('page-container-' + i);
+            if (container) {
+                const orig = _pageSizes[i];
+                if (orig) {
+                    const newWidth = orig.width * currentZoom;
+                    const newHeight = orig.height * currentZoom;
+
+                    container.style.width = newWidth + 'px';
+                    container.style.height = newHeight + 'px';
+
+                    // 펜 선이나 도형 가이드 레이어가 어긋나지 않도록 자식 요소들도 동시에 임시 확대
+                    const children = container.querySelectorAll('canvas, svg, .drawing-layer');
+                    children.forEach(child => {
+                        child.style.width = newWidth + 'px';
+                        child.style.height = newHeight + 'px';
+                    });
+                }
+            }
         }
+
+        // 4. 계산된 비율에 맞춰 스크롤 바 위치를 강제로 홀딩 (화면 튕김 차단)
+        viewerContainer.scrollTop = scrollPercent * viewerContainer.scrollHeight;
+
+        // 5. 손가락을 떼거나 휠 조작이 멈추고 150ms 뒤에 고해상도로 정밀 재렌더링 수행
+        if (_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
+        _renderDebounceTimer = setTimeout(() => {
+            updateVirtualPages();
+
+            // 깨끗한 고해상도 벡터 이미지가 박히면 임시 가상 인라인 CSS 스타일을 해제
+            setTimeout(() => {
+                for (let i = 1; i <= totalPages; i++) {
+                    const container = document.getElementById('page-container-' + i);
+                    if (container) {
+                        const children = container.querySelectorAll('canvas, svg, .drawing-layer');
+                        children.forEach(child => {
+                            child.style.width = '';
+                            child.style.height = '';
+                        });
+                    }
+                }
+                _isZooming = false; // 방어막 해제
+            }, 100);
+        }, 150);
     }
 
-    async function setPlaceholderSize(pageNum, zoom) {
+    // ── 가상화 레이아웃 사이즈 연산 ───────────────────────────
+    function getPageSize(pageNum) {
+        if (_pageSizeCache[pageNum]) return _pageSizeCache[pageNum];
+        const orig = _pageSizes[pageNum];
+        if (!orig) return { width: 300, height: 400 };
+        const w = orig.width * currentZoom;
+        const h = orig.height * currentZoom;
+        _pageSizeCache[pageNum] = { width: w, height: h };
+        return _pageSizeCache[pageNum];
+    }
+
+    function updateVirtualPages() {
         if (!pdfDoc) return;
-        const { cssW, cssH } = await getPageSize(pageNum, zoom);
-        applyPlaceholderSize(pageNum, cssW, cssH);
+        const start = Math.max(1, currentPageNum - RENDER_AHEAD);
+        const end = Math.min(totalPages, currentPageNum + RENDER_AHEAD);
+
+        // 1. 범위를 벗어난 안 보이는 페이지 캔버스 제거 (메모리 절약)
+        for (let i = 1; i <= totalPages; i++) {
+            if (i < start || i > end) {
+                if (_renderedPages.has(i)) {
+                    const container = document.getElementById('page-container-' + i);
+                    if (container) {
+                        const cv = container.querySelector('canvas');
+                        if (cv) cv.remove();
+                    }
+                    _renderedPages.delete(i);
+                    if (_renderTasks[i]) {
+                        try { _renderTasks[i].cancel(); } catch (_) {}
+                        _renderTasks[i] = null;
+                    }
+                }
+            }
+        }
+
+        // 2. 현재 보이는 타겟 범위 내의 페이지 고해상도 리렌더링
+        for (let i = start; i <= end; i++) {
+            if (!_renderedPages.has(i)) {
+                renderActualPage(i);
+            }
+        }
     }
 
-    // ── 어노테이션 다시 그리기 ───────────────────────────────
-    function redrawPage(pageNum) {
-        const anno = getAnnoCanvas(pageNum);
-        if (!anno || !_renderedPages.has(pageNum)) return;
-        const ctx = anno.getContext('2d');
-        ctx.clearRect(0, 0, anno.width, anno.height);
-        const dpr = window.devicePixelRatio || 1;
-        paths.filter(p => p.page === pageNum).forEach(p => {
-            if (p.points.length === 0) return;
-            ctx.save();
-            ctx.beginPath();
-            ctx.lineWidth   = p.size * dpr * (currentZoom / p.originZoom);
-            ctx.lineCap     = 'round';
-            ctx.lineJoin    = 'round';
-            ctx.strokeStyle = p.color;
-            ctx.globalCompositeOperation = p.isEraser ? 'destination-out' : 'source-over';
-            ctx.moveTo(p.points[0].x * currentZoom * dpr,
-                       p.points[0].y * currentZoom * dpr);
-            for (let i = 1; i < p.points.length; i++) {
-                ctx.lineTo(p.points[i].x * currentZoom * dpr,
-                           p.points[i].y * currentZoom * dpr);
-            }
-            ctx.stroke();
-            ctx.restore();
-        });
-    }
-
-    // ── 페이지 핸들러 등록 ───────────────────────────────────
-    function addPageHandlers(pageNum) {
-        if (_pageHandlers[pageNum]) return;
-        _pageHandlers[pageNum] = true;
-        const anno = getAnnoCanvas(pageNum);
-        if (!anno) return;
-        const dpr = window.devicePixelRatio || 1;
-
-        function onDown(e) {
-            if (_isPinching) return;
-            if (_tool === 'ruler') {
-                const pos = getCanvasPos(anno, e);
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown',
-                    pos.x / dpr, pos.y / dpr, pageNum);
-                if (e.touches) e.preventDefault();
-                return;
-            }
-            if (_tool !== 'pen' && _tool !== 'eraser') return;
-            if (e.touches) e.preventDefault();
-            const pos = getCanvasPos(anno, e);
-            currentPageNum = pageNum;
-            isDrawing = true;
-            currentPath = {
-                page: pageNum, color: _color, size: _size,
-                isEraser: _isEraser, originZoom: currentZoom,
-                points: [{ x: pos.x / (currentZoom * dpr),
-                           y: pos.y / (currentZoom * dpr) }]
-            };
-            const ctx = anno.getContext('2d');
-            ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-            ctx.lineWidth   = _size * dpr;
-            ctx.lineCap     = 'round';
-            ctx.lineJoin    = 'round';
-            ctx.strokeStyle = _isEraser ? 'rgba(0,0,0,1)' : _color;
-            ctx.globalCompositeOperation = _isEraser ? 'destination-out' : 'source-over';
-        }
-
-        function onMove(e) {
-            if (_isPinching) return;
-            if (_tool === 'ruler') {
-                if (e.touches) e.preventDefault();
-                const pos = getCanvasPos(anno, e);
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove',
-                    pos.x / dpr, pos.y / dpr);
-                return;
-            }
-            if (!isDrawing || currentPageNum !== pageNum) return;
-            if (_tool !== 'pen' && _tool !== 'eraser') return;
-            if (e.touches) e.preventDefault();
-            const pos = getCanvasPos(anno, e);
-            if (currentPath) currentPath.points.push({
-                x: pos.x / (currentZoom * dpr),
-                y: pos.y / (currentZoom * dpr)
-            });
-            const ctx = anno.getContext('2d');
-            ctx.lineTo(pos.x, pos.y);
-            ctx.stroke();
-        }
-
-        function onUp(e) {
-            if (_isPinching) return;
-            if (_tool === 'ruler') {
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd');
-                return;
-            }
-            if (!isDrawing || currentPageNum !== pageNum) return;
-            isDrawing = false;
-            anno.getContext('2d').globalCompositeOperation = 'source-over';
-            if (currentPath) { paths.push(currentPath); currentPath = null; }
-        }
-
-        anno.addEventListener('mousedown',  onDown);
-        anno.addEventListener('mousemove',  onMove);
-        anno.addEventListener('mouseup',    onUp);
-        anno.addEventListener('touchstart', onDown, { passive: false });
-        anno.addEventListener('touchmove',  onMove, { passive: false });
-        anno.addEventListener('touchend',   onUp);
-    }
-
-    // ── 단일 페이지 렌더 ─────────────────────────────────────
-    async function renderOnePage(pageNum, zoom) {
-        if (!pdfDoc) return;
-        const pdfCanvas  = getPdfCanvas(pageNum);
-        const annoCanvas = getAnnoCanvas(pageNum);
-        if (!pdfCanvas || !annoCanvas) return;
-
-        if (_renderTasks[pageNum]) {
-            try { _renderTasks[pageNum].cancel(); } catch (_) {}
-            _renderTasks[pageNum] = null;
-        }
-
-        const page = await pdfDoc.getPage(pageNum);
-        const dpr  = window.devicePixelRatio || 1;
-        const viewport = page.getViewport({ scale: zoom });
-
-        const cssW = Math.floor(viewport.width);
-        const cssH = Math.floor(viewport.height);
-        const bufW = Math.floor(cssW * dpr);
-        const bufH = Math.floor(cssH * dpr);
-
-        pdfCanvas.width   = bufW;
-        pdfCanvas.height  = bufH;
-        annoCanvas.width  = bufW;
-        annoCanvas.height = bufH;
-        pdfCanvas.style.width  = annoCanvas.style.width  = cssW + 'px';
-        pdfCanvas.style.height = annoCanvas.style.height = cssH + 'px';
-
-        const cursor = _tool === 'pen' ? 'crosshair'
-                     : _tool === 'eraser' ? 'cell'
-                     : _tool === 'ruler'  ? 'crosshair' : 'default';
-        annoCanvas.style.cursor = cursor;
-
-        const pdfCtx = pdfCanvas.getContext('2d');
-        pdfCtx.save();
-        pdfCtx.scale(dpr, dpr);
-        const task = page.render({ canvasContext: pdfCtx, viewport: page.getViewport({ scale: zoom }) });
-        _renderTasks[pageNum] = task;
-        try {
-            await task.promise;
-        } catch (err) {
-            if (err && err.name !== 'RenderingCancelledException') console.warn('render error p' + pageNum, err);
-            pdfCtx.restore();
-            return;
-        }
-        pdfCtx.restore();
-        _renderTasks[pageNum] = null;
+    async function renderActualPage(pageNum) {
+        if (!pdfDoc || _renderedPages.has(pageNum)) return;
         _renderedPages.add(pageNum);
 
-        redrawPage(pageNum);
-        _pageHandlers[pageNum] = false;
-        addPageHandlers(pageNum);
-    }
+        try {
+            const container = document.getElementById('page-container-' + pageNum);
+            if (!container) return;
 
-    // ── 범위 밖 페이지 메모리 해제 ──────────────────────────
-    function unloadPage(pageNum) {
-        if (!_renderedPages.has(pageNum)) return;
-        const pdfCanvas  = getPdfCanvas(pageNum);
-        const annoCanvas = getAnnoCanvas(pageNum);
-        if (pdfCanvas)  { pdfCanvas.width  = 1; pdfCanvas.height  = 1; }
-        if (annoCanvas) { annoCanvas.width  = 1; annoCanvas.height = 1; }
-        _renderedPages.delete(pageNum);
-        _pageHandlers[pageNum] = false;
-    }
-
-    // ── 현재 페이지 기준 가상화 렌더 ────────────────────────
-    async function virtualizeRender(zoom) {
-        if (!pdfDoc) return;
-        const from = Math.max(1, currentPageNum - RENDER_AHEAD);
-        const to   = Math.min(totalPages, currentPageNum + RENDER_AHEAD);
-
-        // 범위 밖 페이지 언로드
-        for (let i = 1; i <= totalPages; i++) {
-            if (i < from || i > to) unloadPage(i);
-        }
-        // 범위 내 페이지 렌더
-        for (let i = from; i <= to; i++) {
-            if (!_renderedPages.has(i)) {
-                await renderOnePage(i, zoom);
+            if (_renderTasks[pageNum]) {
+                try { _renderTasks[pageNum].cancel(); } catch (_) {}
             }
+
+            const page = await pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale: currentZoom });
+
+            let canvas = container.querySelector('canvas');
+            if (!canvas) {
+                canvas = document.createElement('canvas');
+                canvas.style.position = 'absolute';
+                canvas.style.left = '0';
+                canvas.style.top = '0';
+                canvas.style.zIndex = '1';
+                container.appendChild(canvas);
+            }
+
+            canvas.width = viewport.width;
+            canvas.height = viewport.height;
+
+            const ctx = canvas.getContext('2d');
+            const renderContext = { canvasContext: ctx, viewport: viewport };
+            const task = page.render(renderContext);
+            _renderTasks[pageNum] = task;
+
+            await task.promise;
+            _renderTasks[pageNum] = null;
+
+            // PDF 배경이 그려진 후 유저가 그린 필기 데이터 매끄럽게 복원
+            redrawPage(pageNum);
+        } catch (err) {
+            if (err.name !== 'RenderingCancelledException') {
+                console.error("Page render error:", err);
+            }
+            _renderedPages.delete(pageNum);
         }
     }
 
-    // ── 스크롤 후 가상화 갱신 (디바운스) ────────────────────
-    let _intersectionObserver = null;
-
-    function onScroll() {
-        if (_isPinching) return;
-        const scrollEl = document.getElementById('scroll-container');
-        if (!scrollEl) return;
-        const wrapperRect = scrollEl.getBoundingClientRect();
-        const mid = wrapperRect.top + wrapperRect.height / 2;
-        let found = 1;
-        for (let i = 1; i <= totalPages; i++) {
-            const el = document.getElementById('page-container-' + i);
-            if (!el) continue;
-            const r = el.getBoundingClientRect();
-            if (r.top <= mid) found = i;
+    // ── 아노테이션/드로잉 드로우 복원 백엔드 ────────────────
+    function redrawPage(pageNum) {
+        const container = document.getElementById('page-container-' + pageNum);
+        if (!container) return;
+        let canvas = container.querySelector('.drawing-layer');
+        if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvas.className = 'drawing-layer';
+            canvas.style.position = 'absolute';
+            canvas.style.left = '0';
+            canvas.style.top = '0';
+            canvas.style.zIndex = '5';
+            canvas.style.pointerEvents = 'none';
+            container.appendChild(canvas);
         }
-        if (found !== currentPageNum) {
-            currentPageNum = found;
-            if (dotNetRef) dotNetRef.invokeMethodAsync('UpdatePageFromJS', found);
-        }
-    }
 
-    // IntersectionObserver: 페이지가 뷰포트에 들어오는 순간 즉시 렌더
-    function setupIntersectionObserver() {
-        if (_intersectionObserver) {
-            _intersectionObserver.disconnect();
-            _intersectionObserver = null;
-        }
-        const scrollEl = document.getElementById('scroll-container');
-        if (!scrollEl) return;
+        const size = getPageSize(pageNum);
+        canvas.width = size.width;
+        canvas.height = size.height;
 
-        _intersectionObserver = new IntersectionObserver((entries) => {
-            if (_isPinching) return;
-            entries.forEach(entry => {
-                if (!entry.isIntersecting) return;
-                const id = entry.target.id; // 'page-container-N'
-                const pageNum = parseInt(id.replace('page-container-', ''), 10);
-                if (!isNaN(pageNum) && !_renderedPages.has(pageNum)) {
-                    renderOnePage(pageNum, currentZoom);
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const orig = _pageSizes[pageNum];
+        if (!orig) return;
+
+        // 원본 좌표계 데이터를 현재 줌 레벨에 맞추어 드로잉 컨텍스트 배율 동기화
+        ctx.save();
+        ctx.scale(currentZoom, currentZoom);
+
+        paths.forEach(p => {
+            if (p.pageNum !== pageNum || p.points.length < 2) return;
+            ctx.beginPath();
+            ctx.strokeStyle = p.color;
+            ctx.lineWidth = p.size / currentZoom; // 줌 배율에 반비례하여 펜 굵기가 일정하게 보이도록 보정
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            if (p.tool === 'ruler' || p.tool === 'rect') {
+                const p1 = p.points[0];
+                const p2 = p.points[1];
+                if (p.tool === 'ruler') {
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                } else {
+                    ctx.rect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
                 }
-            });
-        }, {
-            root: scrollEl,
-            rootMargin: '200px 0px 200px 0px', // 뷰포트 위아래 200px 미리 렌더
-            threshold: 0
+            } else {
+                ctx.moveTo(p.points[0].x, p.points[0].y);
+                for (let i = 1; i < p.points.length; i++) {
+                    ctx.lineTo(p.points[i].x, p.points[i].y);
+                }
+            }
+            ctx.stroke();
         });
 
-        for (let i = 1; i <= totalPages; i++) {
-            const el = document.getElementById('page-container-' + i);
-            if (el) _intersectionObserver.observe(el);
+        // 현재 실시간으로 그리고 있는 활성 패스 렌더링
+        if (currentPath && currentPath.pageNum === pageNum && currentPath.points.length >= 2) {
+            ctx.beginPath();
+            ctx.strokeStyle = currentPath.color;
+            ctx.lineWidth = currentPath.size / currentZoom;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            if (currentPath.tool === 'ruler' || currentPath.tool === 'rect') {
+                const p1 = currentPath.points[0];
+                const p2 = currentPath.points[1];
+                if (currentPath.tool === 'ruler') {
+                    ctx.moveTo(p1.x, p1.y);
+                    ctx.lineTo(p2.x, p2.y);
+                } else {
+                    ctx.rect(p1.x, p1.y, p2.x - p1.x, p2.y - p1.y);
+                }
+            } else {
+                ctx.moveTo(currentPath.points[0].x, currentPath.points[0].y);
+                for (let i = 1; i < currentPath.points.length; i++) {
+                    ctx.lineTo(currentPath.points[i].x, currentPath.points[i].y);
+                }
+            }
+            ctx.stroke();
+        }
+        ctx.restore();
+    }
+
+    // ── 이벤트 핸들러 마운트 및 연산 구역 ─────────────────────
+    function handleWheel(e) {
+        if (e.ctrlKey) {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.15 : -0.15; // 배율 단위를 체감상 부드럽게 조정
+            
+            // 🌟 대통합 함수 호출 방식으로 기존의 개별 지저분한 스타일 연산 구역 대체
+            changeZoom(currentZoom + delta);
         }
     }
 
-    // ── 디바운스된 줌 재렌더 ────────────────────────────────
-    function scheduleRerender(zoom) {
-        _pendingZoom = zoom;
-        if (_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
-        _renderDebounceTimer = setTimeout(async () => {
-            if (!pdfDoc || _pendingZoom === null) return;
-            const targetZoom = _pendingZoom;
-            _pendingZoom = null;
-            const prevZoom = currentZoom;
-            currentZoom = targetZoom;
-            clearScaleTransform();
-            // 줌 변경 시 모든 렌더 캐시 무효화
-            _renderedPages.clear();
-            _pageHandlers = {};
-            // placeholder 크기 업데이트 (1페이지 기준 일괄)
-            await setAllPlaceholders(targetZoom);
-            // 스크롤 위치 보정 (확대 기준점이 화면 같은 위치에 유지되도록)
-            restoreScrollAfterZoom(prevZoom, targetZoom, _zoomAnchorDocY, _zoomAnchorViewY);
-            // 현재 보이는 페이지 렌더 + Observer 재초기화
-            await virtualizeRender(targetZoom);
-            setupIntersectionObserver();
-            if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', targetZoom);
-        }, 350);
+    function handleTouchStart(e) {
+        if (e.touches.length === 2) {
+            _isPinching = true;
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            _pinchStartDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            _pinchStartZoom = currentZoom;
+        }
     }
 
-    // ── 스크롤 & 줌 이벤트 초기화 ───────────────────────────
-    function setupScrollAndZoom() {
-        const scrollEl = document.getElementById('scroll-container');
-        if (!scrollEl || scrollEl._bound) return;
-        scrollEl._bound = true;
-
-        scrollEl.addEventListener('scroll', onScroll, { passive: true });
-        setupIntersectionObserver();
-
-        // PC: Ctrl+휠 → 마우스 커서 위치 기준 확대
-        scrollEl.addEventListener('wheel', e => {
-            if (e.ctrlKey) {
-                e.preventDefault();
-                const delta = e.deltaY > 0 ? -0.1 : 0.1;
-                const newZ  = Math.round(Math.min(Math.max(3.0, _fitZoom * 5), Math.max(_fitZoom * 0.5, currentZoom + delta)) * 10) / 10;
-                // 첫 휠 이벤트 시 앵커 기록 (연속 휠 중엔 currentZoom 기준 앵커 유지)
-                if (_pendingZoom === null) {
-                    const scRect = scrollEl.getBoundingClientRect();
-                    _zoomAnchorViewY = e.clientY - scRect.top;
-                    _zoomAnchorDocY  = scrollEl.scrollTop + _zoomAnchorViewY;
-                }
-                applyScaleTransform(newZ, e.clientX, e.clientY);
-                scheduleRerender(newZ);
+    function handleTouchMove(e) {
+        if (_isPinching && e.touches.length === 2) {
+            e.preventDefault();
+            const t1 = e.touches[0];
+            const t2 = e.touches[1];
+            const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+            if (_pinchStartDist > 0) {
+                const targetZoomValue = _pinchStartZoom * (dist / _pinchStartDist);
+                
+                // 🌟 모바일 핀치 제스처 시에도 통합 줌 로직으로 넘겨 안전하게 스크롤 보호
+                changeZoom(targetZoomValue);
             }
-        }, { passive: false });
-
-        // 모바일: 핀치 시작
-        scrollEl.addEventListener('touchstart', e => {
-            if (e.touches.length === 2) {
-                _isPinching = true;
-                isDrawing = false;
-                _pinchStartDist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                _pinchStartZoom = currentZoom;
-                // 핀치 중심점 기록 (화면 좌표)
-                _pinchOriginX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                _pinchOriginY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-                // 확대 앵커: 중심점의 문서 내 Y 좌표 기록
-                const _sc = document.getElementById('scroll-container');
-                if (_sc) {
-                    const _scRect = _sc.getBoundingClientRect();
-                    _zoomAnchorViewY = _pinchOriginY - _scRect.top;
-                    _zoomAnchorDocY  = _sc.scrollTop + _zoomAnchorViewY;
-                }
-                e.preventDefault();
-            }
-        }, { passive: false });
-
-        // 모바일: 핀치 중 → CSS scale만 (중심점 기준)
-        scrollEl.addEventListener('touchmove', e => {
-            if (_tool === 'ruler' && e.touches.length === 1) { e.preventDefault(); return; }
-            if (e.touches.length === 2) {
-                e.preventDefault();
-                const dist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                const newZ = Math.min(Math.max(3.0, _fitZoom * 5), Math.max(_fitZoom * 0.5, _pinchStartZoom * dist / _pinchStartDist));
-                // 현재 핀치 중심점 (움직이는 동안 업데이트)
-                const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-                const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-                applyScaleTransform(newZ, cx, cy);
-                _pendingZoom = Math.round(newZ * 10) / 10;
-            }
-        }, { passive: false });
-
-        // 모바일: 핀치 끝 → 디바운스 재렌더
-        scrollEl.addEventListener('touchend', e => {
-            if (_isPinching && e.touches.length < 2) {
-                const zoomToApply = _pendingZoom;
-                // _isPinching 해제를 약간 지연: canvas touchend가 먼저 실행된 후
-                // isPinching=false가 되어야 이후 그리기 터치가 정상 인식됨
-                setTimeout(() => {
-                    _isPinching = false;
-                    if (zoomToApply !== null) {
-                        scheduleRerender(zoomToApply);
-                    }
-                }, 50);
-            }
-        }, { passive: true });
+        }
     }
 
-    // ── fit-zoom 계산 ────────────────────────────────────────
-    async function calcFitZoom(page) {
-        const scrollEl = document.getElementById('scroll-container');
-        if (!scrollEl) return 1.0;
-        const padding = 32;
-        const availW  = scrollEl.clientWidth  - padding;
-        const availH  = scrollEl.clientHeight - padding;
-        const vp1     = page.getViewport({ scale: 1.0 });
-        // 가로/세로 중 작은 비율로 전체 페이지가 화면에 딱 맞게
-        const fit = Math.min(availW / vp1.width, availH / vp1.height);
-        // 최소 0.1, 최대 3.0 (파일 크기에 따라 자동 결정)
-        return Math.round(Math.max(0.1, Math.min(3.0, fit)) * 100) / 100;
+    function handleTouchEnd(e) {
+        if (_isPinching && e.touches.length < 2) {
+            _isPinching = false;
+        }
     }
 
-    // ── 공개 API ────────────────────────────────────────────
     return {
-        init(ref) { dotNetRef = ref; },
+        initialize: async function (containerId, byteArray, dotnet) {
+            this.dispose();
+            await ensurePdfjsLoaded();
 
-        // 1단계: bytes 로드 + 페이지 수 반환
-        async loadPdfBytes(streamRef) {
-            await ensurePdfJs();
-            const base  = getPdfjsBase();
-            const bytes = new Uint8Array(await streamRef.arrayBuffer());
-            pdfDoc = await window.pdfjsLib.getDocument({
-                data: bytes,
-                cMapUrl:             base + '/pdfjs/web/cmaps/',
-                cMapPacked:          true,
-                standardFontDataUrl: base + '/pdfjs/web/standard_fonts/'
-            }).promise;
-            totalPages     = pdfDoc.numPages;
-            _pageHandlers  = {};
-            _renderedPages = new Set();
-            paths          = [];
+            viewerContainer = document.getElementById(containerId);
+            if (!viewerContainer) return;
+            dotNetRef = dotnet;
+
+            // 휠 및 모바일 멀티 터치 제스처 바인딩
+            viewerContainer.addEventListener('wheel', handleWheel, { passive: false });
+            viewerContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+            viewerContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
+            viewerContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+            // 🌟 스크롤 페이지 자동 체인저 감지 센서 레이아웃 설계 수정
+            _intersectionObserver = new IntersectionObserver((entries) => {
+                // 핀치 혹은 휠 줌 연산 스크롤 변형 중일 때는 센서 추적을 차단하여 화면 이탈 현상 방지
+                if (_isPinching || _isZooming) return;
+
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const pageNum = parseInt(entry.target.getAttribute('data-page-number'));
+                        if (!isNaN(pageNum)) {
+                            currentPageNum = pageNum;
+                            if (dotNetRef) dotNetRef.invokeMethodAsync('OnPageChanged', currentPageNum);
+                        }
+                    }
+                });
+            }, {
+                root: viewerContainer,
+                threshold: 0.3 // 모바일 디바이스 감도를 위한 반응 최적화 임계값
+            });
+
+            // 데이터 바이너리 로드 및 파싱 작업
+            const loadingTask = window.pdfjsLib.getDocument({ data: byteArray });
+            pdfDoc = await loadingTask.promise;
+            totalPages = pdfDoc.numPages;
+
+            // 1페이지 로드해 초기 핏배율 뼈대 잡기
+            const firstPage = await pdfDoc.getPage(1);
+            const view = firstPage.getViewport({ scale: 1.0 });
+            _fitZoom = (viewerContainer.clientWidth - 24) / view.width;
+            currentZoom = _fitZoom;
+
+            // 무한 스크롤 가상 뼈대 껍데기(컨테이너) 세팅 및 가상화 타겟 등록
+            for (let i = 1; i <= totalPages; i++) {
+                const pg = await pdfDoc.getPage(i);
+                const vp = pg.getViewport({ scale: 1.0 });
+                _pageSizes[i] = { width: vp.width, height: vp.height };
+
+                const container = document.getElementById('page-container-' + i);
+                if (container) {
+                    const sz = getPageSize(i);
+                    container.style.width = sz.width + 'px';
+                    container.style.height = sz.height + 'px';
+                    _intersectionObserver.observe(container);
+                }
+            }
+
+            updateVirtualPages();
             return totalPages;
         },
 
-        // 2단계: DOM 준비 후 렌더 (처음엔 보이는 페이지만)
-        async renderPdf() {
-            if (!pdfDoc) return;
-            const firstPage = await pdfDoc.getPage(1);
-            const fitZoom   = await calcFitZoom(firstPage);
-            _fitZoom        = fitZoom;   // 파일별 fit zoom 저장
-            currentZoom     = fitZoom;
-            currentPageNum  = 1;
-
-            // 1페이지 기준으로 전체 placeholder 일괄 설정
-            await setAllPlaceholders(currentZoom);
-            // 처음엔 1~RENDER_AHEAD+1 페이지만 렌더
-            await virtualizeRender(currentZoom);
-            setupScrollAndZoom(); // scroll/zoom/pinch 이벤트 + IntersectionObserver 초기화
-            if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', currentZoom);
-        },
-
-        // Blazor +/- 버튼: 즉시 재렌더
-        async renderAllPages(zoom) {
-            if (!pdfDoc) return;
-            if (_renderDebounceTimer) { clearTimeout(_renderDebounceTimer); _renderDebounceTimer = null; }
-            clearScaleTransform();
-            // fit 범위 기준 클램프
-            zoom = Math.min(Math.max(3.0, _fitZoom * 5), Math.max(_fitZoom * 0.5, zoom));
-            currentZoom    = zoom;
-            _renderedPages = new Set();
-            _pageHandlers  = {};
-            await setAllPlaceholders(zoom);
-            await virtualizeRender(zoom);
-            setupIntersectionObserver();
-            setupIntersectionObserver();
-        },
-
-        setTool(color, size, isEraser, tool) {
-            if (isDrawing) {
-                isDrawing = false;
-                if (currentPath) { paths.push(currentPath); currentPath = null; }
+        setCurrentPage: function (pageNum) {
+            if (pageNum < 1 || pageNum > totalPages) return;
+            currentPageNum = pageNum;
+            const container = document.getElementById('page-container-' + pageNum);
+            if (container && viewerContainer) {
+                // 특정 단수로 점프 이동 시 IntersectionObserver 간섭 비활성화 가드
+                _isZooming = true;
+                container.scrollIntoView({ behavior: 'auto', block: 'start' });
+                setTimeout(() => { _isZooming = false; }, 150);
             }
-            _color = color; _size = size; _isEraser = isEraser;
-            if (tool !== undefined) _tool = tool;
-            const cursor = tool === 'pen' ? 'crosshair'
-                         : tool === 'eraser' ? 'cell'
-                         : tool === 'ruler'  ? 'crosshair' : 'default';
+            updateVirtualPages();
+        },
+
+        setTool: function (color, size, isEraser, toolName) {
+            _color = color;
+            _size = size;
+            _isEraser = isEraser;
+            _tool = toolName;
+        },
+
+        startDraw: function (pageNum, x, y) {
+            if (_tool === 'select' || isDrawing) return;
+            isDrawing = true;
+
+            const origX = x / currentZoom;
+            const origY = y / currentZoom;
+
+            if (_tool === 'eraser') {
+                // 지우개 반경 내 충돌 패스 판별 로직
+                const eraseRadius = 12 / currentZoom;
+                paths = paths.filter(p => {
+                    if (p.pageNum !== pageNum) return true;
+                    const hit = p.points.some(pt => Math.hypot(pt.x - origX, pt.y - origY) <= eraseRadius);
+                    return !hit;
+                });
+                isDrawing = false;
+                for (let i = 1; i <= totalPages; i++) redrawPage(i);
+            } else {
+                // 펜, 자, 사각형 그리기 초기 패스 할당
+                currentPath = {
+                    pageNum: pageNum,
+                    color: _color,
+                    size: _size,
+                    tool: _tool,
+                    points: [{ x: origX, y: origY }]
+                };
+            }
+        },
+
+        drawTo: function (pageNum, x, y) {
+            if (!isDrawing || !currentPath || currentPath.pageNum !== pageNum) return;
+            const origX = x / currentZoom;
+            const origY = y / currentZoom;
+
+            if (_tool === 'ruler' || _tool === 'rect') {
+                if (currentPath.points.length === 1) {
+                    currentPath.points.push({ x: origX, y: origY });
+                } else {
+                    currentPath.points[1] = { x: origX, y: origY };
+                }
+            } else {
+                currentPath.points.push({ x: origX, y: origY });
+            }
+            redrawPage(pageNum);
+        },
+
+        setCursor: function (cursor) {
             for (let i = 1; i <= totalPages; i++) {
-                const a = getAnnoCanvas(i);
+                const a = document.getElementById('page-container-' + i);
                 if (a) a.style.cursor = cursor;
             }
         },
 
-        undo() {
+        undo: function () {
             paths.pop();
             for (let i = 1; i <= totalPages; i++) redrawPage(i);
         },
 
-        getRect(pageNum) {
+        getRect: function (pageNum) {
             const pg = pageNum || currentPageNum;
             const container = document.getElementById('page-container-' + pg);
             if (!container) return [0, 0, 0, 0];
@@ -606,19 +493,22 @@ window.patternViewer = (() => {
             return [r.left, r.top, r.width, r.height];
         },
 
-        clearAnnotations() {
+        clearAnnotations: function () {
             paths = [];
             for (let i = 1; i <= totalPages; i++) redrawPage(i);
         },
 
-        endDraw() {
+        endDraw: function () {
             if (isDrawing) {
                 isDrawing = false;
-                if (currentPath) { paths.push(currentPath); currentPath = null; }
+                if (currentPath) {
+                    paths.push(currentPath);
+                    currentPath = null;
+                }
             }
         },
 
-        dispose() {
+        dispose: function () {
             if (_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
             if (_intersectionObserver) { _intersectionObserver.disconnect(); _intersectionObserver = null; }
             Object.values(_renderTasks).forEach(t => { try { if (t) t.cancel(); } catch (_) {} });
@@ -630,9 +520,10 @@ window.patternViewer = (() => {
             isDrawing      = false;
             currentPath    = null;
             _isPinching    = false;
+            _isZooming     = false;
             _pageSizeCache = {};
         },
 
-        preventScroll() {}
+        preventScroll: function () {}
     };
 })();
