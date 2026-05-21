@@ -1,4 +1,3 @@
-// Blazor가 언제 호출해도 안전하도록 전역 객체 확보
 window.patternViewer = window.patternViewer || {};
 
 ((exports) => {
@@ -17,7 +16,6 @@ window.patternViewer = window.patternViewer || {};
     let _renderTasks = {};
     let _renderedPages = new Set();
 
-    // 줌/핀치 상태 및 튕김 방지 가드 플래그
     let _fitZoom = 1.0;
     let _pinchStartDist = 0;
     let _pinchStartZoom = 1.0;
@@ -27,47 +25,15 @@ window.patternViewer = window.patternViewer || {};
 
     const RENDER_AHEAD = 1;
 
-    // 🌟 GitHub Pages 서브디렉토리(/KnitLog)까지 완벽하게 추출하는 절대경로 계산기
+    // 🌟 base href 기준 절대경로 계산기
     function getPdfjsBase() {
         const baseEl = document.querySelector('base');
         if (baseEl && baseEl.href) {
-            // baseEl.href는 브라우저가 자동으로 'https://sso-o22.github.io/KnitLog/' 형태의 절대경로로 해석합니다.
             return baseEl.href.replace(/\/$/, ''); 
         }
-        // 폴백 (안전장치)
         const pathSegments = window.location.pathname.split('/');
         const repoName = pathSegments[1] ? '/' + pathSegments[1] : '';
         return window.location.origin + repoName;
-    }
-
-    // ── PDF.js 동적 모듈 로드 구역 ────────────────────
-    let _pdfjsReady = null;
-    async function ensurePdfjsLoaded() {
-        if (_pdfjsReady) return _pdfjsReady;
-        _pdfjsReady = (async () => {
-            if (window.pdfjsLib) return;
-            
-            const base = getPdfjsBase(); // 예: https://sso-o22.github.io/KnitLog
-            
-            // 🌟 workerSrc와 라이브러리 경로에 서브디렉토리가 누락되지 않도록 절대경로 결합
-            window.pdfjsWebAppOptions = { workerSrc: base + '/pdfjs/build/pdf.worker.mjs' };
-            
-            const script = document.createElement('script');
-            script.type = 'module';
-            script.src = base + '/pdfjs/build/pdf.mjs';
-            document.head.appendChild(script);
-
-            await new Promise((resolve) => {
-                const check = setInterval(() => {
-                    if (window.pdfjsLib) {
-                        clearInterval(check);
-                        resolve();
-                    }
-                }, 50);
-            });
-            window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + '/pdfjs/build/pdf.worker.mjs';
-        })();
-        return _pdfjsReady;
     }
 
     let viewerContainer = null;
@@ -239,10 +205,16 @@ window.patternViewer = window.patternViewer || {};
     function handleTouchMove(e) { if (_isPinching && e.touches.length === 2) { e.preventDefault(); const dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); if (_pinchStartDist > 0) changeZoom(_pinchStartZoom * (dist / _pinchStartDist)); } }
     function handleTouchEnd(e) { if (_isPinching && e.touches.length < 2) _isPinching = false; }
 
-    // ── 🌟 양쪽 인터페이스를 모두 만족하도록 두 이름 모두 안전하게 노출 ──
+    // ── 인터페이스 초기화 구역 ────────────────────
     exports.init = async function (containerId, dotnet) {
         this.dispose();
-        await ensurePdfjsLoaded();
+
+        // 🌟 index.html에서 로드된 전역 pdfjsLib 인지 및 워커 절대경로 바인딩
+        if (window.pdfjsLib) {
+            const base = getPdfjsBase();
+            window.pdfjsLib.GlobalWorkerOptions.workerSrc = base + '/pdfjs/build/pdf.worker.mjs';
+        }
+
         viewerContainer = document.getElementById(containerId);
         if (!viewerContainer) return;
         dotNetRef = dotnet;
@@ -263,9 +235,9 @@ window.patternViewer = window.patternViewer || {};
         }, { root: viewerContainer, threshold: 0.3 });
     };
 
-    // Blazor 호출 규격 대통합 (loadPdfBytes와 renderPdf를 같은 함수로 매핑)
     const loadCore = async function (byteArray) {
-        if (!viewerContainer) return 0;
+        if (!viewerContainer || !window.pdfjsLib) return 0;
+        
         const loadingTask = window.pdfjsLib.getDocument({ data: byteArray });
         pdfDoc = await loadingTask.promise;
         totalPages = pdfDoc.numPages;
