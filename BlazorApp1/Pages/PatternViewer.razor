@@ -218,7 +218,7 @@
                    @oninput="e => ChangeRulerOpacity(_sr, e)" style="width:48px;" title="투명도" />
             <button class="ctrl-btn" @onclick="() => { _sr.Y -= _sr.Height; StateHasChanged(); }">▲</button>
             <button class="ctrl-btn" @onclick="() => { _sr.Y += _sr.Height; StateHasChanged(); }">▼</button>
-            <button class="ctrl-btn del" @onclick="() => { _rulers.Remove(_sr); _selectedRuler = null; StateHasChanged(); }">✕</button>
+            <button class="ctrl-btn del" @onclick="() => { _rulers.Remove(_sr); _selectedRuler = null; _ = SaveViewerStateAsync(); StateHasChanged(); }">✕</button>
         </div>
     }
 </div>
@@ -815,7 +815,7 @@
     // ── 자 ──
     [JSInvokable] public void OnCanvasPointerDown(double x,double y,int pageNum){if(_tool=="ruler"){_isDrawingRuler=true;_rulerStartX=x;_rulerStartY=y;_rulerPage=pageNum;_previewW=0;_previewH=0;StateHasChanged();}}
     [JSInvokable] public void OnRulerTouchMove(double x,double y){if(_isDrawingRuler){_previewW=x-_rulerStartX;_previewH=y-_rulerStartY;StateHasChanged();}}
-    [JSInvokable] public void OnRulerTouchEnd(){if(_isDrawingRuler&&Math.Abs(_previewW)>5)_rulers.Add(new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage});_isDrawingRuler=false;StateHasChanged();}
+    [JSInvokable] public void OnRulerTouchEnd(){if(_isDrawingRuler&&Math.Abs(_previewW)>5)_rulers.Add(new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage});_isDrawingRuler=false;_=SaveViewerStateAsync();StateHasChanged();}
 
     async Task OnGlobalMouseMove(MouseEventArgs e)
     {
@@ -835,30 +835,28 @@
     async Task OnGlobalMouseUp(MouseEventArgs e)
     {
         _cwDragging=false;
-        if(_isDrawingRuler&&Math.Abs(_previewW)>5){var r=new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage};_rulers.Add(r);_selectedRuler=r;}
+        if(_isDrawingRuler&&Math.Abs(_previewW)>5){var r=new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage};_rulers.Add(r);_selectedRuler=r;_=SaveViewerStateAsync();}
+        bool _hadRulerAction = _isDrawingRuler || _draggingRuler!=null || _resizingRuler!=null;
         _isDrawingRuler=false;_draggingRuler=null;_resizingRuler=null;
         if(_isDrawing&&_pdfLoaded&&(_tool=="pen"||_tool=="eraser"))await JS.InvokeVoidAsync("patternViewer.endDraw");
-        _isDrawing=false;StateHasChanged();
+        _isDrawing=false;
+        if(_hadRulerAction)_=SaveViewerStateAsync();
+        StateHasChanged();
     }
     void DeselectRuler(){if(_tool=="ruler")_selectedRuler=null;}
     void OnRulerClick(RulerOverlay ruler)
     {
         if (_tool != "ruler") return;
-        _selectedRuler = _selectedRuler == ruler ? null : ruler;
+        _selectedRuler = ruler; // 클릭 시 항상 선택 (토글 제거 → 이동하려다 해제되는 문제 방지)
     }
     async Task OnRulerMouseDown(MouseEventArgs e, RulerOverlay ruler)
     {
         if (_tool != "ruler") return;
-        if (_selectedRuler != ruler)
-        {
-            _selectedRuler = ruler;
-            // 팝업을 마우스 위치 기준으로 (화면 경계 고려)
-            _rulerPopupX = Math.Min(e.ClientX + 8, e.ClientX - 20);
-            _rulerPopupY = Math.Max(e.ClientY - 60, 60);
-            StateHasChanged();
-            return;
-        }
-        // 이미 선택된 경우 드래그
+        // 선택 + 팝업 위치 갱신
+        _selectedRuler = ruler;
+        _rulerPopupX = Math.Min(e.ClientX + 8, e.ClientX - 20);
+        _rulerPopupY = Math.Max(e.ClientY - 60, 60);
+        // 드래그 시작
         var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect", ruler.Page);
         _draggingRuler = ruler;
         _dragOffsetX = (e.ClientX - rect[0]) - ruler.X * _zoom;
@@ -882,7 +880,7 @@
             StateHasChanged();
         }
     }
-    Task OnGlobalTouchEnd(TouchEventArgs e){_cwDragging=false;_draggingRuler=null;_resizingRuler=null;StateHasChanged();return Task.CompletedTask;}
+    async Task OnGlobalTouchEnd(TouchEventArgs e){_cwDragging=false;bool _hadRuler=_draggingRuler!=null||_resizingRuler!=null;_draggingRuler=null;_resizingRuler=null;if(_hadRuler)await SaveViewerStateAsync();StateHasChanged();}
 
     void UpdateRulerColor(RulerOverlay r,ChangeEventArgs e)=>r.ColorRgb=HexToRgb(e.Value?.ToString()??"#ffffff");
     void ChangeRulerOpacity(RulerOverlay r,ChangeEventArgs e)=>r.Opacity=(double.TryParse(e.Value?.ToString(),out var v)?v:35)/100.0;
