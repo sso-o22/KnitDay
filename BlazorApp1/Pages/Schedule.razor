@@ -38,7 +38,7 @@ else
                 <button class="btn btn-sm @(_statusFilter == "진행중" ? "btn-sage" : "btn-ghost")"
                         @onclick='async () => { _statusFilter = "진행중"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>진행중</button>
                 <button class="btn btn-sm @(_statusFilter == "일시중단" ? "btn-sage" : "btn-ghost")"
-                        @onclick='async () => { _statusFilter = "일시중단"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>⏸ 중단</button>
+                        @onclick='async () => { _statusFilter = "일시중단"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>중단</button>
             </div>
 
             <!-- 정렬 기준 -->
