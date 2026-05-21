@@ -15,6 +15,7 @@ window.patternViewer = (() => {
     let _renderedPages = new Set(); // 실제 렌더된 페이지 추적
 
     // 핀치/휠 줌 상태
+    let _fitZoom = 1.0;        // 초기 fit-zoom 값 (파일마다 다름)
     let _pinchStartDist = 0;
     let _pinchStartZoom = 1.0;
     let _isPinching = false;
@@ -73,8 +74,11 @@ window.patternViewer = (() => {
         };
     }
 
-    // ── CSS transform scale (즉각 시각 반응, 핀치 중심점 기준) ──
-    let _pinchOriginX = 0, _pinchOriginY = 0; // 핀치 중심점 (scroll-container 기준)
+    // ── CSS transform scale (핀치/휠 중 시각 피드백) ──────────
+    let _pinchOriginX = 0, _pinchOriginY = 0;
+    // 확대 시작 시점의 스크롤 위치와 중심점 문서 좌표 기록
+    let _zoomAnchorDocY = 0;   // 확대 기준점의 문서 내 Y 좌표 (scrollTop + 화면Y)
+    let _zoomAnchorViewY = 0;  // 확대 기준점의 뷰포트 내 Y 좌표
 
     function applyScaleTransform(zoom, originX, originY) {
         const wrapper = document.getElementById('pdf-wrapper');
@@ -83,7 +87,6 @@ window.patternViewer = (() => {
         const ratio = zoom / currentZoom;
 
         if (originX !== undefined && originY !== undefined) {
-            // 핀치 중심점을 wrapper 내부 좌표로 변환
             const wRect = wrapper.getBoundingClientRect();
             const ox = originX - wRect.left;
             const oy = originY - wRect.top;
@@ -99,6 +102,17 @@ window.patternViewer = (() => {
         if (!wrapper) return;
         wrapper.style.transform = '';
         wrapper.style.transformOrigin = '';
+    }
+
+    // 재렌더 후 스크롤 위치 보정: 확대 기준점이 화면의 같은 위치에 오도록
+    function restoreScrollAfterZoom(oldZoom, newZoom, anchorDocY, anchorViewY) {
+        const scrollEl = document.getElementById('scroll-container');
+        if (!scrollEl) return;
+        // 문서 내 앵커 Y를 새 줌 비율로 환산
+        const scaledAnchorDocY = anchorDocY * (newZoom / oldZoom);
+        // 앵커가 뷰포트에서 같은 위치(anchorViewY)에 오도록 scrollTop 설정
+        const newScrollTop = scaledAnchorDocY - anchorViewY;
+        scrollEl.scrollTop = Math.max(0, newScrollTop);
     }
 
     // ── placeholder 크기 설정 (렌더 전 높이 확보) ───────────
@@ -393,6 +407,7 @@ window.patternViewer = (() => {
             if (!pdfDoc || _pendingZoom === null) return;
             const targetZoom = _pendingZoom;
             _pendingZoom = null;
+            const prevZoom = currentZoom;
             currentZoom = targetZoom;
             clearScaleTransform();
             // 줌 변경 시 모든 렌더 캐시 무효화
@@ -400,9 +415,11 @@ window.patternViewer = (() => {
             _pageHandlers = {};
             // placeholder 크기 업데이트 (1페이지 기준 일괄)
             await setAllPlaceholders(targetZoom);
+            // 스크롤 위치 보정 (확대 기준점이 화면 같은 위치에 유지되도록)
+            restoreScrollAfterZoom(prevZoom, targetZoom, _zoomAnchorDocY, _zoomAnchorViewY);
             // 현재 보이는 페이지 렌더 + Observer 재초기화
             await virtualizeRender(targetZoom);
-            setupIntersectionObserver(); // 줌 변경 후 Observer 재등록
+            setupIntersectionObserver();
             if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', targetZoom);
         }, 350);
     }
@@ -421,8 +438,13 @@ window.patternViewer = (() => {
             if (e.ctrlKey) {
                 e.preventDefault();
                 const delta = e.deltaY > 0 ? -0.1 : 0.1;
-                const newZ  = Math.round(Math.min(3.0, Math.max(0.5, currentZoom + delta)) * 10) / 10;
-                // 마우스 커서 위치를 중심점으로 전달
+                const newZ  = Math.round(Math.min(Math.max(3.0, _fitZoom * 5), Math.max(_fitZoom * 0.5, currentZoom + delta)) * 10) / 10;
+                // 첫 휠 이벤트 시 앵커 기록 (연속 휠 중엔 currentZoom 기준 앵커 유지)
+                if (_pendingZoom === null) {
+                    const scRect = scrollEl.getBoundingClientRect();
+                    _zoomAnchorViewY = e.clientY - scRect.top;
+                    _zoomAnchorDocY  = scrollEl.scrollTop + _zoomAnchorViewY;
+                }
                 applyScaleTransform(newZ, e.clientX, e.clientY);
                 scheduleRerender(newZ);
             }
@@ -441,6 +463,13 @@ window.patternViewer = (() => {
                 // 핀치 중심점 기록 (화면 좌표)
                 _pinchOriginX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
                 _pinchOriginY = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+                // 확대 앵커: 중심점의 문서 내 Y 좌표 기록
+                const _sc = document.getElementById('scroll-container');
+                if (_sc) {
+                    const _scRect = _sc.getBoundingClientRect();
+                    _zoomAnchorViewY = _pinchOriginY - _scRect.top;
+                    _zoomAnchorDocY  = _sc.scrollTop + _zoomAnchorViewY;
+                }
                 e.preventDefault();
             }
         }, { passive: false });
@@ -454,7 +483,7 @@ window.patternViewer = (() => {
                     e.touches[0].clientX - e.touches[1].clientX,
                     e.touches[0].clientY - e.touches[1].clientY
                 );
-                const newZ = Math.min(3.0, Math.max(0.5, _pinchStartZoom * dist / _pinchStartDist));
+                const newZ = Math.min(Math.max(3.0, _fitZoom * 5), Math.max(_fitZoom * 0.5, _pinchStartZoom * dist / _pinchStartDist));
                 // 현재 핀치 중심점 (움직이는 동안 업데이트)
                 const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
                 const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
@@ -487,8 +516,10 @@ window.patternViewer = (() => {
         const availW  = scrollEl.clientWidth  - padding;
         const availH  = scrollEl.clientHeight - padding;
         const vp1     = page.getViewport({ scale: 1.0 });
+        // 가로/세로 중 작은 비율로 전체 페이지가 화면에 딱 맞게
         const fit = Math.min(availW / vp1.width, availH / vp1.height);
-        return Math.round(Math.max(0.5, Math.min(3.0, fit)) * 100) / 100;
+        // 최소 0.1, 최대 3.0 (파일 크기에 따라 자동 결정)
+        return Math.round(Math.max(0.1, Math.min(3.0, fit)) * 100) / 100;
     }
 
     // ── 공개 API ────────────────────────────────────────────
@@ -518,6 +549,7 @@ window.patternViewer = (() => {
             if (!pdfDoc) return;
             const firstPage = await pdfDoc.getPage(1);
             const fitZoom   = await calcFitZoom(firstPage);
+            _fitZoom        = fitZoom;   // 파일별 fit zoom 저장
             currentZoom     = fitZoom;
             currentPageNum  = 1;
 
@@ -534,6 +566,8 @@ window.patternViewer = (() => {
             if (!pdfDoc) return;
             if (_renderDebounceTimer) { clearTimeout(_renderDebounceTimer); _renderDebounceTimer = null; }
             clearScaleTransform();
+            // fit 범위 기준 클램프
+            zoom = Math.min(Math.max(3.0, _fitZoom * 5), Math.max(_fitZoom * 0.5, zoom));
             currentZoom    = zoom;
             _renderedPages = new Set();
             _pageHandlers  = {};
