@@ -12,28 +12,25 @@ window.patternViewer = (() => {
     let currentPath = null;
     let _pageHandlers = {};
     let _renderTasks = {};
-    let _renderedPages = new Set(); // 실제 렌더된 페이지 추적
+    let _renderedPages = new Set(); 
 
-    // 핀치/휠 줌 상태
-    let _fitZoom = 1.0;        // 초기 fit-zoom 값 (파일마다 다름)
+    // 핀치/휠 줌 상태 및 플래그
+    let _fitZoom = 1.0;        
     let _pinchStartDist = 0;
     let _pinchStartZoom = 1.0;
     let _isPinching = false;
-    let _isZooming = false;     // 🌟 추가: 휠/제스처 줌 전체를 감시하여 IntersectionObserver 오작동을 막는 플래그
+    let _isZooming = false;     // 🌟 휠/제스처 줌 전체를 감시하여 IntersectionObserver 오작동을 막는 플래그
     let _renderDebounceTimer = null;
     let _pendingZoom = null;
 
-    // 가상화: 현재 보이는 페이지 기준 렌더 범위
-    const RENDER_AHEAD = 1; // 위아래 1페이지씩만 렌더
+    const RENDER_AHEAD = 1; 
 
-    // ── base href 기준 절대경로 ──────────────────────────────
     function getPdfjsBase() {
         const baseEl = document.querySelector('base');
         const href = baseEl ? baseEl.href : (window.location.origin + '/');
         return href.replace(/\/$/, '');
     }
 
-    // ── PDF.js inline module script 로드 ────────────────────
     let _pdfjsReady = null;
     async function ensurePdfjsLoaded() {
         if (_pdfjsReady) return _pdfjsReady;
@@ -60,29 +57,24 @@ window.patternViewer = (() => {
         return _pdfjsReady;
     }
 
-    // ── 전역 상태 관리 ───────────────────────────────────────
     let viewerContainer = null;
     let _intersectionObserver = null;
-    let _pageSizes = {};      // {pageNum: {width, height}} 원본 사이즈 캐시
-    let _pageSizeCache = {};  // {pageNum: {width, height}} currentZoom 반영 사이즈 캐시
+    let _pageSizes = {};      
+    let _pageSizeCache = {};  
 
-    // 🌟 대통합 줌 기능 (확대/축소 시 튕김 방지 및 레이아웃 강제 고정 핵심 엔진)
+    // 🌟 대통합 줌 기능 (화면 튕김 차단 및 레이아웃 강제 유지)
     function changeZoom(newZoom) {
         if (!pdfDoc || !viewerContainer) return;
 
-        // 1. 줌 동작 시작을 알려 IntersectionObserver 스스크롤 감지를 잠시 차단
         _isZooming = true; 
 
-        // 2. 현재 유저가 스크롤해서 보고 있던 위치의 퍼센트(%) 비율 저장
         const scrollTop = viewerContainer.scrollTop;
         const scrollHeight = viewerContainer.scrollHeight;
         const scrollPercent = scrollTop / (scrollHeight || 1);
 
-        // 배율 제약 조건 (최소 0.5배 ~ 최대 4.0배)
         currentZoom = Math.max(0.5, Math.min(newZoom, 4.0));
-        _pageSizeCache = {}; // 줌 배율이 바뀌었으므로 렌더링용 사이즈 캐시 초기화
+        _pageSizeCache = {}; 
 
-        // 3. 렌더링 타임아웃 대기 시간 동안 컨테이너 및 모든 그리기 레이어 크기를 즉시 선변경
         for (let i = 1; i <= totalPages; i++) {
             const container = document.getElementById('page-container-' + i);
             if (container) {
@@ -94,7 +86,6 @@ window.patternViewer = (() => {
                     container.style.width = newWidth + 'px';
                     container.style.height = newHeight + 'px';
 
-                    // 펜 선이나 도형 가이드 레이어가 어긋나지 않도록 자식 요소들도 동시에 임시 확대
                     const children = container.querySelectorAll('canvas, svg, .drawing-layer');
                     children.forEach(child => {
                         child.style.width = newWidth + 'px';
@@ -104,15 +95,12 @@ window.patternViewer = (() => {
             }
         }
 
-        // 4. 계산된 비율에 맞춰 스크롤 바 위치를 강제로 홀딩 (화면 튕김 차단)
         viewerContainer.scrollTop = scrollPercent * viewerContainer.scrollHeight;
 
-        // 5. 손가락을 떼거나 휠 조작이 멈추고 150ms 뒤에 고해상도로 정밀 재렌더링 수행
         if (_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
         _renderDebounceTimer = setTimeout(() => {
             updateVirtualPages();
 
-            // 깨끗한 고해상도 벡터 이미지가 박히면 임시 가상 인라인 CSS 스타일을 해제
             setTimeout(() => {
                 for (let i = 1; i <= totalPages; i++) {
                     const container = document.getElementById('page-container-' + i);
@@ -124,12 +112,11 @@ window.patternViewer = (() => {
                         });
                     }
                 }
-                _isZooming = false; // 방어막 해제
+                _isZooming = false; 
             }, 100);
         }, 150);
     }
 
-    // ── 가상화 레이아웃 사이즈 연산 ───────────────────────────
     function getPageSize(pageNum) {
         if (_pageSizeCache[pageNum]) return _pageSizeCache[pageNum];
         const orig = _pageSizes[pageNum];
@@ -145,7 +132,6 @@ window.patternViewer = (() => {
         const start = Math.max(1, currentPageNum - RENDER_AHEAD);
         const end = Math.min(totalPages, currentPageNum + RENDER_AHEAD);
 
-        // 1. 범위를 벗어난 안 보이는 페이지 캔버스 제거 (메모리 절약)
         for (let i = 1; i <= totalPages; i++) {
             if (i < start || i > end) {
                 if (_renderedPages.has(i)) {
@@ -163,7 +149,6 @@ window.patternViewer = (() => {
             }
         }
 
-        // 2. 현재 보이는 타겟 범위 내의 페이지 고해상도 리렌더링
         for (let i = start; i <= end; i++) {
             if (!_renderedPages.has(i)) {
                 renderActualPage(i);
@@ -207,7 +192,6 @@ window.patternViewer = (() => {
             await task.promise;
             _renderTasks[pageNum] = null;
 
-            // PDF 배경이 그려진 후 유저가 그린 필기 데이터 매끄럽게 복원
             redrawPage(pageNum);
         } catch (err) {
             if (err.name !== 'RenderingCancelledException') {
@@ -217,7 +201,6 @@ window.patternViewer = (() => {
         }
     }
 
-    // ── 아노테이션/드로잉 드로우 복원 백엔드 ────────────────
     function redrawPage(pageNum) {
         const container = document.getElementById('page-container-' + pageNum);
         if (!container) return;
@@ -243,7 +226,6 @@ window.patternViewer = (() => {
         const orig = _pageSizes[pageNum];
         if (!orig) return;
 
-        // 원본 좌표계 데이터를 현재 줌 레벨에 맞추어 드로잉 컨텍스트 배율 동기화
         ctx.save();
         ctx.scale(currentZoom, currentZoom);
 
@@ -251,7 +233,7 @@ window.patternViewer = (() => {
             if (p.pageNum !== pageNum || p.points.length < 2) return;
             ctx.beginPath();
             ctx.strokeStyle = p.color;
-            ctx.lineWidth = p.size / currentZoom; // 줌 배율에 반비례하여 펜 굵기가 일정하게 보이도록 보정
+            ctx.lineWidth = p.size / currentZoom; 
             ctx.lineCap = 'round';
             ctx.lineJoin = 'round';
 
@@ -273,7 +255,6 @@ window.patternViewer = (() => {
             ctx.stroke();
         });
 
-        // 현재 실시간으로 그리고 있는 활성 패스 렌더링
         if (currentPath && currentPath.pageNum === pageNum && currentPath.points.length >= 2) {
             ctx.beginPath();
             ctx.strokeStyle = currentPath.color;
@@ -301,13 +282,10 @@ window.patternViewer = (() => {
         ctx.restore();
     }
 
-    // ── 이벤트 핸들러 마운트 및 연산 구역 ─────────────────────
     function handleWheel(e) {
         if (e.ctrlKey) {
             e.preventDefault();
-            const delta = e.deltaY < 0 ? 0.15 : -0.15; // 배율 단위를 체감상 부드럽게 조정
-            
-            // 🌟 대통합 함수 호출 방식으로 기존의 개별 지저분한 스타일 연산 구역 대체
+            const delta = e.deltaY < 0 ? 0.15 : -0.15;
             changeZoom(currentZoom + delta);
         }
     }
@@ -329,10 +307,7 @@ window.patternViewer = (() => {
             const t2 = e.touches[1];
             const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
             if (_pinchStartDist > 0) {
-                const targetZoomValue = _pinchStartZoom * (dist / _pinchStartDist);
-                
-                // 🌟 모바일 핀치 제스처 시에도 통합 줌 로직으로 넘겨 안전하게 스크롤 보호
-                changeZoom(targetZoomValue);
+                changeZoom(_pinchStartZoom * (dist / _pinchStartDist));
             }
         }
     }
@@ -352,15 +327,12 @@ window.patternViewer = (() => {
             if (!viewerContainer) return;
             dotNetRef = dotnet;
 
-            // 휠 및 모바일 멀티 터치 제스처 바인딩
             viewerContainer.addEventListener('wheel', handleWheel, { passive: false });
             viewerContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
             viewerContainer.addEventListener('touchmove', handleTouchMove, { passive: false });
             viewerContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
 
-            // 🌟 스크롤 페이지 자동 체인저 감지 센서 레이아웃 설계 수정
             _intersectionObserver = new IntersectionObserver((entries) => {
-                // 핀치 혹은 휠 줌 연산 스크롤 변형 중일 때는 센서 추적을 차단하여 화면 이탈 현상 방지
                 if (_isPinching || _isZooming) return;
 
                 entries.forEach(entry => {
@@ -374,21 +346,18 @@ window.patternViewer = (() => {
                 });
             }, {
                 root: viewerContainer,
-                threshold: 0.3 // 모바일 디바이스 감도를 위한 반응 최적화 임계값
+                threshold: 0.3 
             });
 
-            // 데이터 바이너리 로드 및 파싱 작업
             const loadingTask = window.pdfjsLib.getDocument({ data: byteArray });
             pdfDoc = await loadingTask.promise;
             totalPages = pdfDoc.numPages;
 
-            // 1페이지 로드해 초기 핏배율 뼈대 잡기
             const firstPage = await pdfDoc.getPage(1);
             const view = firstPage.getViewport({ scale: 1.0 });
             _fitZoom = (viewerContainer.clientWidth - 24) / view.width;
             currentZoom = _fitZoom;
 
-            // 무한 스크롤 가상 뼈대 껍데기(컨테이너) 세팅 및 가상화 타겟 등록
             for (let i = 1; i <= totalPages; i++) {
                 const pg = await pdfDoc.getPage(i);
                 const vp = pg.getViewport({ scale: 1.0 });
@@ -412,7 +381,6 @@ window.patternViewer = (() => {
             currentPageNum = pageNum;
             const container = document.getElementById('page-container-' + pageNum);
             if (container && viewerContainer) {
-                // 특정 단수로 점프 이동 시 IntersectionObserver 간섭 비활성화 가드
                 _isZooming = true;
                 container.scrollIntoView({ behavior: 'auto', block: 'start' });
                 setTimeout(() => { _isZooming = false; }, 150);
@@ -427,6 +395,7 @@ window.patternViewer = (() => {
             _tool = toolName;
         },
 
+        // 🌟 버그 수정 완료: Blazor의 마우스 매핑 규격에 맞춰 완벽 복구
         startDraw: function (pageNum, x, y) {
             if (_tool === 'select' || isDrawing) return;
             isDrawing = true;
@@ -435,7 +404,6 @@ window.patternViewer = (() => {
             const origY = y / currentZoom;
 
             if (_tool === 'eraser') {
-                // 지우개 반경 내 충돌 패스 판별 로직
                 const eraseRadius = 12 / currentZoom;
                 paths = paths.filter(p => {
                     if (p.pageNum !== pageNum) return true;
@@ -445,7 +413,6 @@ window.patternViewer = (() => {
                 isDrawing = false;
                 for (let i = 1; i <= totalPages; i++) redrawPage(i);
             } else {
-                // 펜, 자, 사각형 그리기 초기 패스 할당
                 currentPath = {
                     pageNum: pageNum,
                     color: _color,
@@ -456,6 +423,7 @@ window.patternViewer = (() => {
             }
         },
 
+        // 🌟 버그 수정 완료: 드로잉 좌표 실시간 트래킹 원본 기능 복구
         drawTo: function (pageNum, x, y) {
             if (!isDrawing || !currentPath || currentPath.pageNum !== pageNum) return;
             const origX = x / currentZoom;
@@ -471,6 +439,19 @@ window.patternViewer = (() => {
                 currentPath.points.push({ x: origX, y: origY });
             }
             redrawPage(pageNum);
+        },
+
+        // 🌟 버그 수정 완료: 그리기 종료 시 레이어에 패스를 고정하는 오리지널 로직 완벽 연동
+        endDraw: function () {
+            if (isDrawing) {
+                isDrawing = false;
+                if (currentPath) {
+                    paths.push(currentPath);
+                    const pg = currentPath.pageNum;
+                    currentPath = null;
+                    redrawPage(pg); // 마친 뒤 최종 확정선 새로고침
+                }
+            }
         },
 
         setCursor: function (cursor) {
@@ -496,16 +477,6 @@ window.patternViewer = (() => {
         clearAnnotations: function () {
             paths = [];
             for (let i = 1; i <= totalPages; i++) redrawPage(i);
-        },
-
-        endDraw: function () {
-            if (isDrawing) {
-                isDrawing = false;
-                if (currentPath) {
-                    paths.push(currentPath);
-                    currentPath = null;
-                }
-            }
         },
 
         dispose: function () {
