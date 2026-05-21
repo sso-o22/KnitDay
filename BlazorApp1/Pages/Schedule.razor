@@ -580,7 +580,7 @@ else
                             <input class="form-control" type="number" min="1" style="width:64px;"
                                    value="@usage.BallsUsed"
                                    @onchange="e => usage.BallsUsed = int.TryParse(e.Value?.ToString(), out var n) ? n : 1" />
-                            <span style="font-size:0.82rem; color:var(--text-mid);">볼</span>
+                            <span style="font-size:0.82rem; color:var(--text-mid);">볼(콘)</span>
                             <button class="btn btn-danger btn-sm" @onclick="() => _editingProject.YarnUsages.Remove(usage)">✕</button>
                         </div>
                     }
