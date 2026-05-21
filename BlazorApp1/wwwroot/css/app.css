@@ -106,7 +106,7 @@ body {
     top: 0;
     height: 100vh;
     height: 100dvh;
-    overflow-y: auto;
+    overflow: hidden; /* 사이드바 자체는 스크롤 안 됨 */
     flex-shrink: 0;
 }
 
@@ -131,6 +131,8 @@ body {
     list-style: none;
     padding: 16px 0;
     flex: 1;
+    overflow-y: auto; /* 메뉴만 스크롤 */
+    min-height: 0;    /* flex 자식의 overflow 스크롤 작동 필수 */
 }
 
 .nav-list li { margin: 2px 12px; }
