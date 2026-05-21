@@ -67,49 +67,57 @@
     </div>
 
     <!-- ── 상단 오버레이 툴바 ── -->
+    <!-- 구조: [나가기 + 타이머] [가운데: 페이지/줌] [도안 불러오기] -->
     <div class="top-bar">
-        <button class="tb-btn" @onclick="GoBack">←</button>
-        <div class="tb-div"></div>
-
-        <label class="tb-label">
-            📄 <InputFile OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
-        </label>
-
-        @if (_pdfLoaded)
-        {
-            <span class="tb-txt">@_currentPage / @_totalPages</span>
-            <div class="tb-zoom">
-                <button class="tb-zoom-btn" @onclick="ZoomOut">−</button>
-                <span class="tb-txt" style="min-width:36px;text-align:center;">@((int)(_zoom*100))%</span>
-                <button class="tb-zoom-btn" @onclick="ZoomIn">+</button>
-            </div>
-        }
-
-        @if (_project is not null)
-        {
-            <div class="tb-div"></div>
-            <span style="font-size:11px;opacity:0.4;">⏱</span>
-            <span class="tb-txt" style="font-variant-numeric:tabular-nums;letter-spacing:0.3px;">@_timerDisplay</span>
-            @if (_activeSession == null)
+        <!-- 왼쪽: 나가기 + 타이머 -->
+        <div class="tb-left">
+            <button class="tb-btn" @onclick="GoBack">←</button>
+            @if (_project is not null)
             {
-                <button class="tb-icon-btn" @onclick="StartSession">▶</button>
+                <div class="tb-div"></div>
+                <span style="font-size:11px;opacity:0.4;">⏱</span>
+                <span class="tb-txt" style="font-variant-numeric:tabular-nums;letter-spacing:0.3px;">@_timerDisplay</span>
+                @if (_activeSession == null)
+                {
+                    <button class="tb-icon-btn" @onclick="StartSession">▶</button>
+                }
+                else
+                {
+                    <button class="tb-icon-btn" @onclick="EndSession">⏸</button>
+                }
             }
-            else
+        </div>
+
+        <!-- 가운데: 페이지수 + 줌 -->
+        <div class="tb-center">
+            @if (_pdfLoaded)
             {
-                <button class="tb-icon-btn" @onclick="EndSession">⏸</button>
+                <span class="tb-txt">@_currentPage / @_totalPages</span>
+                <div class="tb-div"></div>
+                <div class="tb-zoom">
+                    <button class="tb-zoom-btn" @onclick="ZoomOut">−</button>
+                    <span class="tb-txt" style="min-width:36px;text-align:center;">@((int)(_zoom*100))%</span>
+                    <button class="tb-zoom-btn" @onclick="ZoomIn">+</button>
+                </div>
             }
-        }
+        </div>
+
+        <!-- 오른쪽: 도안 불러오기 -->
+        <div class="tb-right">
+            <label class="tb-label">
+                📄 <InputFile OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
+            </label>
+        </div>
     </div>
 
     <!-- ── 필기 도구 플로팅 위젯 (좌측 상단, 툴바 아래) ── -->
     <div class="draw-wrap">
-        <button class="draw-fab @(_drawMode ? "draw-fab-on" : "")" @onclick="ToggleDrawMode">✏️</button>
+        <button class="draw-fab @(_drawMode ? "draw-fab-on" : "")" @onclick="ToggleDrawMode">🖊️</button>
         <div class="draw-panel @(_drawMode ? "draw-panel-open" : "")">
             <div class="draw-panel-inner">
-                <button class="dp-btn @(_tool=="pen"?"dp-on":"")"    @onclick='()=>SetTool("pen")'>✏️</button>
+                <button class="dp-btn @(_tool=="pen"?"dp-on":"")"    @onclick='()=>SetTool("pen")'>🖊️</button>
                 <button class="dp-btn @(_tool=="eraser"?"dp-on":"")" @onclick='()=>SetTool("eraser")'>🧽</button>
                 <button class="dp-btn @(_tool=="ruler"?"dp-on":"")"  @onclick='()=>SetTool("ruler")'>📏</button>
-                <button class="dp-btn @(_tool=="select"?"dp-on":"")" @onclick='()=>SetTool("select")'>🖱️</button>
 
                 @if (_tool == "pen")
                 {
@@ -215,12 +223,16 @@
         padding: 5px 10px;
         display: flex;
         align-items: center;
-        gap: 6px;
+        justify-content: space-between;
+        gap: 4px;
         z-index: 200;
         border-bottom: 1px solid rgba(0,0,0,0.08);
         flex-wrap: nowrap;
         box-shadow: 0 1px 8px rgba(0,0,0,0.1);
     }
+    .tb-left  { display:flex; align-items:center; gap:5px; flex-shrink:0; }
+    .tb-center { display:flex; align-items:center; gap:5px; flex:1; justify-content:center; }
+    .tb-right { display:flex; align-items:center; gap:5px; flex-shrink:0; }
     .tb-btn {
         background: rgba(0,0,0,0.07); border: 1px solid rgba(0,0,0,0.12);
         color: #222; width: 32px; height: 28px; border-radius: 6px; cursor: pointer; flex-shrink: 0;
@@ -248,14 +260,16 @@
     }
     .tb-icon-btn:hover { background: rgba(0,0,0,0.14); }
 
-    /* ── 필기 위젯: 라이트 계열 ── */
+    /* ── 필기 위젯: 위젯(동그라미) 아래로 패널 펼치기 ── */
     .draw-wrap {
         position: absolute;
         top: 46px;
         left: 10px;
         z-index: 300;
         display: flex;
-        align-items: center;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
     }
     .draw-fab {
         width: 40px; height: 40px; border-radius: 50%;
@@ -271,12 +285,15 @@
     .draw-fab-on {
         background: #f0f0f0;
         border-color: rgba(0,0,0,0.25);
-        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
     }
 
-    /* 펼쳐지는 패널 */
-    .draw-panel { overflow: hidden; max-width: 0; transition: max-width 0.22s cubic-bezier(0.4,0,0.2,1); margin-left: 0; }
-    .draw-panel-open { max-width: 420px; margin-left: 6px; }
+    /* 아래로 펼쳐지는 패널 */
+    .draw-panel {
+        overflow: hidden;
+        max-height: 0;
+        transition: max-height 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+    .draw-panel-open { max-height: 60px; }
     .draw-panel-inner {
         display: flex; align-items: center; gap: 3px;
         background: rgba(255,255,255,0.95);
@@ -350,6 +367,61 @@
         display: flex; align-items: center; justify-content: center;
     }
     .cw-fab:active { transform: scale(0.9); }
+
+    /* ── 다크모드 대응 ── */
+    [data-dark="true"] .top-bar {
+        background: rgba(28,28,28,0.92);
+        border-bottom-color: rgba(255,255,255,0.08);
+        color: #f0f0f0;
+    }
+    [data-dark="true"] .tb-btn {
+        background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #eee;
+    }
+    [data-dark="true"] .tb-btn:hover { background: rgba(255,255,255,0.15); }
+    [data-dark="true"] .tb-label { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.1); color: #ddd; }
+    [data-dark="true"] .tb-txt { color: #eee; }
+    [data-dark="true"] .tb-div { background: rgba(255,255,255,0.12); }
+    [data-dark="true"] .tb-zoom { background: rgba(255,255,255,0.07); }
+    [data-dark="true"] .tb-zoom-btn { color: #ddd; }
+    [data-dark="true"] .tb-icon-btn { background: rgba(255,255,255,0.08); color: #ddd; }
+    [data-dark="true"] .tb-icon-btn:hover { background: rgba(255,255,255,0.15); }
+
+    [data-dark="true"] .draw-fab {
+        background: rgba(40,40,40,0.92); border-color: rgba(255,255,255,0.15); color: #eee;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.4);
+    }
+    [data-dark="true"] .draw-fab-on { background: rgba(60,60,60,0.95); }
+    [data-dark="true"] .draw-panel-inner {
+        background: rgba(32,32,32,0.96); border-color: rgba(255,255,255,0.1);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    }
+    [data-dark="true"] .dp-btn { color: #ddd; }
+    [data-dark="true"] .dp-btn:hover { background: rgba(255,255,255,0.1); }
+    [data-dark="true"] .dp-on { background: rgba(255,255,255,0.15); }
+    [data-dark="true"] .dp-div { background: rgba(255,255,255,0.1); }
+    [data-dark="true"] .dp-size-btn { background: rgba(255,255,255,0.08); color: #ddd; }
+    [data-dark="true"] .dp-size-btn:hover { background: rgba(255,255,255,0.15); }
+
+    [data-dark="true"] .cw-inner {
+        background: rgba(32,32,32,0.96); border-color: rgba(255,255,255,0.1);
+        box-shadow: 0 8px 32px rgba(0,0,0,0.5); color: #eee;
+    }
+    [data-dark="true"] .cw-header span { color: #ccc; }
+    [data-dark="true"] .cw-close { color: #666; }
+    [data-dark="true"] .cw-close:hover { color: #eee; }
+    [data-dark="true"] .cw-nav-btn { background: rgba(255,255,255,0.08); color: #ddd; }
+    [data-dark="true"] .cw-nav-btn:hover { background: rgba(255,255,255,0.15); }
+    [data-dark="true"] .cw-btn.plus  { background: rgba(255,255,255,0.12); color: #eee; }
+    [data-dark="true"] .cw-btn.plus:hover  { background: rgba(255,255,255,0.2); }
+    [data-dark="true"] .cw-btn.minus { background: rgba(255,255,255,0.06); color: #aaa; }
+    [data-dark="true"] .cw-btn.minus:hover { background: rgba(255,255,255,0.12); }
+    [data-dark="true"] .cw-val { color: #f0f0f0; }
+    [data-dark="true"] .cw-fab { background: rgba(32,32,32,0.92); border-color: rgba(255,255,255,0.12); }
+
+    [data-dark="true"] .ruler-ctrl { background: #2a2a2a; border-color: rgba(255,255,255,0.1); }
+    [data-dark="true"] .ctrl-btn { background: #3a3a3a; color: #ddd; }
+    [data-dark="true"] .ctrl-btn.del { background: #4a1a1a; color: #ff9999; }
+    [data-dark="true"] .resize-handle { background: #444; border-color: #777; }
 
     /* ── 자 ── */
     .ruler-item { z-index: 50; touch-action: none; }
@@ -485,7 +557,13 @@
     [JSInvokable] public void ZoomToFromJS(double zoom){_zoom=zoom;StateHasChanged();}
 
     // ── 필기 ──
-    void ToggleDrawMode(){_drawMode=!_drawMode;if(_drawMode&&_tool=="select")SetTool("pen");else if(!_drawMode)SetTool("select");}
+    void ToggleDrawMode()
+    {
+        _drawMode = !_drawMode;
+        if (_drawMode)
+            SetTool("pen"); // 필기모드 ON → 항상 펜으로 시작
+        // 필기모드 OFF → 도구 그대로 유지 (select 강제 안 함)
+    }
     void SetTool(string t){_tool=t;_=JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,t=="eraser",t);}
     async Task OnColorChange(ChangeEventArgs e){_penColor=e.Value?.ToString()??_penColor;await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool);}
     async Task OnSizeChange(ChangeEventArgs e){if(int.TryParse(e.Value?.ToString(),out var v))_penSize=v;await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool);}
