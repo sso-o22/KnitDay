@@ -177,8 +177,8 @@
     {
         @if (_showCounterWidget)
         {
-            <div class="cw-wrap"
-                 style="position:fixed;left:@(_cwX)px;top:@(_cwY)px;z-index:600;touch-action:none;cursor:grab;"
+            <div class="cw-wrap @(_cwX < 0 ? "cw-default-pos" : "")"
+                 style="@(_cwX >= 0 ? $"position:fixed;left:{_cwX}px;top:{_cwY}px;" : "")z-index:600;touch-action:none;cursor:grab;"
                  @onmousedown="CwDragStart">
                 <div class="cw-inner" @onmousedown:stopPropagation="true" @ontouchstart:stopPropagation="true">
                     <!-- 드래그 핸들 -->
@@ -208,8 +208,7 @@
         }
         else
         {
-            <button class="cw-fab" @onclick="()=>_showCounterWidget=true"
-                    style="position:fixed;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 72px);z-index:600;">🧶</button>
+            <button class="cw-fab" @onclick="()=>_showCounterWidget=true">🧶</button>
         }
     }
 </div>
@@ -378,6 +377,14 @@
 
     /* ── 카운터 위젯: 라이트 계열 ── */
     .cw-wrap { user-select: none; }
+    /* JS 위치 계산 전 기본 위치: 우하단 고정 */
+    .cw-default-pos {
+        position: fixed !important;
+        right: 16px !important;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
+        left: auto !important;
+        top: auto !important;
+    }
     .cw-inner {
         background: rgba(255,255,255,0.95);
         backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
@@ -412,6 +419,10 @@
     .cw-btn.minus:hover { background: #e8e8e8; }
     .cw-val { font-size: 28px; font-weight: 700; min-width: 48px; text-align: center; font-variant-numeric: tabular-nums; color: #111; }
     .cw-fab {
+        position: fixed;
+        right: 16px;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+        z-index: 600;
         background: rgba(255,255,255,0.92);
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
         border: 1px solid rgba(0,0,0,0.12);
@@ -549,7 +560,7 @@
     DotNetObjectReference<PatternViewer>? _dotNetRef;
 
     // ── 카운터 위젯 드래그 ──
-    double _cwX=0, _cwY=0;
+    double _cwX=-1, _cwY=-1; // -1 = JS 계산 전, CSS로 우하단 고정
     bool _cwDragging=false;
     double _cwOffX=0, _cwOffY=0;
 
@@ -611,14 +622,26 @@
     async Task UndoLastPath()=>await JS.InvokeVoidAsync("patternViewer.undo");
     async Task OnPdfSelected(InputFileChangeEventArgs e)
     {
-        using var stream=e.File.OpenReadStream(25*1024*1024);
-        using var streamRef=new DotNetStreamReference(stream);
-        _pdfLoading=true;_pdfLoaded=false;StateHasChanged();
-        _totalPages=await JS.InvokeAsync<int>("patternViewer.loadPdfBytes",streamRef);
-        _pdfLoaded=true;_pdfLoading=true;StateHasChanged();
-        await Task.Delay(80);
-        await JS.InvokeVoidAsync("patternViewer.renderPdf");
-        _pdfLoading=false;StateHasChanged();
+        try
+        {
+            _pdfLoading=true; _pdfLoaded=false; StateHasChanged();
+            // iOS Safari: 스트림을 먼저 메모리로 읽어서 전달 (스트림 직접 전달 불안정)
+            using var stream=e.File.OpenReadStream(50*1024*1024);
+            using var ms=new System.IO.MemoryStream();
+            await stream.CopyToAsync(ms);
+            ms.Position=0;
+            using var streamRef=new DotNetStreamReference(ms, leaveOpen:false);
+            _totalPages=await JS.InvokeAsync<int>("patternViewer.loadPdfBytes",streamRef);
+            _pdfLoaded=true; _pdfLoading=true; StateHasChanged();
+            await Task.Delay(80);
+            await JS.InvokeVoidAsync("patternViewer.renderPdf");
+            _pdfLoading=false; StateHasChanged();
+        }
+        catch(Exception ex)
+        {
+            _pdfLoading=false; _pdfLoaded=false; StateHasChanged();
+            await JS.InvokeVoidAsync("console.error","PDF load error: "+ex.Message);
+        }
     }
     async Task ZoomIn(){_zoom=Math.Round(_zoom+0.1,1);await RenderAllPages();}
     async Task ZoomOut(){_zoom=Math.Round(_zoom-0.1,1);await RenderAllPages();}
