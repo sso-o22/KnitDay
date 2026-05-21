@@ -183,7 +183,8 @@ window.patternViewer = (() => {
         }
 
         function onUp(e) {
-            if (_isPinching || _isZooming) return;
+            // onUp은 isZooming 무관하게 항상 그리기 상태 정리
+            if (_isPinching) return;
             if (_tool === 'ruler') { if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd'); return; }
             if (!isDrawing || currentPageNum !== pageNum) return;
             isDrawing = false;
@@ -339,7 +340,7 @@ window.patternViewer = (() => {
 
             // CSS transform 제거
             const wrapper = document.getElementById('pdf-wrapper');
-            if (wrapper) { wrapper.style.transform = ''; wrapper.style.transformOrigin = ''; }
+            if (wrapper) { wrapper.style.transform = ''; wrapper.style.transformOrigin = ''; wrapper.style.opacity = '1'; }
 
             // 렌더 캐시 무효화
             _renderedPages.clear();
@@ -363,8 +364,11 @@ window.patternViewer = (() => {
             await virtualizeRender(targetZoom);
             setupIntersectionObserver();
 
-            // 렌더 완료 후 줌 플래그 OFF
-            setTimeout(() => { _isZooming = false; }, 100);
+            // opacity 복원 + 줌 플래그 OFF
+            const wrapperAfter = document.getElementById('pdf-wrapper');
+            if (wrapperAfter) wrapperAfter.style.opacity = '1';
+            // 렌더 직후 바로 해제 (50ms만 유지 → 그리기 빠르게 복귀)
+            setTimeout(() => { _isZooming = false; }, 50);
 
             if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', targetZoom);
         }, 200);
@@ -392,7 +396,7 @@ window.patternViewer = (() => {
         const vp1 = page.getViewport({ scale: 1.0 });
         const fit = Math.min((scrollEl.clientWidth - 32) / vp1.width,
                              (scrollEl.clientHeight - 32) / vp1.height);
-        return Math.round(Math.max(0.1, Math.min(3.0, fit)) * 100) / 100;
+        return Math.round(Math.max(0.1, Math.min(2.0, fit)) * 100) / 100;
     }
 
     // ── 이벤트 초기화 ────────────────────────────────────────
@@ -409,7 +413,7 @@ window.patternViewer = (() => {
         scrollEl.addEventListener('wheel', e => {
             if (!e.ctrlKey) return;
             e.preventDefault();
-            const maxZ = Math.max(3.0, _fitZoom * 5);
+            const maxZ = Math.max(5.0, _fitZoom * 10);
             const minZ = _fitZoom * 0.3;
 
             // deltaY를 비례값으로 변환 → 부드러운 연속 확대 (픽셀/라인/페이지 단위 통일)
@@ -447,15 +451,9 @@ window.patternViewer = (() => {
             scrollEl._pinchAnchorViewY = cy - scRect.top;
             scrollEl._pinchAnchorDocY  = scrollEl.scrollTop + scrollEl._pinchAnchorViewY;
 
-            // 핀치 시작 시 canvas 픽셀 버퍼 즉시 해제 (iOS 메모리 절약)
-            // CSS 크기는 유지 → 레이아웃 안 깨짐, transform으로 시각 피드백
-            for (let i = 1; i <= totalPages; i++) {
-                const pc = getPdfCanvas(i);
-                const ac = getAnnoCanvas(i);
-                if (pc && pc.width > 1) { pc.width = 1; pc.height = 1; }
-                if (ac && ac.width > 1) { ac.width = 1; ac.height = 1; }
-            }
-            _renderedPages.clear();
+            // 핀치 중엔 wrapper를 살짝 흐리게 (canvas 버퍼는 유지 → 회색화면 방지)
+            const wrapper = document.getElementById('pdf-wrapper');
+            if (wrapper) wrapper.style.opacity = '0.85';
 
             e.preventDefault();
         }, { passive: false });
@@ -468,7 +466,7 @@ window.patternViewer = (() => {
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
             );
-            const maxZ = Math.max(3.0, _fitZoom * 5);
+            const maxZ = Math.max(5.0, _fitZoom * 10);
             const minZ = _fitZoom * 0.3;
             const newZ = Math.min(maxZ, Math.max(minZ, _pinchStartZoom * dist / _pinchStartDist));
             const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
@@ -538,8 +536,8 @@ window.patternViewer = (() => {
             if (!pdfDoc) return;
             if (_renderDebounceTimer) { clearTimeout(_renderDebounceTimer); _renderDebounceTimer = null; }
             const wrapper = document.getElementById('pdf-wrapper');
-            if (wrapper) { wrapper.style.transform = ''; wrapper.style.transformOrigin = ''; }
-            const maxZ = Math.max(3.0, _fitZoom * 5);
+            if (wrapper) { wrapper.style.transform = ''; wrapper.style.transformOrigin = ''; wrapper.style.opacity = '1'; }
+            const maxZ = Math.max(5.0, _fitZoom * 10);
             const minZ = _fitZoom * 0.3;
             zoom = Math.min(maxZ, Math.max(minZ, zoom));
             currentZoom    = zoom;
