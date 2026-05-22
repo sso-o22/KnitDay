@@ -1364,9 +1364,11 @@ else
         // 완료 후 최신 데이터 다시 읽어서 팝업 표시
         var all = await Storage.GetProjectsAsync();
         _completedPreview = all.FirstOrDefault(p => p.Id == _project.Id);
-        _showCompletedPopup = true;
         _project = _completedPreview;
+        _showCompletedPopup = true;
         StateHasChanged();
+        // 완성작 팝업 뜨면서 프로젝트 목록으로 이동
+        Nav.NavigateTo("projects");
     }
 
     async Task PauseProject()
