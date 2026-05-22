@@ -42,9 +42,23 @@ else
                         <span class="color-dot" style="background:@yarn.ColorCode;"></span>
                         <div class="card-title" style="margin-bottom:0;">@yarn.Name</div>
                     </div>
+                    @{
+                        decimal _used = _usedQty.TryGetValue(yarn.Id, out var _u) ? _u : 0;
+                        decimal _remain = yarn.Quantity - _used;
+                        string _qtyUnit = yarn.YarnType == YarnType.콘사 ? "콘" : "볼";
+                    }
                     @if (yarn.Quantity > 0)
                     {
-                        <span class="badge badge-done">x @(yarn.Quantity)</span>
+                        @if (_used > 0)
+                        {
+                            <span class="badge" style="background:var(--theme-mid);color:var(--text-dark);font-size:0.75rem;">
+                                @(_remain.ToString("G29")) / @(yarn.Quantity.ToString("G29")) @_qtyUnit
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-done">x @(yarn.Quantity.ToString("G29")) @_qtyUnit</span>
+                        }
                     }
                 </div>
 
@@ -73,7 +87,7 @@ else
                     string weightUnit = isCone ? "g/콘" : "g/볼";
                     string lengthUnit = isCone ? "m/콘" : "m/볼";
                     // 총 보유 길이 계산
-                    int totalLength = yarn.LengthMeter * yarn.Quantity;
+                    decimal totalLength = yarn.LengthMeter * yarn.Quantity;
                 }
                 <div style="display:flex; gap:12px; font-size:0.78rem; color:var(--text-light); margin:6px 0 2px;">
                     @if (yarn.WeightGram > 0) { <span>@yarn.WeightGram @weightUnit</span> }
@@ -223,7 +237,7 @@ else
                         <label class="form-label">수량 (콘)</label>
                         <input type="number" class="form-control" min="0" placeholder="예: 5"
                                value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
-                               @onchange="e => _editingYarn.Quantity = int.TryParse(e.Value?.ToString(), out var q) ? q : 0" />
+                               @onchange="e => _editingYarn.Quantity = decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var q) ? q : 0" />
                     </div>
                 </div>
             }
@@ -244,7 +258,7 @@ else
                         <label class="form-label">수량 (볼)</label>
                         <input type="number" class="form-control" min="0" placeholder="예: 5"
                                value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
-                               @onchange="e => _editingYarn.Quantity = int.TryParse(e.Value?.ToString(), out var q) ? q : 0" />
+                               @onchange="e => _editingYarn.Quantity = decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var q) ? q : 0" />
                     </div>
                 </div>
             }
@@ -336,10 +350,24 @@ else
             y.Color.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
             y.Material.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
 
+    List<KnitProject> _projects = new();
+    // yarnId → 총 사용량 (모든 프로젝트 합산)
+    Dictionary<Guid, decimal> _usedQty = new();
+
     protected override async Task OnInitializedAsync()
     {
         _yarns = await Storage.GetYarnsAsync();
+        _projects = await Storage.GetProjectsAsync();
+        _CalcUsed();
         _loading = false;
+    }
+
+    void _CalcUsed()
+    {
+        _usedQty = new();
+        foreach (var p in _projects)
+            foreach (var u in p.YarnUsages)
+                _usedQty[u.YarnId] = (_usedQty.TryGetValue(u.YarnId, out var v) ? v : 0) + u.BallsUsed;
     }
 
     void OpenAddModal() { _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 }; _showModal = true; }
@@ -352,6 +380,7 @@ else
         if (_editingYarn.Id == Guid.Empty) _editingYarn.Id = Guid.NewGuid();
         await Storage.SaveYarnAsync(_editingYarn);
         _yarns = await Storage.GetYarnsAsync();
+        _CalcUsed();
         CloseModal();
     }
 

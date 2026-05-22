@@ -322,7 +322,7 @@ else
                             <span>@yarn.Brand @yarn.Name (@yarn.Color)</span>
                             @if (usage.BallsUsed > 0)
                             {
-                                <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed 볼</span>
+                                <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed.ToString("G29") 볼</span>
                             }
                         </div>
                     }
@@ -578,8 +578,8 @@ else
                                 <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
                             }
                             <input class="form-control" type="number" min="1" style="width:64px;"
-                                   value="@usage.BallsUsed"
-                                   @onchange="e => usage.BallsUsed = int.TryParse(e.Value?.ToString(), out var n) ? n : 1" />
+                                   value="@usage.BallsUsed.ToString("G29")"
+                                   @onchange="e => usage.BallsUsed = decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : 1" />
                             <span style="font-size:0.82rem; color:var(--text-mid);">볼(콘)</span>
                             <button class="btn btn-danger btn-sm" @onclick="() => _editingProject.YarnUsages.Remove(usage)">✕</button>
                         </div>

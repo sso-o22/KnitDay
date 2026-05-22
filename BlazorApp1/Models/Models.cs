@@ -32,7 +32,7 @@ namespace KnitLog.Models
         public string PurchasePlace { get; set; } = "";
         public decimal Price { get; set; }
         public DateTime? PurchaseDate { get; set; }
-        public int Quantity { get; set; } = 1;
+        public decimal Quantity { get; set; } = 1;
         public string Memo { get; set; } = "";
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
@@ -161,7 +161,7 @@ namespace KnitLog.Models
     public class ProjectYarnUsage
     {
         public Guid YarnId { get; set; }
-        public int BallsUsed { get; set; }
+        public decimal BallsUsed { get; set; }
         public string Memo { get; set; } = "";
     }
 
