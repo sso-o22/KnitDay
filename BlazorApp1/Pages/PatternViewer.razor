@@ -303,7 +303,7 @@
 
     /* ── 필기 위젯: 위젯(동그라미) 아래로 패널 펼치기 ── */
     .draw-wrap {
-        position: absolute;
+        position: fixed;
         top: 46px;
         left: 10px;
         z-index: 300;
@@ -535,7 +535,7 @@
 
 @if (_showLoadWarning)
 {
-    <div class="modal-backdrop" style="z-index:9999;">
+    <div class="modal-backdrop modal-confirm" style="z-index:9999;">
         <div class="modal" style="max-width:360px;text-align:center;" @onclick:stopPropagation="true">
             <div style="font-size:2rem;margin-bottom:12px;">📄</div>
             <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">도안을 교체할까요?</div>
@@ -639,7 +639,7 @@
     System.Threading.CancellationTokenSource? _saveCts;
     async Task SaveViewerStateAsync()
     {
-        if (_project == null || !_pdfLoaded) return;
+        if (_project == null || !_pdfLoaded || _isRestoring) return;
         // 디바운스: 2초 내 연속 호출은 마지막 것만 실행
         _saveCts?.Cancel();
         _saveCts = new System.Threading.CancellationTokenSource();
@@ -678,6 +678,7 @@
 
     // OnAfterRenderAsync 첫 렌더 후 저장된 데이터 복원
     bool _restoredOnce = false;
+    bool _isRestoring = false;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if(firstRender)
@@ -703,6 +704,7 @@
     async Task RestoreSavedPatternAsync()
     {
         if (_project == null || !_project.HasSavedPattern) return;
+        _isRestoring = true;
         try
         {
             var savedFileName = await JS.InvokeAsync<string?>("patternViewer.loadPdfFromProject", ProjectId.ToString());
@@ -755,6 +757,12 @@
         catch (Exception ex)
         {
             await JS.InvokeVoidAsync("console.error", "RestoreSavedPattern error: " + ex.Message);
+        }
+        finally
+        {
+            _saveCts?.Cancel(); // 복원 중 쌓인 디바운스 타이머 취소
+            _saveCts = null;
+            _isRestoring = false;
         }
     }
 
