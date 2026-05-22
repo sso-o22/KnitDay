@@ -100,7 +100,7 @@ else
                                     <span style="font-size:0.85rem; font-weight:500;">@yarn.Brand @yarn.Name</span>
                                     @if (usage.BallsUsed > 0)
                                     {
-                                        <span style="font-size:0.78rem; color:var(--text-light);">@(usage.BallsUsed.ToString("G29"))볼</span>
+                                        <span style="font-size:0.78rem; color:var(--text-light);">@(usage.BallsUsed)볼</span>
                                     }
                                 </div>
                             }
@@ -605,7 +605,7 @@ else
                                     <div style="font-size:0.78rem; color:var(--text-mid);">@yarn.Color</div>
                                     @if (usage.BallsUsed > 0)
                                     {
-                                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:1px;">@(usage.BallsUsed.ToString("G29"))볼 사용</div>
+                                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:1px;">@(usage.BallsUsed)볼 사용</div>
                                     }
                                 </div>
                             </div>
@@ -682,10 +682,18 @@ else
 <!-- 사진 확대 모달 -->
 @if (_showPhoto && _selectedPhoto != null)
 {
-    <div class="modal-backdrop">
-        <div style="max-width:90vw; max-height:90vh;" @onclick:stopPropagation="true">
+    <div class="modal-backdrop" @onclick="() => _showPhoto = false"
+         style="display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px;">
+        <div style="position:relative; max-width:90vw;" @onclick:stopPropagation="true">
+            <button @onclick="() => _showPhoto = false"
+                    style="position:absolute; top:-12px; right:-12px; z-index:10;
+                           width:32px; height:32px; border-radius:50%; border:none;
+                           background:rgba(0,0,0,0.6); color:white; font-size:1rem;
+                           cursor:pointer; display:flex; align-items:center; justify-content:center;">
+                ×
+            </button>
             <img src="@_selectedPhoto.Base64Data"
-                 style="max-width:90vw; max-height:85vh; object-fit:contain; border-radius:var(--radius); display:block;" />
+                 style="max-width:90vw; max-height:80vh; object-fit:contain; border-radius:var(--radius); display:block;" />
             @if (!string.IsNullOrEmpty(_selectedPhoto.Caption))
             {
                 <p style="text-align:center; color:white; margin-top:10px;">@_selectedPhoto.Caption</p>
@@ -770,8 +778,8 @@ else
                             <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
                         }
                         <input class="form-control" type="number" min="1" style="width:64px;"
-                               value="@usage.BallsUsed.ToString("G29")"
-                               @onchange="e => usage.BallsUsed = decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : 1" />
+                               value="@usage.BallsUsed"
+                               @onchange="e => usage.BallsUsed = int.TryParse(e.Value?.ToString(), out var n) ? n : 1" />
                         <span style="font-size:0.82rem; color:var(--text-mid);">볼(콘)</span>
                         <button class="btn btn-danger btn-sm" @onclick="() => _project.YarnUsages.Remove(usage)">✕</button>
                     </div>
@@ -1019,8 +1027,20 @@ else
     List<Yarn> _yarns = new();
     List<KnitTool> _allTools = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnParametersSetAsync()
     {
+        // 프로젝트 간 네비게이션 시 새로고침 (Blazor 컴포넌트 재사용 대응)
+        if (_project?.Id != ProjectId)
+            await LoadDataAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+        => await LoadDataAsync();
+
+    async Task LoadDataAsync()
+    {
+        _project = null;
+        _loading = true;
         var all = await Storage.GetProjectsAsync();
         _project = all.FirstOrDefault(p => p.Id == ProjectId);
         _yarns = await Storage.GetYarnsAsync();
