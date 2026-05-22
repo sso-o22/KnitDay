@@ -1,0 +1,337 @@
+@* =====================================================================
+   Shared/CompletedPopup.razor — 완성작 상세 팝업 (Schedule, ProjectDetail 공용)
+   ===================================================================== *@
+@using KnitLog.Models
+@using KnitLog.Services
+@inject StorageService Storage
+@inject NavigationManager Nav
+
+@if (Show && Project != null)
+{
+    <div class="modal-backdrop">
+        <div class="modal" style="max-width:500px; max-height:90vh; display:flex; flex-direction:column; padding:0;" @onclick:stopPropagation="true">
+            <div class="modal-header" style="padding:16px 20px 12px; flex-shrink:0;">
+                <h2 class="modal-title">@Project.Title</h2>
+                <button class="btn btn-ghost btn-sm" @onclick="OnClose">✕</button>
+            </div>
+
+            <!-- 스크롤 영역 -->
+            <div style="overflow-y:auto; flex:1; padding:0 20px;">
+
+            <!-- 사진 갤러리 -->
+            @if (Project.Photos.Count > 0)
+            {
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; padding-top:12px;">
+                    @foreach (var photo in Project.Photos)
+                    {
+                        <img src="@photo.Base64Data"
+                             style="width:100px; height:100px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border);"
+                             alt="과정 사진" />
+                    }
+                </div>
+            }
+
+            <!-- 날짜 바 -->
+            <div style="margin-bottom:14px; padding:12px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
+                @if (!_editingBasic)
+                {
+                    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
+                        @if (Project.StartDate.HasValue)
+                        {
+                            <div style="text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">시작일</div>
+                                <div style="font-size:0.9rem; font-weight:600;">@Project.StartDate.Value.ToString("yyyy.MM.dd")</div>
+                            </div>
+                        }
+                        @if (Project.EndDate.HasValue)
+                        {
+                            <div style="text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">완성일</div>
+                                <div style="font-size:0.9rem; font-weight:600;">@Project.EndDate.Value.ToString("yyyy.MM.dd")</div>
+                            </div>
+                        }
+                        @if (Project.StartDate.HasValue && Project.EndDate.HasValue)
+                        {
+                            var days = (Project.EndDate.Value - Project.StartDate.Value).Days;
+                            <div style="text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">소요일</div>
+                                <div style="font-size:0.9rem; font-weight:600; color:#8a6a08;">@days 일</div>
+                            </div>
+                        }
+                        @{
+                            var popMin = Project.Sessions
+                                .Where(s => s.EndTime.HasValue)
+                                .Sum(s => (int)(s.EndTime!.Value - s.StartTime).TotalMinutes);
+                        }
+                        @if (popMin > 0)
+                        {
+                            var ph = popMin / 60; var pm = popMin % 60;
+                            <div style="text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
+                                <div style="font-size:0.9rem; font-weight:600; color:#267848;">@(ph > 0 ? $"{ph}시간 " : "")@(pm > 0 ? $"{pm}분" : "")</div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
+                                <div style="font-size:0.82rem; color:var(--text-light);">기록 없음</div>
+                            </div>
+                        }
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; margin-left:auto;"
+                                @onclick="() => _editingBasic = true">✏️ 수정</button>
+                    </div>
+                }
+                else
+                {
+                    <div class="form-row" style="margin-bottom:8px;">
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">시작일</label>
+                            <input type="date" class="form-control"
+                                   value="@Project.StartDate?.ToString("yyyy-MM-dd")"
+                                   @onchange="e => Project.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
+                        </div>
+                        <div class="form-group" style="margin-bottom:0;">
+                            <label class="form-label">완성일</label>
+                            <input type="date" class="form-control"
+                                   value="@Project.EndDate?.ToString("yyyy-MM-dd")"
+                                   @onchange="e => Project.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveBasicInfo">저장</button>
+                        <button class="btn btn-ghost btn-sm" @onclick="() => _editingBasic = false">취소</button>
+                    </div>
+                }
+            </div>
+
+            <!-- 도안 정보 -->
+            @if (!string.IsNullOrEmpty(Project.PatternName))
+            {
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div class="form-label" style="margin-bottom:4px;">📋 도안</div>
+                    <div style="font-size:0.92rem;">@Project.PatternName</div>
+                    @if (!string.IsNullOrEmpty(Project.PatternSource))
+                    {
+                        <div style="font-size:0.82rem; color:var(--text-mid);">출처: @Project.PatternSource</div>
+                    }
+                    @if (!string.IsNullOrEmpty(Project.PatternMemo))
+                    {
+                        <div style="font-size:0.82rem; color:var(--text-mid); margin-top:2px; white-space:pre-wrap;">@Project.PatternMemo</div>
+                    }
+                </div>
+            }
+
+            <!-- 사용 실 -->
+            @if (Yarns.Any())
+            {
+                var popYarns = Project.YarnUsages
+                    .Select(u => (u, Yarns.Find(y => y.Id == u.YarnId)))
+                    .Where(x => x.Item2 != null)
+                    .Select(x => (x.u, x.Item2!))
+                    .ToList();
+                @if (popYarns.Any())
+                {
+                    <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                        <div class="form-label" style="margin-bottom:6px;">🧵 사용 실</div>
+                        @foreach (var (usage, yarn) in popYarns)
+                        {
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:0.88rem;">
+                                <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
+                                <span>@yarn.Brand @yarn.Name (@yarn.Color)</span>
+                                @if (usage.BallsUsed > 0)
+                                {
+                                    <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed.ToString("G29") 볼</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            }
+
+            <!-- 사용 바늘 -->
+            @{
+                var popTools = Tools.Where(t => Project.ToolIds.Contains(t.Id)).ToList();
+            }
+            @if (popTools.Any() || !string.IsNullOrEmpty(Project.NeedleNote))
+            {
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div class="form-label" style="margin-bottom:6px;">⚒️ 사용 바늘</div>
+                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                        @foreach (var tool in popTools)
+                        {
+                            <span style="background:var(--ivory-dark); border-radius:4px; padding:3px 8px; font-size:0.8rem;">@tool.NeedleType @tool.SizeDisplay</span>
+                        }
+                        @if (!string.IsNullOrEmpty(Project.NeedleNote))
+                        {
+                            <span style="background:var(--ivory-dark); border-radius:4px; padding:3px 8px; font-size:0.8rem;">@Project.NeedleNote</span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- 완성 치수 -->
+            <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                    <div class="form-label" style="margin-bottom:0;">📏 완성 치수</div>
+                    @if (!_editingMeasurements)
+                    {
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem;" @onclick="() => { LoadMeasures(); _editingMeasurements = true; }">✏️ 입력</button>
+                    }
+                </div>
+                @if (!_editingMeasurements)
+                {
+                    @if (_measures.Any(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
+                    {
+                        <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem;">
+                            <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전</div>
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후</div>
+                            </div>
+                            @foreach (var m in _measures.Where(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
+                            {
+                                <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
+                                    <div style="padding:6px 10px;">@m.Label</div>
+                                    <div style="padding:6px 10px; border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.Before) ? "-" : m.Before + "cm")</div>
+                                    <div style="padding:6px 10px; border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.After) ? "-" : m.After + "cm")</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p style="font-size:0.82rem; color:var(--text-light);">치수 정보가 없어요.</p>
+                    }
+                }
+                else
+                {
+                    <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem; margin-bottom:8px;">
+                        <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
+                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
+                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전 (cm)</div>
+                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후 (cm)</div>
+                        </div>
+                        @foreach (var m in _measures)
+                        {
+                            <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
+                                <div style="padding:4px 6px; display:flex; align-items:center; gap:4px;">
+                                    @if (m.IsCustom)
+                                    {
+                                        <input class="form-control" style="border:none; padding:3px 6px; font-size:0.82rem; width:100%;" @bind="m.Label" placeholder="항목명" />
+                                        <button class="btn btn-danger btn-sm" style="padding:1px 5px; font-size:0.7rem;" @onclick="() => _measures.Remove(m)">✕</button>
+                                    }
+                                    else { <span style="padding:3px 4px;">@m.Label</span> }
+                                </div>
+                                <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
+                                    <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;" @bind="m.Before" placeholder="-" />
+                                </div>
+                                <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
+                                    <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;" @bind="m.After" placeholder="-" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <div style="display:flex; gap:8px; margin-bottom:8px;">
+                        <button class="btn btn-ghost btn-sm" @onclick="() => _measures.Add(new MeasureItem { IsCustom = true })">+ 항목 추가</button>
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-primary btn-sm" @onclick="SaveMeasurements">저장</button>
+                        <button class="btn btn-ghost btn-sm" @onclick="() => { LoadMeasures(); _editingMeasurements = false; }">취소</button>
+                    </div>
+                }
+            </div>
+
+            <!-- 메모 -->
+            @if (!string.IsNullOrEmpty(Project.Memo))
+            {
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div class="form-label" style="margin-bottom:4px;">📝 메모</div>
+                    <p style="white-space:pre-wrap; font-size:0.9rem; color:var(--text-mid);">@Project.Memo</p>
+                </div>
+            }
+
+            </div><!-- /스크롤 영역 -->
+            <div class="modal-footer" style="flex-shrink:0;">
+                <button class="btn btn-ghost" @onclick="OnClose">닫기</button>
+                <button class="btn btn-primary" @onclick="() => Nav.NavigateTo("finished")">완성작 목록 보기 →</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public KnitProject? Project { get; set; }
+    [Parameter] public List<Yarn> Yarns { get; set; } = new();
+    [Parameter] public List<KnitTool> Tools { get; set; } = new();
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    bool _editingBasic = false;
+    bool _editingMeasurements = false;
+
+    class MeasureItem
+    {
+        public string Label { get; set; } = "";
+        public string Before { get; set; } = "";
+        public string After  { get; set; } = "";
+        public bool IsCustom { get; set; } = false;
+    }
+    static readonly string[] _defaultLabels = { "가슴둘레", "총장", "소매 길이", "소매 단면" };
+    List<MeasureItem> _measures = new();
+
+    protected override void OnParametersSet()
+    {
+        if (Show && Project != null)
+        {
+            _editingBasic = false;
+            _editingMeasurements = false;
+            LoadMeasures();
+        }
+    }
+
+    void LoadMeasures()
+    {
+        if (Project == null) return;
+        var dict = new Dictionary<string, (string, string)>();
+        if (!string.IsNullOrEmpty(Project.MeasurementsMemo))
+        {
+            foreach (var part in Project.MeasurementsMemo.Split('|'))
+            {
+                var seg = part.Split(':');
+                if (seg.Length >= 3) dict[seg[0]] = (seg[1], seg[2]);
+                else if (seg.Length == 2) dict[seg[0]] = (seg[1], "");
+            }
+        }
+        _measures = new();
+        foreach (var label in _defaultLabels)
+        {
+            var (b, a) = dict.TryGetValue(label, out var v) ? v : ("", "");
+            _measures.Add(new MeasureItem { Label = label, Before = b, After = a });
+            dict.Remove(label);
+        }
+        foreach (var kv in dict)
+            _measures.Add(new MeasureItem { Label = kv.Key, Before = kv.Value.Item1, After = kv.Value.Item2, IsCustom = true });
+    }
+
+    async Task SaveBasicInfo()
+    {
+        if (Project == null) return;
+        await Storage.SaveProjectAsync(Project);
+        _editingBasic = false;
+        await OnSaved.InvokeAsync();
+    }
+
+    async Task SaveMeasurements()
+    {
+        if (Project == null) return;
+        Project.MeasurementsMemo = string.Join("|",
+            _measures
+                .Where(m => !string.IsNullOrEmpty(m.Label) && (!string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
+                .Select(m => $"{m.Label}:{m.Before}:{m.After}"));
+        await Storage.SaveProjectAsync(Project);
+        _editingMeasurements = false;
+        await OnSaved.InvokeAsync();
+    }
+}

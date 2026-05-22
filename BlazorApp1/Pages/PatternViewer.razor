@@ -114,9 +114,10 @@
             <div class="draw-panel-inner">
                 <!-- 행1: 도구 선택 (도형 → 펜 → 지우개) -->
                 <div class="dp-row">
-                    <button class="dp-btn @(_tool=="ruler"?"dp-on":"")"  @onclick='()=>SetTool("ruler")'>📏</button>
-                    <button class="dp-btn @(_tool=="pen"?"dp-on":"")"    @onclick='()=>SetTool("pen")'>🖋️</button>
-                    <button class="dp-btn @(_tool=="eraser"?"dp-on":"")" @onclick='()=>SetTool("eraser")'>🧽</button>
+                    <button class="dp-btn @(_tool=="ruler"?"dp-on":"")"       @onclick='()=>SetTool("ruler")'>📏</button>
+                    <button class="dp-btn @(_tool=="pen"?"dp-on":"")"         @onclick='()=>SetTool("pen")'>🖋️</button>
+                    <button class="dp-btn @(_tool=="highlighter"?"dp-on":"")" @onclick='()=>SetTool("highlighter")'>🖊️</button>
+                    <button class="dp-btn @(_tool=="eraser"?"dp-on":"")"       @onclick='()=>SetTool("eraser")'>🧽</button>
                 </div>
 
                 @if (_tool == "pen" || _tool == "eraser")
@@ -922,7 +923,7 @@
         if(_isDrawingRuler&&Math.Abs(_previewW)>5){var r=new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage};_rulers.Add(r);_selectedRuler=r;_=SaveRulersAsync();}
         bool _hadRulerAction = _isDrawingRuler || _draggingRuler!=null || _resizingRuler!=null;
         _isDrawingRuler=false;_draggingRuler=null;_resizingRuler=null;
-        if(_isDrawing&&_pdfLoaded&&(_tool=="pen"||_tool=="eraser"))await JS.InvokeVoidAsync("patternViewer.endDraw");
+        if(_isDrawing&&_pdfLoaded&&(_tool=="pen"||_tool=="eraser"||_tool=="highlighter"))await JS.InvokeVoidAsync("patternViewer.endDraw");
         _isDrawing=false;
         if(_hadRulerAction)_=SaveRulersAsync();
         StateHasChanged();
@@ -946,7 +947,25 @@
         _dragOffsetX = (e.ClientX - rect[0]) - ruler.X * _zoom;
         _dragOffsetY = (e.ClientY - rect[1]) - ruler.Y * _zoom;
     }
-    async Task OnRulerTouchStart(TouchEventArgs e,RulerOverlay ruler){if(_tool!="ruler")return;if(_selectedRuler!=ruler){_selectedRuler=ruler;StateHasChanged();return;}var rect=await JS.InvokeAsync<double[]>("patternViewer.getRect",ruler.Page);var t=e.Touches[0];_draggingRuler=ruler;_dragOffsetX=(t.ClientX-rect[0])-ruler.X*_zoom;_dragOffsetY=(t.ClientY-rect[1])-ruler.Y*_zoom;}
+    async Task OnRulerTouchStart(TouchEventArgs e, RulerOverlay ruler)
+    {
+        if (_tool != "ruler") return;
+        var t = e.Touches[0];
+        if (_selectedRuler != ruler)
+        {
+            _selectedRuler = ruler;
+            // 팝업을 도형 위에 표시
+            _rulerPopupX = Math.Max(10, Math.Min(t.ClientX - 80, t.ClientX + 8));
+            _rulerPopupY = Math.Max(60, t.ClientY - 70);
+            StateHasChanged();
+            return;
+        }
+        // 이미 선택된 도형 → 드래그 시작
+        var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect", ruler.Page);
+        _draggingRuler = ruler;
+        _dragOffsetX = (t.ClientX - rect[0]) - ruler.X * _zoom;
+        _dragOffsetY = (t.ClientY - rect[1]) - ruler.Y * _zoom;
+    }
     void OnResizeMouseDown(MouseEventArgs e,RulerOverlay ruler)=>_resizingRuler=ruler;
     void OnResizeTouchStart(TouchEventArgs e,RulerOverlay ruler)=>_resizingRuler=ruler;
 
@@ -970,7 +989,7 @@
     void ChangeRulerOpacity(RulerOverlay r,ChangeEventArgs e)=>r.Opacity=(double.TryParse(e.Value?.ToString(),out var v)?v:35)/100.0;
     string HexToRgb(string hex){hex=hex.TrimStart('#');return $"{Convert.ToInt32(hex[..2],16)},{Convert.ToInt32(hex[2..4],16)},{Convert.ToInt32(hex[4..6],16)}";}
     string RgbToHex(string rgb){var p=rgb.Split(',');return $"#{int.Parse(p[0]):X2}{int.Parse(p[1]):X2}{int.Parse(p[2]):X2}";}
-    string GetCursor()=>_tool switch{"select"=>"default","pen"=>"crosshair","eraser"=>"cell",_=>"crosshair"};
+    string GetCursor()=>_tool switch{"select"=>"default","pen"=>"crosshair","eraser"=>"cell","highlighter"=>"crosshair",_=>"crosshair"};
     async Task GoBack()
     {
         // 뒤로가기 전 즉시 저장 (디바운스 기다리지 않고)
