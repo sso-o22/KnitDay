@@ -15,7 +15,15 @@ builder.Services.AddScoped(sp => new HttpClient
     BaseAddress = new Uri(builder.HostEnvironment.BaseAddress)
 });
 
-// StorageService를 싱글톤으로 등록
+// 서비스 등록
+builder.Services.AddSingleton<AuthService>();
 builder.Services.AddSingleton<StorageService>();
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+
+// StorageService에 AuthService 주입 (순환 의존 방지)
+var storage = host.Services.GetRequiredService<StorageService>();
+var auth    = host.Services.GetRequiredService<AuthService>();
+storage.SetAuthService(auth);
+
+await host.RunAsync();

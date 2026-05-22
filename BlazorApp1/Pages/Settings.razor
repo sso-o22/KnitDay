@@ -1,5 +1,6 @@
 @page "/settings"
 @inject IJSRuntime JS
+@inject AuthService Auth
 
 <div class="page-header">
     <div>
@@ -9,6 +10,33 @@
 </div>
 
 <div style="max-width:480px; display:flex; flex-direction:column; gap:16px;">
+
+    <!-- 계정 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:4px;">👤 계정</div>
+        @if (Auth.IsLoggedIn)
+        {
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                @if (!string.IsNullOrEmpty(Auth.CurrentUser?.PhotoURL))
+                {
+                    <img src="@Auth.CurrentUser.PhotoURL" style="width:44px;height:44px;border-radius:50%;object-fit:cover;" />
+                }
+                <div>
+                    <div style="font-weight:600;">@Auth.CurrentUser?.DisplayName</div>
+                    <div style="font-size:0.82rem;color:var(--text-mid);">@Auth.CurrentUser?.Email</div>
+                    <div style="font-size:0.75rem;color:var(--text-light);margin-top:2px;">☁️ Firebase 동기화 중</div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" @onclick="SignOut">🚪 로그아웃</button>
+        }
+        else
+        {
+            <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:12px;">
+                구글 계정으로 로그인하면 여러 기기에서 데이터를 동기화할 수 있어요.
+            </p>
+            <button class="btn btn-primary" @onclick="SignIn">🔑 구글 로그인</button>
+        }
+    </div>
 
     <!-- 테마 -->
     <div class="card">
@@ -186,6 +214,9 @@
         }
         StateHasChanged();
     }
+
+    async Task SignIn() => await Auth.SignInWithGoogleAsync();
+    async Task SignOut() { await Auth.SignOutAsync(); StateHasChanged(); }
 
     async Task ToggleDebugMode()
     {
