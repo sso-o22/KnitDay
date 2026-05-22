@@ -192,13 +192,15 @@ else
 <!-- 완성작 미리보기 팝업 -->
 @if (_showCompletedPopup && _completedPreview != null)
 {
-    <div class="modal-backdrop" style="align-items:flex-start; padding:16px; overflow-y:auto;">
-        <div class="modal" style="max-width:740px; margin:auto;" @onclick:stopPropagation="true">
-            <div class="modal-header">
+    <div class="modal-backdrop">
+        <div class="modal" style="max-width:500px; max-height:90vh; display:flex; flex-direction:column; padding:0;" @onclick:stopPropagation="true">
+            <div class="modal-header" style="padding:16px 20px 12px; flex-shrink:0;">
                 <h2 class="modal-title">@_completedPreview.Title</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseCompletedPopup">✕</button>
             </div>
 
+            <!-- 스크롤 영역 -->
+            <div style="overflow-y:auto; flex:1; padding:0 20px;">
             <!-- 사진 갤러리 -->
             @if (_completedPreview.Photos.Count > 0)
             {
@@ -493,7 +495,8 @@ else
                 </div>
             }
 
-            <div class="modal-footer">
+            </div><!-- /스크롤 영역 -->
+            <div class="modal-footer" style="flex-shrink:0;">
                 <button class="btn btn-ghost" @onclick="CloseCompletedPopup">닫기</button>
                 <button class="btn btn-primary" @onclick="GoToFinished">완성작 목록 보기 →</button>
             </div>
