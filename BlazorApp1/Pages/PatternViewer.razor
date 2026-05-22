@@ -640,8 +640,9 @@
             _project.ViewerRulers = System.Text.Json.JsonSerializer.Serialize(_rulers);
             _project.ViewerAnnotations = await JS.InvokeAsync<string>("patternViewer.getPaths");
             await SaveProject();
+            await JS.InvokeVoidAsync("console.log", $"[Ruler SAVED] count={_rulers.Count} json={_project.ViewerRulers[..Math.Min(80,_project.ViewerRulers.Length)]}");
         }
-        catch { }
+        catch (Exception ex) { await JS.InvokeVoidAsync("console.error", "[Ruler SAVE ERR] " + ex.Message); }
     }
 
     // 필기+도형+줌+페이지 자동 저장 (디바운스)
@@ -736,6 +737,7 @@
             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
                 await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
 
+            await JS.InvokeVoidAsync("console.log", $"[Ruler RESTORE] ViewerRulers={(_project.ViewerRulers?.Length > 0 ? _project.ViewerRulers[..Math.Min(80,_project.ViewerRulers.Length)] : \"EMPTY\")} ");
             if (!string.IsNullOrEmpty(_project.ViewerRulers))
             {
                 try
@@ -744,8 +746,9 @@
                         _project.ViewerRulers,
                         new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     if (rulers != null) _rulers = rulers;
+                    await JS.InvokeVoidAsync("console.log", $"[Ruler RESTORE] deserialized count={_rulers.Count}");
                 }
-                catch { }
+                catch (Exception ex) { await JS.InvokeVoidAsync("console.error", "[Ruler RESTORE ERR] " + ex.Message); }
             }
 
             StateHasChanged();
