@@ -237,7 +237,14 @@ window.patternViewer = (() => {
             const pos = getCssPos(e);
             currentPageNum = pageNum;
             isDrawing = true;
-            console.log("[PEN]"+" touch="+pos._cx.toFixed(0)+","+pos._cy.toFixed(0)+" rectL="+pos._rl.toFixed(0)+" rectT="+pos._rt.toFixed(0)+" rectW="+pos._rw.toFixed(0)+" rectH="+pos._rh.toFixed(0)+" pos="+pos.x.toFixed(0)+","+pos.y.toFixed(0)+" dpr="+(anno._renderedDpr||1)+" bufW="+anno.width+" zoom="+currentZoom.toFixed(2));
+            console.log("[PEN]"
+                +" touch="+pos._cx.toFixed(0)+","+pos._cy.toFixed(0)
+                +" rectL="+pos._rl.toFixed(0)+" rectT="+pos._rt.toFixed(0)
+                +" pos="+pos.x.toFixed(0)+","+pos.y.toFixed(0)
+                +" rendDpr="+(anno._renderedDpr||"?")
+                +" sysDpr="+window.devicePixelRatio
+                +" bufW="+anno.width+" cssW="+anno.offsetWidth
+                +" zoom="+currentZoom.toFixed(2));
             // 렌더 시점에 저장된 dpr 사용
             const actualDpr = anno._renderedDpr || 1;
             currentPath = {
@@ -316,7 +323,13 @@ window.patternViewer = (() => {
         }
 
         const page     = await pdfDoc.getPage(pageNum);
-        const dpr      = window.devicePixelRatio || 1;
+        // iOS PWA에서 window.devicePixelRatio가 1로 반환되는 버그 우회
+        // screen.width vs window.innerWidth 비율로 실제 DPR 추정
+        const sysDpr = window.devicePixelRatio || 1;
+        const screenDpr = (screen.width > 0 && window.innerWidth > 0)
+            ? Math.round(screen.width / window.innerWidth * 10) / 10
+            : sysDpr;
+        const dpr = Math.max(sysDpr, screenDpr, 1);
         const viewport = page.getViewport({ scale: zoom });
         const cssW = Math.floor(viewport.width);
         const cssH = Math.floor(viewport.height);
@@ -329,7 +342,6 @@ window.patternViewer = (() => {
         pdfCanvas.style.height  = annoCanvas.style.height = cssH + 'px';
 
         // 렌더 시점의 dpr을 캔버스에 저장 → redraw/draw 시 항상 이 값 사용
-        // (나중에 CSS 크기가 달라져도 좌표 흔들리지 않음)
         annoCanvas._renderedDpr  = dpr;
         annoCanvas._renderedZoom = zoom;
 
