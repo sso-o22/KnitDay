@@ -192,8 +192,8 @@ else
 <!-- 완성작 미리보기 팝업 -->
 @if (_showCompletedPopup && _completedPreview != null)
 {
-    <div class="modal-backdrop">
-        <div class="modal" style="max-width:740px;" @onclick:stopPropagation="true">
+    <div class="modal-backdrop" style="align-items:flex-start; padding:16px; overflow-y:auto;">
+        <div class="modal" style="max-width:740px; margin:auto;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@_completedPreview.Title</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseCompletedPopup">✕</button>
