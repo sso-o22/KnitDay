@@ -172,9 +172,9 @@ window.patternViewer = (() => {
         if (!anno || !_renderedPages.has(pageNum)) return;
         const ctx = anno.getContext('2d');
         ctx.clearRect(0, 0, anno.width, anno.height);
-        // _renderedDpr 없으면 실제 버퍼/CSS 비율로 계산
-        const offsetW = anno.offsetWidth || 1;
-        const actualDpr = anno._renderedDpr || (anno.width / offsetW) || 1;
+        // _cssW: renderOnePage에서 저장한 정확한 CSS px
+        const cssW = anno._cssW || anno.offsetWidth || 1;
+        const actualDpr = anno._renderedDpr || (cssW > 0 ? anno.width / cssW : 1);
         const scale = currentZoom * actualDpr;
         paths.filter(p => p.page === pageNum).forEach(p => {
             if (!p.points.length) return;
@@ -216,14 +216,15 @@ window.patternViewer = (() => {
         function getCssPos(e) {
             const rect = anno.getBoundingClientRect();
             const src  = e.touches ? e.touches[0] : e;
-            // offsetWidth/Height는 항상 CSS px 반환 (getBoundingClientRect는 iOS에서 물리px 반환 버그 있음)
-            const cssW = anno.offsetWidth  || rect.width;
-            const cssH = anno.offsetHeight || rect.height;
-            const scaleX = cssW > 0 ? anno.width  / cssW : 1;
+            // _cssW: renderOnePage에서 viewport 기준으로 저장한 실제 CSS px
+            // offsetWidth/getBoundingClientRect는 iOS에서 물리px 반환 버그 있음
+            const cssW = anno._cssW || anno.offsetWidth || rect.width;
+            const cssH = anno._cssH || anno.offsetHeight || rect.height;
+            const scaleX = cssW > 0 ? anno.width / cssW : 1;
             const scaleY = cssH > 0 ? anno.height / cssH : 1;
             return {
-                x: (src.clientX - rect.left) * scaleX,  // 버퍼 px
-                y: (src.clientY - rect.top)  * scaleY,  // 버퍼 px
+                x: (src.clientX - rect.left) * scaleX,
+                y: (src.clientY - rect.top)  * scaleY,
                 _cx: src.clientX, _cy: src.clientY,
                 _rl: rect.left,   _rt: rect.top,
                 _scaleX: scaleX
@@ -349,6 +350,8 @@ window.patternViewer = (() => {
         const actualDpr = cssW > 0 ? bufW / cssW : dpr;
         annoCanvas._renderedDpr  = actualDpr;
         annoCanvas._renderedZoom = zoom;
+        annoCanvas._cssW = cssW;  // viewport 기준 CSS px 저장 (offsetWidth 신뢰 불가)
+        annoCanvas._cssH = cssH;
         console.log('[RENDER] p'+pageNum+' cssW='+cssW+' bufW='+bufW+' dpr='+dpr+' actualDpr='+actualDpr);
 
         const cursor = _tool === 'pen' || _tool === 'ruler' ? 'crosshair' : _tool === 'eraser' ? 'cell' : 'default';
