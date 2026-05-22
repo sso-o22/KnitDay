@@ -87,6 +87,9 @@
                 await Storage.SyncOnLoginAsync();
                 _isSyncing = false;
                 await RefreshStats();
+                // 로그인 후 테마/다크 재적용 (StateHasChanged로 리렌더링돼도 테마 속성은 유지 필요)
+                await ApplyTheme(_currentTheme);
+                await ApplyDark(_isDark);
                 StateHasChanged();
             }
         });
