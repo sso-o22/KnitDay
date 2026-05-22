@@ -1,4 +1,4 @@
-rncl@page "/pattern-viewer/{ProjectId:guid}"
+@page "/pattern-viewer/{ProjectId:guid}"
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
@@ -100,11 +100,10 @@ rncl@page "/pattern-viewer/{ProjectId:guid}"
                 </div>
                 <div class="tb-div"></div>
             }
-            <label id="pdf-label" class="tb-label" style="cursor:pointer;"
-                   @onclick:preventDefault="@_pdfLoaded"
-                   @onclick="OnLoadPatternClick">
-                📄 <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
-            </label>
+            <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick">
+                📄
+            </span>
+            <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
         </div>
     </div>
 
@@ -763,14 +762,17 @@ rncl@page "/pattern-viewer/{ProjectId:guid}"
     // ── PDF ──
     async Task UndoLastPath()=>await JS.InvokeVoidAsync("patternViewer.undo");
     // 도안 불러오기 버튼 클릭 → 이미 있으면 경고, 없으면 바로 파일 선택
-    void OnLoadPatternClick()
+    async Task OnLoadPatternClick()
     {
         if (_pdfLoaded)
         {
             _showLoadWarning = true;
             StateHasChanged();
         }
-        // _pdfLoaded == false 일 때는 label 기본 동작으로 InputFile 클릭됨
+        else
+        {
+            await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
+        }
     }
 
     async Task ConfirmLoadPattern()
