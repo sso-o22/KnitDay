@@ -1004,5 +1004,15 @@
         _dotNetRef?.Dispose();
         try { await JS.InvokeVoidAsync("patternViewer.dispose"); } catch { }
     }
-    class RulerOverlay{public double X,Y,Width,Height,Opacity=0.35;public string ColorRgb="180,220,190";public int Page;public double SavedAtZoom=0;}
+    class RulerOverlay
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+        public double Opacity { get; set; } = 0.35;
+        public string ColorRgb { get; set; } = "180,220,190";
+        public int Page { get; set; }
+        public double SavedAtZoom { get; set; } = 0;
+    }
 }
