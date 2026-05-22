@@ -215,17 +215,16 @@ window.patternViewer = (() => {
         function getCssPos(e) {
             const rect = anno.getBoundingClientRect();
             const src  = e.touches ? e.touches[0] : e;
-            // rect.width = 실제 화면에 표시되는 CSS px 크기
-            // anno.width = 버퍼 px 크기
-            // 비율 = 버퍼 / 화면CSS (이게 실제 dpr)
-            const scaleX = rect.width  > 0 ? anno.width  / rect.width  : 1;
-            const scaleY = rect.height > 0 ? anno.height / rect.height : 1;
+            // offsetWidth/Height는 항상 CSS px 반환 (getBoundingClientRect는 iOS에서 물리px 반환 버그 있음)
+            const cssW = anno.offsetWidth  || rect.width;
+            const cssH = anno.offsetHeight || rect.height;
+            const scaleX = cssW > 0 ? anno.width  / cssW : 1;
+            const scaleY = cssH > 0 ? anno.height / cssH : 1;
             return {
-                x: (src.clientX - rect.left) * scaleX,  // 버퍼 px 좌표
-                y: (src.clientY - rect.top)  * scaleY,  // 버퍼 px 좌표
+                x: (src.clientX - rect.left) * scaleX,  // 버퍼 px
+                y: (src.clientY - rect.top)  * scaleY,  // 버퍼 px
                 _cx: src.clientX, _cy: src.clientY,
                 _rl: rect.left,   _rt: rect.top,
-                _rw: rect.width,  _rh: rect.height,
                 _scaleX: scaleX
             };
         }
