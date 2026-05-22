@@ -185,7 +185,22 @@ window.patternViewer = (() => {
                 isEraser: _isEraser, tool: _tool,
                 points: [{ x: normX, y: normY }] };
             const {bx, by} = normToBuf(normX, normY, anno, pageNum);
-            _stroke(anno, pageNum, bx, by, bx + 0.1, by + 0.1);
+            if (_tool === 'highlighter') {
+                // 형광펜: context 상태 미리 설정 후 유지 (onMove에서 재사용)
+                const dpr = anno._dpr || 1;
+                const hCtx = anno.getContext('2d');
+                hCtx.lineWidth   = _size * 4 * currentZoom * dpr;
+                hCtx.lineCap     = 'square';
+                hCtx.lineJoin    = 'miter';
+                hCtx.globalAlpha = 0.35;
+                hCtx.strokeStyle = _color;
+                hCtx.globalCompositeOperation = 'multiply';
+                hCtx.beginPath();
+                hCtx.moveTo(bx, by);
+                anno._hlCtx = hCtx;  // onMove에서 재사용
+            } else {
+                _stroke(anno, pageNum, bx, by, bx + 0.1, by + 0.1);
+            }
             // 직선 스냅: 0.9초 후 직선 모드 전환
             _snapTimer = setTimeout(() => {
                 if (isDrawing && currentPath && currentPath.points.length >= 1) {
@@ -215,22 +230,21 @@ window.patternViewer = (() => {
                 // 직선 스냅 모드: 시작점→현재점만 실시간 미리보기
                 const startPt = currentPath.points[0];
                 currentPath.points = [startPt, { x: normX, y: normY }];
+                anno._hlCtx = null;  // 스냅 모드로 전환 시 연속 context 리셋
                 redrawPage(pageNum);
-                if (_tool === 'highlighter') {
-                    _drawFullPath(anno, pageNum, currentPath);
-                } else {
-                    const {bx: fx, by: fy} = normToBuf(startPt.x, startPt.y, anno, pageNum);
-                    const {bx: tx, by: ty} = normToBuf(normX, normY, anno, pageNum);
-                    _stroke(anno, pageNum, fx, fy, tx, ty);
-                }
+                _drawFullPath(anno, pageNum, currentPath);
                 return;
             }
             const prev = currentPath.points[currentPath.points.length - 1];
             currentPath.points.push({ x: normX, y: normY });
-            if (_tool === 'highlighter') {
-                // 형광펜: 전체 경로를 한 번에 그려야 매끄러움 (세그먼트 분리 시 점점이 찍힘)
-                redrawPage(pageNum);
-                _drawFullPath(anno, pageNum, currentPath);
+            if (_tool === 'highlighter' && anno._hlCtx) {
+                // 형광펜: context 유지하며 lineTo로 이어그리기 (끊김 없음)
+                const {bx: tx, by: ty} = normToBuf(normX, normY, anno, pageNum);
+                anno._hlCtx.lineTo(tx, ty);
+                anno._hlCtx.stroke();
+                // stroke 후 다시 moveTo는 하지 않음 - 연속 경로 유지
+                anno._hlCtx.beginPath();
+                anno._hlCtx.moveTo(tx, ty);
             } else {
                 const {bx: fx, by: fy} = normToBuf(prev.x, prev.y, anno, pageNum);
                 const {bx: tx, by: ty} = normToBuf(normX, normY, anno, pageNum);
@@ -248,6 +262,11 @@ window.patternViewer = (() => {
             if (currentPath && currentPath.points.length > 0) {
                 paths.push(currentPath);
                 if (dotNetRef) dotNetRef.invokeMethodAsync('NotifyAnnotationChanged');
+            }
+            // 형광펜: 손 뗄 때 redraw로 정리 (경로 누적 깔끔하게)
+            if (_tool === 'highlighter') {
+                anno._hlCtx = null;
+                redrawPage(pageNum);
             }
             currentPath = null;
         }

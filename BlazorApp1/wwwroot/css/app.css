@@ -582,14 +582,13 @@ body {
         pointer-events: none;
         white-space: nowrap;
     }
-    /* 날짜 input 높이 - 값 있을 때와 동일하게 */
+
+    /* iOS 날짜 input - 값 있을때/없을때 동일하게 충분한 높이 */
     input[type="date"] {
-        min-height: 48px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        min-height: 44px;
+        line-height: 44px;
     }
-    /* 기존 wrapper CSS (혹시 남아있으면 무해하게 유지) */
+
     .date-input-wrap {
         position: relative;
         display: block;
