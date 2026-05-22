@@ -731,7 +731,7 @@
             await Task.Delay(100);
 
             await JS.InvokeVoidAsync("patternViewer.renderPdf");
-            await Task.Delay(200); // renderPdf 내부 ZoomToFromJS 콜백 완료 대기
+            await Task.Delay(500); // renderPdf 내부 ZoomToFromJS 콜백 완료 대기
 
 
             // 필기 복원은 렌더 완전히 끝난 후

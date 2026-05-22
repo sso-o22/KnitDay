@@ -245,6 +245,12 @@ window.patternViewer = (() => {
 
         function onDown(e) {
             if (_isPinching || _isZooming) return;
+            // 그리기/도형 시작 전 wrapper transform 제거 (좌표 정확성 보장)
+            const wrapper = document.getElementById('pdf-wrapper');
+            if (wrapper && wrapper.style.transform) {
+                wrapper.style.transform = '';
+                wrapper.style.transformOrigin = '';
+            }
             if (_tool === 'ruler') {
                 const pos = getCssPos(e);
                 if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown',
@@ -254,12 +260,6 @@ window.patternViewer = (() => {
             }
             if (_tool !== 'pen' && _tool !== 'eraser') return;
             if (e.touches) e.preventDefault();
-            // 그리기 시작 전 wrapper transform 제거 (좌표 정확성 보장)
-            const wrapper = document.getElementById('pdf-wrapper');
-            if (wrapper && wrapper.style.transform) {
-                wrapper.style.transform = '';
-                wrapper.style.transformOrigin = '';
-            }
             const pos = getCssPos(e);
             currentPageNum = pageNum;
             isDrawing = true;
