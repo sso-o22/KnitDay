@@ -737,7 +737,7 @@
             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
                 await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
 
-            await JS.InvokeVoidAsync("console.log", $"[Ruler RESTORE] ViewerRulers={(_project.ViewerRulers?.Length > 0 ? _project.ViewerRulers[..Math.Min(80,_project.ViewerRulers.Length)] : \"EMPTY\")} ");
+            await JS.InvokeVoidAsync("console.log", "[Ruler RESTORE] ViewerRulers=" + (_project.ViewerRulers?.Length > 0 ? _project.ViewerRulers[..Math.Min(80,_project.ViewerRulers.Length)] : "EMPTY"));
             if (!string.IsNullOrEmpty(_project.ViewerRulers))
             {
                 try
