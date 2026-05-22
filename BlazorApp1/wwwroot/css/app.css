@@ -624,7 +624,9 @@ body {
         box-sizing: border-box;
     }
 
-    /* 삭제 확인 모달은 작게 유지 (전체화면 X) — 일반 modal-backdrop보다 먼저 선언 */
+
+
+/* 삭제 확인 모달은 작게 유지 (전체화면 X) — 일반 modal-backdrop보다 먼저 선언 */
     .modal-backdrop.modal-confirm {
         position: fixed !important;
         top: 0 !important;
@@ -668,11 +670,13 @@ body {
 
     /* 완성작 팝업은 모바일에서도 고정 크기 유지 */
     .modal.modal-sheet {
-        max-height: 90vh;
-        min-height: unset;
-        border-radius: var(--radius);
-        box-shadow: var(--shadow-lg);
-        margin: auto;
+        max-height: 90vh !important;
+        min-height: unset !important;
+        height: auto !important;
+        border-radius: var(--radius) !important;
+        box-shadow: var(--shadow-lg) !important;
+        margin: auto !important;
+        padding: 0 !important;
     }
 
     /* 하단 탭바 활성화 */
