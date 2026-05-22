@@ -120,11 +120,11 @@
                     <button class="dp-btn @(_tool=="eraser"?"dp-on":"")"       @onclick='()=>SetTool("eraser")'>🧽</button>
                 </div>
 
-                @if (_tool == "pen" || _tool == "eraser")
+                @if (_tool == "pen" || _tool == "eraser" || _tool == "highlighter")
                 {
                     <div class="dp-sep"></div>
 
-                    @if (_tool == "pen")
+                    @if (_tool == "pen" || _tool == "highlighter")
                     {
                         <!-- 행2: 색상 -->
                         <div class="dp-row" style="justify-content:center;">

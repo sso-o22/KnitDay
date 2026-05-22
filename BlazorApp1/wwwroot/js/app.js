@@ -72,10 +72,11 @@ function updateDatePlaceholders() {
         if (!inp.value) {
             inp.classList.add('date-empty');
             if (!inp.parentElement.classList.contains('date-input-wrap')) {
-                const h = inp.offsetHeight;
+                const h = inp.offsetHeight || 44;
                 const wrap = document.createElement('div');
                 wrap.className = 'date-input-wrap';
-                if (h > 0) wrap.style.height = h + 'px';
+                wrap.style.height = h + 'px';
+                wrap.style.minHeight = h + 'px';
                 inp.parentNode.insertBefore(wrap, inp);
                 wrap.appendChild(inp);
                 const ph = document.createElement('span');

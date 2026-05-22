@@ -555,9 +555,15 @@ body {
     /* iOS Safari: 빈 날짜 input placeholder */
     input[type="date"].date-empty {
         color: transparent;
+        -webkit-text-fill-color: transparent;
     }
     input[type="date"].date-empty::-webkit-date-and-time-value {
         color: transparent;
+        -webkit-text-fill-color: transparent;
+    }
+    input[type="date"].date-empty::-webkit-datetime-edit {
+        color: transparent;
+        -webkit-text-fill-color: transparent;
     }
     /* 날짜 래퍼: input 높이 그대로 유지 */
     .date-input-wrap {
