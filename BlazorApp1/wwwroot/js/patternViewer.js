@@ -172,8 +172,9 @@ window.patternViewer = (() => {
         if (!anno || !_renderedPages.has(pageNum)) return;
         const ctx = anno.getContext('2d');
         ctx.clearRect(0, 0, anno.width, anno.height);
-        const dpr = window.devicePixelRatio || 1;
-        const scale = currentZoom * dpr;
+        // 실제 버퍼/CSS 비율 사용 (window.devicePixelRatio 신뢰 불가 - iOS 이슈)
+        const actualDpr = anno.offsetWidth > 0 ? anno.width / anno.offsetWidth : 1;
+        const scale = currentZoom * actualDpr;
         paths.filter(p => p.page === pageNum).forEach(p => {
             if (!p.points.length) return;
             ctx.save();
@@ -233,9 +234,9 @@ window.patternViewer = (() => {
             const pos = getCssPos(e);
             currentPageNum = pageNum;
             isDrawing = true;
-            console.log("[PEN] pos="+pos.x.toFixed(0)+","+pos.y.toFixed(0)+" cssW="+anno.offsetWidth+" cssH="+anno.offsetHeight+" bufW="+anno.width+" bufH="+anno.height+" dpr="+window.devicePixelRatio+" zoom="+currentZoom.toFixed(2));
-            const dpr = window.devicePixelRatio || 1;
-            // 정규화 저장: CSS px / currentZoom
+            console.log("[PEN] pos="+pos.x.toFixed(0)+","+pos.y.toFixed(0)+" cssW="+anno.offsetWidth+" bufW="+anno.width+" actualDpr="+(anno.offsetWidth>0?(anno.width/anno.offsetWidth).toFixed(2):"?")+" winDpr="+window.devicePixelRatio+" zoom="+currentZoom.toFixed(2));
+            // 실제 버퍼/CSS 비율 사용
+            const actualDpr = anno.offsetWidth > 0 ? anno.width / anno.offsetWidth : 1;
             currentPath = {
                 page: pageNum, color: _color, opacity: _opacity, size: _size,
                 isEraser: _isEraser,
@@ -243,8 +244,8 @@ window.patternViewer = (() => {
             };
             const ctx = anno.getContext('2d');
             ctx.beginPath();
-            ctx.moveTo(pos.x * dpr, pos.y * dpr);
-            ctx.lineWidth = _size * currentZoom * dpr;
+            ctx.moveTo(pos.x * actualDpr, pos.y * actualDpr);
+            ctx.lineWidth = _size * currentZoom * actualDpr;
             ctx.lineCap   = 'round';
             ctx.lineJoin  = 'round';
             if (_isEraser) {
@@ -269,10 +270,10 @@ window.patternViewer = (() => {
             if (!isDrawing || currentPageNum !== pageNum || (_tool !== 'pen' && _tool !== 'eraser')) return;
             if (e.touches) e.preventDefault();
             const pos = getCssPos(e);
-            const dpr = window.devicePixelRatio || 1;
+            const actualDpr = anno.offsetWidth > 0 ? anno.width / anno.offsetWidth : 1;
             if (currentPath) currentPath.points.push({ x: pos.x / currentZoom, y: pos.y / currentZoom });
             const ctx = anno.getContext('2d');
-            ctx.lineTo(pos.x * dpr, pos.y * dpr);
+            ctx.lineTo(pos.x * actualDpr, pos.y * actualDpr);
             ctx.stroke();
         }
 
