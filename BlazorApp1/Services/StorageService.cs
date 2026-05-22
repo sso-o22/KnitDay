@@ -91,35 +91,81 @@ namespace KnitLog.Services
         }
 
         // ── 로그인 시 동기화 ─────────────────────────────────────────
-        // 로컬 있으면 Cloud로 업로드, Cloud 있으면 로컬로 다운로드
+        // 로그인 시 로컬 + Cloud 데이터를 Id 기준으로 merge
+        // - 같은 Id: UpdatedAt이 더 최신인 것 우선
+        // - 한쪽에만 있으면: 그냥 포함
         public async Task SyncOnLoginAsync()
         {
             if (!IsLoggedIn) return;
 
-            await SyncCollectionAsync<KnitProject>(KEY_PROJECTS, "projects", "Id");
-            await SyncCollectionAsync<Yarn>(KEY_YARNS, "yarns", "Id");
-            await SyncCollectionAsync<KnitTool>(KEY_TOOLS, "tools", "Id");
-            await SyncCollectionAsync<Swatch>(KEY_SWATCHES, "swatches", "Id");
+            await MergeCollectionAsync<KnitProject>(KEY_PROJECTS, "projects");
+            await MergeCollectionAsync<Yarn>(KEY_YARNS, "yarns");
+            await MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools");
+            await MergeCollectionAsync<Swatch>(KEY_SWATCHES, "swatches");
         }
 
-        private async Task SyncCollectionAsync<T>(string localKey, string collectionName, string idField)
+        private async Task MergeCollectionAsync<T>(string localKey, string collectionName)
         {
             var localJson = await _js.InvokeAsync<string?>("localStorage.getItem", localKey);
-            var hasLocal  = !string.IsNullOrWhiteSpace(localJson) && localJson != "[]";
-            var cloudData = await LoadFirebaseAsync<T>(collectionName);
-            var hasCloud  = cloudData != null && cloudData.Count > 0;
+            var localList = string.IsNullOrWhiteSpace(localJson) || localJson == "[]"
+                ? new List<JsonElement>()
+                : JsonSerializer.Deserialize<List<JsonElement>>(localJson, _jsonOpts) ?? new();
 
-            if (hasLocal && !hasCloud)
+            var cloudJson = await LoadFirebaseAsync<JsonElement>(collectionName);
+            var cloudList = cloudJson ?? new List<JsonElement>();
+
+            // Id 기준으로 merge
+            var merged = new Dictionary<string, JsonElement>();
+
+            // 로컬 먼저 추가
+            foreach (var item in localList)
             {
-                // 로컬 → Cloud 업로드
-                var list = JsonSerializer.Deserialize<List<T>>(localJson!, _jsonOpts) ?? new();
-                await SaveFirebaseAsync(collectionName, list, idField);
+                var id = GetId(item);
+                if (id != null) merged[id] = item;
             }
-            else if (hasCloud)
+
+            // Cloud에서 더 최신이면 덮어쓰기, 없으면 추가
+            foreach (var item in cloudList)
             {
-                // Cloud → 로컬 덮어쓰기
-                await SaveLocalAsync(localKey, cloudData!);
+                var id = GetId(item);
+                if (id == null) continue;
+                if (!merged.ContainsKey(id))
+                {
+                    merged[id] = item;
+                }
+                else
+                {
+                    // UpdatedAt 비교 (없으면 Cloud 우선)
+                    var localUpdated  = GetUpdatedAt(merged[id]);
+                    var cloudUpdated  = GetUpdatedAt(item);
+                    if (cloudUpdated > localUpdated) merged[id] = item;
+                }
             }
+
+            var mergedList = merged.Values.ToList();
+            var mergedJson = JsonSerializer.Serialize(mergedList, _jsonOpts);
+
+            // 로컬 저장
+            await _js.InvokeVoidAsync("localStorage.setItem", localKey, mergedJson);
+
+            // Cloud 업데이트 (로컬에만 있던 것도 올리기)
+            await _js.InvokeAsync<bool>("firebaseStore.saveCollection",
+                $"users/{Uid}/{collectionName}", mergedJson, "Id");
+        }
+
+        private static string? GetId(JsonElement el)
+        {
+            if (el.TryGetProperty("Id", out var id) || el.TryGetProperty("id", out id))
+                return id.ValueKind == JsonValueKind.String ? id.GetString() : id.ToString();
+            return null;
+        }
+
+        private static DateTime GetUpdatedAt(JsonElement el)
+        {
+            foreach (var key in new[] { "UpdatedAt", "updatedAt", "SavedAt", "savedAt", "CreatedAt", "createdAt" })
+                if (el.TryGetProperty(key, out var val) && val.ValueKind == JsonValueKind.String)
+                    if (DateTime.TryParse(val.GetString(), out var dt)) return dt;
+            return DateTime.MinValue;
         }
 
         // ── 통합 저장 (로컬 + Firebase) ──────────────────────────────
