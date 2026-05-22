@@ -519,6 +519,13 @@ window.patternViewer = (() => {
         }, { passive: false });
 
         // 모바일: 핀치
+        // rAF 스로틀링용 변수 (touchmove마다 렌더하지 않고 프레임당 1회만)
+        let _pinchRafId = null;
+        let _pinchLatestDist = 0;
+        let _pinchLatestCx = 0;
+        let _pinchLatestCy = 0;
+        let _pinchWrapperRect = null; // touchstart 때 캐싱 → touchmove 중 getBoundingClientRect 호출 제거
+
         scrollEl.addEventListener('touchstart', e => {
             if (e.touches.length !== 2) return;
             _isPinching    = true;
@@ -534,9 +541,10 @@ window.patternViewer = (() => {
             scrollEl._pinchAnchorViewY = cy - scRect.top;
             scrollEl._pinchAnchorDocY  = scrollEl.scrollTop + scrollEl._pinchAnchorViewY;
 
-            // 핀치 중엔 wrapper를 살짝 흐리게 (canvas 버퍼는 유지 → 회색화면 방지)
+            // wrapper rect 캐싱 (핀치 중 getBoundingClientRect 호출 제거)
             const wrapper = document.getElementById('pdf-wrapper');
-            if (wrapper) wrapper.style.opacity = '0.85';
+            _pinchWrapperRect = wrapper ? wrapper.getBoundingClientRect() : null;
+            if (wrapper) wrapper.style.willChange = 'transform'; // GPU 레이어 미리 확보
 
             e.preventDefault();
         }, { passive: false });
@@ -545,31 +553,57 @@ window.patternViewer = (() => {
             if (_tool === 'ruler' && e.touches.length === 1) { e.preventDefault(); return; }
             if (e.touches.length !== 2) return;
             e.preventDefault();
-            const dist = Math.hypot(
+
+            // 최신 터치 값만 저장 (rAF에서 소비)
+            _pinchLatestDist = Math.hypot(
                 e.touches[0].clientX - e.touches[1].clientX,
                 e.touches[0].clientY - e.touches[1].clientY
             );
-            const maxZ = Math.max(5.0, _fitZoom * 10);
-            const minZ = _fitZoom * 0.3;
-            const newZ = Math.min(maxZ, Math.max(minZ, _pinchStartZoom * dist / _pinchStartDist));
-            const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-            const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
-            applyScaleTransform(newZ, cx, cy);
-            _pendingZoom = Math.round(newZ * 10) / 10;
+            _pinchLatestCx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+            _pinchLatestCy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+
+            // rAF가 이미 예약된 경우 중복 예약 안 함 (프레임당 1회만 실행)
+            if (_pinchRafId !== null) return;
+            _pinchRafId = requestAnimationFrame(() => {
+                _pinchRafId = null;
+                if (!_isPinching) return;
+                const maxZ = Math.max(5.0, _fitZoom * 10);
+                const minZ = _fitZoom * 0.3;
+                const newZ = Math.min(maxZ, Math.max(minZ,
+                    _pinchStartZoom * _pinchLatestDist / _pinchStartDist));
+
+                // 캐싱된 rect 사용 (reflow 없음)
+                const wrapper = document.getElementById('pdf-wrapper');
+                if (wrapper && _pinchWrapperRect) {
+                    wrapper.style.transformOrigin =
+                        (_pinchLatestCx - _pinchWrapperRect.left) + 'px ' +
+                        (_pinchLatestCy - _pinchWrapperRect.top)  + 'px';
+                    wrapper.style.transform = 'scale(' + (newZ / currentZoom) + ')';
+                }
+                _pendingZoom = Math.round(newZ * 10) / 10;
+            });
         }, { passive: false });
 
         scrollEl.addEventListener('touchend', e => {
             if (!_isPinching || e.touches.length >= 2) return;
+
+            // 미처리 rAF 취소
+            if (_pinchRafId !== null) { cancelAnimationFrame(_pinchRafId); _pinchRafId = null; }
+            _pinchWrapperRect = null;
+
+            // willChange 해제 (GPU 레이어 반환)
+            const wrapperClean = document.getElementById('pdf-wrapper');
+            if (wrapperClean) wrapperClean.style.willChange = '';
+
             const finalZoom = _pendingZoom;
             setTimeout(() => {
                 _isPinching = false;
                 if (finalZoom !== null) {
                     changeZoom(finalZoom, scrollEl._pinchAnchorDocY, scrollEl._pinchAnchorViewY);
                 } else {
-                    // 줌 변화 없이 핀치 끝 → 플래그 해제
                     _isZooming = false;
                     const w = document.getElementById('pdf-wrapper');
-                    if (w) { w.style.transform = ''; w.style.transformOrigin = ''; w.style.opacity = '1'; }
+                    if (w) { w.style.transform = ''; w.style.transformOrigin = ''; }
                 }
             }, 50);
         }, { passive: true });
@@ -680,6 +714,7 @@ window.patternViewer = (() => {
 
         dispose() {
             if (_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
+            if (_pinchRafId !== null) { cancelAnimationFrame(_pinchRafId); _pinchRafId = null; }
             if (_intersectionObserver) { _intersectionObserver.disconnect(); _intersectionObserver = null; }
             Object.values(_renderTasks).forEach(t => { try { if (t) t.cancel(); } catch (_) {} });
             _renderTasks   = {};
