@@ -168,12 +168,13 @@ window.patternViewer = (() => {
         const ctx = anno.getContext('2d');
         ctx.clearRect(0, 0, anno.width, anno.height);
         const dpr = window.devicePixelRatio || 1;
+        // 저장 좌표: zoom=1 기준 CSS px
+        // 버퍼 px = 저장좌표 * currentZoom * dpr
         paths.filter(p => p.page === pageNum).forEach(p => {
             if (!p.points.length) return;
             ctx.save();
             ctx.beginPath();
-            // zoom=1 정규화 좌표 → 현재 zoom의 CSS px → 버퍼 px
-            ctx.lineWidth = p.size * dpr;
+            ctx.lineWidth = p.size * currentZoom * dpr;
             ctx.lineCap   = 'round';
             ctx.lineJoin  = 'round';
             if (p.isEraser) {
@@ -207,11 +208,18 @@ window.patternViewer = (() => {
         _pageHandlers[pageNum] = ac;
         const sig = { signal: ac.signal };
 
-        // CSS px 기준 좌표 반환 (DPR 독립)
+        // anno canvas의 CSS px 기준 좌표 반환
+        // getBoundingClientRect() 기반 → 스크롤/DPR 무관하게 정확
         function getCssPos(e) {
             const rect = anno.getBoundingClientRect();
             const src  = e.touches ? e.touches[0] : e;
-            return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+            // scaleX/Y: CSS 크기와 실제 표시 크기 차이 보정 (CSS transform scale 등)
+            const scaleX = rect.width  > 0 ? anno.offsetWidth  / rect.width  : 1;
+            const scaleY = rect.height > 0 ? anno.offsetHeight / rect.height : 1;
+            return {
+                x: (src.clientX - rect.left) / scaleX,
+                y: (src.clientY - rect.top)  / scaleY
+            };
         }
 
         function onDown(e) {
@@ -224,10 +232,10 @@ window.patternViewer = (() => {
             }
             if (_tool !== 'pen' && _tool !== 'eraser') return;
             if (e.touches) e.preventDefault();
-            const pos = getCssPos(e);
+            const pos = getCssPos(e);  // CSS px (viewport 기준)
             currentPageNum = pageNum;
             isDrawing = true;
-            // zoom=1 기준 정규화 좌표로 저장
+            // zoom=1 기준 정규화 좌표로 저장 (redraw 시 currentZoom * dpr 곱해서 복원)
             currentPath = {
                 page: pageNum, color: _color, opacity: _opacity, size: _size,
                 isEraser: _isEraser,
@@ -236,8 +244,9 @@ window.patternViewer = (() => {
             const dpr = window.devicePixelRatio || 1;
             const ctx = anno.getContext('2d');
             ctx.beginPath();
+            // 즉시 그리기: CSS px → 버퍼 px
             ctx.moveTo(pos.x * dpr, pos.y * dpr);
-            ctx.lineWidth = _size * dpr;
+            ctx.lineWidth = _size * currentZoom * dpr;
             ctx.lineCap   = 'round';
             ctx.lineJoin  = 'round';
             if (_isEraser) {

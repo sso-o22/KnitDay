@@ -638,6 +638,7 @@
         try
         {
             _project.ViewerRulers = System.Text.Json.JsonSerializer.Serialize(_rulers);
+            _project.ViewerAnnotations = await JS.InvokeAsync<string>("patternViewer.getPaths");
             await SaveProject();
         }
         catch { }
