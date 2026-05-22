@@ -552,17 +552,21 @@ body {
         appearance: none;
     }
 
-    /* iOS Safari: 빈 날짜 input은 color transparent로 만들고 JS/wrapper로 처리 */
+    /* iOS Safari: 빈 날짜 input placeholder */
     input[type="date"].date-empty {
         color: transparent;
     }
     input[type="date"].date-empty::-webkit-date-and-time-value {
         color: transparent;
     }
-    /* 날짜 래퍼 */
+    /* 날짜 래퍼: input 높이 그대로 유지 */
     .date-input-wrap {
         position: relative;
         display: block;
+    }
+    .date-input-wrap input[type="date"] {
+        display: block;
+        width: 100%;
     }
     .date-input-wrap .date-placeholder {
         position: absolute;
@@ -577,6 +581,7 @@ body {
         font-size: 16px;
         pointer-events: none;
         user-select: none;
+        line-height: 1;
     }
 
     /* form-control 전체도 넘치지 않도록 */
