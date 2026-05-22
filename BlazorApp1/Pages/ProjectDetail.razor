@@ -920,7 +920,7 @@ else
 <!-- 다른 프로젝트 타이머 충돌 모달 -->
 @if (_showTimerConflict && _conflictProject != null)
 {
-    <div class="modal-backdrop" style="z-index:9999;">
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
         <div class="modal" style="max-width:380px; text-align:center;" @onclick:stopPropagation="true">
             <div style="font-size:2rem; margin-bottom:12px;">⏱️</div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">다른 프로젝트 타이머가 진행 중이에요</div>
@@ -938,8 +938,8 @@ else
 <!-- 삭제 확인 모달 -->
 @if (_showConfirm)
 {
-    <div class="modal-backdrop modal-confirm" style="z-index:9999;">
-        <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:var(--surface);border-radius:16px;max-width:320px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
             <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
@@ -1354,8 +1354,9 @@ else
         if (_project == null) return;
         var id = _project.Id;
         await Storage.CompleteProjectAsync(id);
-        // 문어발 화면으로 이동하면서 완성작 팝업 띄우기
-        Nav.NavigateTo($"projects/{id}");
+        // localStorage로 신호 → 문어발 화면에서 팝업 띄움
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_completed_popup", id.ToString());
+        Nav.NavigateTo("projects");
     }
 
     async Task PauseProject()

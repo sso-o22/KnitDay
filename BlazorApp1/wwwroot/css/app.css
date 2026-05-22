@@ -511,6 +511,13 @@ body {
         padding: 10px 12px;
         font-size: 0.95rem;
     }
+    /* 아이패드: 날짜 input 높이 + form-row 간격 */
+    input[type="date"] {
+        min-height: 48px;
+    }
+    .form-row {
+        gap: 20px;
+    }
 }
 
 /* 모바일 (640px 이하): 사이드바 숨기고 하단 탭바 표시 */
@@ -583,23 +590,11 @@ body {
         white-space: nowrap;
     }
 
-    /* iOS 날짜 input - 값 있을때/없을때 동일하게 충분한 높이 */
+    /* iOS 날짜 input - 빈 상태도 값 있을때와 동일한 높이 유지 */
     input[type="date"] {
         min-height: 44px;
-        line-height: 44px;
     }
 
-    .date-input-wrap {
-        position: relative;
-        display: block;
-    }
-    .date-input-wrap input[type="date"] {
-        display: block;
-        width: 100%;
-    }
-    .date-input-wrap .date-placeholder {
-        display: none;
-    }
 
     /* form-control 전체도 넘치지 않도록 */
     .form-control {

@@ -544,7 +544,7 @@
 
 @if (_showLoadWarning)
 {
-    <div class="modal-backdrop modal-confirm" style="z-index:9999;">
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
         <div class="modal" style="max-width:360px;text-align:center;" @onclick:stopPropagation="true">
             <div style="font-size:2rem;margin-bottom:12px;">📄</div>
             <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">도안을 교체할까요?</div>
@@ -559,7 +559,7 @@
 
 @if (_showConfirm)
 {
-    <div class="modal-backdrop" style="z-index:9999;">
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
         <div class="modal" style="max-width:360px;text-align:center;" @onclick:stopPropagation="true">
             <div style="font-size:2rem;margin-bottom:12px;">🗑️</div>
             <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">정말 삭제할까요?</div>
