@@ -115,6 +115,8 @@ window.patternViewer = (() => {
         const origH = getPageOrigH(pageNum);
         const scaleX = origW * currentZoom * dpr;
         const scaleY = origH * currentZoom * dpr;
+        const pathsOnPage = paths.filter(p => p.page === pageNum);
+        if (pathsOnPage.length > 0) console.log('[REDRAW] p'+pageNum+' zoom='+currentZoom.toFixed(2)+' dpr='+dpr+' origW='+Math.round(origW)+' paths='+pathsOnPage.length+' first='+pathsOnPage[0].points[0].x.toFixed(3)+','+pathsOnPage[0].points[0].y.toFixed(3));
         paths.filter(p => p.page === pageNum).forEach(p => {
             if (!p.points.length) return;
             ctx.save();
@@ -214,6 +216,7 @@ window.patternViewer = (() => {
     function _stroke(anno, pageNum, fromX, fromY, toX, toY) {
         const dpr = anno._dpr || 1;
         const ctx = anno.getContext('2d');
+        console.log('[STROKE] from='+fromX.toFixed(0)+','+fromY.toFixed(0)+' to='+toX.toFixed(0)+','+toY.toFixed(0)+' dpr='+dpr+' bufW='+anno.width+' lw='+(_size*currentZoom*dpr).toFixed(1));
         ctx.save();
         ctx.beginPath();
         ctx.lineWidth = _size * currentZoom * dpr;
