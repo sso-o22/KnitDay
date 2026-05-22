@@ -172,9 +172,10 @@ window.patternViewer = (() => {
         if (!anno || !_renderedPages.has(pageNum)) return;
         const ctx = anno.getContext('2d');
         ctx.clearRect(0, 0, anno.width, anno.height);
-        // 렌더 시점에 저장된 dpr 사용 (CSS 크기 변화에 영향받지 않음)
-        const dpr = anno._renderedDpr || 1;
-        const scale = currentZoom * dpr;
+        // _renderedDpr 없으면 실제 버퍼/CSS 비율로 계산
+        const offsetW = anno.offsetWidth || 1;
+        const actualDpr = anno._renderedDpr || (anno.width / offsetW) || 1;
+        const scale = currentZoom * actualDpr;
         paths.filter(p => p.page === pageNum).forEach(p => {
             if (!p.points.length) return;
             ctx.save();
@@ -908,11 +909,10 @@ window.patternViewer = (() => {
 
         setPaths(json) {
             try { paths = JSON.parse(json) || []; } catch(_) { paths = []; }
-            // 복원 후 모든 페이지 다시 그리기
+            // _renderedPages에 있는 페이지만 즉시 redraw
+            // 아직 렌더 안 된 페이지는 renderOnePage 완료 시 자동으로 redrawPage 호출됨
             for (let i = 1; i <= totalPages; i++) {
-                const a = getAnnoCanvas(i);
-                if (a) console.log('[RESTORE-REDRAW] p'+i+' zoom='+currentZoom.toFixed(2)+' rendDpr='+(a._renderedDpr||'?')+' bufW='+a.width+' offsetW='+a.offsetWidth);
-                redrawPage(i);
+                if (_renderedPages.has(i)) redrawPage(i);
             }
         }
     };
