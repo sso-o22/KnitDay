@@ -10,18 +10,18 @@
 {
     <div class="modal-backdrop" style="z-index:1100;">
         <div class="modal" style="max-width:500px; display:flex; flex-direction:column; padding:0; overflow:hidden;" @onclick:stopPropagation="true">
-            <div class="modal-header" style="padding:16px 20px 12px; flex-shrink:0; border-bottom:1px solid var(--border); margin-bottom:0;">
+            <div class="modal-header" style="padding:16px 20px 14px; flex-shrink:0; margin-bottom:0;">
                 <h2 class="modal-title" style="font-size:1.2rem;">@Project.Title</h2>
-                <button style="background:none; border:1px solid var(--border); border-radius:8px; width:32px; height:32px; cursor:pointer; font-size:1rem;" @onclick="OnClose">✕</button>
+                <button class="btn btn-ghost btn-sm" style="width:32px; height:32px; padding:0; font-size:1rem; color:var(--text-dark);" @onclick="OnClose">✕</button>
             </div>
 
             <!-- 스크롤 영역 -->
-            <div style="overflow-y:auto; flex:1; padding:0 20px;">
+            <div style="overflow-y:auto; flex:1; padding:0 20px 4px;">
 
             <!-- 사진 갤러리 -->
             @if (Project.Photos.Count > 0)
             {
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; padding-top:12px;">
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px; padding-top:4px;">
                     @foreach (var photo in Project.Photos)
                     {
                         <img src="@photo.Base64Data"
@@ -78,7 +78,7 @@
                                 <div style="font-size:0.82rem; color:var(--text-light);">기록 없음</div>
                             </div>
                         }
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; margin-left:auto;"
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; margin-left:auto; color:var(--text-dark);"
                                 @onclick="() => _editingBasic = true">✏️ 수정</button>
                     </div>
                 }
@@ -100,7 +100,7 @@
                     </div>
                     <div style="display:flex; gap:8px;">
                         <button class="btn btn-primary btn-sm" @onclick="SaveBasicInfo">저장</button>
-                        <button class="btn btn-ghost btn-sm" @onclick="() => _editingBasic = false">취소</button>
+                        <button class="btn btn-ghost btn-sm" style="color:var(--text-dark);" @onclick="() => _editingBasic = false">취소</button>
                     </div>
                 }
             </div>
@@ -176,7 +176,7 @@
                     <div class="form-label" style="margin-bottom:0;">📏 완성 치수</div>
                     @if (!_editingMeasurements)
                     {
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem;" @onclick="() => { LoadMeasures(); _editingMeasurements = true; }">✏️ 입력</button>
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem; color:var(--text-dark);" @onclick="() => { LoadMeasures(); _editingMeasurements = true; }">✏️ 입력</button>
                     }
                 </div>
                 @if (!_editingMeasurements)
@@ -233,11 +233,11 @@
                         }
                     </div>
                     <div style="display:flex; gap:8px; margin-bottom:8px;">
-                        <button class="btn btn-ghost btn-sm" @onclick="() => _measures.Add(new MeasureItem { IsCustom = true })">+ 항목 추가</button>
+                        <button class="btn btn-ghost btn-sm" style="color:var(--text-dark);" @onclick="() => _measures.Add(new MeasureItem { IsCustom = true })">+ 항목 추가</button>
                     </div>
                     <div style="display:flex; gap:8px;">
                         <button class="btn btn-primary btn-sm" @onclick="SaveMeasurements">저장</button>
-                        <button class="btn btn-ghost btn-sm" @onclick="() => { LoadMeasures(); _editingMeasurements = false; }">취소</button>
+                        <button class="btn btn-ghost btn-sm" style="color:var(--text-dark);" @onclick="() => { LoadMeasures(); _editingMeasurements = false; }">취소</button>
                     </div>
                 }
             </div>
@@ -252,9 +252,10 @@
             }
 
             </div><!-- /스크롤 영역 -->
-            <div style="display:flex; justify-content:flex-end; gap:10px; padding:12px 20px; border-top:1px solid var(--border); flex-shrink:0; background:var(--surface);">
-                <button style="padding:8px 16px; border-radius:8px; border:1px solid var(--border); background:none; cursor:pointer; font-size:0.9rem;" @onclick="OnClose">닫기</button>
-                <button style="padding:8px 16px; border-radius:8px; border:none; background:var(--theme-mid); color:var(--text-dark); cursor:pointer; font-size:0.9rem; font-weight:600;" @onclick='() => Nav.NavigateTo("finished")'>완성작 목록 보기 →</button>
+
+            <div class="modal-footer" style="flex-shrink:0;">
+                <button class="btn btn-ghost" style="color:var(--text-dark);" @onclick="OnClose">닫기</button>
+                <button class="btn btn-primary" @onclick='() => Nav.NavigateTo("finished")'>완성작 목록 보기 →</button>
             </div>
         </div>
     </div>
