@@ -63,7 +63,7 @@ window.cleanupCardDrag = () => {
 // ── 날짜 input placeholder (iOS Safari 대응) ──────────────────
 // 빈 date input에 "연도-월-일" 텍스트 표시
 function updateDatePlaceholders() {
-    // iOS Safari에서만 적용 (PC 브라우저는 자체 placeholder 표시)
+    // iOS Safari에서만 적용
     const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
                   (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     if (!isIOS) return;
@@ -71,25 +71,11 @@ function updateDatePlaceholders() {
     document.querySelectorAll('input[type="date"]').forEach(inp => {
         if (!inp.value) {
             inp.classList.add('date-empty');
-            if (!inp.parentElement.classList.contains('date-input-wrap')) {
-                const h = inp.offsetHeight || 44;
-                const wrap = document.createElement('div');
-                wrap.className = 'date-input-wrap';
-                wrap.style.height = h + 'px';
-                wrap.style.minHeight = h + 'px';
-                inp.parentNode.insertBefore(wrap, inp);
-                wrap.appendChild(inp);
-                const ph = document.createElement('span');
-                ph.className = 'date-placeholder';
-                ph.textContent = '연도-월-일';
-                wrap.appendChild(ph);
-            }
-            const ph = inp.parentElement.querySelector('.date-placeholder');
-            if (ph) ph.style.display = '';
+            // data-placeholder 속성으로 CSS ::before 처리
+            inp.setAttribute('data-placeholder', '연도-월-일');
         } else {
             inp.classList.remove('date-empty');
-            const ph = inp.parentElement.querySelector('.date-placeholder');
-            if (ph) ph.style.display = 'none';
+            inp.removeAttribute('data-placeholder');
         }
     });
 }

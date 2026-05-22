@@ -552,10 +552,11 @@ body {
         appearance: none;
     }
 
-    /* iOS Safari: 빈 날짜 input placeholder */
+    /* iOS Safari: 빈 날짜 input placeholder - wrapper DOM 없이 CSS로 처리 */
     input[type="date"].date-empty {
         color: transparent;
         -webkit-text-fill-color: transparent;
+        position: relative;
     }
     input[type="date"].date-empty::-webkit-date-and-time-value {
         color: transparent;
@@ -565,7 +566,30 @@ body {
         color: transparent;
         -webkit-text-fill-color: transparent;
     }
-    /* 날짜 래퍼: input 높이 그대로 유지 */
+    /* placeholder 텍스트: 부모 relative + 가상요소로 */
+    input[type="date"].date-empty {
+        background-image: none;
+    }
+    /* data-placeholder 속성 이용 */
+    input[type="date"][data-placeholder]::before {
+        content: attr(data-placeholder);
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: #aaa;
+        font-size: 16px;
+        pointer-events: none;
+        white-space: nowrap;
+    }
+    /* 날짜 input 높이 - 값 있을 때와 동일하게 */
+    input[type="date"] {
+        min-height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    /* 기존 wrapper CSS (혹시 남아있으면 무해하게 유지) */
     .date-input-wrap {
         position: relative;
         display: block;
@@ -575,19 +599,7 @@ body {
         width: 100%;
     }
     .date-input-wrap .date-placeholder {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #aaa;
-        font-size: 16px;
-        pointer-events: none;
-        user-select: none;
-        line-height: 1;
+        display: none;
     }
 
     /* form-control 전체도 넘치지 않도록 */
@@ -652,6 +664,15 @@ body {
         border-radius: 0;
         min-height: 100%;
         box-shadow: none;
+    }
+
+    /* 완성작 팝업은 모바일에서도 고정 크기 유지 */
+    .modal.modal-sheet {
+        max-height: 90vh;
+        min-height: unset;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow-lg);
+        margin: auto;
     }
 
     /* 하단 탭바 활성화 */

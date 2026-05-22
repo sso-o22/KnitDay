@@ -56,7 +56,13 @@ window.firebaseAuth = {
     // Firebase가 세션 복원 완료할 때까지 대기 후 현재 유저 반환
     waitForAuthReady() {
         return new Promise(resolve => {
+            // 5초 타임아웃
+            const timer = setTimeout(() => {
+                console.warn('waitForAuthReady timeout');
+                resolve(null);
+            }, 5000);
             const unsubscribe = onAuthStateChanged(auth, user => {
+                clearTimeout(timer);
                 unsubscribe();
                 if (!user) { resolve(null); return; }
                 resolve({ uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL });
