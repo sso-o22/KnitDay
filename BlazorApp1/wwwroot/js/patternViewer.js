@@ -216,7 +216,8 @@ window.patternViewer = (() => {
     function _stroke(anno, pageNum, fromX, fromY, toX, toY) {
         const dpr = anno._dpr || 1;
         const ctx = anno.getContext('2d');
-        console.log('[STROKE] from='+fromX.toFixed(0)+','+fromY.toFixed(0)+' to='+toX.toFixed(0)+','+toY.toFixed(0)+' dpr='+dpr+' bufW='+anno.width+' lw='+(_size*currentZoom*dpr).toFixed(1));
+        const annoRect2 = anno.getBoundingClientRect();
+        console.log('[STROKE] from='+fromX.toFixed(0)+','+fromY.toFixed(0)+' dpr='+dpr+' bufW='+anno.width+' lw='+(_size*currentZoom*dpr).toFixed(1)+' color='+_color+' alpha='+_opacity+' annoCSSrect='+annoRect2.left.toFixed(0)+','+annoRect2.top.toFixed(0)+','+annoRect2.width.toFixed(0)+'x'+annoRect2.height.toFixed(0)+' annoZidx='+anno.style.zIndex+' annoOpacity='+anno.style.opacity);
         ctx.save();
         ctx.beginPath();
         ctx.lineWidth = _size * currentZoom * dpr;
