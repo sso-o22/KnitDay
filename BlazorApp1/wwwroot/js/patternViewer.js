@@ -162,19 +162,23 @@ window.patternViewer = (() => {
     }
 
     // ── 어노테이션 다시 그리기 ───────────────────────────────
+
+    // ── 어노테이션 다시 그리기 ───────────────────────────────
+    // 저장 좌표: zoom=1 기준 CSS px (정규화)
+    // 캔버스 버퍼: cssW*dpr x cssH*dpr
+    // 그릴 때 버퍼 좌표 = normCoord * currentZoom * dpr
     function redrawPage(pageNum) {
         const anno = getAnnoCanvas(pageNum);
         if (!anno || !_renderedPages.has(pageNum)) return;
         const ctx = anno.getContext('2d');
         ctx.clearRect(0, 0, anno.width, anno.height);
         const dpr = window.devicePixelRatio || 1;
-        // 저장 좌표: zoom=1 기준 CSS px
-        // 버퍼 px = 저장좌표 * currentZoom * dpr
+        const scale = currentZoom * dpr;
         paths.filter(p => p.page === pageNum).forEach(p => {
             if (!p.points.length) return;
             ctx.save();
             ctx.beginPath();
-            ctx.lineWidth = p.size * currentZoom * dpr;
+            ctx.lineWidth = p.size * scale;
             ctx.lineCap   = 'round';
             ctx.lineJoin  = 'round';
             if (p.isEraser) {
@@ -186,21 +190,17 @@ window.patternViewer = (() => {
                 ctx.strokeStyle = p.color;
                 ctx.globalCompositeOperation = 'source-over';
             }
-            ctx.moveTo(p.points[0].x * currentZoom * dpr, p.points[0].y * currentZoom * dpr);
+            ctx.moveTo(p.points[0].x * scale, p.points[0].y * scale);
             for (let i = 1; i < p.points.length; i++)
-                ctx.lineTo(p.points[i].x * currentZoom * dpr, p.points[i].y * currentZoom * dpr);
+                ctx.lineTo(p.points[i].x * scale, p.points[i].y * scale);
             ctx.stroke();
             ctx.restore();
         });
     }
 
     // ── 페이지 핸들러 ────────────────────────────────────────
-    // AbortController로 기존 리스너 완전 제거 후 재등록 (중복 방지)
     function addPageHandlers(pageNum) {
-        // 기존 리스너 제거
-        if (_pageHandlers[pageNum]) {
-            _pageHandlers[pageNum].abort();
-        }
+        if (_pageHandlers[pageNum]) _pageHandlers[pageNum].abort();
         const anno = getAnnoCanvas(pageNum);
         if (!anno) return;
 
@@ -208,17 +208,15 @@ window.patternViewer = (() => {
         _pageHandlers[pageNum] = ac;
         const sig = { signal: ac.signal };
 
-        // anno canvas의 CSS px 기준 좌표 반환
-        // getBoundingClientRect() 기반 → 스크롤/DPR 무관하게 정확
+        // 터치/마우스 → canvas 기준 CSS px 좌표
+        // anno CSS size = cssW x cssH, buffer size = cssW*dpr x cssH*dpr
+        // clientX - rect.left = CSS px 위치 (스크롤 자동 반영)
         function getCssPos(e) {
             const rect = anno.getBoundingClientRect();
             const src  = e.touches ? e.touches[0] : e;
-            // scaleX/Y: CSS 크기와 실제 표시 크기 차이 보정 (CSS transform scale 등)
-            const scaleX = rect.width  > 0 ? anno.offsetWidth  / rect.width  : 1;
-            const scaleY = rect.height > 0 ? anno.offsetHeight / rect.height : 1;
             return {
-                x: (src.clientX - rect.left) / scaleX,
-                y: (src.clientY - rect.top)  / scaleY
+                x: src.clientX - rect.left,
+                y: src.clientY - rect.top
             };
         }
 
@@ -232,19 +230,19 @@ window.patternViewer = (() => {
             }
             if (_tool !== 'pen' && _tool !== 'eraser') return;
             if (e.touches) e.preventDefault();
-            const pos = getCssPos(e);  // CSS px (viewport 기준)
+            const pos = getCssPos(e);
+            console.log("[draw] pos=", pos.x.toFixed(1), pos.y.toFixed(1), "annoCSSW=", anno.offsetWidth, "annoCSSH=", anno.offsetHeight, "bufW=", anno.width, "bufH=", anno.height, "dpr=", window.devicePixelRatio, "zoom=", currentZoom);
             currentPageNum = pageNum;
             isDrawing = true;
-            // zoom=1 기준 정규화 좌표로 저장 (redraw 시 currentZoom * dpr 곱해서 복원)
+            const dpr = window.devicePixelRatio || 1;
+            // 정규화 저장: CSS px / currentZoom
             currentPath = {
                 page: pageNum, color: _color, opacity: _opacity, size: _size,
                 isEraser: _isEraser,
                 points: [{ x: pos.x / currentZoom, y: pos.y / currentZoom }]
             };
-            const dpr = window.devicePixelRatio || 1;
             const ctx = anno.getContext('2d');
             ctx.beginPath();
-            // 즉시 그리기: CSS px → 버퍼 px
             ctx.moveTo(pos.x * dpr, pos.y * dpr);
             ctx.lineWidth = _size * currentZoom * dpr;
             ctx.lineCap   = 'round';
@@ -271,8 +269,8 @@ window.patternViewer = (() => {
             if (!isDrawing || currentPageNum !== pageNum || (_tool !== 'pen' && _tool !== 'eraser')) return;
             if (e.touches) e.preventDefault();
             const pos = getCssPos(e);
-            if (currentPath) currentPath.points.push({ x: pos.x / currentZoom, y: pos.y / currentZoom });
             const dpr = window.devicePixelRatio || 1;
+            if (currentPath) currentPath.points.push({ x: pos.x / currentZoom, y: pos.y / currentZoom });
             const ctx = anno.getContext('2d');
             ctx.lineTo(pos.x * dpr, pos.y * dpr);
             ctx.stroke();
