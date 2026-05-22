@@ -49,27 +49,27 @@ window.patternViewer = (() => {
     function getPageOrigH(pageNum) { return (_pageSizes[pageNum] || _pageSizes[1] || {h:1}).h; }
 
     // 터치/마우스 → 정규화 좌표 (0~1)
-    // wrapper transform이 있어도 정확한 좌표 반환
+    // offsetLeft/offsetTop 기반으로 계산 → CSS transform 영향 없음
+    function getOffsetPos(el) {
+        let x = 0, y = 0;
+        while (el && el !== document.getElementById('scroll-container')) {
+            x += el.offsetLeft;
+            y += el.offsetTop;
+            el = el.offsetParent;
+        }
+        return { x, y };
+    }
+
     function getNormPos(anno, e, pageNum) {
-        // wrapper transform 제거 후 계산
-        const wrapper = document.getElementById('pdf-wrapper');
-        const savedTransform = wrapper ? wrapper.style.transform : '';
-        const savedOrigin    = wrapper ? wrapper.style.transformOrigin : '';
-        if (wrapper && savedTransform) {
-            wrapper.style.transform = '';
-            wrapper.style.transformOrigin = '';
-        }
+        const src = e.touches ? e.touches[0] : e;
+        const scrollEl = document.getElementById('scroll-container');
+        const scrollTop  = scrollEl ? scrollEl.scrollTop  : 0;
+        const scrollLeft = scrollEl ? scrollEl.scrollLeft : 0;
 
-        const rect = anno.getBoundingClientRect();
-        const src  = e.touches ? e.touches[0] : e;
-        const cssX = src.clientX - rect.left;
-        const cssY = src.clientY - rect.top;
-
-        // transform 복원
-        if (wrapper && savedTransform) {
-            wrapper.style.transform = savedTransform;
-            wrapper.style.transformOrigin = savedOrigin;
-        }
+        // anno의 scroll-container 기준 절대 위치 (transform 무관)
+        const off = getOffsetPos(anno);
+        const cssX = src.clientX - (off.x - scrollLeft + (scrollEl ? scrollEl.getBoundingClientRect().left : 0));
+        const cssY = src.clientY - (off.y - scrollTop  + (scrollEl ? scrollEl.getBoundingClientRect().top  : 0));
 
         const origW = getPageOrigW(pageNum);
         const origH = getPageOrigH(pageNum);
@@ -149,12 +149,6 @@ window.patternViewer = (() => {
 
         function onDown(e) {
             if (_isPinching || _isZooming) return;
-            // wrapper transform 제거 (좌표 정확성)
-            const wrapper = document.getElementById('pdf-wrapper');
-            if (wrapper && wrapper.style.transform) {
-                wrapper.style.transform = '';
-                wrapper.style.transformOrigin = '';
-            }
             const {normX, normY} = getNormPos(anno, e, pageNum);
             if (_tool === 'ruler') {
                 const {cx, cy} = normToCss(normX, normY, pageNum);
