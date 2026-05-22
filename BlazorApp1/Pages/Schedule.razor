@@ -190,319 +190,10 @@ else
 }
 
 <!-- 완성작 미리보기 팝업 -->
-@if (_showCompletedPopup && _completedPreview != null)
-{
-    <div class="modal-backdrop">
-        <div class="modal" style="max-width:500px; max-height:90vh; display:flex; flex-direction:column; padding:0;" @onclick:stopPropagation="true">
-            <div class="modal-header" style="padding:16px 20px 12px; flex-shrink:0;">
-                <h2 class="modal-title">@_completedPreview.Title</h2>
-                <button class="btn btn-ghost btn-sm" @onclick="CloseCompletedPopup">✕</button>
-            </div>
+<CompletedPopup Show="_showCompletedPopup" Project="_completedPreview"
+    Yarns="_yarns" Tools="_tools"
+    OnClose="CloseCompletedPopup" OnSaved="LoadData" />
 
-            <!-- 스크롤 영역 -->
-            <div style="overflow-y:auto; flex:1; padding:0 20px;">
-            <!-- 사진 갤러리 -->
-            @if (_completedPreview.Photos.Count > 0)
-            {
-                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
-                    @foreach (var photo in _completedPreview.Photos)
-                    {
-                        <img src="@photo.Base64Data"
-                             style="width:130px; height:130px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border);"
-                             alt="과정 사진" />
-                    }
-                </div>
-            }
-
-            <!-- 날짜 바 -->
-            <div style="margin-bottom:14px; padding:12px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
-                @if (!_popupEditingBasicInfo)
-                {
-                    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
-                        @if (_completedPreview.StartDate.HasValue)
-                        {
-                            <div style="text-align:center;">
-                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">시작일</div>
-                                <div style="font-size:0.9rem; font-weight:600;">@_completedPreview.StartDate.Value.ToString("yyyy.MM.dd")</div>
-                            </div>
-                        }
-                        @if (_completedPreview.EndDate.HasValue)
-                        {
-                            <div style="text-align:center;">
-                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">완성일</div>
-                                <div style="font-size:0.9rem; font-weight:600;">@_completedPreview.EndDate.Value.ToString("yyyy.MM.dd")</div>
-                            </div>
-                        }
-                        @if (_completedPreview.StartDate.HasValue && _completedPreview.EndDate.HasValue)
-                        {
-                            var days = (_completedPreview.EndDate.Value - _completedPreview.StartDate.Value).Days;
-                            <div style="text-align:center;">
-                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">소요일</div>
-                                <div style="font-size:0.9rem; font-weight:600; color:#8a6a08;">@days 일</div>
-                            </div>
-                        }
-                        @{
-                            var popMin = _completedPreview.Sessions
-                                .Where(s => s.EndTime.HasValue)
-                                .Sum(s => (int)(s.EndTime!.Value - s.StartTime).TotalMinutes);
-                        }
-                        @if (popMin > 0)
-                        {
-                            var ph = popMin / 60; var pm = popMin % 60;
-                            <div style="text-align:center;">
-                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
-                                <div style="font-size:0.9rem; font-weight:600; color:#267848;">@(ph > 0 ? $"{ph}시간 " : "")@(pm > 0 ? $"{pm}분" : "")</div>
-                            </div>
-                        }
-                        else
-                        {
-                            <div style="text-align:center;">
-                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:2px;">누적 시간</div>
-                                <div style="font-size:0.82rem; color:var(--text-light);">기록 없음</div>
-                            </div>
-                        }
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; margin-left:auto;"
-                                @onclick="() => _popupEditingBasicInfo = true">✏️ 수정</button>
-                    </div>
-                }
-                else
-                {
-                    <div class="form-row" style="margin-bottom:8px;">
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">시작일</label>
-                            <input type="date" class="form-control"
-                                   value="@_completedPreview.StartDate?.ToString("yyyy-MM-dd")"
-                                   @onchange="e => _completedPreview.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
-                        </div>
-                        <div class="form-group" style="margin-bottom:0;">
-                            <label class="form-label">완성일</label>
-                            <input type="date" class="form-control"
-                                   value="@_completedPreview.EndDate?.ToString("yyyy-MM-dd")"
-                                   @onchange="e => _completedPreview.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn btn-primary btn-sm" @onclick="SavePopBasicInfo">저장</button>
-                        <button class="btn btn-ghost btn-sm" @onclick="() => _popupEditingBasicInfo = false">취소</button>
-                    </div>
-                }
-            </div>
-
-            <!-- 도안 정보 -->
-            @if (!string.IsNullOrEmpty(_completedPreview.PatternName))
-            {
-                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:4px;">📋 도안</div>
-                    <div style="font-size:0.92rem;">@_completedPreview.PatternName</div>
-                    @if (!string.IsNullOrEmpty(_completedPreview.PatternSource))
-                    {
-                        <div style="font-size:0.82rem; color:var(--text-mid);">출처: @_completedPreview.PatternSource</div>
-                    }
-                    @if (!string.IsNullOrEmpty(_completedPreview.PatternMemo))
-                    {
-                        <div style="font-size:0.82rem; color:var(--text-mid); margin-top:2px; white-space:pre-wrap;">@_completedPreview.PatternMemo</div>
-                    }
-                </div>
-            }
-
-            <!-- 사용 실 -->
-            @{
-                var popYarns = _completedPreview.YarnUsages
-                    .Select(u => (u, _yarns.Find(y => y.Id == u.YarnId)))
-                    .Where(x => x.Item2 != null)
-                    .Select(x => (x.u, x.Item2!))
-                    .ToList();
-            }
-            @if (popYarns.Any())
-            {
-                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:6px;">🧵 사용 실</div>
-                    @foreach (var (usage, yarn) in popYarns)
-                    {
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:0.88rem;">
-                            <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
-                            <span>@yarn.Brand @yarn.Name (@yarn.Color)</span>
-                            @if (usage.BallsUsed > 0)
-                            {
-                                <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed.ToString("G29") 볼</span>
-                            }
-                        </div>
-                    }
-                </div>
-            }
-
-            <!-- 사용 바늘 -->
-            @{
-                var popTools = _tools.Where(t => _completedPreview.ToolIds.Contains(t.Id)).ToList();
-            }
-            @if (popTools.Any() || !string.IsNullOrEmpty(_completedPreview.NeedleNote))
-            {
-                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:6px;">⚒️ 사용 바늘</div>
-                    <div style="display:flex; flex-wrap:wrap; gap:6px;">
-                        @foreach (var tool in popTools)
-                        {
-                            <span style="background:var(--ivory-dark); border-radius:4px; padding:3px 8px; font-size:0.8rem;">@tool.NeedleType @tool.SizeDisplay</span>
-                        }
-                        @if (!string.IsNullOrEmpty(_completedPreview.NeedleNote))
-                        {
-                            <span style="background:var(--ivory-dark); border-radius:4px; padding:3px 8px; font-size:0.8rem;">@_completedPreview.NeedleNote</span>
-                        }
-                    </div>
-                </div>
-            }
-
-            <!-- 스와치 -->
-            @{
-                var popSwatches = _allSwatches.Where(s => s.ProjectId == _completedPreview.Id).ToList();
-            }
-            @if (popSwatches.Any())
-            {
-                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:6px;">📐 스와치</div>
-                    @foreach (var s in popSwatches)
-                    {
-                        <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:6px; font-size:0.84rem;">
-                            <div style="font-weight:600; margin-bottom:6px;">@(string.IsNullOrEmpty(s.Name) ? "스와치" : s.Name)
-                                @if (!string.IsNullOrEmpty(s.Stitch))
-                                {
-                                    <span style="font-weight:400; color:var(--text-mid); margin-left:6px;">(@s.Stitch)</span>
-                                }
-                                @if (s.NeedleSizeMm > 0)
-                                {
-                                    <span style="font-weight:400; color:var(--text-mid); margin-left:6px;">@(s.NeedleSizeMm)mm</span>
-                                }
-                            </div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                                <div>
-                                    <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:3px;">세탁 전</div>
-                                    @if (s.PreWashStitches > 0 || s.PreWashRows > 0)
-                                    {
-                                        <div>@(s.PreWashStitches)코 × @(s.PreWashRows)단</div>
-                                    }
-                                    @if (s.PreWashWidthCm > 0 || s.PreWashHeightCm > 0)
-                                    {
-                                        <div style="color:var(--text-mid);">@(s.PreWashWidthCm)cm × @(s.PreWashHeightCm)cm</div>
-                                    }
-                                </div>
-                                @if (s.PostWashStitches > 0 || s.PostWashWidthCm > 0)
-                                {
-                                    <div>
-                                        <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:3px;">세탁 후</div>
-                                        @if (s.PostWashStitches > 0 || s.PostWashRows > 0)
-                                        {
-                                            <div>@(s.PostWashStitches)코 × @(s.PostWashRows)단</div>
-                                        }
-                                        @if (s.PostWashWidthCm > 0 || s.PostWashHeightCm > 0)
-                                        {
-                                            <div style="color:var(--text-mid);">@(s.PostWashWidthCm)cm × @(s.PostWashHeightCm)cm</div>
-                                        }
-                                    </div>
-                                }
-                            </div>
-                        </div>
-                    }
-                </div>
-            }
-
-            <!-- 완성 치수 -->
-            <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <div class="form-label" style="margin-bottom:0;">📏 완성 치수</div>
-                    @if (!_popupEditingMeasurements)
-                    {
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem;" @onclick="() => { LoadPopMeasures(); _popupEditingMeasurements = true; }">✏️ 입력</button>
-                    }
-                </div>
-                @if (!_popupEditingMeasurements)
-                {
-                    @if (_popMeasures.Any(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
-                    {
-                        <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem;">
-                            <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
-                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
-                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전</div>
-                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후</div>
-                            </div>
-                            @foreach (var m in _popMeasures)
-                            {
-                                @if (!string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After))
-                                {
-                                    <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
-                                        <div style="padding:6px 10px; color:var(--text-dark);">@m.Label</div>
-                                        <div style="padding:6px 10px; color:var(--text-mid); border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.Before) ? "-" : m.Before + "cm")</div>
-                                        <div style="padding:6px 10px; color:var(--text-mid); border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.After) ? "-" : m.After + "cm")</div>
-                                    </div>
-                                }
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <p style="font-size:0.82rem; color:var(--text-light);">치수 정보가 없어요.</p>
-                    }
-                }
-                else
-                {
-                    <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem; margin-bottom:8px;">
-                        <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:#f8f8f8; border-bottom:0.5px solid var(--border);">
-                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
-                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전 (cm)</div>
-                            <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후 (cm)</div>
-                        </div>
-                        @foreach (var m in _popMeasures)
-                        {
-                            <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
-                                <div style="padding:4px 6px; display:flex; align-items:center; gap:4px;">
-                                    @if (m.IsCustom)
-                                    {
-                                        <input class="form-control" style="border:none; padding:3px 6px; font-size:0.82rem; width:100%;"
-                                               @bind="m.Label" placeholder="항목명" />
-                                        <button class="btn btn-danger btn-sm" style="padding:1px 5px; font-size:0.7rem; flex-shrink:0;" @onclick="() => _popMeasures.Remove(m)">✕</button>
-                                    }
-                                    else
-                                    {
-                                        <span style="padding:3px 4px; color:var(--text-dark);">@m.Label</span>
-                                    }
-                                </div>
-                                <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
-                                    <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;"
-                                           @bind="m.Before" placeholder="-" />
-                                </div>
-                                <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
-                                    <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;"
-                                           @bind="m.After" placeholder="-" />
-                                </div>
-                            </div>
-                        }
-                    </div>
-                    <div style="display:flex; gap:8px; margin-bottom:8px;">
-                        <button class="btn btn-ghost btn-sm" @onclick="() => _popMeasures.Add(new PopMeasureItem { IsCustom = true })">+ 항목 추가</button>
-                    </div>
-                    <div style="display:flex; gap:8px;">
-                        <button class="btn btn-primary btn-sm" @onclick="SavePopMeasurements">저장</button>
-                        <button class="btn btn-ghost btn-sm" @onclick="CancelPopMeasurements">취소</button>
-                    </div>
-                }
-            </div>
-
-            <!-- 메모 -->
-            @if (!string.IsNullOrEmpty(_completedPreview.Memo))
-            {
-                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:4px;">📝 메모</div>
-                    <p style="white-space:pre-wrap; font-size:0.9rem; color:var(--text-mid);">@_completedPreview.Memo</p>
-                </div>
-            }
-
-            </div><!-- /스크롤 영역 -->
-            <div class="modal-footer" style="flex-shrink:0;">
-                <button class="btn btn-ghost" @onclick="CloseCompletedPopup">닫기</button>
-                <button class="btn btn-primary" @onclick="GoToFinished">완성작 목록 보기 →</button>
-            </div>
-        </div>
-    </div>
-}
 
 @if (_showModal)
 {
@@ -764,8 +455,6 @@ else
     bool _showCompletedPopup = false;
     List<Guid>? _swatchSnapshot;
     KnitProject? _completedPreview;
-    bool _popupEditingBasicInfo = false;
-    bool _popupEditingMeasurements = false;
 
     class PopMeasureItem
     {
@@ -774,8 +463,6 @@ else
         public string After  { get; set; } = "";
         public bool IsCustom { get; set; } = false;
     }
-    static readonly string[] _popDefaultLabels = { "가슴둘레", "총장", "소매 길이", "소매 단면" };
-    List<PopMeasureItem> _popMeasures = new();
     string _sortField = "created";
     bool _sortAsc = false;          // false = 내림차순(기본), true = 오름차순
     string _statusFilter = "all";   // "all" | "진행중" | "일시중단"
@@ -983,60 +670,17 @@ else
     {
         _showCompletedPopup = false;
         _completedPreview = null;
-        _popupEditingBasicInfo = false;
-        _popupEditingMeasurements = false;
-        _popMeasures.Clear();
     }
 
-    void LoadPopMeasures()
-    {
-        if (_completedPreview == null) return;
-        var dict = new Dictionary<string, (string, string)>();
-        if (!string.IsNullOrEmpty(_completedPreview.MeasurementsMemo))
-        {
-            foreach (var part in _completedPreview.MeasurementsMemo.Split('|'))
-            {
-                var seg = part.Split(':');
-                if (seg.Length >= 3) dict[seg[0]] = (seg[1], seg[2]);
-                else if (seg.Length == 2) dict[seg[0]] = (seg[1], "");
-            }
-        }
-        _popMeasures = new List<PopMeasureItem>();
-        foreach (var label in _popDefaultLabels)
-        {
-            var (b, a) = dict.TryGetValue(label, out var v) ? v : ("", "");
-            _popMeasures.Add(new PopMeasureItem { Label = label, Before = b, After = a, IsCustom = false });
-            dict.Remove(label);
-        }
-        foreach (var kv in dict)
-            _popMeasures.Add(new PopMeasureItem { Label = kv.Key, Before = kv.Value.Item1, After = kv.Value.Item2, IsCustom = true });
-    }
 
-    async Task SavePopBasicInfo()
-    {
-        if (_completedPreview == null) return;
-        await Storage.SaveProjectAsync(_completedPreview);
-        _popupEditingBasicInfo = false;
-    }
 
-    async Task SavePopMeasurements()
-    {
-        if (_completedPreview == null) return;
-        _completedPreview.MeasurementsMemo = string.Join("|",
-            _popMeasures
-                .Where(m => !string.IsNullOrEmpty(m.Label) && (!string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
-                .Select(m => $"{m.Label}:{m.Before}:{m.After}"));
-        await Storage.SaveProjectAsync(_completedPreview);
-        _popupEditingMeasurements = false;
-    }
 
-    void CancelPopMeasurements()
-    {
-        LoadPopMeasures();
-        _popupEditingMeasurements = false;
-    }
 
-    void GoToFinished() => Nav.NavigateTo("finished");
+
+
+
+
+
 
     async Task DeleteProject(Guid id)
     {

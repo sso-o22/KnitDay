@@ -119,16 +119,27 @@ window.patternViewer = (() => {
         if (pathsOnPage.length > 0) console.log('[REDRAW] p'+pageNum+' zoom='+currentZoom.toFixed(2)+' dpr='+dpr+' origW='+Math.round(origW)+' paths='+pathsOnPage.length+' first='+pathsOnPage[0].points[0].x.toFixed(3)+','+pathsOnPage[0].points[0].y.toFixed(3));
         paths.filter(p => p.page === pageNum).forEach(p => {
             if (!p.points.length) return;
+            const isHighlighter = p.tool === 'highlighter';
             ctx.save();
             ctx.beginPath();
-            ctx.lineWidth = p.size * currentZoom * dpr;
-            ctx.lineCap   = 'round';
-            ctx.lineJoin  = 'round';
-            if (p.isEraser) {
+            if (isHighlighter) {
+                ctx.lineWidth = p.size * 4 * currentZoom * dpr;
+                ctx.lineCap   = 'square';
+                ctx.lineJoin  = 'square';
+                ctx.globalAlpha = 0.35;
+                ctx.strokeStyle = p.color;
+                ctx.globalCompositeOperation = 'multiply';
+            } else if (p.isEraser) {
+                ctx.lineWidth  = p.size * currentZoom * dpr;
+                ctx.lineCap    = 'round';
+                ctx.lineJoin   = 'round';
                 ctx.globalAlpha = 1.0;
                 ctx.strokeStyle = 'rgba(0,0,0,1)';
                 ctx.globalCompositeOperation = 'destination-out';
             } else {
+                ctx.lineWidth  = p.size * currentZoom * dpr;
+                ctx.lineCap    = 'round';
+                ctx.lineJoin   = 'round';
                 ctx.globalAlpha = p.opacity ?? 1.0;
                 ctx.strokeStyle = p.color;
                 ctx.globalCompositeOperation = 'source-over';
@@ -153,6 +164,8 @@ window.patternViewer = (() => {
         _pageHandlers[pageNum] = ac;
         const sig = { signal: ac.signal };
 
+        let _snapTimer = null, _snapTriggered = false;
+
         function onDown(e) {
             if (_isPinching || _isZooming) return;
             const {normX, normY} = getNormPos(anno, e, pageNum);
@@ -162,15 +175,27 @@ window.patternViewer = (() => {
                 if (e.touches) e.preventDefault();
                 return;
             }
-            if (_tool !== 'pen' && _tool !== 'eraser') return;
+            if (_tool !== 'pen' && _tool !== 'eraser' && _tool !== 'highlighter') return;
             if (e.touches) e.preventDefault();
             currentPageNum = pageNum;
             isDrawing = true;
-            currentPath = { page: pageNum, color: _color, opacity: _opacity, size: _size, isEraser: _isEraser,
+            _snapTriggered = false;
+            if (_snapTimer) { clearTimeout(_snapTimer); _snapTimer = null; }
+            currentPath = { page: pageNum, color: _color, opacity: _opacity, size: _size,
+                isEraser: _isEraser, tool: _tool,
                 points: [{ x: normX, y: normY }] };
-            // 즉시 점 하나 그리기
             const {bx, by} = normToBuf(normX, normY, anno, pageNum);
             _stroke(anno, pageNum, bx, by, bx + 0.1, by + 0.1);
+            // 직선 스냅: 0.9초 후 직선 모드 전환
+            _snapTimer = setTimeout(() => {
+                if (isDrawing && currentPath && currentPath.points.length >= 1) {
+                    _snapTriggered = true;
+                    const startPt = currentPath.points[0];
+                    currentPath.points = [startPt];
+                    redrawPage(pageNum);
+                    if (navigator.vibrate) navigator.vibrate(30);
+                }
+            }, 900);
         }
 
         function onMove(e) {
@@ -182,9 +207,20 @@ window.patternViewer = (() => {
                 if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove', cx, cy);
                 return;
             }
-            if (!isDrawing || currentPageNum !== pageNum || (_tool !== 'pen' && _tool !== 'eraser')) return;
+            if (!isDrawing || currentPageNum !== pageNum ||
+                (_tool !== 'pen' && _tool !== 'eraser' && _tool !== 'highlighter')) return;
             if (e.touches) e.preventDefault();
             const {normX, normY} = getNormPos(anno, e, pageNum);
+            if (_snapTriggered) {
+                // 직선 스냅 모드: 시작점→현재점만 실시간 미리보기
+                const startPt = currentPath.points[0];
+                redrawPage(pageNum);
+                const {bx: fx, by: fy} = normToBuf(startPt.x, startPt.y, anno, pageNum);
+                const {bx: tx, by: ty} = normToBuf(normX, normY, anno, pageNum);
+                _stroke(anno, pageNum, fx, fy, tx, ty);
+                currentPath.points = [startPt, { x: normX, y: normY }];
+                return;
+            }
             const prev = currentPath.points[currentPath.points.length - 1];
             currentPath.points.push({ x: normX, y: normY });
             const {bx: fx, by: fy} = normToBuf(prev.x, prev.y, anno, pageNum);
@@ -194,9 +230,11 @@ window.patternViewer = (() => {
 
         function onUp(e) {
             if (_isPinching) return;
+            if (_snapTimer) { clearTimeout(_snapTimer); _snapTimer = null; }
             if (_tool === 'ruler') { if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd'); return; }
             if (!isDrawing || currentPageNum !== pageNum) return;
             isDrawing = false;
+            _snapTriggered = false;
             if (currentPath && currentPath.points.length > 0) {
                 paths.push(currentPath);
                 if (dotNetRef) dotNetRef.invokeMethodAsync('NotifyAnnotationChanged');
@@ -216,18 +254,24 @@ window.patternViewer = (() => {
     function _stroke(anno, pageNum, fromX, fromY, toX, toY) {
         const dpr = anno._dpr || 1;
         const ctx = anno.getContext('2d');
-        const annoRect2 = anno.getBoundingClientRect();
-        console.log('[STROKE] from='+fromX.toFixed(0)+','+fromY.toFixed(0)+' dpr='+dpr+' bufW='+anno.width+' lw='+(_size*currentZoom*dpr).toFixed(1)+' color='+_color+' alpha='+_opacity+' annoCSSrect='+annoRect2.left.toFixed(0)+','+annoRect2.top.toFixed(0)+','+annoRect2.width.toFixed(0)+'x'+annoRect2.height.toFixed(0)+' annoZidx='+anno.style.zIndex+' annoOpacity='+anno.style.opacity);
         ctx.save();
         ctx.beginPath();
-        ctx.lineWidth = _size * currentZoom * dpr;
-        ctx.lineCap   = 'round';
-        ctx.lineJoin  = 'round';
+        ctx.lineCap  = 'round';
+        ctx.lineJoin = 'round';
         if (_isEraser) {
+            ctx.lineWidth  = _size * currentZoom * dpr;
             ctx.globalAlpha = 1.0;
             ctx.strokeStyle = 'rgba(0,0,0,1)';
             ctx.globalCompositeOperation = 'destination-out';
+        } else if (_tool === 'highlighter') {
+            // 형광펜: 두껍고 반투명, multiply로 겹쳐도 진해지지 않음
+            ctx.lineWidth  = _size * 4 * currentZoom * dpr;
+            ctx.lineCap   = 'square';
+            ctx.globalAlpha = 0.35;
+            ctx.strokeStyle = _color;
+            ctx.globalCompositeOperation = 'multiply';
         } else {
+            ctx.lineWidth  = _size * currentZoom * dpr;
             ctx.globalAlpha = _opacity;
             ctx.strokeStyle = _color;
             ctx.globalCompositeOperation = 'source-over';
@@ -561,7 +605,15 @@ window.patternViewer = (() => {
         getRect(pageNum) {
             const el = document.getElementById('page-container-'+(pageNum||currentPageNum));
             if (!el) return [0,0,0,0];
-            const r = el.getBoundingClientRect(); return [r.left, r.top, r.width, r.height];
+            // offsetLeft/offsetTop 기반 (getBoundingClientRect는 iOS에서 물리px 반환 버그)
+            const scrollEl = document.getElementById('scroll-container');
+            const scrollLeft = scrollEl ? scrollEl.scrollLeft : 0;
+            const scrollTop  = scrollEl ? scrollEl.scrollTop  : 0;
+            const scRect = scrollEl ? scrollEl.getBoundingClientRect() : {left:0,top:0};
+            let ox = 0, oy = 0, cur = el;
+            while (cur && cur !== scrollEl) { ox += cur.offsetLeft; oy += cur.offsetTop; cur = cur.offsetParent; }
+            return [ox - scrollLeft + scRect.left, oy - scrollTop + scRect.top,
+                    el.offsetWidth, el.offsetHeight];
         },
 
         clearAnnotations() { paths = []; for (let i=1;i<=totalPages;i++) redrawPage(i); },
