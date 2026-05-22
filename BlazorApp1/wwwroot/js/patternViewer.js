@@ -258,6 +258,18 @@ window.patternViewer = (() => {
         annoCanvas.width = bufW; annoCanvas.height = bufH;
         pdfCanvas.style.width   = annoCanvas.style.width  = cssW + 'px';
         pdfCanvas.style.height  = annoCanvas.style.height = cssH + 'px';
+        // Blazor 재렌더 시 style 리셋 방지 - MutationObserver로 CSS 크기 고정
+        annoCanvas._cssW = cssW;
+        annoCanvas._cssH = cssH;
+        if (!annoCanvas._sizeObserver) {
+            annoCanvas._sizeObserver = new MutationObserver(() => {
+                if (annoCanvas._cssW && annoCanvas.style.width !== annoCanvas._cssW + 'px') {
+                    annoCanvas.style.width  = annoCanvas._cssW + 'px';
+                    annoCanvas.style.height = annoCanvas._cssH + 'px';
+                }
+            });
+            annoCanvas._sizeObserver.observe(annoCanvas, { attributes: true, attributeFilter: ['style'] });
+        }
         annoCanvas._dpr  = dpr;
         annoCanvas._zoom = zoom;
         console.log('[RENDER] p'+pageNum+' origW='+Math.round(getPageOrigW(pageNum))+' cssW='+cssW+' bufW='+bufW+' dpr='+dpr+' zoom='+zoom.toFixed(2));
