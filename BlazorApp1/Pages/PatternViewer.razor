@@ -586,6 +586,8 @@
     double _zoom=1.0;
     bool _pdfLoaded=false, _isDrawing=false, _isDrawingRuler=false;
     bool _drawMode=false, _showCounterWidget=true;
+    bool _suppressRender = false;
+    protected override bool ShouldRender() { if (_suppressRender) { _suppressRender = false; return false; } return true; }
     int _activeCounterIndex=0;
     double _rulerStartX,_rulerStartY,_previewW,_previewH,_dragOffsetX,_dragOffsetY;
     double _rulerPopupX=200, _rulerPopupY=200; // 도형 컨트롤 팝업 위치
@@ -640,9 +642,8 @@
             _project.ViewerRulers = System.Text.Json.JsonSerializer.Serialize(_rulers);
             _project.ViewerAnnotations = await JS.InvokeAsync<string>("patternViewer.getPaths");
             await SaveProject();
-            await JS.InvokeVoidAsync("console.log", $"[Ruler SAVED] count={_rulers.Count} json={_project.ViewerRulers[..Math.Min(80,_project.ViewerRulers.Length)]}");
         }
-        catch (Exception ex) { await JS.InvokeVoidAsync("console.error", "[Ruler SAVE ERR] " + ex.Message); }
+        catch { }
     }
 
     // 필기+도형+줌+페이지 자동 저장 (디바운스)
@@ -737,7 +738,6 @@
             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
                 await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
 
-            await JS.InvokeVoidAsync("console.log", "[Ruler RESTORE] ViewerRulers=" + (_project.ViewerRulers?.Length > 0 ? _project.ViewerRulers[..Math.Min(80,_project.ViewerRulers.Length)] : "EMPTY"));
             if (!string.IsNullOrEmpty(_project.ViewerRulers))
             {
                 try
@@ -746,9 +746,8 @@
                         _project.ViewerRulers,
                         new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                     if (rulers != null) _rulers = rulers;
-                    await JS.InvokeVoidAsync("console.log", $"[Ruler RESTORE] deserialized count={_rulers.Count}");
                 }
-                catch (Exception ex) { await JS.InvokeVoidAsync("console.error", "[Ruler RESTORE ERR] " + ex.Message); }
+                catch { }
             }
 
             StateHasChanged();
@@ -882,11 +881,13 @@
     async Task ToggleDrawMode()
     {
         _drawMode = !_drawMode;
+        _suppressRender = true;
         await JS.InvokeVoidAsync("patternViewer.setDrawPanelOpen", _drawMode);
         if (_drawMode)
-            SetTool("pen"); // 필기모드 ON → 펜으로 시작
+            SetTool("pen");
         else
-            SetTool("select"); // 필기모드 OFF → select(이동) 모드
+            SetTool("select");
+        _suppressRender = false;
     }
     void SetTool(string t){_tool=t;_=JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,t=="eraser",t,_penOpacity);}
     async Task OnColorChange(ChangeEventArgs e){_penColor=e.Value?.ToString()??_penColor;await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool,_penOpacity);}

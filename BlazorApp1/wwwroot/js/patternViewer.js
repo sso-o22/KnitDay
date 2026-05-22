@@ -231,7 +231,6 @@ window.patternViewer = (() => {
             if (_tool !== 'pen' && _tool !== 'eraser') return;
             if (e.touches) e.preventDefault();
             const pos = getCssPos(e);
-            console.log("[draw] pos=", pos.x.toFixed(1), pos.y.toFixed(1), "annoCSSW=", anno.offsetWidth, "annoCSSH=", anno.offsetHeight, "bufW=", anno.width, "bufH=", anno.height, "dpr=", window.devicePixelRatio, "zoom=", currentZoom);
             currentPageNum = pageNum;
             isDrawing = true;
             const dpr = window.devicePixelRatio || 1;
@@ -768,6 +767,10 @@ window.patternViewer = (() => {
             const panel = document.getElementById('draw-panel-div');
             if (btn)   btn.classList.toggle('draw-fab-on', open);
             if (panel) panel.classList.toggle('draw-panel-open', open);
+            // 패널 애니메이션(0.25s) 동안 IntersectionObserver 차단
+            // → layout 변화로 인한 캔버스 재렌더 방지
+            _isZooming = true;
+            setTimeout(() => { _isZooming = false; }, 350);
         },
 
         triggerFileInput() {
