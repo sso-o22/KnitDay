@@ -147,7 +147,14 @@
             using var stream = e.File.OpenReadStream(10 * 1024 * 1024);
             using var ms = new System.IO.MemoryStream();
             await stream.CopyToAsync(ms);
-            var json = System.Text.Encoding.UTF8.GetString(ms.ToArray());
+            var json = System.Text.Encoding.UTF8.GetString(ms.ToArray()).Trim();
+            if (string.IsNullOrEmpty(json))
+            {
+                _importMsg = "❌ 파일이 비어있어요.";
+                _importError = true;
+                StateHasChanged();
+                return;
+            }
             var doc = System.Text.Json.JsonDocument.Parse(json);
             var keys = new[] { "knittracker_projects", "knittracker_yarns", "knittracker_tools", "knittracker_swatches" };
             int count = 0;
@@ -164,8 +171,9 @@
             {
                 try
                 {
-                    await JS.InvokeAsync<bool>("patternViewer.importAllPdfs", pdfs.GetRawText());
-                    count++;
+                    // GetRawText()는 JSON 객체 문자열 → importAllPdfs는 JSON.parse()하므로 그대로 전달
+                    var ok = await JS.InvokeAsync<bool>("patternViewer.importAllPdfs", pdfs.GetRawText());
+                    if (ok) count++;
                 }
                 catch { }
             }
@@ -200,7 +208,12 @@
         try
         {
             var pdfJson = await JS.InvokeAsync<string>("patternViewer.exportAllPdfs");
-            await JS.InvokeVoidAsync("eval", $"window._exportData.knitlog_pdfs = JSON.parse({System.Text.Json.JsonSerializer.Serialize(pdfJson)});");
+            if (!string.IsNullOrEmpty(pdfJson) && pdfJson != "{}")
+            {
+                // PDF JSON을 문자열로 그대로 저장 (이중 직렬화 방지)
+                await JS.InvokeVoidAsync("eval",
+                    $"try{{window._exportData.knitlog_pdfs=JSON.parse({System.Text.Json.JsonSerializer.Serialize(pdfJson)})}}catch(e){{}}");
+            }
         }
         catch { }
         await JS.InvokeVoidAsync("eval", @"
