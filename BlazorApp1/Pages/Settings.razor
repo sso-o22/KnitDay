@@ -79,9 +79,15 @@
     <!-- 데이터 -->
     <div class="card">
         <div class="card-title" style="margin-bottom:4px;">💾 데이터</div>
-        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:16px;">
-            데이터는 이 브라우저에 저장돼요. Firebase 연동 전까지는 기기마다 따로 관리돼요.
+        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:8px;">
+            프로젝트, 실 창고, 도구, 스와치 데이터가 저장돼요.
         </p>
+        <div style="font-size:0.82rem; padding:10px 12px; border-radius:8px; margin-bottom:16px;
+                    background:var(--theme-pale); color:var(--text-mid); line-height:1.6;">
+            ⚠️ <b>도안 PDF 파일과 필기 내용은 Firebase에 저장되지 않아요.</b><br>
+            다른 기기로 옮기려면 <b>데이터 내보내기</b>로 백업 파일을 만들고,<br>
+            새 기기에서 <b>데이터 불러오기</b>로 복원해주세요.
+        </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn btn-secondary" @onclick="ExportData">📤 데이터 내보내기</button>
             <button class="btn btn-secondary" @onclick="ImportDataClick">📥 데이터 불러오기</button>
