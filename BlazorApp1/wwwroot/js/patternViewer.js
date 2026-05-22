@@ -73,10 +73,14 @@ window.patternViewer = (() => {
 
         const origW = getPageOrigW(pageNum);
         const origH = getPageOrigH(pageNum);
-        return {
-            normX: cssX / (origW * currentZoom),
-            normY: cssY / (origH * currentZoom)
-        };
+        const normX2 = cssX / (origW * currentZoom);
+        const normY2 = cssY / (origH * currentZoom);
+        console.log('[PEN] clientXY='+src.clientX.toFixed(0)+','+src.clientY.toFixed(0)
+            +' offXY='+off.x.toFixed(0)+','+off.y.toFixed(0)
+            +' cssXY='+cssX.toFixed(0)+','+cssY.toFixed(0)
+            +' norm='+normX2.toFixed(3)+','+normY2.toFixed(3)
+            +' origW='+Math.round(origW)+' zoom='+currentZoom.toFixed(2));
+        return { normX: normX2, normY: normY2 };
     }
 
     // 정규화 → 캔버스 버퍼 px
@@ -252,6 +256,7 @@ window.patternViewer = (() => {
         pdfCanvas.style.height  = annoCanvas.style.height = cssH + 'px';
         annoCanvas._dpr  = dpr;
         annoCanvas._zoom = zoom;
+        console.log('[RENDER] p'+pageNum+' origW='+Math.round(getPageOrigW(pageNum))+' cssW='+cssW+' bufW='+bufW+' dpr='+dpr+' zoom='+zoom.toFixed(2));
 
         const cursor = _tool === 'pen' || _tool === 'ruler' ? 'crosshair' : _tool === 'eraser' ? 'cell' : 'default';
         annoCanvas.style.cursor = cursor;
