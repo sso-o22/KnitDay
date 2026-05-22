@@ -1277,7 +1277,7 @@ else
         if (_project == null) return;
         
         var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
-        if (_activeSession != null)
+        if (activeSession != null)
         {
             activeSession.EndTime = DateTime.Now;
             if (!string.IsNullOrEmpty(_sessionMemo))
@@ -1327,7 +1327,7 @@ else
         if (_project == null) return;
         
         var activeSession = _project.Sessions.FirstOrDefault(s => s.IsActive);
-        if (_activeSession == null)
+        if (activeSession == null)
         {
             _timerDisplay = "00:00:00";
             return;

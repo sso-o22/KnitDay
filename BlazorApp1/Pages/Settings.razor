@@ -55,7 +55,7 @@
                 var isDisabled = _isDark && t.Id != "mono";
                 <button class="settings-theme-btn @((!_isDark && _currentTheme == t.Id) || (_isDark && t.Id == "mono") ? "active" : "")"
                         style="@(isDisabled ? "opacity:0.3; cursor:not-allowed;" : "")"
-                        @onclick="() => { if (!isDisabled) SetTheme(t.Id); }">
+                        @onclick="async () => { if (!isDisabled) await SetTheme(t.Id); }">
                     <div class="settings-theme-dot" style="background:@t.DotColor;"></div>
                     <span class="settings-theme-name">@t.Name</span>
                 </button>
@@ -126,6 +126,7 @@
 
     string _currentTheme = "mono";
     bool _isDark = false;
+    bool _debugMode = false;
     string _importMsg = "";
     bool _importError = false;
 
