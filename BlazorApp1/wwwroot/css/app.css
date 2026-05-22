@@ -511,14 +511,17 @@ body {
         padding: 10px 12px;
         font-size: 0.95rem;
     }
-    /* 아이패드: 날짜 input 높이 + form-row 간격 */
+    /* 아이패드: 날짜 input — form-control과 높이 통일, 폭 제한 없음 */
     input[type="date"] {
-        min-height: 52px;
-        font-size: 1rem;
-        max-width: 220px;
+        height: auto;
+        min-height: unset;
+        font-size: 0.9rem;
+        max-width: unset;
+        padding: 10px 14px;
+        box-sizing: border-box;
     }
     .form-row {
-        gap: 20px;
+        gap: 16px;
     }
 }
 

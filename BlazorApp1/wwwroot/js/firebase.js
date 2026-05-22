@@ -1,7 +1,10 @@
 // ── Firebase 초기화 ───────────────────────────────────────────────
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+    getAuth, GoogleAuthProvider,
+    signInWithPopup, signInWithRedirect, getRedirectResult,
+    signOut, onAuthStateChanged,
+    indexedDBLocalPersistence, setPersistence
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
     getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc
@@ -21,13 +24,30 @@ const auth = getAuth(app);
 const db   = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+// ── 영구 세션 유지 (IndexedDB — PWA 재시작해도 로그인 유지) ───────
+setPersistence(auth, indexedDBLocalPersistence).catch(e =>
+    console.warn('setPersistence failed:', e)
+);
+
+// PWA(홈화면 앱)에서는 popup이 새 탭을 열어 앱 컨텍스트를 끊어버리므로
+// standalone 모드일 때는 redirect 방식 사용
+const isPWA = window.matchMedia('(display-mode: standalone)').matches
+           || window.navigator.standalone === true;
+
 // ── Auth ─────────────────────────────────────────────────────────
 window.firebaseAuth = {
     async signInWithGoogle() {
         try {
-            const result = await signInWithPopup(auth, provider);
-            const u = result.user;
-            return { uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL };
+            if (isPWA) {
+                // redirect 방식: 현재 페이지를 Google 로그인 페이지로 이동
+                // 결과는 waitForAuthReady에서 getRedirectResult로 처리
+                await signInWithRedirect(auth, provider);
+                return null; // 페이지가 이동되므로 여기는 도달 안 함
+            } else {
+                const result = await signInWithPopup(auth, provider);
+                const u = result.user;
+                return { uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL };
+            }
         } catch (e) {
             console.error('signInWithGoogle:', e.code, e.message);
             return null;
@@ -46,17 +66,30 @@ window.firebaseAuth = {
     },
 
     onAuthStateChanged(dotNetRef) {
-        // 첫 발화 시 현재 상태 즉시 전달 (앱 재시작 시 로그인 유지)
         onAuthStateChanged(auth, user => {
-            const info = user ? { uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL } : null;
+            const info = user
+                ? { uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL }
+                : null;
             dotNetRef.invokeMethodAsync('OnAuthStateChanged', info);
         });
     },
 
-    // Firebase가 세션 복원 완료할 때까지 대기 후 현재 유저 반환
+    // Firebase 세션 복원 완료까지 대기 + redirect 결과 처리
     waitForAuthReady() {
-        return new Promise(resolve => {
-            // 5초 타임아웃
+        return new Promise(async resolve => {
+            // redirect 로그인 결과가 있으면 먼저 처리
+            try {
+                const redirectResult = await getRedirectResult(auth);
+                if (redirectResult?.user) {
+                    const u = redirectResult.user;
+                    resolve({ uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL });
+                    return;
+                }
+            } catch (e) {
+                console.warn('getRedirectResult:', e);
+            }
+
+            // 기존 세션 복원 대기
             const timer = setTimeout(() => {
                 console.warn('waitForAuthReady timeout');
                 resolve(null);
@@ -73,7 +106,6 @@ window.firebaseAuth = {
 
 // ── Firestore ────────────────────────────────────────────────────
 window.firebaseStore = {
-    // 컬렉션 전체 읽기
     async getCollection(path) {
         try {
             const parts = path.split('/');
@@ -87,7 +119,6 @@ window.firebaseStore = {
         }
     },
 
-    // 문서 저장
     async setDocument(path, jsonData) {
         try {
             await setDoc(doc(db, ...path.split('/')), JSON.parse(jsonData), { merge: true });
@@ -98,7 +129,6 @@ window.firebaseStore = {
         }
     },
 
-    // 문서 읽기
     async getDocument(path) {
         try {
             const snap = await getDoc(doc(db, ...path.split('/')));
@@ -109,7 +139,6 @@ window.firebaseStore = {
         }
     },
 
-    // 문서 삭제
     async deleteDocument(path) {
         try {
             await deleteDoc(doc(db, ...path.split('/')));
@@ -119,7 +148,6 @@ window.firebaseStore = {
         }
     },
 
-    // 배열 → 컬렉션 upsert
     async saveCollection(basePath, jsonArray, idField) {
         try {
             const items = JSON.parse(jsonArray);
