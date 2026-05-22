@@ -215,19 +215,30 @@ window.patternViewer = (() => {
         // anno CSS size = cssW x cssH, buffer size = cssW*dpr x cssH*dpr
         // 버퍼/CSS 비율을 직접 계산 → DPR 값 자체는 사용하지 않음
         function getCssPos(e) {
-            const rect = anno.getBoundingClientRect();
-            const src  = e.touches ? e.touches[0] : e;
-            // _cssW: renderOnePage에서 viewport 기준으로 저장한 실제 CSS px
-            // offsetWidth/getBoundingClientRect는 iOS에서 물리px 반환 버그 있음
-            const cssW = anno._cssW || anno.offsetWidth || rect.width;
-            const cssH = anno._cssH || anno.offsetHeight || rect.height;
+            const src = e.touches ? e.touches[0] : e;
+            const annoRect = anno.getBoundingClientRect();
+            // annoRect는 CSS transform이 적용된 시각적 위치를 반환
+            // _cssW는 transform 전 실제 CSS 크기
+            const cssW = anno._cssW || 1;
+            const cssH = anno._cssH || 1;
+            // getBoundingClientRect().width = cssW * transformScale
+            // transformScale = annoRect.width / cssW
+            const displayW = annoRect.width;
+            const displayH = annoRect.height;
+            // 시각적 위치 기준 CSS px → 실제 캔버스 내 좌표
+            const relX = src.clientX - annoRect.left;
+            const relY = src.clientY - annoRect.top;
+            // 실제 캔버스 CSS px (transform 제거)
+            const realCssX = cssW > 0 && displayW > 0 ? relX * cssW / displayW : relX;
+            const realCssY = cssH > 0 && displayH > 0 ? relY * cssH / displayH : relY;
+            // 버퍼 px
             const scaleX = cssW > 0 ? anno.width / cssW : 1;
             const scaleY = cssH > 0 ? anno.height / cssH : 1;
             return {
-                x: (src.clientX - rect.left) * scaleX,
-                y: (src.clientY - rect.top)  * scaleY,
+                x: realCssX * scaleX,
+                y: realCssY * scaleY,
                 _cx: src.clientX, _cy: src.clientY,
-                _rl: rect.left,   _rt: rect.top,
+                _rl: annoRect.left, _rt: annoRect.top,
                 _scaleX: scaleX
             };
         }
@@ -243,6 +254,12 @@ window.patternViewer = (() => {
             }
             if (_tool !== 'pen' && _tool !== 'eraser') return;
             if (e.touches) e.preventDefault();
+            // 그리기 시작 전 wrapper transform 제거 (좌표 정확성 보장)
+            const wrapper = document.getElementById('pdf-wrapper');
+            if (wrapper && wrapper.style.transform) {
+                wrapper.style.transform = '';
+                wrapper.style.transformOrigin = '';
+            }
             const pos = getCssPos(e);
             currentPageNum = pageNum;
             isDrawing = true;
