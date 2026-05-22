@@ -788,6 +788,47 @@ window.patternViewer = (() => {
             if (inp) inp.click();
         },
 
+        // 모든 PDF를 Base64로 내보내기 (데이터 백업용)
+        async exportAllPdfs() {
+            try {
+                const db = await openDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(IDB_STORE, 'readonly');
+                    const req = tx.objectStore(IDB_STORE).getAll();
+                    req.onsuccess = e => {
+                        const result = {};
+                        for (const item of e.target.result) {
+                            // Uint8Array → Base64
+                            const bytes = item.bytes instanceof Uint8Array ? item.bytes : new Uint8Array(item.bytes);
+                            let bin = '';
+                            for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                            result[item.projectId] = {
+                                fileName: item.fileName,
+                                data: btoa(bin)
+                            };
+                        }
+                        resolve(JSON.stringify(result));
+                    };
+                    req.onerror = e => reject(e.target.error);
+                });
+            } catch(e) { return '{}'; }
+        },
+
+        // Base64 PDF 데이터를 IndexedDB로 복원
+        async importAllPdfs(jsonStr) {
+            try {
+                const map = JSON.parse(jsonStr);
+                const db = await openDB();
+                for (const [projectId, val] of Object.entries(map)) {
+                    const bin = atob(val.data);
+                    const bytes = new Uint8Array(bin.length);
+                    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+                    await savePdfToIDB(projectId, bytes, val.fileName);
+                }
+                return true;
+            } catch(e) { console.error('importAllPdfs error:', e); return false; }
+        },
+
         // ── IndexedDB PDF 저장/불러오기 ──────────────────────
         async savePdfToProject(projectId, fileName) {
             if (!_lastPdfBytes) return false;

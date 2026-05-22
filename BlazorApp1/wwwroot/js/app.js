@@ -111,8 +111,8 @@ document.addEventListener('change', e => {
     // URL ?debug=1 또는 localStorage knitlog_debug=1 이면 활성화
     const debugEnabled = location.search.includes('debug=1') || localStorage.getItem('knitlog_debug') === '1';
     if (!debugEnabled) return;
-    // 도안 뷰어 페이지에서만 표시
-    if (!location.pathname.includes('pattern-viewer')) return;
+    // PWA(홈화면 추가)는 pathname이 고정이라 Blazor 해시/히스토리 라우팅으로 감지
+    // → 패널은 항상 생성하되, pattern-viewer 경로일 때만 표시
 
     const panel = document.createElement('div');
     panel.id = '_dbg';
@@ -165,4 +165,19 @@ document.addEventListener('change', e => {
     window.addEventListener('unhandledrejection', e => addLog('error', ['UnhandledPromise:', e.reason]));
 
     console.log('Debug panel ready. URL: ' + location.href);
+
+    // Blazor SPA 라우팅 변경 감지 → pattern-viewer일 때만 패널 표시
+    function checkRoute() {
+        const path = location.href;
+        const show = path.includes('pattern-viewer');
+        panel.style.display = show ? '' : 'none';
+    }
+    checkRoute();
+    // popstate: 브라우저 뒤로/앞으로
+    window.addEventListener('popstate', checkRoute);
+    // Blazor가 pushState로 라우팅할 때 감지
+    const _origPush = history.pushState.bind(history);
+    history.pushState = function(...args) { _origPush(...args); checkRoute(); };
+    const _origReplace = history.replaceState.bind(history);
+    history.replaceState = function(...args) { _origReplace(...args); checkRoute(); };
 })();

@@ -159,6 +159,16 @@
                     count++;
                 }
             }
+            // IndexedDB PDF 복원
+            if (doc.RootElement.TryGetProperty("knitlog_pdfs", out var pdfs))
+            {
+                try
+                {
+                    await JS.InvokeAsync<bool>("patternViewer.importAllPdfs", pdfs.GetRawText());
+                    count++;
+                }
+                catch { }
+            }
             _importMsg = $"✅ 불러오기 완료! ({count}가지 데이터) 앱을 다시 시작하면 반영돼요.";
         }
         catch (Exception ex)
@@ -178,16 +188,28 @@
 
     async Task ExportData()
     {
+        // localStorage 데이터
         await JS.InvokeVoidAsync("eval", @"
             const keys = ['knittracker_projects','knittracker_yarns','knittracker_tools','knittracker_swatches'];
             const data = {};
             keys.forEach(k => { const v = localStorage.getItem(k); if(v) data[k] = JSON.parse(v); });
             data.exportedAt = new Date().toISOString();
-            const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+            window._exportData = data;
+        ");
+        // IndexedDB PDF 데이터 포함
+        try
+        {
+            var pdfJson = await JS.InvokeAsync<string>("patternViewer.exportAllPdfs");
+            await JS.InvokeVoidAsync("eval", $"window._exportData.knitlog_pdfs = JSON.parse({System.Text.Json.JsonSerializer.Serialize(pdfJson)});");
+        }
+        catch { }
+        await JS.InvokeVoidAsync("eval", @"
+            const blob = new Blob([JSON.stringify(window._exportData, null, 2)], {type:'application/json'});
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'knitlog_backup_' + new Date().toISOString().slice(0,10) + '.json';
             a.click();
+            delete window._exportData;
         ");
     }
 }
