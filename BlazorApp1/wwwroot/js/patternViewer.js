@@ -217,7 +217,10 @@ window.patternViewer = (() => {
             const src  = e.touches ? e.touches[0] : e;
             return {
                 x: src.clientX - rect.left,
-                y: src.clientY - rect.top
+                y: src.clientY - rect.top,
+                _cx: src.clientX, _cy: src.clientY,
+                _rl: rect.left,   _rt: rect.top,
+                _rw: rect.width,  _rh: rect.height
             };
         }
 
@@ -234,7 +237,7 @@ window.patternViewer = (() => {
             const pos = getCssPos(e);
             currentPageNum = pageNum;
             isDrawing = true;
-            console.log("[PEN] pos="+pos.x.toFixed(0)+","+pos.y.toFixed(0)+" dpr="+(anno._renderedDpr||1)+" cssW="+anno.offsetWidth+" bufW="+anno.width+" zoom="+currentZoom.toFixed(2));
+            console.log("[PEN]"+" touch="+pos._cx.toFixed(0)+","+pos._cy.toFixed(0)+" rectL="+pos._rl.toFixed(0)+" rectT="+pos._rt.toFixed(0)+" rectW="+pos._rw.toFixed(0)+" rectH="+pos._rh.toFixed(0)+" pos="+pos.x.toFixed(0)+","+pos.y.toFixed(0)+" dpr="+(anno._renderedDpr||1)+" bufW="+anno.width+" zoom="+currentZoom.toFixed(2));
             // 렌더 시점에 저장된 dpr 사용
             const actualDpr = anno._renderedDpr || 1;
             currentPath = {
