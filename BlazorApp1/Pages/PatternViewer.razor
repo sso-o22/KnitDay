@@ -109,8 +109,8 @@
 
     <!-- ── 필기 도구 플로팅 위젯 (좌측 상단, 툴바 아래) ── -->
     <div class="draw-wrap">
-        <button class="draw-fab @(_drawMode ? "draw-fab-on" : "")" @onclick="ToggleDrawMode">✏️</button>
-        <div class="draw-panel @(_drawMode ? "draw-panel-open" : "")">
+        <button class="draw-fab" id="draw-fab-btn" @onclick="ToggleDrawMode">✏️</button>
+        <div class="draw-panel" id="draw-panel-div">
             <div class="draw-panel-inner">
                 <!-- 행1: 도구 선택 (도형 → 펜 → 지우개) -->
                 <div class="dp-row">
@@ -762,7 +762,7 @@
         }
         finally
         {
-            _saveCts?.Cancel(); // 복원 중 쌓인 디바운스 타이머 취소
+            _saveCts?.Cancel();
             _saveCts = null;
             _isRestoring = false;
         }
@@ -875,9 +875,10 @@
     }
 
     // ── 필기 ──
-    void ToggleDrawMode()
+    async Task ToggleDrawMode()
     {
         _drawMode = !_drawMode;
+        await JS.InvokeVoidAsync("patternViewer.setDrawPanelOpen", _drawMode);
         if (_drawMode)
             SetTool("pen"); // 필기모드 ON → 펜으로 시작
         else

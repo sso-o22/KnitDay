@@ -509,7 +509,7 @@ window.patternViewer = (() => {
         scrollEl.addEventListener('wheel', e => {
             if (!e.ctrlKey) return;
             e.preventDefault();
-            const maxZ = Math.max(5.0, _fitZoom * 10);
+            const maxZ = Math.min(4.0, _fitZoom * 6);
             const minZ = _fitZoom * 0.3;
 
             // deltaY를 비례값으로 변환 → 부드러운 연속 확대 (픽셀/라인/페이지 단위 통일)
@@ -579,7 +579,7 @@ window.patternViewer = (() => {
             _pinchRafId = requestAnimationFrame(() => {
                 _pinchRafId = null;
                 if (!_isPinching) return;
-                const maxZ = Math.max(5.0, _fitZoom * 10);
+                const maxZ = Math.min(4.0, _fitZoom * 6);
                 const minZ = _fitZoom * 0.3;
                 const newZ = Math.min(maxZ, Math.max(minZ,
                     _pinchStartZoom * _pinchLatestDist / _pinchStartDist));
@@ -685,7 +685,7 @@ window.patternViewer = (() => {
             if (_renderDebounceTimer) { clearTimeout(_renderDebounceTimer); _renderDebounceTimer = null; }
             const wrapper = document.getElementById('pdf-wrapper');
             if (wrapper) { wrapper.style.transform = ''; wrapper.style.transformOrigin = ''; wrapper.style.opacity = '1'; }
-            const maxZ = Math.max(5.0, _fitZoom * 10);
+            const maxZ = Math.min(4.0, _fitZoom * 6);
             const minZ = _fitZoom * 0.3;
             zoom = Math.min(maxZ, Math.max(minZ, zoom));
             currentZoom    = zoom;
@@ -754,6 +754,14 @@ window.patternViewer = (() => {
         },
 
         preventScroll() {},
+
+        // 필기 패널 토글 (JS로 직접 제어 → Blazor 재렌더 없이)
+        setDrawPanelOpen(open) {
+            const btn   = document.getElementById('draw-fab-btn');
+            const panel = document.getElementById('draw-panel-div');
+            if (btn)   btn.classList.toggle('draw-fab-on', open);
+            if (panel) panel.classList.toggle('draw-panel-open', open);
+        },
 
         triggerFileInput() {
             const inp = document.getElementById('pdf-file-input');

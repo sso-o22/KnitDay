@@ -552,16 +552,27 @@ body {
         appearance: none;
     }
 
-    /* 모바일: 날짜 없을 때 "연도-월-일" placeholder 표시 */
-    input[type="date"]:not(:valid)::before,
-    input[type="date"][value=""]::before {
-        content: "연도-월-일";
-        color: #aaa;
-        pointer-events: none;
-    }
-    /* iOS Safari: 빈 날짜 input의 내부 텍스트 숨김 후 가상요소로 대체 */
-    input[type="date"]:not(:valid)::-webkit-date-and-time-value {
+    /* iOS Safari: 빈 날짜 input은 color transparent로 만들고 JS/wrapper로 처리 */
+    input[type="date"].date-empty {
         color: transparent;
+    }
+    input[type="date"].date-empty::-webkit-date-and-time-value {
+        color: transparent;
+    }
+    /* 날짜 래퍼 */
+    .date-input-wrap {
+        position: relative;
+        display: block;
+    }
+    .date-input-wrap .date-placeholder {
+        position: absolute;
+        top: 50%;
+        left: 13px;
+        transform: translateY(-50%);
+        color: #aaa;
+        font-size: 16px;
+        pointer-events: none;
+        user-select: none;
     }
 
     /* form-control 전체도 넘치지 않도록 */

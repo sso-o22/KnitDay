@@ -60,3 +60,41 @@ window.initCardDrag = (dotNetRef) => {
 window.cleanupCardDrag = () => {
     if (window._cardDragCleanup) window._cardDragCleanup();
 };
+// ── 날짜 input placeholder (iOS Safari 대응) ──────────────────
+// 빈 date input에 "연도-월-일" 텍스트 표시
+function updateDatePlaceholders() {
+    document.querySelectorAll('input[type="date"]').forEach(inp => {
+        if (!inp.value) {
+            inp.classList.add('date-empty');
+            // wrapper가 없으면 생성
+            if (!inp.parentElement.classList.contains('date-input-wrap')) {
+                const wrap = document.createElement('div');
+                wrap.className = 'date-input-wrap';
+                inp.parentNode.insertBefore(wrap, inp);
+                wrap.appendChild(inp);
+                const ph = document.createElement('span');
+                ph.className = 'date-placeholder';
+                ph.textContent = '연도-월-일';
+                wrap.appendChild(ph);
+            }
+            const ph = inp.parentElement.querySelector('.date-placeholder');
+            if (ph) ph.style.display = '';
+        } else {
+            inp.classList.remove('date-empty');
+            const ph = inp.parentElement.querySelector('.date-placeholder');
+            if (ph) ph.style.display = 'none';
+        }
+    });
+}
+
+// Blazor 렌더 완료 후 실행
+document.addEventListener('DOMContentLoaded', updateDatePlaceholders);
+
+// Blazor가 DOM 업데이트할 때마다 실행 (MutationObserver)
+const _dateObserver = new MutationObserver(() => updateDatePlaceholders());
+_dateObserver.observe(document.body, { childList: true, subtree: true });
+
+// date input 변경 시 즉시 업데이트
+document.addEventListener('change', e => {
+    if (e.target.type === 'date') updateDatePlaceholders();
+}, true);
