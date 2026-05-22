@@ -75,11 +75,6 @@ window.patternViewer = (() => {
         const origH = getPageOrigH(pageNum);
         const normX2 = cssX / (origW * currentZoom);
         const normY2 = cssY / (origH * currentZoom);
-        console.log('[PEN] clientXY='+src.clientX.toFixed(0)+','+src.clientY.toFixed(0)
-            +' offXY='+off.x.toFixed(0)+','+off.y.toFixed(0)
-            +' cssXY='+cssX.toFixed(0)+','+cssY.toFixed(0)
-            +' norm='+normX2.toFixed(3)+','+normY2.toFixed(3)
-            +' origW='+Math.round(origW)+' zoom='+currentZoom.toFixed(2));
         return { normX: normX2, normY: normY2 };
     }
 
@@ -116,7 +111,6 @@ window.patternViewer = (() => {
         const scaleX = origW * currentZoom * dpr;
         const scaleY = origH * currentZoom * dpr;
         const pathsOnPage = paths.filter(p => p.page === pageNum);
-        if (pathsOnPage.length > 0) console.log('[REDRAW] p'+pageNum+' zoom='+currentZoom.toFixed(2)+' dpr='+dpr+' origW='+Math.round(origW)+' paths='+pathsOnPage.length+' first='+pathsOnPage[0].points[0].x.toFixed(3)+','+pathsOnPage[0].points[0].y.toFixed(3));
         paths.filter(p => p.page === pageNum).forEach(p => {
             if (!p.points.length) return;
             const isHighlighter = p.tool === 'highlighter';
@@ -369,7 +363,6 @@ window.patternViewer = (() => {
         }
         annoCanvas._dpr  = dpr;
         annoCanvas._zoom = zoom;
-        console.log('[RENDER] p'+pageNum+' origW='+Math.round(getPageOrigW(pageNum))+' cssW='+cssW+' bufW='+bufW+' dpr='+dpr+' zoom='+zoom.toFixed(2));
 
         const cursor = _tool === 'pen' || _tool === 'ruler' ? 'crosshair' : _tool === 'eraser' ? 'cell' : 'default';
         annoCanvas.style.cursor = cursor;

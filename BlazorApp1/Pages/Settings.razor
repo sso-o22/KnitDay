@@ -102,16 +102,7 @@
         }
     </div>
 
-    <!-- 디버그 모드 -->
-    <div class="card">
-        <div class="card-title" style="margin-bottom:4px;">🔧 디버그</div>
-        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:16px;">
-            도안 뷰어에서 디버그 콘솔을 표시합니다. 홈화면 추가 앱에서 주로 사용해요.
-        </p>
-        <button class="btn @(_debugMode ? "btn-primary" : "btn-secondary")" @onclick="ToggleDebugMode">
-            @(_debugMode ? "🟢 디버그 ON" : "🔴 디버그 OFF")
-        </button>
-    </div>
+
 
 </div>
 
@@ -135,7 +126,6 @@
 
     string _currentTheme = "mono";
     bool _isDark = false;
-    bool _debugMode = false;
     string _importMsg = "";
     bool _importError = false;
 
@@ -224,12 +214,7 @@
     async Task SignIn() => await Auth.SignInWithGoogleAsync();
     async Task SignOut() { await Auth.SignOutAsync(); StateHasChanged(); }
 
-    async Task ToggleDebugMode()
-    {
-        _debugMode = !_debugMode;
-        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_debug", _debugMode ? "1" : "0");
-        StateHasChanged();
-    }
+
 
     async Task ExportData()
     {
