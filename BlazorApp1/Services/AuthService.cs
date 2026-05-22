@@ -35,6 +35,19 @@ namespace KnitLog.Services
         public async Task InitAsync()
         {
             if (IsInitialized) return;
+            // Firebase 세션 복원 완료까지 대기 후 현재 로그인 상태 로드
+            try
+            {
+                var current = await _js.InvokeAsync<JsonElement?>("firebaseAuth.waitForAuthReady");
+                if (current.HasValue && current.Value.ValueKind != JsonValueKind.Null)
+                {
+                    CurrentUser = JsonSerializer.Deserialize<UserInfo>(
+                        current.Value.GetRawText(),
+                        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                }
+            }
+            catch { }
+            // 이후 상태 변경 감지 (로그인/로그아웃)
             _ref = DotNetObjectReference.Create(this);
             await _js.InvokeVoidAsync("firebaseAuth.onAuthStateChanged", _ref);
             IsInitialized = true;
@@ -58,6 +71,11 @@ namespace KnitLog.Services
             {
                 var result = await _js.InvokeAsync<JsonElement?>("firebaseAuth.signInWithGoogle");
                 if (result == null || result.Value.ValueKind == JsonValueKind.Null) return false;
+                // 팝업 완료 즉시 상태 반영 (onAuthStateChanged 콜백 대기 없이)
+                CurrentUser = JsonSerializer.Deserialize<UserInfo>(
+                    result.Value.GetRawText(),
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                OnAuthChanged?.Invoke();
                 return true;
             }
             catch (Exception ex)

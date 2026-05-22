@@ -46,9 +46,21 @@ window.firebaseAuth = {
     },
 
     onAuthStateChanged(dotNetRef) {
+        // 첫 발화 시 현재 상태 즉시 전달 (앱 재시작 시 로그인 유지)
         onAuthStateChanged(auth, user => {
             const info = user ? { uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL } : null;
             dotNetRef.invokeMethodAsync('OnAuthStateChanged', info);
+        });
+    },
+
+    // Firebase가 세션 복원 완료할 때까지 대기 후 현재 유저 반환
+    waitForAuthReady() {
+        return new Promise(resolve => {
+            const unsubscribe = onAuthStateChanged(auth, user => {
+                unsubscribe();
+                if (!user) { resolve(null); return; }
+                resolve({ uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL });
+            });
         });
     }
 };
