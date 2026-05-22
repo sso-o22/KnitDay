@@ -235,7 +235,6 @@ window.patternViewer = (() => {
         function onDown(e) {
             if (_isPinching || _isZooming) return;
             if (_tool === 'ruler') {
-                // ruler는 CSS px 필요 → scaleX로 나눔
                 const pos = getCssPos(e);
                 if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown',
                     pos.x / pos._scaleX, pos.y / pos._scaleX, pageNum);
@@ -244,20 +243,25 @@ window.patternViewer = (() => {
             }
             if (_tool !== 'pen' && _tool !== 'eraser') return;
             if (e.touches) e.preventDefault();
-            // getCssPos는 버퍼 px 반환 (rect.width 기준 비율 적용됨)
             const pos = getCssPos(e);
             currentPageNum = pageNum;
             isDrawing = true;
             const dpr = anno._renderedDpr || 1;
-            // 저장: zoom=1 기준 CSS px = 버퍼px / dpr / zoom
             currentPath = {
                 page: pageNum, color: _color, opacity: _opacity, size: _size,
                 isEraser: _isEraser,
                 points: [{ x: pos.x / dpr / currentZoom, y: pos.y / dpr / currentZoom }]
             };
-            const ctx = anno.getContext('2d');
+            // onDown에서 점 하나 즉시 그리기
+            _drawOnCanvas(anno, pos.x, pos.y, pos.x + 0.1, pos.y + 0.1);
+        }
+
+        // context 상태를 매번 완전히 설정해서 iOS 상태 초기화 문제 방지
+        function _drawOnCanvas(canvas, fromX, fromY, toX, toY) {
+            const dpr = canvas._renderedDpr || 1;
+            const ctx = canvas.getContext('2d');
+            ctx.save();
             ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);  // 버퍼 px 그대로
             ctx.lineWidth = _size * currentZoom * dpr;
             ctx.lineCap   = 'round';
             ctx.lineJoin  = 'round';
@@ -270,10 +274,10 @@ window.patternViewer = (() => {
                 ctx.strokeStyle = _color;
                 ctx.globalCompositeOperation = 'source-over';
             }
-            console.log("[PEN] bufPx="+pos.x.toFixed(0)+","+pos.y.toFixed(0)
-                +" scale="+pos._scaleX.toFixed(2)+" dpr="+dpr
-                +" bufW="+anno.width+" cssW="+anno.offsetWidth
-                +" zoom="+currentZoom.toFixed(2));
+            ctx.moveTo(fromX, fromY);
+            ctx.lineTo(toX, toY);
+            ctx.stroke();
+            ctx.restore();
         }
 
         function onMove(e) {
@@ -287,17 +291,21 @@ window.patternViewer = (() => {
             }
             if (!isDrawing || currentPageNum !== pageNum || (_tool !== 'pen' && _tool !== 'eraser')) return;
             if (e.touches) e.preventDefault();
-            const pos = getCssPos(e);  // 버퍼 px
+            const pos = getCssPos(e);
             const dpr = anno._renderedDpr || 1;
+            const pts = currentPath ? currentPath.points : null;
+            const prev = pts && pts.length > 0 ? pts[pts.length - 1] : null;
             if (currentPath) currentPath.points.push({
                 x: pos.x / dpr / currentZoom,
                 y: pos.y / dpr / currentZoom
             });
-            const ctx = anno.getContext('2d');
-            ctx.lineTo(pos.x, pos.y);  // 버퍼 px 그대로
-            ctx.stroke();
+            // 이전 점에서 현재 점으로 선분 그리기 (매번 context 상태 완전 재설정)
+            if (prev) {
+                _drawOnCanvas(anno,
+                    prev.x * dpr * currentZoom, prev.y * dpr * currentZoom,
+                    pos.x, pos.y);
+            }
         }
-
         function onUp(e) {
             if (_isPinching) return;
             if (_tool === 'ruler') { if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd'); return; }
