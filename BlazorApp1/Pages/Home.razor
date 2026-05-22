@@ -6,6 +6,7 @@
 @using KnitLog.Services
 @inject StorageService Storage
 @inject AuthService Auth
+@implements IDisposable
 
 <div class="page-header">
     <div>
@@ -14,7 +15,15 @@
     </div>
 </div>
 
-@if (!Auth.IsLoggedIn)
+@if (_authLoading)
+{
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;
+                margin-bottom:16px;background:var(--theme-pale);border:1.5px solid var(--theme-mid);">
+        <span style="font-size:1.1rem;">⏳</span>
+        <div style="font-size:0.85rem;color:var(--text-mid);">로그인 상태 확인 중...</div>
+    </div>
+}
+else if (!Auth.IsLoggedIn)
 {
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;
                 padding:12px 16px;border-radius:12px;margin-bottom:16px;
@@ -109,12 +118,28 @@ else
 @code {
     async Task SignIn() => await Auth.SignInWithGoogleAsync();
 
+    void OnAuthChanged()
+    {
+        _authLoading = false;
+        InvokeAsync(StateHasChanged);
+    }
+
     bool _loading = true;
+    bool _authLoading = true; // Firebase 세션 복원 대기 중
+
     int _inProgress, _finished, _wishlist, _yarns, _swatches, _tools;
     List<KnitProject> _recentProjects = new();
 
     protected override async Task OnInitializedAsync()
     {
+        Auth.OnAuthChanged += OnAuthChanged;
+        // Firebase 초기화 완료 대기 (최대 6초)
+        if (!Auth.IsInitialized)
+        {
+            var waited = 0;
+            while (!Auth.IsInitialized && waited < 60) { await Task.Delay(100); waited++; }
+        }
+        _authLoading = false;
         var projects = await Storage.GetProjectsAsync();
         _inProgress = projects.Count(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단);
         _finished   = projects.Count(p => p.Status == ProjectStatus.완료);
@@ -133,5 +158,10 @@ else
         _tools = tools.Count;
 
         _loading = false;
+    }
+
+    public void Dispose()
+    {
+        Auth.OnAuthChanged -= OnAuthChanged;
     }
 }
