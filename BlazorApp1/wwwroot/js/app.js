@@ -63,15 +63,18 @@ window.cleanupCardDrag = () => {
 // ── 날짜 input placeholder (iOS Safari 대응) ──────────────────
 // 빈 date input에 "연도-월-일" 텍스트 표시
 function updateDatePlaceholders() {
+    // iOS Safari에서만 적용 (PC 브라우저는 자체 placeholder 표시)
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) ||
+                  (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    if (!isIOS) return;
+
     document.querySelectorAll('input[type="date"]').forEach(inp => {
         if (!inp.value) {
             inp.classList.add('date-empty');
             if (!inp.parentElement.classList.contains('date-input-wrap')) {
-                // 감싸기 전 높이 기록
                 const h = inp.offsetHeight;
                 const wrap = document.createElement('div');
                 wrap.className = 'date-input-wrap';
-                // 래퍼 높이를 input 높이로 명시 고정
                 if (h > 0) wrap.style.height = h + 'px';
                 inp.parentNode.insertBefore(wrap, inp);
                 wrap.appendChild(inp);
@@ -105,10 +108,10 @@ document.addEventListener('change', e => {
 // ── 모바일 디버그 콘솔 ──────────────────────────────────────
 // URL에 ?debug=1 붙이면 화면에 로그 패널 표시
 (function() {
-    if (!location.search.includes('debug=1')) return;
+    // URL ?debug=1 또는 localStorage knitlog_debug=1 이면 활성화
+    const debugEnabled = location.search.includes('debug=1') || localStorage.getItem('knitlog_debug') === '1';
+    if (!debugEnabled) return;
     // 도안 뷰어 페이지에서만 표시
-    // (다른 페이지 URL에 ?debug=1 붙여도 패널 안 뜸 — pattern-viewer 경로만 허용)
-    // 모든 페이지에서 보고 싶으면 아래 줄 주석 처리
     if (!location.pathname.includes('pattern-viewer')) return;
 
     const panel = document.createElement('div');

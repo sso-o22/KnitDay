@@ -54,10 +54,37 @@
         <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:16px;">
             데이터는 이 브라우저에 저장돼요. Firebase 연동 전까지는 기기마다 따로 관리돼요.
         </p>
-        <button class="btn btn-secondary" @onclick="ExportData">📤 데이터 내보내기</button>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-secondary" @onclick="ExportData">📤 데이터 내보내기</button>
+            <button class="btn btn-secondary" @onclick="ImportDataClick">📥 데이터 불러오기</button>
+        </div>
+        <InputFile id="import-file-input" OnChange="ImportData" accept=".json" style="display:none;" />
+        @if (_importMsg != "")
+        {
+            <div style="margin-top:10px; padding:10px 14px; border-radius:8px; font-size:0.88rem;"
+                 class="@(_importError ? "import-msg-error" : "import-msg-ok")">
+                @_importMsg
+            </div>
+        }
+    </div>
+
+    <!-- 디버그 모드 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:4px;">🔧 디버그</div>
+        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:16px;">
+            도안 뷰어에서 디버그 콘솔을 표시합니다. 홈화면 추가 앱에서 주로 사용해요.
+        </p>
+        <button class="btn @(_debugMode ? "btn-primary" : "btn-secondary")" @onclick="ToggleDebugMode">
+            @(_debugMode ? "🟢 디버그 ON" : "🔴 디버그 OFF")
+        </button>
     </div>
 
 </div>
+
+<style>
+    .import-msg-ok    { background: var(--theme-pale); color: var(--text-dark); }
+    .import-msg-error { background: #ffe0e0; color: #c00; }
+</style>
 
 @code {
     record ThemeOption(string Id, string Name, string DotColor);
@@ -74,6 +101,9 @@
 
     string _currentTheme = "mono";
     bool _isDark = false;
+    bool _debugMode = false;
+    string _importMsg = "";
+    bool _importError = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -83,6 +113,8 @@
             if (!string.IsNullOrEmpty(saved)) _currentTheme = saved;
             var dark = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_dark");
             _isDark = dark == "true";
+            var debug = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_debug");
+            _debugMode = debug == "1";
             StateHasChanged();
         }
     }
@@ -99,6 +131,49 @@
         _isDark = !_isDark;
         await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_dark", _isDark.ToString().ToLower());
         await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark', '{_isDark.ToString().ToLower()}')");
+    }
+
+    void ImportDataClick()
+    {
+        _ = JS.InvokeVoidAsync("eval", "document.getElementById('import-file-input').click()");
+    }
+
+    async Task ImportData(InputFileChangeEventArgs e)
+    {
+        _importMsg = "";
+        _importError = false;
+        try
+        {
+            using var stream = e.File.OpenReadStream(10 * 1024 * 1024);
+            using var ms = new System.IO.MemoryStream();
+            await stream.CopyToAsync(ms);
+            var json = System.Text.Encoding.UTF8.GetString(ms.ToArray());
+            var doc = System.Text.Json.JsonDocument.Parse(json);
+            var keys = new[] { "knittracker_projects", "knittracker_yarns", "knittracker_tools", "knittracker_swatches" };
+            int count = 0;
+            foreach (var key in keys)
+            {
+                if (doc.RootElement.TryGetProperty(key, out var val))
+                {
+                    await JS.InvokeVoidAsync("localStorage.setItem", key, val.GetRawText());
+                    count++;
+                }
+            }
+            _importMsg = $"✅ 불러오기 완료! ({count}가지 데이터) 앱을 다시 시작하면 반영돼요.";
+        }
+        catch (Exception ex)
+        {
+            _importMsg = "❌ 오류: " + ex.Message;
+            _importError = true;
+        }
+        StateHasChanged();
+    }
+
+    async Task ToggleDebugMode()
+    {
+        _debugMode = !_debugMode;
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_debug", _debugMode ? "1" : "0");
+        StateHasChanged();
     }
 
     async Task ExportData()
