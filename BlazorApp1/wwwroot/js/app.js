@@ -166,18 +166,19 @@ document.addEventListener('change', e => {
 
     console.log('Debug panel ready. URL: ' + location.href);
 
-    // Blazor SPA 라우팅 변경 감지 → pattern-viewer일 때만 패널 표시
+    // Blazor SPA 라우팅 감지 - polling 방식 (PWA에서 pushState 패치 타이밍 문제 우회)
+    let _lastHref = '';
     function checkRoute() {
-        const path = location.href;
-        const show = path.includes('pattern-viewer');
+        const href = location.href;
+        if (href === _lastHref) return;
+        _lastHref = href;
+        const show = href.includes('pattern-viewer');
         panel.style.display = show ? '' : 'none';
+        if (show) console.log('[DBG] pattern-viewer detected: ' + href);
     }
+    // 초기 체크 + 100ms 간격 polling
     checkRoute();
-    // popstate: 브라우저 뒤로/앞으로
+    setInterval(checkRoute, 100);
+    // popstate도 함께
     window.addEventListener('popstate', checkRoute);
-    // Blazor가 pushState로 라우팅할 때 감지
-    const _origPush = history.pushState.bind(history);
-    history.pushState = function(...args) { _origPush(...args); checkRoute(); };
-    const _origReplace = history.replaceState.bind(history);
-    history.replaceState = function(...args) { _origReplace(...args); checkRoute(); };
 })();
