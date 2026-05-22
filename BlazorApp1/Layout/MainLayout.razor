@@ -24,31 +24,6 @@
             <li><NavLink href="tools" class="nav-item"><span class="nav-icon">⚒️</span><span class="nav-label">도구</span></NavLink></li>
             <li><NavLink href="stats" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">통계</span></NavLink></li>
             <li><NavLink href="settings" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-label">설정</span></NavLink></li>
-            <li style="margin-top:auto; padding:12px 0 8px;">
-                @if (Auth.IsLoggedIn)
-                {
-                    <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;" @onclick="SignOut">
-                        @if (!string.IsNullOrEmpty(Auth.CurrentUser?.PhotoURL))
-                        {
-                            <img src="@Auth.CurrentUser.PhotoURL" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" />
-                        }
-                        else
-                        {
-                            <span style="font-size:1.4rem;">👤</span>
-                        }
-                        <div style="font-size:0.75rem;line-height:1.3;overflow:hidden;">
-                            <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">@Auth.CurrentUser?.DisplayName</div>
-                            <div style="color:var(--text-light);font-size:0.68rem;">로그아웃</div>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <button class="btn btn-secondary" style="width:calc(100% - 16px);margin:0 8px;font-size:0.8rem;" @onclick="SignIn">
-                        🔑 구글 로그인
-                    </button>
-                }
-            </li>
         </ul>
 
         <!-- 사이드바 하단 통계 + 다크 토글 -->

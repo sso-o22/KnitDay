@@ -5,6 +5,7 @@
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
+@inject AuthService Auth
 
 <div class="page-header">
     <div>
@@ -12,6 +13,24 @@
         <p class="page-subtitle">오늘도 즐거운 뜨개질 하세요!</p>
     </div>
 </div>
+
+@if (!Auth.IsLoggedIn)
+{
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;
+                padding:12px 16px;border-radius:12px;margin-bottom:16px;
+                background:var(--theme-pale);border:1.5px solid var(--theme-mid);">
+        <div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-size:1.3rem;">☁️</span>
+            <div>
+                <div style="font-size:0.88rem;font-weight:600;color:var(--text-dark);">여러 기기에서 동기화하세요</div>
+                <div style="font-size:0.78rem;color:var(--text-mid);">구글 로그인하면 데이터가 자동으로 백업돼요</div>
+            </div>
+        </div>
+        <button class="btn btn-primary" style="white-space:nowrap;font-size:0.82rem;padding:6px 14px;" @onclick="SignIn">
+            로그인
+        </button>
+    </div>
+}
 
 @if (_loading)
 {
@@ -88,6 +107,8 @@ else
 }
 
 @code {
+    async Task SignIn() => await Auth.SignInWithGoogleAsync();
+
     bool _loading = true;
     int _inProgress, _finished, _wishlist, _yarns, _swatches, _tools;
     List<KnitProject> _recentProjects = new();
