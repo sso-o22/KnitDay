@@ -2,6 +2,7 @@
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
+@inject AuthService Auth
 @inject IJSRuntime JS
 @implements IAsyncDisposable
 
@@ -23,6 +24,31 @@
             <li><NavLink href="tools" class="nav-item"><span class="nav-icon">⚒️</span><span class="nav-label">도구</span></NavLink></li>
             <li><NavLink href="stats" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">통계</span></NavLink></li>
             <li><NavLink href="settings" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-label">설정</span></NavLink></li>
+            <li style="margin-top:auto; padding:12px 0 8px;">
+                @if (Auth.IsLoggedIn)
+                {
+                    <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;cursor:pointer;" @onclick="SignOut">
+                        @if (!string.IsNullOrEmpty(Auth.CurrentUser?.PhotoURL))
+                        {
+                            <img src="@Auth.CurrentUser.PhotoURL" style="width:28px;height:28px;border-radius:50%;object-fit:cover;" />
+                        }
+                        else
+                        {
+                            <span style="font-size:1.4rem;">👤</span>
+                        }
+                        <div style="font-size:0.75rem;line-height:1.3;overflow:hidden;">
+                            <div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px;">@Auth.CurrentUser?.DisplayName</div>
+                            <div style="color:var(--text-light);font-size:0.68rem;">로그아웃</div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn btn-secondary" style="width:calc(100% - 16px);margin:0 8px;font-size:0.8rem;" @onclick="SignIn">
+                        🔑 구글 로그인
+                    </button>
+                }
+            </li>
         </ul>
 
         <!-- 사이드바 하단 통계 + 다크 토글 -->
@@ -65,11 +91,41 @@
     int _finished;
     string _todayTime = "0분";
     private PeriodicTimer? _sidebarTimer;
+    bool _isSyncing = false;
 
     protected override async Task OnInitializedAsync()
     {
         await RefreshStats();
         StartSidebarTimer();
+        Auth.OnAuthChanged += OnAuthChanged;
+    }
+
+    void OnAuthChanged()
+    {
+        InvokeAsync(async () =>
+        {
+            StateHasChanged();
+            // 로그인 직후 동기화
+            if (Auth.IsLoggedIn && !_isSyncing)
+            {
+                _isSyncing = true;
+                await Storage.SyncOnLoginAsync();
+                _isSyncing = false;
+                await RefreshStats();
+                StateHasChanged();
+            }
+        });
+    }
+
+    async Task SignIn()
+    {
+        await Auth.SignInWithGoogleAsync();
+    }
+
+    async Task SignOut()
+    {
+        await Auth.SignOutAsync();
+        StateHasChanged();
     }
 
     async Task RefreshStats()
@@ -122,6 +178,7 @@
     {
         if (firstRender)
         {
+            await Auth.InitAsync();
             var theme = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_theme");
             if (!string.IsNullOrEmpty(theme)) _currentTheme = theme;
             var dark = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_dark");
@@ -149,6 +206,7 @@
     {
         _sidebarTimer?.Dispose();
         _sidebarTimer = null;
+        Auth.OnAuthChanged -= OnAuthChanged;
         return ValueTask.CompletedTask;
     }
 }
