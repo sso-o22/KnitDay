@@ -68,6 +68,7 @@ window.patternViewer = (() => {
     let _fitZoom      = 1.0;
     let _isPinching   = false;
     let _isZooming    = false;   // 휠/핀치 줌 전체 감시 플래그
+    let _isPanelAnimating = false; // 필기 패널 애니메이션 중 (IntersectionObserver 차단용)
     let _renderDebounceTimer = null;
     let _pendingZoom  = null;
 
@@ -403,8 +404,8 @@ window.patternViewer = (() => {
         if (!scrollEl) return;
 
         _intersectionObserver = new IntersectionObserver(entries => {
-            // 줌 동작 중에는 스크롤 감지 완전 차단 (currentPageNum 변경 방지)
-            if (_isPinching || _isZooming) return;
+            // 줌/패널 애니메이션 중에는 스크롤 감지 완전 차단
+            if (_isPinching || _isZooming || _isPanelAnimating) return;
             entries.forEach(entry => {
                 if (!entry.isIntersecting) return;
                 const pageNum = parseInt(entry.target.id.replace('page-container-', ''), 10);
@@ -798,10 +799,10 @@ window.patternViewer = (() => {
             const panel = document.getElementById('draw-panel-div');
             if (btn)   btn.classList.toggle('draw-fab-on', open);
             if (panel) panel.classList.toggle('draw-panel-open', open);
-            // 패널 애니메이션(0.25s) 동안 IntersectionObserver 차단
-            // → layout 변화로 인한 캔버스 재렌더 방지
-            _isZooming = true;
-            setTimeout(() => { _isZooming = false; }, 350);
+            // 패널 애니메이션 중 IntersectionObserver만 차단 (그리기는 계속 허용)
+            // _isZooming 대신 별도 플래그 사용
+            _isPanelAnimating = true;
+            setTimeout(() => { _isPanelAnimating = false; }, 350);
         },
 
         triggerFileInput() {
