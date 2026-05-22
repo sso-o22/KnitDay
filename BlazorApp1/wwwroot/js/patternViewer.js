@@ -211,51 +211,52 @@ window.patternViewer = (() => {
 
         // 터치/마우스 → canvas 기준 CSS px 좌표
         // anno CSS size = cssW x cssH, buffer size = cssW*dpr x cssH*dpr
-        // clientX - rect.left = CSS px 위치 (스크롤 자동 반영)
+        // 버퍼/CSS 비율을 직접 계산 → DPR 값 자체는 사용하지 않음
         function getCssPos(e) {
             const rect = anno.getBoundingClientRect();
             const src  = e.touches ? e.touches[0] : e;
+            // rect.width = 실제 화면에 표시되는 CSS px 크기
+            // anno.width = 버퍼 px 크기
+            // 비율 = 버퍼 / 화면CSS (이게 실제 dpr)
+            const scaleX = rect.width  > 0 ? anno.width  / rect.width  : 1;
+            const scaleY = rect.height > 0 ? anno.height / rect.height : 1;
             return {
-                x: src.clientX - rect.left,
-                y: src.clientY - rect.top,
+                x: (src.clientX - rect.left) * scaleX,  // 버퍼 px 좌표
+                y: (src.clientY - rect.top)  * scaleY,  // 버퍼 px 좌표
                 _cx: src.clientX, _cy: src.clientY,
                 _rl: rect.left,   _rt: rect.top,
-                _rw: rect.width,  _rh: rect.height
+                _rw: rect.width,  _rh: rect.height,
+                _scaleX: scaleX
             };
         }
 
         function onDown(e) {
             if (_isPinching || _isZooming) return;
             if (_tool === 'ruler') {
+                // ruler는 CSS px 필요 → scaleX로 나눔
                 const pos = getCssPos(e);
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', pos.x, pos.y, pageNum);
+                if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown',
+                    pos.x / pos._scaleX, pos.y / pos._scaleX, pageNum);
                 if (e.touches) e.preventDefault();
                 return;
             }
             if (_tool !== 'pen' && _tool !== 'eraser') return;
             if (e.touches) e.preventDefault();
+            // getCssPos는 버퍼 px 반환 (rect.width 기준 비율 적용됨)
             const pos = getCssPos(e);
             currentPageNum = pageNum;
             isDrawing = true;
-            console.log("[PEN]"
-                +" touch="+pos._cx.toFixed(0)+","+pos._cy.toFixed(0)
-                +" rectL="+pos._rl.toFixed(0)+" rectT="+pos._rt.toFixed(0)
-                +" pos="+pos.x.toFixed(0)+","+pos.y.toFixed(0)
-                +" rendDpr="+(anno._renderedDpr||"?")
-                +" sysDpr="+window.devicePixelRatio
-                +" bufW="+anno.width+" cssW="+anno.offsetWidth
-                +" zoom="+currentZoom.toFixed(2));
-            // 렌더 시점에 저장된 dpr 사용
-            const actualDpr = anno._renderedDpr || 1;
+            const dpr = anno._renderedDpr || 1;
+            // 저장: zoom=1 기준 CSS px = 버퍼px / dpr / zoom
             currentPath = {
                 page: pageNum, color: _color, opacity: _opacity, size: _size,
                 isEraser: _isEraser,
-                points: [{ x: pos.x / currentZoom, y: pos.y / currentZoom }]
+                points: [{ x: pos.x / dpr / currentZoom, y: pos.y / dpr / currentZoom }]
             };
             const ctx = anno.getContext('2d');
             ctx.beginPath();
-            ctx.moveTo(pos.x * actualDpr, pos.y * actualDpr);
-            ctx.lineWidth = _size * currentZoom * actualDpr;
+            ctx.moveTo(pos.x, pos.y);  // 버퍼 px 그대로
+            ctx.lineWidth = _size * currentZoom * dpr;
             ctx.lineCap   = 'round';
             ctx.lineJoin  = 'round';
             if (_isEraser) {
@@ -267,6 +268,10 @@ window.patternViewer = (() => {
                 ctx.strokeStyle = _color;
                 ctx.globalCompositeOperation = 'source-over';
             }
+            console.log("[PEN] bufPx="+pos.x.toFixed(0)+","+pos.y.toFixed(0)
+                +" scale="+pos._scaleX.toFixed(2)+" dpr="+dpr
+                +" bufW="+anno.width+" cssW="+anno.offsetWidth
+                +" zoom="+currentZoom.toFixed(2));
         }
 
         function onMove(e) {
@@ -274,16 +279,20 @@ window.patternViewer = (() => {
             if (_tool === 'ruler') {
                 if (e.touches) e.preventDefault();
                 const pos = getCssPos(e);
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove', pos.x, pos.y);
+                if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove',
+                    pos.x / pos._scaleX, pos.y / pos._scaleX);
                 return;
             }
             if (!isDrawing || currentPageNum !== pageNum || (_tool !== 'pen' && _tool !== 'eraser')) return;
             if (e.touches) e.preventDefault();
-            const pos = getCssPos(e);
-            const actualDpr = anno._renderedDpr || 1;
-            if (currentPath) currentPath.points.push({ x: pos.x / currentZoom, y: pos.y / currentZoom });
+            const pos = getCssPos(e);  // 버퍼 px
+            const dpr = anno._renderedDpr || 1;
+            if (currentPath) currentPath.points.push({
+                x: pos.x / dpr / currentZoom,
+                y: pos.y / dpr / currentZoom
+            });
             const ctx = anno.getContext('2d');
-            ctx.lineTo(pos.x * actualDpr, pos.y * actualDpr);
+            ctx.lineTo(pos.x, pos.y);  // 버퍼 px 그대로
             ctx.stroke();
         }
 
@@ -323,13 +332,7 @@ window.patternViewer = (() => {
         }
 
         const page     = await pdfDoc.getPage(pageNum);
-        // iOS PWA에서 window.devicePixelRatio가 1로 반환되는 버그 우회
-        // screen.width vs window.innerWidth 비율로 실제 DPR 추정
-        const sysDpr = window.devicePixelRatio || 1;
-        const screenDpr = (screen.width > 0 && window.innerWidth > 0)
-            ? Math.round(screen.width / window.innerWidth * 10) / 10
-            : sysDpr;
-        const dpr = Math.max(sysDpr, screenDpr, 1);
+        const dpr      = window.devicePixelRatio || 1;
         const viewport = page.getViewport({ scale: zoom });
         const cssW = Math.floor(viewport.width);
         const cssH = Math.floor(viewport.height);
@@ -341,9 +344,12 @@ window.patternViewer = (() => {
         pdfCanvas.style.width   = annoCanvas.style.width  = cssW + 'px';
         pdfCanvas.style.height  = annoCanvas.style.height = cssH + 'px';
 
-        // 렌더 시점의 dpr을 캔버스에 저장 → redraw/draw 시 항상 이 값 사용
-        annoCanvas._renderedDpr  = dpr;
+        // 버퍼 설정 직후 실제 비율 저장 (렌더 중 다른 호출이 버퍼를 바꿔도 안전)
+        // _renderedDpr = 실제 bufW / cssW (window.devicePixelRatio 신뢰 안 함)
+        const actualDpr = cssW > 0 ? bufW / cssW : dpr;
+        annoCanvas._renderedDpr  = actualDpr;
         annoCanvas._renderedZoom = zoom;
+        console.log('[RENDER] p'+pageNum+' cssW='+cssW+' bufW='+bufW+' dpr='+dpr+' actualDpr='+actualDpr);
 
         const cursor = _tool === 'pen' || _tool === 'ruler' ? 'crosshair' : _tool === 'eraser' ? 'cell' : 'default';
         annoCanvas.style.cursor = cursor;
