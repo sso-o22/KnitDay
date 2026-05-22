@@ -513,7 +513,9 @@ body {
     }
     /* 아이패드: 날짜 input 높이 + form-row 간격 */
     input[type="date"] {
-        min-height: 48px;
+        min-height: 52px;
+        font-size: 1rem;
+        max-width: 220px;
     }
     .form-row {
         gap: 20px;
