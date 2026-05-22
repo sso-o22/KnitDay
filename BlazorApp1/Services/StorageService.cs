@@ -79,15 +79,11 @@ namespace KnitLog.Services
             }
         }
 
-        private async Task DeleteFirebaseDocAsync(string collectionName, string id)
+        private void DeleteFirebaseDocBackground(string collectionName, string id)
         {
             if (!IsLoggedIn) return;
-            try
-            {
-                await _js.InvokeAsync<bool>("firebaseStore.deleteDocument",
-                    $"users/{Uid}/{collectionName}/{id}");
-            }
-            catch { }
+            _ = _js.InvokeAsync<bool>("firebaseStore.deleteDocument", $"users/{Uid}/{collectionName}/{id}").AsTask()
+                   .ContinueWith(_ => { }, TaskContinuationOptions.None);
         }
 
         // ── 로그인 시 동기화 ─────────────────────────────────────────
@@ -172,7 +168,8 @@ namespace KnitLog.Services
         private async Task SaveAsync<T>(string key, string collectionName, string idField, List<T> list)
         {
             await SaveLocalAsync(key, list);
-            await SaveFirebaseAsync(collectionName, list, idField);
+            // Firebase는 백그라운드에서 처리 (UI 블로킹 방지)
+            _ = SaveFirebaseAsync(collectionName, list, idField);
         }
 
         // ── 프로젝트 ─────────────────────────────────────────────────
@@ -191,7 +188,7 @@ namespace KnitLog.Services
             var list = await GetProjectsAsync();
             list.RemoveAll(p => p.Id == id);
             await SaveLocalAsync(KEY_PROJECTS, list);
-            await DeleteFirebaseDocAsync("projects", id.ToString());
+            DeleteFirebaseDocBackground("projects", id.ToString());
         }
 
         public async Task CompleteProjectAsync(Guid id)
@@ -248,7 +245,7 @@ namespace KnitLog.Services
             var list = await GetYarnsAsync();
             list.RemoveAll(y => y.Id == id);
             await SaveLocalAsync(KEY_YARNS, list);
-            await DeleteFirebaseDocAsync("yarns", id.ToString());
+            DeleteFirebaseDocBackground("yarns", id.ToString());
         }
 
         // ── 도구 ─────────────────────────────────────────────────────
@@ -267,7 +264,7 @@ namespace KnitLog.Services
             var list = await GetToolsAsync();
             list.RemoveAll(t => t.Id == id);
             await SaveLocalAsync(KEY_TOOLS, list);
-            await DeleteFirebaseDocAsync("tools", id.ToString());
+            DeleteFirebaseDocBackground("tools", id.ToString());
         }
 
         // ── 스와치 ───────────────────────────────────────────────────
@@ -286,7 +283,7 @@ namespace KnitLog.Services
             var list = await GetSwatchesAsync();
             list.RemoveAll(s => s.Id == id);
             await SaveLocalAsync(KEY_SWATCHES, list);
-            await DeleteFirebaseDocAsync("swatches", id.ToString());
+            DeleteFirebaseDocBackground("swatches", id.ToString());
         }
 
         // ── 내보내기 ─────────────────────────────────────────────────
