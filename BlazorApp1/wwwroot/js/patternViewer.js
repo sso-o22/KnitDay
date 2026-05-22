@@ -128,6 +128,12 @@ window.patternViewer = (() => {
     // ── 스크롤 컨테이너 ──────────────────────────────────────
     function getScrollEl() { return document.getElementById('scroll-container'); }
 
+    // 모든 페이지 핸들러 AbortController 해제
+    function abortAllPageHandlers() {
+        Object.values(_pageHandlers).forEach(ac => { try { if (ac && ac.abort) ac.abort(); } catch (_) {} });
+        _pageHandlers = {};
+    }
+
     // ── page-container 크기 즉시 동기화 ─────────────────────
     // 줌 변경 시 레이아웃 무너짐 방지 (렌더 전에 미리 크기 확보)
     function syncContainerSizes(zoom) {
@@ -166,9 +172,10 @@ window.patternViewer = (() => {
             if (!p.points.length) return;
             ctx.save();
             ctx.beginPath();
-            ctx.lineWidth   = p.size * dpr * (currentZoom / p.originZoom);
-            ctx.lineCap     = 'round';
-            ctx.lineJoin    = 'round';
+            // zoom=1 정규화 좌표 → 현재 zoom의 CSS px → 버퍼 px
+            ctx.lineWidth = p.size * dpr;
+            ctx.lineCap   = 'round';
+            ctx.lineJoin  = 'round';
             if (p.isEraser) {
                 ctx.globalAlpha = 1.0;
                 ctx.strokeStyle = 'rgba(0,0,0,1)';
@@ -187,42 +194,52 @@ window.patternViewer = (() => {
     }
 
     // ── 페이지 핸들러 ────────────────────────────────────────
+    // AbortController로 기존 리스너 완전 제거 후 재등록 (중복 방지)
     function addPageHandlers(pageNum) {
-        if (_pageHandlers[pageNum]) return;
-        _pageHandlers[pageNum] = true;
+        // 기존 리스너 제거
+        if (_pageHandlers[pageNum]) {
+            _pageHandlers[pageNum].abort();
+        }
         const anno = getAnnoCanvas(pageNum);
         if (!anno) return;
-        const dpr = window.devicePixelRatio || 1;
+
+        const ac = new AbortController();
+        _pageHandlers[pageNum] = ac;
+        const sig = { signal: ac.signal };
+
+        // CSS px 기준 좌표 반환 (DPR 독립)
+        function getCssPos(e) {
+            const rect = anno.getBoundingClientRect();
+            const src  = e.touches ? e.touches[0] : e;
+            return { x: src.clientX - rect.left, y: src.clientY - rect.top };
+        }
 
         function onDown(e) {
             if (_isPinching || _isZooming) return;
             if (_tool === 'ruler') {
-                // canvas 픽셀 → CSS px (DPR 제거)
-                // anno canvas의 CSS 크기 기준 좌표로 변환
-                const annoRect = anno.getBoundingClientRect();
-                const src = e.touches ? e.touches[0] : e;
-                const cssX = src.clientX - annoRect.left;
-                const cssY = src.clientY - annoRect.top;
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', cssX, cssY, pageNum);
+                const pos = getCssPos(e);
+                if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', pos.x, pos.y, pageNum);
                 if (e.touches) e.preventDefault();
                 return;
             }
             if (_tool !== 'pen' && _tool !== 'eraser') return;
             if (e.touches) e.preventDefault();
-            const pos = getCanvasPos(anno, e);
+            const pos = getCssPos(e);
             currentPageNum = pageNum;
             isDrawing = true;
+            // zoom=1 기준 정규화 좌표로 저장
             currentPath = {
                 page: pageNum, color: _color, opacity: _opacity, size: _size,
-                isEraser: _isEraser, originZoom: currentZoom,
-                points: [{ x: pos.x / (currentZoom * dpr), y: pos.y / (currentZoom * dpr) }]
+                isEraser: _isEraser,
+                points: [{ x: pos.x / currentZoom, y: pos.y / currentZoom }]
             };
+            const dpr = window.devicePixelRatio || 1;
             const ctx = anno.getContext('2d');
             ctx.beginPath();
-            ctx.moveTo(pos.x, pos.y);
-            ctx.lineWidth   = _size * dpr;
-            ctx.lineCap     = 'round';
-            ctx.lineJoin    = 'round';
+            ctx.moveTo(pos.x * dpr, pos.y * dpr);
+            ctx.lineWidth = _size * dpr;
+            ctx.lineCap   = 'round';
+            ctx.lineJoin  = 'round';
             if (_isEraser) {
                 ctx.globalAlpha = 1.0;
                 ctx.strokeStyle = 'rgba(0,0,0,1)';
@@ -238,45 +255,41 @@ window.patternViewer = (() => {
             if (_isPinching || _isZooming) return;
             if (_tool === 'ruler') {
                 if (e.touches) e.preventDefault();
-                const annoRect = anno.getBoundingClientRect();
-                const src = e.touches ? e.touches[0] : e;
-                const cssX = src.clientX - annoRect.left;
-                const cssY = src.clientY - annoRect.top;
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove', cssX, cssY);
+                const pos = getCssPos(e);
+                if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove', pos.x, pos.y);
                 return;
             }
             if (!isDrawing || currentPageNum !== pageNum || (_tool !== 'pen' && _tool !== 'eraser')) return;
             if (e.touches) e.preventDefault();
-            const pos = getCanvasPos(anno, e);
-            if (currentPath) currentPath.points.push({ x: pos.x / (currentZoom * dpr), y: pos.y / (currentZoom * dpr) });
+            const pos = getCssPos(e);
+            if (currentPath) currentPath.points.push({ x: pos.x / currentZoom, y: pos.y / currentZoom });
+            const dpr = window.devicePixelRatio || 1;
             const ctx = anno.getContext('2d');
-            ctx.lineTo(pos.x, pos.y);
+            ctx.lineTo(pos.x * dpr, pos.y * dpr);
             ctx.stroke();
         }
 
         function onUp(e) {
-            // onUp은 isZooming 무관하게 항상 그리기 상태 정리
             if (_isPinching) return;
             if (_tool === 'ruler') { if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd'); return; }
             if (!isDrawing || currentPageNum !== pageNum) return;
             isDrawing = false;
-            const _ctx = anno.getContext('2d');
-            _ctx.globalCompositeOperation = 'source-over';
-            _ctx.globalAlpha = 1.0;
+            const ctx = anno.getContext('2d');
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1.0;
             if (currentPath) {
                 paths.push(currentPath);
                 currentPath = null;
-                // 필기 완료 → Blazor에 저장 트리거
                 if (dotNetRef) dotNetRef.invokeMethodAsync('NotifyAnnotationChanged');
             }
         }
 
-        anno.addEventListener('mousedown',  onDown);
-        anno.addEventListener('mousemove',  onMove);
-        anno.addEventListener('mouseup',    onUp);
-        anno.addEventListener('touchstart', onDown, { passive: false });
-        anno.addEventListener('touchmove',  onMove, { passive: false });
-        anno.addEventListener('touchend',   onUp);
+        anno.addEventListener('mousedown',  onDown, sig);
+        anno.addEventListener('mousemove',  onMove, sig);
+        anno.addEventListener('mouseup',    onUp,   sig);
+        anno.addEventListener('touchstart', onDown, { passive: false, signal: ac.signal });
+        anno.addEventListener('touchmove',  onMove, { passive: false, signal: ac.signal });
+        anno.addEventListener('touchend',   onUp,   sig);
     }
 
     // ── 단일 페이지 렌더 ─────────────────────────────────────
@@ -323,7 +336,6 @@ window.patternViewer = (() => {
         _renderTasks[pageNum] = null;
         _renderedPages.add(pageNum);
         redrawPage(pageNum);
-        _pageHandlers[pageNum] = false;
         addPageHandlers(pageNum);
     }
 
@@ -335,7 +347,7 @@ window.patternViewer = (() => {
         if (pc) { pc.width = 1; pc.height = 1; }
         if (ac) { ac.width = 1; ac.height = 1; }
         _renderedPages.delete(pageNum);
-        _pageHandlers[pageNum] = false;
+        if (_pageHandlers[pageNum]) { _pageHandlers[pageNum].abort(); _pageHandlers[pageNum] = null; }
     }
 
     // ── 현재 페이지 기준 가상화 렌더 ────────────────────────
@@ -428,7 +440,7 @@ window.patternViewer = (() => {
                 if (ac && ac.width > 1) { ac.width = 1; ac.height = 1; }
             }
             _renderedPages.clear();
-            _pageHandlers = {};
+            abortAllPageHandlers();
 
             // 컨테이너 크기 즉시 동기화 (레이아웃 무너짐 방지)
             syncContainerSizes(targetZoom);
@@ -641,7 +653,7 @@ window.patternViewer = (() => {
                 standardFontDataUrl: base + '/pdfjs/web/standard_fonts/'
             }).promise;
             totalPages     = pdfDoc.numPages;
-            _pageHandlers  = {};
+            abortAllPageHandlers();
             _renderedPages = new Set();
             _pageSizes     = {};
             paths          = [];
@@ -678,7 +690,7 @@ window.patternViewer = (() => {
             zoom = Math.min(maxZ, Math.max(minZ, zoom));
             currentZoom    = zoom;
             _renderedPages = new Set();
-            _pageHandlers  = {};
+            abortAllPageHandlers();
             syncContainerSizes(zoom);
             await virtualizeRender(zoom);
             setupIntersectionObserver();
@@ -716,13 +728,14 @@ window.patternViewer = (() => {
             if (_renderDebounceTimer) clearTimeout(_renderDebounceTimer);
             if (_pinchRafId !== null) { cancelAnimationFrame(_pinchRafId); _pinchRafId = null; }
             if (_intersectionObserver) { _intersectionObserver.disconnect(); _intersectionObserver = null; }
+            abortAllPageHandlers();
             Object.values(_renderTasks).forEach(t => { try { if (t) t.cancel(); } catch (_) {} });
             _renderTasks   = {};
             _renderedPages = new Set();
             _pageSizes     = {};
             pdfDoc         = null;
             paths          = [];
-            _pageHandlers  = {};
+            abortAllPageHandlers();
             isDrawing      = false;
             currentPath    = null;
             _isPinching    = false;
@@ -783,7 +796,7 @@ window.patternViewer = (() => {
                     standardFontDataUrl: base + '/pdfjs/web/standard_fonts/'
                 }).promise;
                 totalPages     = pdfDoc.numPages;
-                _pageHandlers  = {};
+                abortAllPageHandlers();
                 _renderedPages = new Set();
                 _pageSizes     = {};
                 _lastPdfBytes  = record.bytes;

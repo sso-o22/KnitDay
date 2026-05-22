@@ -305,12 +305,20 @@
     .draw-wrap {
         position: fixed;
         top: 46px;
-        left: 10px;
+        left: 230px; /* PC: sidebar(220px) + 10px */
         z-index: 300;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
         gap: 6px;
+    }
+    /* 태블릿: sidebar 72px */
+    @@media (max-width: 1024px) and (min-width: 641px) {
+        .draw-wrap { left: 82px; }
+    }
+    /* 모바일: sidebar 없음, fixed fullscreen 진장 */
+    @@media (max-width: 640px) {
+        .draw-wrap { left: 10px; }
     }
     .draw-fab {
         width: 40px; height: 40px; border-radius: 50%;
@@ -722,12 +730,6 @@
             await JS.InvokeVoidAsync("patternViewer.renderPdf");
             await Task.Delay(200); // renderPdf 내부 ZoomToFromJS 콜백 완료 대기
 
-            if (_project.ViewerLastZoom > 0)
-            {
-                _zoom = _project.ViewerLastZoom;
-                await JS.InvokeVoidAsync("patternViewer.renderAllPages", _zoom);
-                await Task.Delay(100); // 재렌더 완료 대기
-            }
 
             // 필기 복원은 렌더 완전히 끝난 후
             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
@@ -786,8 +788,19 @@
     async Task ConfirmLoadPattern()
     {
         _showLoadWarning = false;
-        // 기존 필기/도형 지우기
+        // 기존 필기/도형/줌/페이지 초기화
         _rulers.Clear();
+        _zoom = 1.0;
+        _currentPage = 1;
+        _pdfLoaded = false;
+        _totalPages = 0;
+        if (_project != null)
+        {
+            _project.ViewerAnnotations = "";
+            _project.ViewerRulers = "";
+            _project.ViewerLastZoom = 0;
+            _project.ViewerLastPage = 1;
+        }
         await JS.InvokeVoidAsync("patternViewer.clearAnnotations");
         await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
     }
