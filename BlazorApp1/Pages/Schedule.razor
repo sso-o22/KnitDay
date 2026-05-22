@@ -659,9 +659,6 @@ else
             // 완료 처리 후 EndDate가 설정되므로 Storage에서 다시 읽기
             var allProjects = await Storage.GetProjectsAsync();
             _completedPreview = allProjects.FirstOrDefault(p => p.Id == id) ?? proj;
-            _popupEditingBasicInfo = false;
-            _popupEditingMeasurements = false;
-            LoadPopMeasures();
             _showCompletedPopup = true;
         }
     }
