@@ -951,11 +951,6 @@ else
     </div>
 }
 
-<CompletedPopup Show="_showCompletedPopup" Project="_completedPreview"
-    Yarns="_yarns" Tools="_allTools"
-    OnClose="() => { _showCompletedPopup = false; _completedPreview = null; }"
-    OnSaved="LoadDataAsync" />
-
 @code {
     bool _showConfirm = false;
     string _confirmMsg = "";
@@ -1354,21 +1349,13 @@ else
     }
 
     // ── 완료 처리 ────────────────────────────────────────
-    bool _showCompletedPopup = false;
-    KnitProject? _completedPreview;
-
     async Task CompleteProject()
     {
         if (_project == null) return;
-        await Storage.CompleteProjectAsync(_project.Id);
-        // 완료 후 최신 데이터 다시 읽어서 팝업 표시
-        var all = await Storage.GetProjectsAsync();
-        _completedPreview = all.FirstOrDefault(p => p.Id == _project.Id);
-        _project = _completedPreview;
-        _showCompletedPopup = true;
-        StateHasChanged();
-        // 완성작 팝업 뜨면서 프로젝트 목록으로 이동
-        Nav.NavigateTo("projects");
+        var id = _project.Id;
+        await Storage.CompleteProjectAsync(id);
+        // 문어발 화면으로 이동하면서 완성작 팝업 띄우기
+        Nav.NavigateTo($"projects/{id}");
     }
 
     async Task PauseProject()

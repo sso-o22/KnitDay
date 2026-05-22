@@ -1,4 +1,5 @@
 @page "/projects"
+@page "/projects/{CompletedProjectId}"
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
@@ -513,6 +514,22 @@ else
     List<KnitTool> _tools = new();
     List<Swatch> _allSwatches = new();
     KnitProject? _editingProject;
+
+    [Parameter] public string? CompletedProjectId { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // ProjectDetail에서 완료 후 팝업 띄우기
+        if (!string.IsNullOrEmpty(CompletedProjectId) && Guid.TryParse(CompletedProjectId, out var pid))
+        {
+            await LoadData();
+            _loading = false;
+            var allProj = await Storage.GetProjectsAsync();
+            _completedPreview = allProj.FirstOrDefault(p => p.Id == pid);
+            if (_completedPreview != null) _showCompletedPopup = true;
+            StateHasChanged();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
