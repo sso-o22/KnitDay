@@ -1,5 +1,4 @@
 @page "/projects"
-@page "/projects/{CompletedProjectId}"
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
@@ -418,8 +417,8 @@ else
 <!-- 삭제 확인 모달 -->
 @if (_showConfirm)
 {
-    <div class="modal-backdrop" style="z-index:9999;">
-        <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:var(--surface);border-radius:16px;max-width:320px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
             <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
@@ -515,22 +514,6 @@ else
     List<Swatch> _allSwatches = new();
     KnitProject? _editingProject;
 
-    [Parameter] public string? CompletedProjectId { get; set; }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        // ProjectDetail에서 완료 후 팝업 띄우기
-        if (!string.IsNullOrEmpty(CompletedProjectId) && Guid.TryParse(CompletedProjectId, out var pid))
-        {
-            await LoadData();
-            _loading = false;
-            var allProj = await Storage.GetProjectsAsync();
-            _completedPreview = allProj.FirstOrDefault(p => p.Id == pid);
-            if (_completedPreview != null) _showCompletedPopup = true;
-            StateHasChanged();
-        }
-    }
-
     protected override async Task OnInitializedAsync()
     {
         // 마지막 상태 복원
@@ -544,6 +527,15 @@ else
         if (!string.IsNullOrEmpty(listview)) _isListView   = listview == "true";
         await LoadData();
         _loading = false;
+        // ProjectDetail에서 완료 후 신호 확인
+        var completedId = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_completed_popup");
+        if (!string.IsNullOrEmpty(completedId) && Guid.TryParse(completedId, out var cpid))
+        {
+            await JS.InvokeVoidAsync("localStorage.removeItem", "knitlog_completed_popup");
+            var allProj = await Storage.GetProjectsAsync();
+            _completedPreview = allProj.FirstOrDefault(p => p.Id == cpid);
+            if (_completedPreview != null) { _showCompletedPopup = true; StateHasChanged(); }
+        }
     }
 
     async Task SaveSchedulePrefs()
