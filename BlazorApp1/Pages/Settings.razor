@@ -144,7 +144,7 @@
         _importError = false;
         try
         {
-            using var stream = e.File.OpenReadStream(10 * 1024 * 1024);
+            using var stream = e.File.OpenReadStream(50 * 1024 * 1024); // 50MB
             using var ms = new System.IO.MemoryStream();
             await stream.CopyToAsync(ms);
             var json = System.Text.Encoding.UTF8.GetString(ms.ToArray()).Trim();
