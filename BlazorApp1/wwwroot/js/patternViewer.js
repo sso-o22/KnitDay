@@ -214,18 +214,28 @@ window.patternViewer = (() => {
             if (_snapTriggered) {
                 // 직선 스냅 모드: 시작점→현재점만 실시간 미리보기
                 const startPt = currentPath.points[0];
-                redrawPage(pageNum);
-                const {bx: fx, by: fy} = normToBuf(startPt.x, startPt.y, anno, pageNum);
-                const {bx: tx, by: ty} = normToBuf(normX, normY, anno, pageNum);
-                _stroke(anno, pageNum, fx, fy, tx, ty);
                 currentPath.points = [startPt, { x: normX, y: normY }];
+                redrawPage(pageNum);
+                if (_tool === 'highlighter') {
+                    _drawFullPath(anno, pageNum, currentPath);
+                } else {
+                    const {bx: fx, by: fy} = normToBuf(startPt.x, startPt.y, anno, pageNum);
+                    const {bx: tx, by: ty} = normToBuf(normX, normY, anno, pageNum);
+                    _stroke(anno, pageNum, fx, fy, tx, ty);
+                }
                 return;
             }
             const prev = currentPath.points[currentPath.points.length - 1];
             currentPath.points.push({ x: normX, y: normY });
-            const {bx: fx, by: fy} = normToBuf(prev.x, prev.y, anno, pageNum);
-            const {bx: tx, by: ty} = normToBuf(normX, normY, anno, pageNum);
-            _stroke(anno, pageNum, fx, fy, tx, ty);
+            if (_tool === 'highlighter') {
+                // 형광펜: 전체 경로를 한 번에 그려야 매끄러움 (세그먼트 분리 시 점점이 찍힘)
+                redrawPage(pageNum);
+                _drawFullPath(anno, pageNum, currentPath);
+            } else {
+                const {bx: fx, by: fy} = normToBuf(prev.x, prev.y, anno, pageNum);
+                const {bx: tx, by: ty} = normToBuf(normX, normY, anno, pageNum);
+                _stroke(anno, pageNum, fx, fy, tx, ty);
+            }
         }
 
         function onUp(e) {
@@ -251,6 +261,30 @@ window.patternViewer = (() => {
     }
 
     // 매번 context 상태 완전 설정 (iOS context 상태 초기화 버그 방지)
+    // 전체 경로를 한 번에 그리기 (형광펜 실시간 미리보기용)
+    function _drawFullPath(anno, pageNum, path) {
+        if (!path || path.points.length < 2) return;
+        const dpr = anno._dpr || 1;
+        const origW = getPageOrigW(pageNum);
+        const origH = getPageOrigH(pageNum);
+        const scaleX = origW * currentZoom * dpr;
+        const scaleY = origH * currentZoom * dpr;
+        const ctx = anno.getContext('2d');
+        ctx.save();
+        ctx.beginPath();
+        ctx.lineWidth  = path.size * 4 * currentZoom * dpr;
+        ctx.lineCap    = 'square';
+        ctx.lineJoin   = 'miter';
+        ctx.globalAlpha = 0.35;
+        ctx.strokeStyle = path.color;
+        ctx.globalCompositeOperation = 'multiply';
+        ctx.moveTo(path.points[0].x * scaleX, path.points[0].y * scaleY);
+        for (let i = 1; i < path.points.length; i++)
+            ctx.lineTo(path.points[i].x * scaleX, path.points[i].y * scaleY);
+        ctx.stroke();
+        ctx.restore();
+    }
+
     function _stroke(anno, pageNum, fromX, fromY, toX, toY) {
         const dpr = anno._dpr || 1;
         const ctx = anno.getContext('2d');
