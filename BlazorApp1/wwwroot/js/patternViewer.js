@@ -233,6 +233,7 @@ window.patternViewer = (() => {
             const pos = getCssPos(e);
             currentPageNum = pageNum;
             isDrawing = true;
+            console.log("[PEN] pos="+pos.x.toFixed(0)+","+pos.y.toFixed(0)+" cssW="+anno.offsetWidth+" cssH="+anno.offsetHeight+" bufW="+anno.width+" bufH="+anno.height+" dpr="+window.devicePixelRatio+" zoom="+currentZoom.toFixed(2));
             const dpr = window.devicePixelRatio || 1;
             // 정규화 저장: CSS px / currentZoom
             currentPath = {

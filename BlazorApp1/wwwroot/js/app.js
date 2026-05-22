@@ -98,3 +98,61 @@ _dateObserver.observe(document.body, { childList: true, subtree: true });
 document.addEventListener('change', e => {
     if (e.target.type === 'date') updateDatePlaceholders();
 }, true);
+
+// ── 모바일 디버그 콘솔 ──────────────────────────────────────
+// URL에 ?debug=1 붙이면 화면에 로그 패널 표시
+(function() {
+    if (!location.search.includes('debug=1')) return;
+
+    const panel = document.createElement('div');
+    panel.id = '_dbg';
+    panel.style.cssText = [
+        'position:fixed', 'bottom:0', 'left:0', 'right:0',
+        'height:220px', 'background:rgba(0,0,0,0.88)',
+        'color:#0f0', 'font:11px/1.4 monospace',
+        'overflow-y:auto', 'z-index:99999',
+        'padding:4px 6px', 'box-sizing:border-box',
+        'border-top:2px solid #0f0'
+    ].join(';');
+
+    const toolbar = document.createElement('div');
+    toolbar.style.cssText = 'display:flex;gap:6px;margin-bottom:4px;position:sticky;top:0;background:rgba(0,0,0,0.9);padding:2px 0;';
+    toolbar.innerHTML = '<span style="color:#0f0;flex:1;font-weight:bold;">📱 Debug Console</span>'
+        + '<button onclick="document.getElementById(\'_dbg_log\').innerHTML=\'\'" style="background:#333;color:#fff;border:none;padding:2px 8px;border-radius:3px;font-size:11px;">Clear</button>'
+        + '<button onclick="document.getElementById(\'_dbg\').style.height=(document.getElementById(\'_dbg\').style.height===\'220px\'?\'45px\':\'220px\')" style="background:#333;color:#fff;border:none;padding:2px 8px;border-radius:3px;font-size:11px;">↕</button>'
+        + '<button onclick="document.getElementById(\'_dbg\').remove()" style="background:#c00;color:#fff;border:none;padding:2px 8px;border-radius:3px;font-size:11px;">✕</button>';
+
+    const log = document.createElement('div');
+    log.id = '_dbg_log';
+
+    panel.appendChild(toolbar);
+    panel.appendChild(log);
+    document.body.appendChild(panel);
+
+    function addLog(type, args) {
+        const line = document.createElement('div');
+        const colors = { log: '#0f0', warn: '#ff0', error: '#f44', info: '#4af' };
+        line.style.color = colors[type] || '#0f0';
+        line.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+        line.style.padding = '1px 0';
+        const text = Array.from(args).map(a => {
+            if (typeof a === 'object') { try { return JSON.stringify(a); } catch(e) { return String(a); } }
+            return String(a);
+        }).join(' ');
+        line.textContent = '[' + type.toUpperCase() + '] ' + text;
+        log.appendChild(line);
+        panel.scrollTop = panel.scrollHeight;
+        // 최대 200줄
+        while (log.children.length > 200) log.removeChild(log.firstChild);
+    }
+
+    ['log', 'warn', 'error', 'info'].forEach(type => {
+        const orig = console[type].bind(console);
+        console[type] = function(...args) { orig(...args); addLog(type, args); };
+    });
+
+    window.addEventListener('error', e => addLog('error', [e.message, e.filename + ':' + e.lineno]));
+    window.addEventListener('unhandledrejection', e => addLog('error', ['UnhandledPromise:', e.reason]));
+
+    console.log('Debug panel ready. URL: ' + location.href);
+})();
