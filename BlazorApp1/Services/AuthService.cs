@@ -47,10 +47,11 @@ namespace KnitLog.Services
                 }
             }
             catch { }
+            IsInitialized = true;
+            OnAuthChanged?.Invoke();
             // 이후 상태 변경 감지 (로그인/로그아웃)
             _ref = DotNetObjectReference.Create(this);
             await _js.InvokeVoidAsync("firebaseAuth.onAuthStateChanged", _ref);
-            IsInitialized = true;
         }
 
         [JSInvokable]
