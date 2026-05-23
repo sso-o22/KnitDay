@@ -335,7 +335,6 @@ body {
 }
 .form-row > * {
     min-width: 0;
-    overflow: hidden;
 }
 
 .form-row-3 {
@@ -516,7 +515,7 @@ body {
         font-size: 0.9rem;
         box-sizing: border-box;
     }
-    /* 아이패드: 날짜 input — appearance 건드리지 않고 크기만 제한 */
+    /* 아이패드: 날짜 input — 그리드 셀 너비에 맞게 강제 */
     input[type="date"] {
         display: block;
         width: 100%;
@@ -526,6 +525,10 @@ body {
         height: auto;
         font-size: 0.9rem;
         box-sizing: border-box;
+    }
+    /* 날짜 input을 감싸는 form-group도 overflow 방지 */
+    .form-row .form-group {
+        min-width: 0;
         overflow: hidden;
     }
     .form-row {
