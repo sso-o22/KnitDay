@@ -333,6 +333,10 @@ body {
     grid-template-columns: 1fr 1fr;
     gap: 16px;
 }
+.form-row > * {
+    min-width: 0;
+    overflow: hidden;
+}
 
 .form-row-3 {
     display: grid;
@@ -504,21 +508,25 @@ body {
     .nav-icon { width: auto; }
     .main-content { padding: 24px 20px; }
 
-    /* 아이패드: form-control 계열 전체 — 높이/폰트/패딩 PC와 통일 */
-    .form-control,
-    select.form-control,
-    input[type="date"].form-control,
-    input[type="date"] {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 100%;
-        max-width: 100%;
-        min-height: unset;
+    /* 아이패드: select 높이 통일 */
+    select.form-control {
         height: auto;
+        min-height: unset;
         padding: 10px 14px;
         font-size: 0.9rem;
-        line-height: 1.4;
         box-sizing: border-box;
+    }
+    /* 아이패드: 날짜 input — appearance 건드리지 않고 크기만 제한 */
+    input[type="date"] {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        min-height: unset;
+        height: auto;
+        font-size: 0.9rem;
+        box-sizing: border-box;
+        overflow: hidden;
     }
     .form-row {
         gap: 16px;
