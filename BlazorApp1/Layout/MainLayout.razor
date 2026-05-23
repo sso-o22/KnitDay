@@ -15,15 +15,15 @@
 
         <ul class="nav-list">
             <li><NavLink href="" Match="NavLinkMatch.All" class="nav-item"><span class="nav-icon"><img src="icons/Home.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">홈</span></NavLink></li>
-            <li><NavLink href="schedule" class="nav-item"><span class="nav-icon">🗓️</span><span class="nav-label">뜨케줄</span></NavLink></li>
-            <li><NavLink href="projects" class="nav-item"><span class="nav-icon">🐙</span><span class="nav-label">문어발</span></NavLink></li>
-            <li><NavLink href="finished" class="nav-item"><span class="nav-icon">✅</span><span class="nav-label">완성작</span></NavLink></li>
+            <li><NavLink href="schedule" class="nav-item"><span class="nav-icon"><img src="icons/Calendar.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">뜨케줄</span></NavLink></li>
+            <li><NavLink href="projects" class="nav-item"><span class="nav-icon"><img src="icons/Octopus.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">문어발</span></NavLink></li>
+            <li><NavLink href="finished" class="nav-item"><span class="nav-icon"><img src="icons/Done.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">완성작</span></NavLink></li>
             <li><NavLink href="wishlist" class="nav-item"><span class="nav-icon">💫</span><span class="nav-label">위시리스트</span></NavLink></li>
             <li><NavLink href="yarns" class="nav-item"><span class="nav-icon">🧵</span><span class="nav-label">실 창고</span></NavLink></li>
             <li><NavLink href="swatches" class="nav-item"><span class="nav-icon">🧪</span><span class="nav-label">스와치</span></NavLink></li>
             <li><NavLink href="tools" class="nav-item"><span class="nav-icon">⚒️</span><span class="nav-label">도구</span></NavLink></li>
             <li><NavLink href="stats" class="nav-item"><span class="nav-icon">📊</span><span class="nav-label">통계</span></NavLink></li>
-            <li><NavLink href="settings" class="nav-item"><span class="nav-icon">⚙️</span><span class="nav-label">설정</span></NavLink></li>
+            <li><NavLink href="settings" class="nav-item"><span class="nav-icon"><img src="icons/Setting.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">설정</span></NavLink></li>
         </ul>
 
         <!-- 사이드바 하단 통계 + 다크 토글 -->
@@ -49,13 +49,13 @@
             <span class="bottom-nav-icon"><img src="icons/Home.svg" style="width:28px;height:28px;" /></span><span class="bottom-nav-label">홈</span>
         </NavLink>
         <NavLink href="schedule" class="bottom-nav-item">
-            <span class="bottom-nav-icon">🗓️</span><span class="bottom-nav-label">뜨케줄</span>
+            <span class="bottom-nav-icon"><img src="icons/Calendar.svg" style="width:28px;height:28px;" /></span><span class="bottom-nav-label">뜨케줄</span>
         </NavLink>
         <NavLink href="stats" class="bottom-nav-item">
             <span class="bottom-nav-icon">📊</span><span class="bottom-nav-label">통계</span>
         </NavLink>
         <NavLink href="settings" class="bottom-nav-item">
-            <span class="bottom-nav-icon">⚙️</span><span class="bottom-nav-label">설정</span>
+            <span class="bottom-nav-icon"><img src="icons/Setting.svg" style="width:28px;height:28px;" /></span><span class="bottom-nav-label">설정</span>
         </NavLink>
     </nav>
 </div>
@@ -67,6 +67,7 @@
     string _todayTime = "0분";
     private PeriodicTimer? _sidebarTimer;
     bool _isSyncing = false;
+    DotNetObjectReference<MainLayout>? _visibilityRef;
 
     protected override async Task OnInitializedAsync()
     {
@@ -87,9 +88,6 @@
                 await Storage.SyncOnLoginAsync();
                 _isSyncing = false;
                 await RefreshStats();
-                // 로그인 후 테마/다크 재적용 (StateHasChanged로 리렌더링돼도 테마 속성은 유지 필요)
-                await ApplyTheme(_currentTheme);
-                await ApplyDark(_isDark);
                 StateHasChanged();
             }
         });
@@ -163,6 +161,9 @@
             _isDark = dark == "true";
             await ApplyTheme(_currentTheme);
             await ApplyDark(_isDark);
+            // 앱 포그라운드 복귀 감지 등록
+            _visibilityRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("registerVisibilitySync", _visibilityRef);
             StateHasChanged();
         }
     }
@@ -180,11 +181,27 @@
     async Task ApplyDark(bool dark) =>
         await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark','{dark.ToString().ToLower()}')");
 
+    [Microsoft.JSInterop.JSInvokable]
+    public async Task OnAppResumed()
+    {
+        // 다른 기기에서 수정했을 수 있으므로 Firestore에서 최신 데이터 pull
+        if (Auth.IsLoggedIn && !_isSyncing)
+        {
+            _isSyncing = true;
+            await Storage.SyncOnLoginAsync();
+            _isSyncing = false;
+            await RefreshStats();
+            StateHasChanged();
+        }
+    }
+
     public ValueTask DisposeAsync()
     {
         _sidebarTimer?.Dispose();
         _sidebarTimer = null;
         Auth.OnAuthChanged -= OnAuthChanged;
+        _visibilityRef?.Dispose();
+        _visibilityRef = null;
         return ValueTask.CompletedTask;
     }
 }
