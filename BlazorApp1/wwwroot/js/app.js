@@ -169,3 +169,21 @@ document.addEventListener('change', e => {
     // popstate도 함께
     window.addEventListener('popstate', checkRoute);
 })();
+
+// ── 앱 포그라운드 복귀 시 Blazor에 알림 (다기기 동기화용) ──────────
+window.registerVisibilitySync = (dotNetRef) => {
+    let _hidden = document.hidden;
+    document.addEventListener('visibilitychange', () => {
+        const nowHidden = document.hidden;
+        // 숨김 → 보임 (앱/탭이 포그라운드로 돌아옴)
+        if (_hidden && !nowHidden) {
+            dotNetRef.invokeMethodAsync('OnAppResumed').catch(() => {});
+        }
+        _hidden = nowHidden;
+    });
+};
+
+window.unregisterVisibilitySync = () => {
+    // dotNetRef 해제는 Blazor 쪽에서 처리; 여기선 리스너 제거 불필요
+    // (컴포넌트 dispose 시 dotNetRef가 해제되어 invoke가 silently fail됨)
+};
