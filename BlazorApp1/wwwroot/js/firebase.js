@@ -1,9 +1,7 @@
 // ── Firebase 초기화 ───────────────────────────────────────────────
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
-    getAuth, GoogleAuthProvider,
-    signInWithPopup, signInWithRedirect, getRedirectResult,
-    signOut, onAuthStateChanged,
+    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
     indexedDBLocalPersistence, setPersistence
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
@@ -24,30 +22,21 @@ const auth = getAuth(app);
 const db   = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-// ── 영구 세션 유지 (IndexedDB — PWA 재시작해도 로그인 유지) ───────
-setPersistence(auth, indexedDBLocalPersistence).catch(e =>
-    console.warn('setPersistence failed:', e)
-);
-
-// PWA(홈화면 앱)에서는 popup이 새 탭을 열어 앱 컨텍스트를 끊어버리므로
-// standalone 모드일 때는 redirect 방식 사용
-const isPWA = window.matchMedia('(display-mode: standalone)').matches
-           || window.navigator.standalone === true;
+// ── 영구 세션 유지 (IndexedDB) ────────────────────────────────────
+// setPersistence는 비동기지만 auth 객체에 즉시 반영됨
+// waitForAuthReady보다 먼저 설정되도록 모듈 최상단에서 호출
+const _persistenceReady = setPersistence(auth, indexedDBLocalPersistence)
+    .catch(e => console.warn('setPersistence failed:', e));
 
 // ── Auth ─────────────────────────────────────────────────────────
 window.firebaseAuth = {
     async signInWithGoogle() {
         try {
-            if (isPWA) {
-                // redirect 방식: 현재 페이지를 Google 로그인 페이지로 이동
-                // 결과는 waitForAuthReady에서 getRedirectResult로 처리
-                await signInWithRedirect(auth, provider);
-                return null; // 페이지가 이동되므로 여기는 도달 안 함
-            } else {
-                const result = await signInWithPopup(auth, provider);
-                const u = result.user;
-                return { uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL };
-            }
+            // persistence 설정 완료 후 로그인 시도
+            await _persistenceReady;
+            const result = await signInWithPopup(auth, provider);
+            const u = result.user;
+            return { uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL };
         } catch (e) {
             console.error('signInWithGoogle:', e.code, e.message);
             return null;
@@ -74,26 +63,15 @@ window.firebaseAuth = {
         });
     },
 
-    // Firebase 세션 복원 완료까지 대기 + redirect 결과 처리
-    waitForAuthReady() {
-        return new Promise(async resolve => {
-            // redirect 로그인 결과가 있으면 먼저 처리
-            try {
-                const redirectResult = await getRedirectResult(auth);
-                if (redirectResult?.user) {
-                    const u = redirectResult.user;
-                    resolve({ uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL });
-                    return;
-                }
-            } catch (e) {
-                console.warn('getRedirectResult:', e);
-            }
-
-            // 기존 세션 복원 대기
+    // Firebase 세션 복원 완료까지 대기 후 현재 유저 반환
+    async waitForAuthReady() {
+        // persistence 설정이 완료된 뒤 세션 복원을 기다려야 함
+        await _persistenceReady;
+        return new Promise(resolve => {
             const timer = setTimeout(() => {
                 console.warn('waitForAuthReady timeout');
                 resolve(null);
-            }, 5000);
+            }, 6000);
             const unsubscribe = onAuthStateChanged(auth, user => {
                 clearTimeout(timer);
                 unsubscribe();
