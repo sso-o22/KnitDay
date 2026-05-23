@@ -504,20 +504,20 @@ body {
     .nav-icon { width: auto; }
     .main-content { padding: 24px 20px; }
 
-    /* 아이패드: select(콤보박스) 높이 PC와 동일하게 */
-    select.form-control, select {
-        min-height: 42px;
-        height: auto;
-        padding: 10px 12px;
-        font-size: 0.95rem;
-    }
-    /* 아이패드: 날짜 input — form-control과 높이 통일, 폭 제한 없음 */
+    /* 아이패드: form-control 계열 전체 — 높이/폰트/패딩 PC와 통일 */
+    .form-control,
+    select.form-control,
+    input[type="date"].form-control,
     input[type="date"] {
-        height: auto;
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        max-width: 100%;
         min-height: unset;
-        font-size: 0.9rem;
-        max-width: unset;
+        height: auto;
         padding: 10px 14px;
+        font-size: 0.9rem;
+        line-height: 1.4;
         box-sizing: border-box;
     }
     .form-row {
