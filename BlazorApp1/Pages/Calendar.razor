@@ -292,13 +292,13 @@ else
                     <div style="display:flex; gap:16px; margin-bottom:8px;">
                         <div class="form-group" style="flex:1; min-width:0; margin-bottom:0;">
                             <label class="form-label">시작일</label>
-                            <input type="date" class="form-control" style="width:100%; box-sizing:border-box;" class="form-control"
+                            <input type="date" class="form-control" style="width:100%; box-sizing:border-box;"
                                    value="@_finishedPopupProject.StartDate?.ToString("yyyy-MM-dd")"
                                    @onchange="e => _finishedPopupProject.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                         </div>
                         <div class="form-group" style="flex:1; min-width:0; margin-bottom:0;">
                             <label class="form-label">완성일</label>
-                            <input type="date" class="form-control" style="width:100%; box-sizing:border-box;" class="form-control"
+                            <input type="date" class="form-control" style="width:100%; box-sizing:border-box;"
                                    value="@_finishedPopupProject.EndDate?.ToString("yyyy-MM-dd")"
                                    @onchange="e => _finishedPopupProject.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                         </div>
