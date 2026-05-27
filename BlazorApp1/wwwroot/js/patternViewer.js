@@ -773,24 +773,45 @@ window.patternViewer = (() => {
                 const cssW = canvas.offsetWidth || bw / dpr;
                 const cssH = canvas.offsetHeight || bh / dpr;
 
-                // buffer 픽셀로 밝기 프로파일 계산
-                const data = ctx.getImageData(0, 0, bw, bh).data;
+                // 도안 내용이 있는 중앙 영역만 스캔 (여백 제외)
+                // 가로: 잉크가 있는 구간 자동 감지
+                const fullData = ctx.getImageData(0, 0, bw, bh).data;
+
+                // X방향으로 잉크 있는 범위 찾기 (상단 30% 영역 샘플링)
+                const sampleH = Math.floor(bh * 0.3);
+                let xMin = bw, xMax = 0;
+                for (let y = 0; y < sampleH; y++) {
+                    for (let x = 0; x < bw; x++) {
+                        const i = (y * bw + x) * 4;
+                        const b = (fullData[i] + fullData[i+1] + fullData[i+2]) / 3;
+                        if (b < 240) { xMin = Math.min(xMin, x); xMax = Math.max(xMax, x); }
+                    }
+                }
+                // 여백이 많으면 잉크 있는 영역만, 없으면 전체 사용
+                const scanX0 = xMin < bw ? Math.max(0, xMin) : 0;
+                const scanX1 = xMax > 0 ? Math.min(bw, xMax + 1) : bw;
+                const scanW  = Math.max(scanX1 - scanX0, Math.floor(bw * 0.3));
+                const actualX0 = Math.max(0, Math.floor((scanX0 + scanX1) / 2) - Math.floor(scanW / 2));
+                const actualX1 = Math.min(bw, actualX0 + scanW);
+
+                // 밝기 프로파일 (잉크 범위만)
+                const data = ctx.getImageData(actualX0, 0, actualX1 - actualX0, bh).data;
+                const sw = actualX1 - actualX0;
                 const profile = new Float32Array(bh);
                 for (let y = 0; y < bh; y++) {
                     let sum = 0;
-                    for (let x = 0; x < bw; x++) {
-                        const i = (y * bw + x) * 4;
+                    for (let x = 0; x < sw; x++) {
+                        const i = (y * sw + x) * 4;
                         sum += (data[i] + data[i+1] + data[i+2]) / 3;
                     }
-                    profile[y] = sum / bw;
+                    profile[y] = sum / sw;
                 }
 
-                // 어두운 줄 찾기: 로컬 최솟값 중 충분히 어두운 것
-                // 전체 밝기 분포 기반 threshold
+                // 어두운 줄 찾기
                 const sorted = Float32Array.from(profile).sort();
-                const p10 = sorted[Math.floor(bh * 0.10)]; // 하위 10% 밝기
-                const p90 = sorted[Math.floor(bh * 0.90)]; // 상위 10% 밝기
-                const threshold = p10 + (p90 - p10) * 0.35; // 어두운 쪽 35%
+                const p10 = sorted[Math.floor(bh * 0.10)];
+                const p90 = sorted[Math.floor(bh * 0.90)];
+                const threshold = p10 + (p90 - p10) * 0.35;
 
                 const darkLines = []; // buffer px 단위
                 for (let y = 1; y < bh - 1; y++) {
@@ -830,7 +851,7 @@ window.patternViewer = (() => {
                 // avgGap보다 훨씬 가까운 줄들은 같은 행의 내부 격자선 → 병합
                 // 실제 행 높이 = 행당 격자선 수 * avgGap
                 // 방법: avgGap * 1.5 이상 벌어진 경우만 행 경계로 인정
-                const minRowGap = avgGap * 1.8; // 이 간격 이상이면 다음 행
+                const minRowGap = avgGap * 2.2; // 이 간격 이상이면 다음 행
                 const rowBoundaries = [darkLines[0]]; // 첫 번째 줄은 무조건 포함
                 for (let i = 1; i < darkLines.length; i++) {
                     if (darkLines[i] - rowBoundaries[rowBoundaries.length - 1] >= minRowGap) {
@@ -854,12 +875,20 @@ window.patternViewer = (() => {
                     console.log(`[행감지] 행경계 ${rowBoundaries.length}개, 실제행높이=${realRowHeightCss.toFixed(1)}px`);
                 }
 
-                // 행 시작 Y 위치 (CSS px)
-                const lineYs = rowBoundaries.map(y => y / dpr);
+                // lineYs를 균등 간격으로 재생성 (첫 행 + realRowHeight 배수)
+                // → 마커 높이가 항상 일정하게 유지됨
+                const firstY = rowBoundaries[0] / dpr;  // CSS px
+                const stepCss = realRowHeightCss;
+                const lineYs = [];
+                for (let y = firstY; y < cssH; y += stepCss) {
+                    lineYs.push(y);
+                }
+
+                console.log(`[행감지] 균등 lineYs: 시작=${firstY.toFixed(1)}px, 간격=${stepCss.toFixed(1)}px, 개수=${lineYs.length}`);
 
                 return {
                     rowHeight: realRowHeightCss,
-                    lineCount: rowBoundaries.length,
+                    lineCount: lineYs.length,
                     lineYs
                 };
             } catch(e) {
