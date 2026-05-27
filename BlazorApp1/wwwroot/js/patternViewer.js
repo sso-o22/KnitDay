@@ -758,8 +758,7 @@ window.patternViewer = (() => {
             } catch(e) { console.error(e); return false; }
         },
 
-        // ── 행 높이 자동 감지 ──────────────────────────────────────
-        // 전략: 수평선(격자선) 사이의 여백(흰 줄) 간격으로 행 높이 계산
+        // ── 행 높이 자동 감지 (자기상관 기반, 도안 종류 무관) ──────
         detectRowHeight(pageNum) {
             try {
                 const canvas = document.getElementById('pdf-canvas-' + pageNum);
@@ -769,94 +768,83 @@ window.patternViewer = (() => {
                 const dpr = window.devicePixelRatio || 1;
                 const zoom = currentZoom || 1;
 
-                // 왼쪽 10% 영역만 스캔 (숫자 라벨 열 - 행 경계가 가장 명확)
-                const scanW = Math.max(Math.floor(w * 0.10), 20);
-                const data = ctx.getImageData(0, 0, scanW, h).data;
-
-                // Y별 평균 밝기
-                const brightness = new Float32Array(h);
+                // 전체 너비 Y별 평균 밝기 프로파일
+                const data = ctx.getImageData(0, 0, w, h).data;
+                const profile = new Float32Array(h);
                 for (let y = 0; y < h; y++) {
                     let sum = 0;
-                    for (let x = 0; x < scanW; x++) {
-                        const i = (y * scanW + x) * 4;
+                    for (let x = 0; x < w; x++) {
+                        const i = (y * w + x) * 4;
                         sum += (data[i] + data[i+1] + data[i+2]) / 3;
                     }
-                    brightness[y] = sum / scanW;
+                    profile[y] = sum / w;
                 }
 
-                // 밝기 히스토그램으로 "밝은 행(여백)"과 "어두운 행(내용/선)" 구분
-                // 여백 행: 밝기 > 230 (거의 흰색)
-                const isLight = new Uint8Array(h);
-                for (let y = 0; y < h; y++) isLight[y] = brightness[y] > 230 ? 1 : 0;
+                // 평균 제거 (DC 성분 제거)
+                const mean = profile.reduce((a, b) => a + b, 0) / h;
+                const centered = profile.map(v => v - mean);
 
-                // 어두운 구간(격자선 + 내용)의 시작점을 행 시작으로 판단
-                // 연속된 어두운 픽셀 묶음 = 한 행
-                const rowStarts = [];
-                let prevLight = true;
-                for (let y = 1; y < h; y++) {
-                    if (prevLight && !isLight[y]) {
-                        rowStarts.push(y); // 밝음→어두움 전환 = 행 시작
+                // 자기상관(Autocorrelation): lag별 상관값 계산
+                // 탐색 범위: 4px ~ h/3 (너무 작거나 너무 큰 행 높이 제외)
+                const minLag = Math.max(4, Math.floor(h * 0.005));
+                const maxLag = Math.floor(h / 3);
+                const acorr = new Float32Array(maxLag + 1);
+
+                for (let lag = minLag; lag <= maxLag; lag++) {
+                    let sum = 0;
+                    for (let y = 0; y < h - lag; y++) {
+                        sum += centered[y] * centered[y + lag];
                     }
-                    prevLight = isLight[y] === 1;
+                    acorr[lag] = sum / (h - lag);
                 }
 
-                if (rowStarts.length < 3) {
-                    // fallback: 전체 너비로 재시도, threshold 낮춤
-                    const data2 = ctx.getImageData(0, 0, w, h).data;
-                    const ink = new Float32Array(h);
-                    for (let y = 0; y < h; y++) {
-                        let c = 0;
-                        for (let x = 0; x < w; x++) {
-                            const i = (y * w + x) * 4;
-                            if ((data2[i] + data2[i+1] + data2[i+2]) / 3 < 180) c++;
-                        }
-                        ink[y] = c / w;
-                    }
-                    const bands = [];
-                    let inB = false, bs = 0;
-                    for (let y = 0; y < h; y++) {
-                        if (!inB && ink[y] > 0.005) { inB = true; bs = y; }
-                        else if (inB && ink[y] <= 0.005) {
-                            inB = false;
-                            bands.push({ start: bs, end: y, center: (bs + y) / 2 });
+                // 자기상관에서 가장 강한 피크 찾기
+                // 피크 = 주변보다 높고, 양수인 지점
+                let bestLag = 0, bestVal = -Infinity;
+                for (let lag = minLag + 1; lag < maxLag; lag++) {
+                    if (acorr[lag] > acorr[lag-1] && acorr[lag] > acorr[lag+1] && acorr[lag] > 0) {
+                        if (acorr[lag] > bestVal) {
+                            bestVal = acorr[lag];
+                            bestLag = lag;
                         }
                     }
-                    if (inB) bands.push({ start: bs, end: h, center: (bs + h) / 2 });
-                    if (bands.length < 3) return { rowHeight: 0, lineCount: bands.length, lineYs: [] };
-                    const gaps2 = [];
-                    for (let i = 1; i < bands.length; i++) gaps2.push(bands[i].center - bands[i-1].center);
-                    gaps2.sort((a, b) => a - b);
-                    const med = gaps2[Math.floor(gaps2.length / 2)];
-                    const filt = gaps2.filter(g => g > med * 0.6 && g < med * 1.4);
-                    const avg = filt.length > 0 ? filt.reduce((a,b) => a+b, 0) / filt.length : med;
-                    return {
-                        rowHeight: avg / (dpr * zoom),
-                        lineCount: bands.length,
-                        lineYs: bands.map(b => b.start / (dpr * zoom))
-                    };
                 }
 
-                // 행 시작점 간격의 중앙값
-                const gaps = [];
-                for (let i = 1; i < rowStarts.length; i++)
-                    gaps.push(rowStarts[i] - rowStarts[i-1]);
-                gaps.sort((a, b) => a - b);
-                const med = gaps[Math.floor(gaps.length / 2)];
+                if (bestLag === 0) return { rowHeight: 0, lineCount: 0, lineYs: [] };
 
-                // 이상치 제거 (중앙값 60~140% 범위)
-                const filtered = gaps.filter(g => g > med * 0.6 && g < med * 1.4);
-                const avg = filtered.length > 0
-                    ? filtered.reduce((a, b) => a + b, 0) / filtered.length : med;
+                const rowHeightPx = bestLag / (dpr * zoom);
 
-                const rowHeightPx = avg / (dpr * zoom);
-                const lineYs = rowStarts.map(y => y / (dpr * zoom));
+                // 행 시작 위치: 밝기 프로파일에서 bestLag 간격으로 가장 밝은 줄(여백)
+                // 또는 가장 어두운 줄(격자선)의 위치를 찾아 정렬
+                // → 첫 번째 행 경계 찾기: 초반부에서 피크(밝거나 어두운 반복점) 탐색
+                const lineYs = [];
+                // 첫 번째 행 경계: bestLag 기준으로 grid 재구성
+                // profile에서 bestLag 주기로 슬라이딩해 가장 상관 높은 시작점 찾기
+                let bestOffset = 0, bestOffsetScore = -Infinity;
+                for (let offset = 0; offset < bestLag; offset++) {
+                    let score = 0;
+                    for (let k = offset; k < h; k += bestLag) {
+                        score += Math.abs(centered[k]);
+                    }
+                    if (score > bestOffsetScore) {
+                        bestOffsetScore = score;
+                        bestOffset = offset;
+                    }
+                }
 
-                return { rowHeight: rowHeightPx, lineCount: rowStarts.length, lineYs };
+                for (let y = bestOffset; y < h; y += bestLag) {
+                    lineYs.push(y / (dpr * zoom));
+                }
+
+                return {
+                    rowHeight: rowHeightPx,
+                    lineCount: lineYs.length,
+                    lineYs
+                };
             } catch(e) {
                 console.error('detectRowHeight error:', e);
                 return { rowHeight: 0, lineCount: 0, lineYs: [] };
-            }
-        },
+            }        },
 
         // 페이지 너비 반환 (zoom=1 기준 px)
         getPageWidth(pageNum) {
