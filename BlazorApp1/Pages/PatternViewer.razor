@@ -1266,6 +1266,10 @@
         // anno-canvas 기준 Y (zoom 적용 전)
         var clickY = e.OffsetY / _zoom;
 
+        _ = JS.InvokeVoidAsync("console.log",
+            $"[클릭] OffsetY={e.OffsetY:F1} zoom={_zoom:F2} clickY={clickY:F1} rowH={_detectedRowH:F2} lineYs={_previewLineYs.Count}개" +
+            (_previewLineYs.Count > 0 ? $" 근접lineY={_previewLineYs.MinBy(ly => Math.Abs(ly - clickY)):F1}" : ""));
+
         // 감지된 lineYs가 있으면 가장 가까운 행 시작점으로 스냅
         double markerY;
         if (_previewLineYs.Count > 0)
