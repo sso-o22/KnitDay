@@ -161,7 +161,7 @@ body {
     font-weight: 600;
 }
 
-.nav-icon { font-size: 1.1rem; width: 22px; text-align: center; }
+.nav-icon { display: flex; align-items: center; justify-content: center; width: 32px; flex-shrink: 0; }
 
 
 /* ── 메인 콘텐츠 ─────────────────────────────────────── */
@@ -810,9 +810,10 @@ body {
 
 .sidebar-dark-toggle {
     margin-top: 8px;
-    font-size: 1.1rem;
     cursor: pointer;
-    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 4px;
     border-radius: var(--radius-sm);
     transition: background 0.15s;
