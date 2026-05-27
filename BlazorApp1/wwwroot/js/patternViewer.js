@@ -758,7 +758,7 @@ window.patternViewer = (() => {
             } catch(e) { console.error(e); return false; }
         },
 
-        // ── 행 높이 자동 감지 ──────────────────────────────────────
+        // ── 행 높이 자동 감지 (텍스트 줄 간격 기반) ──────────────
         detectRowHeight(pageNum) {
             try {
                 const canvas = document.getElementById('pdf-canvas-' + pageNum);
@@ -767,47 +767,53 @@ window.patternViewer = (() => {
                 const w = canvas.width, h = canvas.height;
                 const data = ctx.getImageData(0, 0, w, h).data;
                 const dpr = window.devicePixelRatio || 1;
+                const zoom = currentZoom || 1;
 
-                // 각 Y 행의 "어두운 픽셀" 비율 계산
-                const darkRatios = new Float32Array(h);
+                // 각 Y 행의 잉크 픽셀 비율 (흰색이 아닌 픽셀)
+                const inkRatios = new Float32Array(h);
                 for (let y = 0; y < h; y++) {
-                    let dark = 0;
+                    let ink = 0;
                     for (let x = 0; x < w; x++) {
                         const i = (y * w + x) * 4;
                         const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
-                        if (brightness < 80) dark++;
+                        if (brightness < 200) ink++;
                     }
-                    darkRatios[y] = dark / w;
+                    inkRatios[y] = ink / w;
                 }
 
-                // 어두운 픽셀 비율이 높은 행 = 격자선
-                const threshold = 0.3;
-                const lineYs = [];
-                for (let y = 1; y < h - 1; y++) {
-                    if (darkRatios[y] > threshold &&
-                        darkRatios[y] >= darkRatios[y-1] &&
-                        darkRatios[y] >= darkRatios[y+1]) {
-                        if (lineYs.length === 0 || y - lineYs[lineYs.length-1] > 5) {
-                            lineYs.push(y);
-                        }
+                // 잉크 구간(텍스트 행) 감지
+                const threshold = 0.01;
+                const rowBands = [];
+                let inBand = false, bandStart = 0;
+                for (let y = 0; y < h; y++) {
+                    if (!inBand && inkRatios[y] > threshold) {
+                        inBand = true; bandStart = y;
+                    } else if (inBand && inkRatios[y] <= threshold) {
+                        inBand = false;
+                        rowBands.push({ start: bandStart, end: y, center: (bandStart + y) / 2 });
                     }
                 }
+                if (inBand) rowBands.push({ start: bandStart, end: h, center: (bandStart + h) / 2 });
 
-                if (lineYs.length < 3) return { rowHeight: 0, lineCount: lineYs.length, lineYs: [] };
+                if (rowBands.length < 3) return { rowHeight: 0, lineCount: rowBands.length, lineYs: [] };
 
-                // 격자선 간격의 중앙값
+                // 인접 밴드 중심 간격의 중앙값
                 const gaps = [];
-                for (let i = 1; i < lineYs.length; i++) gaps.push(lineYs[i] - lineYs[i-1]);
+                for (let i = 1; i < rowBands.length; i++)
+                    gaps.push(rowBands[i].center - rowBands[i-1].center);
                 gaps.sort((a, b) => a - b);
-                const median = gaps[Math.floor(gaps.length / 2)];
+                const medianGap = gaps[Math.floor(gaps.length / 2)];
 
-                const zoom = currentZoom || 1;
-                const rowHeightPx = median / (dpr * zoom);
+                // 이상치 제거 후 평균
+                const filtered = gaps.filter(g => g > medianGap * 0.5 && g < medianGap * 1.5);
+                const avgGap = filtered.length > 0
+                    ? filtered.reduce((a, b) => a + b, 0) / filtered.length
+                    : medianGap;
 
-                // zoom=1 기준 선 위치로 변환
-                const lineYsNorm = lineYs.map(y => y / (dpr * zoom));
+                const rowHeightPx = avgGap / (dpr * zoom);
+                const lineYs = rowBands.map(b => b.start / (dpr * zoom));
 
-                return { rowHeight: rowHeightPx, lineCount: lineYs.length, lineYs: lineYsNorm };
+                return { rowHeight: rowHeightPx, lineCount: rowBands.length, lineYs };
             } catch(e) {
                 console.error('detectRowHeight error:', e);
                 return { rowHeight: 0, lineCount: 0, lineYs: [] };
