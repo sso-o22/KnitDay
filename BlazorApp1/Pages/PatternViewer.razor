@@ -1261,13 +1261,21 @@
         if (_tool != "rowmarker") return;
         if (_detectedRowH <= 0) return;
 
-        // 클릭한 Y 좌표 (zoom 적용 전)
-        var rect = e; // clientY 기준이므로 canvas offset 필요 → JS로 처리된 좌표 사용
-        // anno-canvas 내부 좌표 = e.OffsetY
+        // anno-canvas 기준 Y (zoom 적용 전)
         var clickY = e.OffsetY / _zoom;
-        // 행 인덱스 계산
-        var rowIndex = (int)(clickY / _detectedRowH);
-        var markerY  = rowIndex * _detectedRowH;
+
+        // 감지된 lineYs가 있으면 가장 가까운 행 시작점으로 스냅
+        double markerY;
+        if (_previewLineYs.Count > 0)
+        {
+            markerY = _previewLineYs.MinBy(ly => Math.Abs(ly - clickY));
+        }
+        else
+        {
+            // lineYs 없으면 행 높이로 계산
+            var rowIndex = (int)(clickY / _detectedRowH);
+            markerY = rowIndex * _detectedRowH;
+        }
 
         // 같은 페이지·같은 행이면 무시
         if (_rowMarkers.Any(m => m.Page == pageNum && Math.Abs(m.Y - markerY) < _detectedRowH * 0.5 && m.IsCurrent))
@@ -1344,14 +1352,25 @@
         var current = _rowMarkers.FirstOrDefault(m => m.IsCurrent);
         if (current == null || _detectedRowH <= 0) return;
 
-        // 현재 행 → 완료 처리
-        current.IsCurrent = false;
+        // 다음 행 Y 계산: lineYs에서 현재보다 작은 값 중 가장 가까운 것
+        double nextY;
+        if (_previewLineYs.Count > 0)
+        {
+            var candidates = _previewLineYs.Where(ly => ly < current.Y - _detectedRowH * 0.3).ToList();
+            nextY = candidates.Count > 0
+                ? candidates.MaxBy(ly => ly)
+                : Math.Max(0, current.Y - _detectedRowH);
+        }
+        else
+        {
+            nextY = Math.Max(0, current.Y - _detectedRowH);
+        }
 
-        // 한 행 위로 이동한 새 마커 추가
+        current.IsCurrent = false;
         _rowMarkers.Add(new RowMarker
         {
             Page = current.Page,
-            Y = Math.Max(0, current.Y - _detectedRowH),
+            Y = nextY,
             RowHeight = _detectedRowH,
             PageWidth = _pageWidth,
             Color = _rowMarkerColor,
