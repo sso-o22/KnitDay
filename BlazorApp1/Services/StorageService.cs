@@ -16,6 +16,7 @@ namespace KnitLog.Services
         private const string KEY_YARNS    = "knittracker_yarns";
         private const string KEY_TOOLS    = "knittracker_tools";
         private const string KEY_SWATCHES = "knittracker_swatches";
+        private const string KEY_TODOS    = "knitlog_todos";
 
         private static readonly JsonSerializerOptions _jsonOpts = new()
         {
@@ -98,6 +99,50 @@ namespace KnitLog.Services
             await MergeCollectionAsync<Yarn>(KEY_YARNS, "yarns");
             await MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools");
             await MergeCollectionAsync<Swatch>(KEY_SWATCHES, "swatches");
+            await SyncTodosAsync();
+        }
+
+        private async Task SyncTodosAsync()
+        {
+            // 할 일 목록은 배열 통째로 동기화 (항목 수가 더 많은 쪽 우선, 없으면 로컬 우선)
+            var localJson = await _js.InvokeAsync<string?>("localStorage.getItem", KEY_TODOS);
+
+            // Firebase에서 읽기
+            string? cloudJson = null;
+            try
+            {
+                var cloudDoc = await _js.InvokeAsync<string?>(
+                    "firebaseStore.getDocument", $"users/{Uid}/settings/todos");
+                if (!string.IsNullOrEmpty(cloudDoc))
+                {
+                    var el = JsonSerializer.Deserialize<JsonElement>(cloudDoc, _jsonOpts);
+                    if (el.TryGetProperty("data", out var data))
+                        cloudJson = data.GetRawText();
+                }
+            }
+            catch { }
+
+            // 병합: 둘 다 있으면 항목 수 많은 쪽 채택, 한쪽만 있으면 그쪽 사용
+            string mergedJson = localJson ?? "[]";
+            if (!string.IsNullOrEmpty(cloudJson))
+            {
+                var localCount  = string.IsNullOrEmpty(localJson) ? 0
+                    : (JsonSerializer.Deserialize<JsonElement>(localJson,  _jsonOpts).GetArrayLength());
+                var cloudCount  = JsonSerializer.Deserialize<JsonElement>(cloudJson, _jsonOpts).GetArrayLength();
+                if (cloudCount > localCount) mergedJson = cloudJson;
+            }
+
+            // 로컬 저장
+            await _js.InvokeVoidAsync("localStorage.setItem", KEY_TODOS, mergedJson);
+
+            // Firebase 저장
+            try
+            {
+                var payload = JsonSerializer.Serialize(new { data = JsonSerializer.Deserialize<JsonElement>(mergedJson, _jsonOpts) }, _jsonOpts);
+                await _js.InvokeAsync<bool>("firebaseStore.setDocument",
+                    $"users/{Uid}/settings/todos", payload);
+            }
+            catch { }
         }
 
         private async Task MergeCollectionAsync<T>(string localKey, string collectionName)
