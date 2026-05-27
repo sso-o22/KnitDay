@@ -209,6 +209,38 @@ namespace KnitLog.Services
             return DateTime.MinValue;
         }
 
+        // ── 온라인 복귀 시 로컬 → Firebase push ─────────────────────
+        // 오프라인 중 수정된 내용을 Firebase에 강제 업로드
+        public async Task PushLocalToFirebaseAsync()
+        {
+            if (!IsLoggedIn) return;
+            try
+            {
+                await SaveFirebaseAsync("projects", await GetProjectsAsync(), "Id");
+                await SaveFirebaseAsync("yarns",    await GetYarnsAsync(),    "Id");
+                await SaveFirebaseAsync("tools",    await GetToolsAsync(),    "Id");
+                await SaveFirebaseAsync("swatches", await GetSwatchesAsync(), "Id");
+
+                // todos push
+                var todosJson = await _js.InvokeAsync<string?>("localStorage.getItem", KEY_TODOS);
+                if (!string.IsNullOrEmpty(todosJson))
+                {
+                    try
+                    {
+                        var payload = JsonSerializer.Serialize(
+                            new { data = JsonSerializer.Deserialize<JsonElement>(todosJson, _jsonOpts) }, _jsonOpts);
+                        await _js.InvokeAsync<bool>("firebaseStore.setDocument",
+                            $"users/{Uid}/settings/todos", payload);
+                    }
+                    catch { }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"PushLocalToFirebase error: {ex.Message}");
+            }
+        }
+
         // ── 통합 저장 (로컬 + Firebase) ──────────────────────────────
         private async Task SaveAsync<T>(string key, string collectionName, string idField, List<T> list)
         {
