@@ -1311,9 +1311,11 @@
 
         if (result.RowHeight > 0)
         {
-            _detectedRowH = result.RowHeight;
+            // JS가 현재 zoom 기준 CSS px로 반환 → zoom=1 기준으로 저장
+            _detectedRowH = result.RowHeight / _zoom;
             _pageWidth = await JS.InvokeAsync<double>("patternViewer.getPageWidth", _currentPage);
-            _previewLineYs = result.LineYs ?? new();
+            // lineYs도 zoom=1 기준으로 변환
+            _previewLineYs = result.LineYs?.Select(y => y / _zoom).ToList() ?? new();
             _showPreviewLines = true;
         }
         StateHasChanged();

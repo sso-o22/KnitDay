@@ -758,87 +758,80 @@ window.patternViewer = (() => {
             } catch(e) { console.error(e); return false; }
         },
 
-        // ── 행 높이 자동 감지 (자기상관 기반, 도안 종류 무관) ──────
+        // ── 행 높이 자동 감지 ──────────────────────────────────────
+        // canvas에 렌더링된 실제 픽셀 기준으로 행 높이 감지
+        // rowHeight는 canvas CSS px 단위 (zoom=currentZoom 기준)
         detectRowHeight(pageNum) {
             try {
                 const canvas = document.getElementById('pdf-canvas-' + pageNum);
                 if (!canvas) return { rowHeight: 0, lineCount: 0, lineYs: [] };
                 const ctx = canvas.getContext('2d');
-                const w = canvas.width, h = canvas.height;
                 const dpr = window.devicePixelRatio || 1;
-                const zoom = currentZoom || 1;
+                // canvas buffer px (dpr 배율 적용됨)
+                const bw = canvas.width, bh = canvas.height;
+                // CSS px (화면에서 보이는 크기)
+                const cssW = canvas.offsetWidth || bw / dpr;
+                const cssH = canvas.offsetHeight || bh / dpr;
 
-                // 전체 너비 Y별 평균 밝기 프로파일
-                const data = ctx.getImageData(0, 0, w, h).data;
-                const profile = new Float32Array(h);
-                for (let y = 0; y < h; y++) {
+                // buffer 픽셀로 밝기 프로파일 계산
+                const data = ctx.getImageData(0, 0, bw, bh).data;
+                const profile = new Float32Array(bh);
+                for (let y = 0; y < bh; y++) {
                     let sum = 0;
-                    for (let x = 0; x < w; x++) {
-                        const i = (y * w + x) * 4;
+                    for (let x = 0; x < bw; x++) {
+                        const i = (y * bw + x) * 4;
                         sum += (data[i] + data[i+1] + data[i+2]) / 3;
                     }
-                    profile[y] = sum / w;
+                    profile[y] = sum / bw;
                 }
 
-                // 평균 제거 (DC 성분 제거)
-                const mean = profile.reduce((a, b) => a + b, 0) / h;
-                const centered = profile.map(v => v - mean);
+                // 어두운 줄 찾기: 로컬 최솟값 중 충분히 어두운 것
+                // 전체 밝기 분포 기반 threshold
+                const sorted = Float32Array.from(profile).sort();
+                const p10 = sorted[Math.floor(bh * 0.10)]; // 하위 10% 밝기
+                const p90 = sorted[Math.floor(bh * 0.90)]; // 상위 10% 밝기
+                const threshold = p10 + (p90 - p10) * 0.35; // 어두운 쪽 35%
 
-                // 자기상관(Autocorrelation): lag별 상관값 계산
-                // 탐색 범위: 4px ~ h/3 (너무 작거나 너무 큰 행 높이 제외)
-                const minLag = Math.max(4, Math.floor(h * 0.005));
-                const maxLag = Math.floor(h / 3);
-                const acorr = new Float32Array(maxLag + 1);
-
-                for (let lag = minLag; lag <= maxLag; lag++) {
-                    let sum = 0;
-                    for (let y = 0; y < h - lag; y++) {
-                        sum += centered[y] * centered[y + lag];
-                    }
-                    acorr[lag] = sum / (h - lag);
-                }
-
-                // 자기상관에서 가장 강한 피크 찾기
-                // 피크 = 주변보다 높고, 양수인 지점
-                let bestLag = 0, bestVal = -Infinity;
-                for (let lag = minLag + 1; lag < maxLag; lag++) {
-                    if (acorr[lag] > acorr[lag-1] && acorr[lag] > acorr[lag+1] && acorr[lag] > 0) {
-                        if (acorr[lag] > bestVal) {
-                            bestVal = acorr[lag];
-                            bestLag = lag;
+                const darkLines = []; // buffer px 단위
+                for (let y = 1; y < bh - 1; y++) {
+                    if (profile[y] < threshold &&
+                        profile[y] <= profile[y-1] &&
+                        profile[y] <= profile[y+1]) {
+                        if (darkLines.length === 0 || y - darkLines[darkLines.length-1] > 2) {
+                            darkLines.push(y);
                         }
                     }
                 }
 
-                if (bestLag === 0) return { rowHeight: 0, lineCount: 0, lineYs: [] };
+                console.log(`[행감지] p10=${p10.toFixed(0)}, p90=${p90.toFixed(0)}, threshold=${threshold.toFixed(0)}`);
+                console.log(`[행감지] 어두운 줄 수: ${darkLines.length}, 처음 10개: ${darkLines.slice(0,10)}`);
 
-                const rowHeightPx = bestLag / (dpr * zoom);
+                if (darkLines.length < 3) return { rowHeight: 0, lineCount: darkLines.length, lineYs: [] };
 
-                // 행 시작 위치: 밝기 프로파일에서 bestLag 간격으로 가장 밝은 줄(여백)
-                // 또는 가장 어두운 줄(격자선)의 위치를 찾아 정렬
-                // → 첫 번째 행 경계 찾기: 초반부에서 피크(밝거나 어두운 반복점) 탐색
-                const lineYs = [];
-                // 첫 번째 행 경계: bestLag 기준으로 grid 재구성
-                // profile에서 bestLag 주기로 슬라이딩해 가장 상관 높은 시작점 찾기
-                let bestOffset = 0, bestOffsetScore = -Infinity;
-                for (let offset = 0; offset < bestLag; offset++) {
-                    let score = 0;
-                    for (let k = offset; k < h; k += bestLag) {
-                        score += Math.abs(centered[k]);
-                    }
-                    if (score > bestOffsetScore) {
-                        bestOffsetScore = score;
-                        bestOffset = offset;
-                    }
-                }
+                // 간격 계산 및 중앙값
+                const gaps = [];
+                for (let i = 1; i < darkLines.length; i++)
+                    gaps.push(darkLines[i] - darkLines[i-1]);
+                gaps.sort((a, b) => a - b);
+                const median = gaps[Math.floor(gaps.length / 2)];
 
-                for (let y = bestOffset; y < h; y += bestLag) {
-                    lineYs.push(y / (dpr * zoom));
-                }
+                // 이상치 제거 후 평균 (중앙값 60~140% 범위)
+                const filtered = gaps.filter(g => g > median * 0.6 && g < median * 1.4);
+                const avgGap = filtered.length > 0
+                    ? filtered.reduce((a, b) => a + b, 0) / filtered.length
+                    : median;
+
+                // CSS px 단위로 변환 (÷ dpr)
+                const rowHeightCss = avgGap / dpr;
+
+                // 행 시작 Y 위치 (CSS px)
+                const lineYs = darkLines.map(y => y / dpr);
+
+                console.log(`[행감지] avgGap=${avgGap.toFixed(1)}buf_px → CSS ${rowHeightCss.toFixed(1)}px`);
 
                 return {
-                    rowHeight: rowHeightPx,
-                    lineCount: lineYs.length,
+                    rowHeight: rowHeightCss,  // CSS px (현재 zoom 기준)
+                    lineCount: darkLines.length,
                     lineYs
                 };
             } catch(e) {
