@@ -867,6 +867,17 @@ window.patternViewer = (() => {
                 return { rowHeight: 0, lineCount: 0, lineYs: [] };
             }        },
 
+        // 클릭 이벤트의 canvas 기준 CSS Y 좌표 반환 (스크롤 보정 포함)
+        getCanvasCssY(pageNum, clientY) {
+            const anno = document.getElementById('anno-canvas-' + pageNum);
+            if (!anno) return clientY;
+            const scrollEl = document.getElementById('scroll-container');
+            const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+            const off = getOffsetPos(anno);
+            const scrollContainerTop = scrollEl ? scrollEl.getBoundingClientRect().top : 0;
+            return clientY - (off.y - scrollTop + scrollContainerTop);
+        },
+
         // 페이지 너비 반환 (zoom=1 기준 px)
         getPageWidth(pageNum) {
             return getPageOrigW(pageNum);

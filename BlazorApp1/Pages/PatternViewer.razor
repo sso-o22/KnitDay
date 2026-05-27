@@ -77,18 +77,29 @@
                         @* ── 행 마커 ── *@
                         @foreach (var marker in _rowMarkers.Where(m => m.Page == pageNum))
                         {
-                            var markerY   = marker.Y * _zoom;
-                            var markerH   = Math.Max(marker.RowHeight * _zoom, 4);
+                            var markerY = marker.Y * _zoom;
+                            // 다음 lineY까지의 거리로 높이 계산 (더 정확하게 행을 채움)
+                            double markerH;
+                            if (_previewLineYs.Count > 1)
+                            {
+                                var idx = _previewLineYs.IndexOf(_previewLineYs.MinBy(ly => Math.Abs(ly - marker.Y)));
+                                var nextY = (idx + 1 < _previewLineYs.Count) ? _previewLineYs[idx + 1] : marker.Y + marker.RowHeight;
+                                markerH = Math.Max((nextY - marker.Y) * _zoom, 4);
+                            }
+                            else
+                            {
+                                markerH = Math.Max(marker.RowHeight * _zoom, 4);
+                            }
                             var markerW   = marker.PageWidth * _zoom;
                             var alpha     = marker.IsCurrent ? "0.45" : "0.30";
                             var rgb       = HexToRgb(marker.Color);
                             var darkRgb   = DarkenRgb(marker.Color);
-                            var borderH   = Math.Max(2, markerH * 0.15);
+                            var borderH   = Math.Max(2, markerH * 0.12);
                             <div style="position:absolute;left:0;top:@(markerY)px;
                                         width:@(markerW)px;height:@(markerH)px;
                                         background:rgba(@rgb,@alpha);
                                         @(marker.IsCurrent
-                                            ? $"box-shadow:0 -{borderH}px 0 0 rgba({darkRgb},0.7),0 {borderH}px 0 0 rgba({darkRgb},0.7);"
+                                            ? $"box-shadow:0 -{borderH}px 0 0 rgba({darkRgb},0.8),0 {borderH}px 0 0 rgba({darkRgb},0.8);"
                                             : "")
                                         pointer-events:none;z-index:15;
                                         transition:top 0.15s ease,height 0.15s ease;">
@@ -1257,17 +1268,18 @@
     bool _showPreviewLines = false;
     int _detectPage = 0;
 
-    void OnAnnoCanvasClick(MouseEventArgs e, int pageNum)
+    async Task OnAnnoCanvasClick(MouseEventArgs e, int pageNum)
     {
         if (_tool == "ruler") { DeselectRuler(); return; }
         if (_tool != "rowmarker") return;
         if (_detectedRowH <= 0) return;
 
-        // anno-canvas 기준 Y (zoom 적용 전)
-        var clickY = e.OffsetY / _zoom;
+        // JS로 스크롤 보정된 정확한 CSS Y 좌표 가져오기
+        var cssPxY = await JS.InvokeAsync<double>("patternViewer.getCanvasCssY", pageNum, e.ClientY);
+        var clickY = cssPxY / _zoom;  // zoom=1 기준
 
         _ = JS.InvokeVoidAsync("console.log",
-            $"[클릭] OffsetY={e.OffsetY:F1} zoom={_zoom:F2} clickY={clickY:F1} rowH={_detectedRowH:F2} lineYs={_previewLineYs.Count}개" +
+            $"[클릭] ClientY={e.ClientY:F1} cssPxY={cssPxY:F1} zoom={_zoom:F2} clickY={clickY:F1} rowH={_detectedRowH:F2} lineYs={_previewLineYs.Count}개" +
             (_previewLineYs.Count > 0 ? $" 근접lineY={_previewLineYs.MinBy(ly => Math.Abs(ly - clickY)):F1}" : ""));
 
         // 감지된 lineYs가 있으면 가장 가까운 행 시작점으로 스냅
