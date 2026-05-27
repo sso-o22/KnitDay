@@ -14,36 +14,36 @@
         </div>
 
         <ul class="nav-list">
-            <li><NavLink href="" Match="NavLinkMatch.All" class="nav-item"><span class="nav-icon"><img src="icons/Home.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">홈</span></NavLink></li>
-            <li><NavLink href="schedule" class="nav-item"><span class="nav-icon"><img src="icons/Calendar.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">뜨케줄</span></NavLink></li>
-            <li><NavLink href="projects" class="nav-item"><span class="nav-icon"><img src="icons/Octopus.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">문어발</span></NavLink></li>
-            <li><NavLink href="finished" class="nav-item"><span class="nav-icon"><img src="icons/Done.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">완성작</span></NavLink></li>
-            <li><NavLink href="wishlist" class="nav-item"><span class="nav-icon"><img src="icons/Wish.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">위시리스트</span></NavLink></li>
-            <li><NavLink href="yarns" class="nav-item"><span class="nav-icon"><img src="icons/Yarn_cone.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">실 창고</span></NavLink></li>
-            <li><NavLink href="swatches" class="nav-item"><span class="nav-icon"><img src="icons/Swatch.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">스와치</span></NavLink></li>
-            <li><NavLink href="tools" class="nav-item"><span class="nav-icon"><img src="icons/Tool.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">도구</span></NavLink></li>
-            <li><NavLink href="stats" class="nav-item"><span class="nav-icon"><img src="icons/Chart.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">통계</span></NavLink></li>
-            <li><NavLink href="settings" class="nav-item"><span class="nav-icon"><img src="icons/Setting.svg" style="width:26px;height:26px;vertical-align:middle;" /></span><span class="nav-label">설정</span></NavLink></li>
+            <li><NavLink href="" Match="NavLinkMatch.All" class="nav-item"><span class="nav-icon"><img src="icons/Home.svg" style="width:28px;height:28px;" /></span><span class="nav-label">홈</span></NavLink></li>
+            <li><NavLink href="schedule" class="nav-item"><span class="nav-icon"><img src="icons/Calendar.svg" style="width:28px;height:28px;" /></span><span class="nav-label">뜨케줄</span></NavLink></li>
+            <li><NavLink href="projects" class="nav-item"><span class="nav-icon"><img src="icons/Octopus.svg" style="width:28px;height:28px;" /></span><span class="nav-label">문어발</span></NavLink></li>
+            <li><NavLink href="finished" class="nav-item"><span class="nav-icon"><img src="icons/Done.svg" style="width:28px;height:28px;" /></span><span class="nav-label">완성작</span></NavLink></li>
+            <li><NavLink href="wishlist" class="nav-item"><span class="nav-icon"><img src="icons/Wish.svg" style="width:28px;height:28px;" /></span><span class="nav-label">위시리스트</span></NavLink></li>
+            <li><NavLink href="yarns" class="nav-item"><span class="nav-icon"><img src="icons/Yarn_cone.svg" style="width:28px;height:28px;" /></span><span class="nav-label">실 창고</span></NavLink></li>
+            <li><NavLink href="swatches" class="nav-item"><span class="nav-icon"><img src="icons/Swatch.svg" style="width:28px;height:28px;" /></span><span class="nav-label">스와치</span></NavLink></li>
+            <li><NavLink href="tools" class="nav-item"><span class="nav-icon"><img src="icons/Tool.svg" style="width:28px;height:28px;" /></span><span class="nav-label">도구</span></NavLink></li>
+            <li><NavLink href="stats" class="nav-item"><span class="nav-icon"><img src="icons/Chart.svg" style="width:28px;height:28px;" /></span><span class="nav-label">통계</span></NavLink></li>
+            <li><NavLink href="settings" class="nav-item"><span class="nav-icon"><img src="icons/Setting.svg" style="width:28px;height:28px;" /></span><span class="nav-label">설정</span></NavLink></li>
         </ul>
 
         <!-- 사이드바 하단 통계 + 다크 토글 -->
         <div class="sidebar-stats">
             <div class="sidebar-stat-row">
-                <span><img src="icons/Done.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;" /> 완성작</span>
+                <span><img src="icons/Done.svg" style="width:22px;height:22px;margin-right:4px;" /> 완성작</span>
                 <strong>@(_finished)개</strong>
             </div>
             <div class="sidebar-stat-row">
-                <span><img src="icons/Time.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;" /> 오늘</span>
+                <span><img src="icons/Time.svg" style="width:22px;height:22px;margin-right:4px;" /> 오늘</span>
                 <strong>@_todayTime</strong>
             </div>
             <div class="sidebar-dark-toggle" @onclick="ToggleDark" title="@(_isDark ? "라이트 모드" : "다크 모드")">
                 @if (_isDark)
                 {
-                    <img src="icons/Light.svg" style="width:24px;height:24px;" />
+                    <img src="icons/Light.svg" style="width:32px;height:32px;" />
                 }
                 else
                 {
-                    <img src="icons/Dark.svg" style="width:24px;height:24px;" />
+                    <img src="icons/Dark.svg" style="width:32px;height:32px;" />
                 }
             </div>
         </div>
@@ -53,16 +53,16 @@
 
     <nav class="bottom-nav">
         <NavLink href="" Match="NavLinkMatch.All" class="bottom-nav-item">
-            <span class="bottom-nav-icon"><img src="icons/Home.svg" style="width:28px;height:28px;" /></span><span class="bottom-nav-label">홈</span>
+            <span class="bottom-nav-icon"><img src="icons/Home.svg" style="width:36px;height:36px;" /></span><span class="bottom-nav-label">홈</span>
         </NavLink>
         <NavLink href="schedule" class="bottom-nav-item">
-            <span class="bottom-nav-icon"><img src="icons/Calendar.svg" style="width:28px;height:28px;" /></span><span class="bottom-nav-label">뜨케줄</span>
+            <span class="bottom-nav-icon"><img src="icons/Calendar.svg" style="width:36px;height:36px;" /></span><span class="bottom-nav-label">뜨케줄</span>
         </NavLink>
         <NavLink href="stats" class="bottom-nav-item">
-            <span class="bottom-nav-icon"><img src="icons/Chart.svg" style="width:28px;height:28px;" /></span><span class="bottom-nav-label">통계</span>
+            <span class="bottom-nav-icon"><img src="icons/Chart.svg" style="width:36px;height:36px;" /></span><span class="bottom-nav-label">통계</span>
         </NavLink>
         <NavLink href="settings" class="bottom-nav-item">
-            <span class="bottom-nav-icon"><img src="icons/Setting.svg" style="width:28px;height:28px;" /></span><span class="bottom-nav-label">설정</span>
+            <span class="bottom-nav-icon"><img src="icons/Setting.svg" style="width:36px;height:36px;" /></span><span class="bottom-nav-label">설정</span>
         </NavLink>
     </nav>
 </div>
