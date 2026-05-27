@@ -192,7 +192,7 @@
                         @if (_detectedRowH > 0)
                         {
                             <div class="dp-val" style="font-size:9px;text-align:center;color:#2a7a2a;margin-top:2px;">
-                                @($"{_detectedRowH:F0}px")
+                                @($"{_detectedRowH * _zoom:F0}px")
                             </div>
                             <div class="dp-val" style="font-size:8px;text-align:center;color:#888;">
                                 @($"{_detectedLineCount}줄")
@@ -212,7 +212,7 @@
                     }
                     @* 수동 행 높이 입력 *@
                     <div class="dp-row" style="justify-content:center;margin-top:2px;">
-                        <input type="number" min="4" max="200" value="@((int)(_detectedRowH > 0 ? _detectedRowH : 20))"
+                        <input type="number" min="2" max="500" value="@((int)(_detectedRowH * _zoom > 0 ? _detectedRowH * _zoom : 20))"
                                @onchange="OnRowHeightManualChange"
                                style="width:36px;font-size:10px;text-align:center;padding:2px;border:1px solid #ccc;border-radius:4px;" />
                     </div>
@@ -1311,10 +1311,11 @@
 
         if (result.RowHeight > 0)
         {
-            // JS가 현재 zoom 기준 CSS px로 반환 → zoom=1 기준으로 저장
+            // JS는 현재 zoom 기준 CSS px 반환 → zoom=1 기준으로 나눠서 저장
             _detectedRowH = result.RowHeight / _zoom;
             _pageWidth = await JS.InvokeAsync<double>("patternViewer.getPageWidth", _currentPage);
-            // lineYs도 zoom=1 기준으로 변환
+            // lineYs도 동일하게 zoom=1 기준으로 변환해서 저장
+            // 렌더링 시 * _zoom 곱하므로 일관성 유지
             _previewLineYs = result.LineYs?.Select(y => y / _zoom).ToList() ?? new();
             _showPreviewLines = true;
         }
@@ -1345,8 +1346,9 @@
 
     void OnRowHeightManualChange(ChangeEventArgs e)
     {
+        // 사용자는 현재 화면 기준 px 입력 → zoom=1 기준으로 변환해서 저장
         if (double.TryParse(e.Value?.ToString(), out var v) && v > 0)
-            _detectedRowH = v;
+            _detectedRowH = v / _zoom;
     }
 
     void MoveRowMarkerUp()
