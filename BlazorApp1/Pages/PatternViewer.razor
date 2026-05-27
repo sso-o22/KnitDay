@@ -54,6 +54,18 @@
                             <div style="position:absolute;left:@(Math.Min(_rulerStartX,_rulerStartX+_previewW))px;top:@(Math.Min(_rulerStartY,_rulerStartY+_previewH))px;width:@(Math.Abs(_previewW))px;height:@(Math.Abs(_previewH))px;border:2px dashed rgba(0,0,0,0.5);pointer-events:none;z-index:20;"></div>
                         }
 
+                        @* ── 행 감지 미리보기 선 ── *@
+                        @if (_showPreviewLines && _detectPage == pageNum)
+                        {
+                            foreach (var lineY in _previewLineYs)
+                            {
+                                <div style="position:absolute;left:0;top:@(lineY * _zoom)px;
+                                            width:@(_pageWidth * _zoom)px;height:1px;
+                                            background:rgba(255,80,80,0.6);
+                                            pointer-events:none;z-index:25;"></div>
+                            }
+                        }
+
                         @* ── 행 마커 ── *@
                         @foreach (var marker in _rowMarkers.Where(m => m.Page == pageNum))
                         {
@@ -166,8 +178,28 @@
                     <div class="dp-row" style="justify-content:center;">
                         <button class="dp-btn" title="행 감지" @onclick="DetectRowHeight" style="font-size:11px;width:36px;height:28px;">🔍</button>
                     </div>
-                    @* 감지된 행 높이 표시 + 수동 입력 *@
-                    <div class="dp-val" style="font-size:9px;text-align:center;margin-top:2px;">@(_detectedRowH > 0 ? $"{_detectedRowH:F0}px" : "미감지")</div>
+                    @* 감지 결과 피드백 *@
+                    @if (_detectedRowH > 0)
+                    {
+                        <div class="dp-val" style="font-size:9px;text-align:center;color:#2a7a2a;margin-top:2px;">
+                            @($"{_detectedRowH:F0}px")
+                        </div>
+                        <div class="dp-val" style="font-size:8px;text-align:center;color:#888;">
+                            @($"{_detectedLineCount}줄")
+                        </div>
+                        @if (_showPreviewLines)
+                        {
+                            <div class="dp-row" style="justify-content:center;margin-top:2px;">
+                                <button class="dp-btn" style="font-size:10px;width:36px;height:22px;background:#e8f5e8;"
+                                        @onclick="ConfirmDetect" title="확인">✓</button>
+                            </div>
+                        }
+                    }
+                    else if (_detectedLineCount >= 0 && _detectPage > 0)
+                    {
+                        <div class="dp-val" style="font-size:8px;text-align:center;color:#c05050;margin-top:2px;">감지 실패</div>
+                    }
+                    @* 수동 행 높이 입력 *@
                     <div class="dp-row" style="justify-content:center;margin-top:2px;">
                         <input type="number" min="4" max="200" value="@((int)(_detectedRowH > 0 ? _detectedRowH : 20))"
                                @onchange="OnRowHeightManualChange"
@@ -1144,6 +1176,10 @@
     List<RowMarker> _rowMarkers = new();
     string _rowMarkerColor = "#ffeb3b";
     double _detectedRowH = 0;
+    int _detectedLineCount = 0;
+    List<double> _previewLineYs = new();   // 감지 미리보기 선 (확인 전)
+    bool _showPreviewLines = false;
+    int _detectPage = 0;
 
     void OnAnnoCanvasClick(MouseEventArgs e, int pageNum)
     {
@@ -1183,14 +1219,36 @@
     async Task DetectRowHeight()
     {
         if (!_pdfLoaded) return;
-        var h = await JS.InvokeAsync<double>("patternViewer.detectRowHeight", _currentPage);
-        if (h > 0)
+        _showPreviewLines = false;
+        _previewLineYs.Clear();
+        StateHasChanged();
+
+        var result = await JS.InvokeAsync<DetectResult>("patternViewer.detectRowHeight", _currentPage);
+        _detectedLineCount = result.LineCount;
+        _detectPage = _currentPage;
+
+        if (result.RowHeight > 0)
         {
-            _detectedRowH = h;
+            _detectedRowH = result.RowHeight;
             _pageWidth = await JS.InvokeAsync<double>("patternViewer.getPageWidth", _currentPage);
+            _previewLineYs = result.LineYs ?? new();
+            _showPreviewLines = true;
         }
         StateHasChanged();
     }
+
+    void ConfirmDetect()
+    {
+        _showPreviewLines = false;
+        _previewLineYs.Clear();
+        StateHasChanged();
+    }
+
+    record DetectResult(
+        [property: System.Text.Json.Serialization.JsonPropertyName("rowHeight")] double RowHeight,
+        [property: System.Text.Json.Serialization.JsonPropertyName("lineCount")] int LineCount,
+        [property: System.Text.Json.Serialization.JsonPropertyName("lineYs")] List<double>? LineYs
+    );
 
     void OnRowMarkerColorChange(ChangeEventArgs e)
     {

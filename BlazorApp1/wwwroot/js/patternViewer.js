@@ -759,11 +759,10 @@ window.patternViewer = (() => {
         },
 
         // ── 행 높이 자동 감지 ──────────────────────────────────────
-        // canvas 픽셀 데이터에서 수평 격자선을 감지해 행 높이를 반환 (zoom=1 기준 px)
         detectRowHeight(pageNum) {
             try {
                 const canvas = document.getElementById('pdf-canvas-' + pageNum);
-                if (!canvas) return 0;
+                if (!canvas) return { rowHeight: 0, lineCount: 0, lineYs: [] };
                 const ctx = canvas.getContext('2d');
                 const w = canvas.width, h = canvas.height;
                 const data = ctx.getImageData(0, 0, w, h).data;
@@ -788,29 +787,30 @@ window.patternViewer = (() => {
                     if (darkRatios[y] > threshold &&
                         darkRatios[y] >= darkRatios[y-1] &&
                         darkRatios[y] >= darkRatios[y+1]) {
-                        // 인접 선은 하나로 합치기
                         if (lineYs.length === 0 || y - lineYs[lineYs.length-1] > 5) {
                             lineYs.push(y);
                         }
                     }
                 }
 
-                if (lineYs.length < 3) return 0;
+                if (lineYs.length < 3) return { rowHeight: 0, lineCount: lineYs.length, lineYs: [] };
 
-                // 격자선 간격의 중앙값 계산
+                // 격자선 간격의 중앙값
                 const gaps = [];
-                for (let i = 1; i < lineYs.length; i++) {
-                    gaps.push(lineYs[i] - lineYs[i-1]);
-                }
+                for (let i = 1; i < lineYs.length; i++) gaps.push(lineYs[i] - lineYs[i-1]);
                 gaps.sort((a, b) => a - b);
                 const median = gaps[Math.floor(gaps.length / 2)];
 
-                // zoom=1 기준으로 변환 (canvas는 dpr * zoom 배율로 렌더링됨)
                 const zoom = currentZoom || 1;
-                return median / (dpr * zoom);
+                const rowHeightPx = median / (dpr * zoom);
+
+                // zoom=1 기준 선 위치로 변환
+                const lineYsNorm = lineYs.map(y => y / (dpr * zoom));
+
+                return { rowHeight: rowHeightPx, lineCount: lineYs.length, lineYs: lineYsNorm };
             } catch(e) {
                 console.error('detectRowHeight error:', e);
-                return 0;
+                return { rowHeight: 0, lineCount: 0, lineYs: [] };
             }
         },
 
