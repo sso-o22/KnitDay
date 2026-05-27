@@ -875,12 +875,14 @@ window.patternViewer = (() => {
                     console.log(`[행감지] 행경계 ${rowBoundaries.length}개, 실제행높이=${realRowHeightCss.toFixed(1)}px`);
                 }
 
-                // lineYs를 균등 간격으로 재생성 (첫 행 + realRowHeight 배수)
-                // → 마커 높이가 항상 일정하게 유지됨
-                const firstY = rowBoundaries[0] / dpr;  // CSS px
+                // lineYs: rowBoundaries 기준 균등 간격으로 생성
+                // rowBoundaries의 첫/끝 범위 안에서만 생성 (도안 외부 제외)
+                const firstY = rowBoundaries[0] / dpr;
+                const lastY  = rowBoundaries[rowBoundaries.length - 1] / dpr;
                 const stepCss = realRowHeightCss;
                 const lineYs = [];
-                for (let y = firstY; y < cssH; y += stepCss) {
+                // 첫 행부터 마지막 행 + 1칸 여유까지만
+                for (let y = firstY; y <= lastY + stepCss * 0.5; y += stepCss) {
                     lineYs.push(y);
                 }
 
