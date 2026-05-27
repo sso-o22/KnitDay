@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>니트로그</title>
+    <base href="/KnitLog/" />
+    <script>
+        (function () {
+            var redirect = sessionStorage.redirect;
+            delete sessionStorage.redirect;
+            if (redirect && redirect !== location.href) {
+                history.replaceState(null, null, redirect);
+            }
+        })();
+    </script>
+
+    <!-- iOS Safari 폴리필: Map.prototype.getOrInsertComputed (PDF.js 5.7+ 요구) -->
+    <script>
+        if (typeof Map !== 'undefined' && !Map.prototype.getOrInsertComputed) {
+            Map.prototype.getOrInsertComputed = function(key, fn) {
+                if (!this.has(key)) {
+                    this.set(key, fn(key));
+                }
+                return this.get(key);
+            };
+        }
+    </script>
+
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧶</text></svg>" />
+
+    <!-- SVG 아이콘 preload -->
+    <link rel="preload" href="icons/Home.svg"       as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Calendar.svg"   as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Octopus.svg"    as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Done.svg"       as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Wish.svg"       as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Yarn_cone.svg"  as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Swatch.svg"     as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Tool.svg"       as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Chart.svg"      as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Setting.svg"    as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Dark.svg"       as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Light.svg"      as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Time.svg"       as="image" type="image/svg+xml" />
+
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" sizes="192x192" href="icon-192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png" />
+    
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="white" />
+    <meta name="theme-color" content="#ffffff" />
+    <meta name="apple-mobile-web-app-title" content="니트로그" />
+</head>
+<body>
+    <div id="app">
+        <div style="display:flex; flex-direction:column; align-items:center; justify-content:center;
+                    height:100vh; font-family:'Noto Sans KR',sans-serif; color:#6b4c3b;">
+            <div style="font-size:4rem; margin-bottom:16px;">🧶</div>
+            <div style="font-size:1.1rem;">니트로그 불러오는 중...</div>
+        </div>
+    </div>
+
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="js/patternViewer.js"></script>
+    <script src="js/app.js"></script>
+    
+    <script type="module" src="js/firebase.js"></script>
+    <script>navigator.serviceWorker.register('service-worker.js');</script>
+</body>
+</html>
