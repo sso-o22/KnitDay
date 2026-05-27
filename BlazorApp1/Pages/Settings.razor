@@ -67,7 +67,16 @@
     <div class="card">
         <div style="display:flex; align-items:center; justify-content:space-between;">
             <div>
-                <div class="card-title" style="margin-bottom:4px;">@(_isDark ? "🌙 다크 모드" : "☀️ 라이트 모드")</div>
+                <div class="card-title" style="margin-bottom:4px;">
+                    @if (_isDark)
+                    {
+                        <img src="icons/Dark.svg" style="width:20px;height:20px;vertical-align:middle;margin-right:4px;" /><span>다크 모드</span>
+                    }
+                    else
+                    {
+                        <img src="icons/Light.svg" style="width:20px;height:20px;vertical-align:middle;margin-right:4px;" /><span>라이트 모드</span>
+                    }
+                </div>
                 <p style="font-size:0.85rem; color:var(--text-mid);">@(_isDark ? "배경/글자가 반전되고 흑백 테마로 표시돼요" : "테마 색상이 적용된 라이트 모드예요")</p>
             </div>
             <button class="dark-toggle-btn @(_isDark ? "on" : "")" @onclick="ToggleDark">
