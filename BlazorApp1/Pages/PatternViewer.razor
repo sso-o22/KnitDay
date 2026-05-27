@@ -59,6 +59,19 @@
         </div>
     </div>
 
+    <!-- ── 프로젝트명 / 파일명 표시줄 ── -->
+    @if (_project != null)
+    {
+        <div class="pv-title-bar">
+            <span class="pv-title-project">@_project.Title</span>
+            @if (!string.IsNullOrEmpty(_project.PatternFileName))
+            {
+                <span class="pv-title-sep">·</span>
+                <span class="pv-title-file">@_project.PatternFileName</span>
+            }
+        </div>
+    }
+
     <!-- ── 상단 오버레이 툴바 ── -->
     <!-- 구조: [나가기 + 타이머] [가운데: 페이지/줌] [도안 불러오기] -->
     <div class="top-bar">
@@ -254,8 +267,52 @@
         justify-content: center;
     }
 
-    /* ── 상단 툴바: 라이트 화이트 계열 ── */
+    /* ── 프로젝트명/파일명 표시줄 ── */
+    .pv-title-bar {
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        background: rgba(255,255,255,0.72);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-bottom: 1px solid rgba(0,0,0,0.06);
+        padding: 4px 12px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        z-index: 210;
+        height: 28px;
+        box-sizing: border-box;
+    }
+    .pv-title-project {
+        font-size: 11px;
+        font-weight: 700;
+        color: #333;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 200px;
+    }
+    .pv-title-sep { font-size: 11px; color: #aaa; flex-shrink: 0; }
+    .pv-title-file {
+        font-size: 10px;
+        color: #888;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex: 1;
+    }
+    [data-dark="true"] .pv-title-bar {
+        background: rgba(28,28,28,0.80);
+        border-bottom-color: rgba(255,255,255,0.06);
+    }
+    [data-dark="true"] .pv-title-project { color: #eee; }
+    [data-dark="true"] .pv-title-sep { color: #555; }
+    [data-dark="true"] .pv-title-file { color: #888; }
+
+    /* ── 상단 툴바: 타이틀바(28px) 아래 배치 ── */
     .top-bar {
+        top: 28px;
+    }
         position: absolute;
         top: 0; left: 0; right: 0;
         background: rgba(255,255,255,0.88);
@@ -305,7 +362,7 @@
     /* ── 필기 위젯: 위젯(동그라미) 아래로 패널 펼치기 ── */
     .draw-wrap {
         position: fixed;
-        top: 46px;
+        top: 80px; /* 타이틀바(28px) + 툴바(~38px) + 여백 */
         left: 230px; /* PC: sidebar(220px) + 10px */
         z-index: 300;
         display: flex;
