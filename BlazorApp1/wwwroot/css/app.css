@@ -135,7 +135,7 @@ body {
     min-height: 0;    /* flex 자식의 overflow 스크롤 작동 필수 */
 }
 
-.nav-list li { margin: 1px 12px; }
+.nav-list li { margin: 4px 12px; }
 
 .nav-item {
     display: flex;
