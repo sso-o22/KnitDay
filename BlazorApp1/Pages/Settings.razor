@@ -229,7 +229,7 @@
                 return;
             }
             var doc = System.Text.Json.JsonDocument.Parse(json);
-            var keys = new[] { "knittracker_projects", "knittracker_yarns", "knittracker_tools", "knittracker_swatches" };
+            var keys = new[] { "knittracker_projects", "knittracker_yarns", "knittracker_tools", "knittracker_swatches", "knitlog_todos" };
             int count = 0;
             foreach (var key in keys)
             {
@@ -272,6 +272,8 @@
             const keys = ['knittracker_projects','knittracker_yarns','knittracker_tools','knittracker_swatches'];
             const data = {};
             keys.forEach(k => { const v = localStorage.getItem(k); if(v) data[k] = JSON.parse(v); });
+            const todos = localStorage.getItem('knitlog_todos');
+            if (todos) data['knitlog_todos'] = JSON.parse(todos);
             data.exportedAt = new Date().toISOString();
             window._exportData = data;
         ");
