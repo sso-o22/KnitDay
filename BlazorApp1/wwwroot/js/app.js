@@ -187,3 +187,22 @@ window.unregisterVisibilitySync = () => {
     // dotNetRef 해제는 Blazor 쪽에서 처리; 여기선 리스너 제거 불필요
     // (컴포넌트 dispose 시 dotNetRef가 해제되어 invoke가 silently fail됨)
 };
+
+// ── 온라인 복귀 시 Blazor에 알림 (오프라인 수정 push용) ────────────
+window.registerOnlineSync = (dotNetRef) => {
+    const handler = () => {
+        dotNetRef.invokeMethodAsync('OnBackOnline').catch(() => {});
+    };
+    window.addEventListener('online', handler);
+    // cleanup용으로 저장
+    window._onlineSyncHandler = handler;
+    window._onlineSyncRef = dotNetRef;
+};
+
+window.unregisterOnlineSync = () => {
+    if (window._onlineSyncHandler) {
+        window.removeEventListener('online', window._onlineSyncHandler);
+        window._onlineSyncHandler = null;
+        window._onlineSyncRef = null;
+    }
+};
