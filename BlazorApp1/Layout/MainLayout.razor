@@ -215,14 +215,14 @@
         }
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         _sidebarTimer?.Dispose();
         _sidebarTimer = null;
         Auth.OnAuthChanged -= OnAuthChanged;
         _visibilityRef?.Dispose();
         _visibilityRef = null;
-        await JS.InvokeVoidAsync("unregisterOnlineSync");
-        return ValueTask.CompletedTask;
+        try { await JS.InvokeVoidAsync("unregisterOnlineSync"); } catch { }
+        return;
     }
 }
