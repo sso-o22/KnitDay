@@ -154,6 +154,7 @@ namespace KnitLog.Models
         public string PatternFileName { get; set; } = "";        // 원본 파일명
         public string ViewerAnnotations { get; set; } = "";      // 필기 paths JSON
         public string ViewerRulers { get; set; } = "";           // 도형 rulers JSON
+        public string ViewerRowMarkers { get; set; } = "";       // 행 마커 JSON
         public int ViewerLastPage { get; set; } = 1;             // 마지막 페이지
         public double ViewerLastZoom { get; set; } = 0;          // 마지막 줌 (0=fit)
     }
@@ -206,5 +207,22 @@ namespace KnitLog.Models
         }
 
         public bool IsActive => !EndTime.HasValue;
+    }
+
+    // ── 행 마커 (도안 뷰어 행 추적용) ──────────────────────────────
+    public class RowMarker
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public int Page { get; set; } = 1;
+        // 행의 Y 좌표 (zoom=1 기준, 정규화되지 않은 px)
+        public double Y { get; set; }
+        // 감지된 행 높이 (zoom=1 기준 px)
+        public double RowHeight { get; set; }
+        // 도안 너비 (zoom=1 기준 px, 페이지 전체 너비)
+        public double PageWidth { get; set; }
+        // 색상 (hex)
+        public string Color { get; set; } = "#ffeb3b";
+        // 현재 활성 행인지 (false = 완료된 행)
+        public bool IsCurrent { get; set; } = true;
     }
 }

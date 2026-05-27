@@ -756,6 +756,67 @@ window.patternViewer = (() => {
                 }
                 return true;
             } catch(e) { console.error(e); return false; }
+        },
+
+        // ── 행 높이 자동 감지 ──────────────────────────────────────
+        // canvas 픽셀 데이터에서 수평 격자선을 감지해 행 높이를 반환 (zoom=1 기준 px)
+        detectRowHeight(pageNum) {
+            try {
+                const canvas = document.getElementById('pdf-canvas-' + pageNum);
+                if (!canvas) return 0;
+                const ctx = canvas.getContext('2d');
+                const w = canvas.width, h = canvas.height;
+                const data = ctx.getImageData(0, 0, w, h).data;
+                const dpr = window.devicePixelRatio || 1;
+
+                // 각 Y 행의 "어두운 픽셀" 비율 계산
+                const darkRatios = new Float32Array(h);
+                for (let y = 0; y < h; y++) {
+                    let dark = 0;
+                    for (let x = 0; x < w; x++) {
+                        const i = (y * w + x) * 4;
+                        const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
+                        if (brightness < 80) dark++;
+                    }
+                    darkRatios[y] = dark / w;
+                }
+
+                // 어두운 픽셀 비율이 높은 행 = 격자선
+                const threshold = 0.3;
+                const lineYs = [];
+                for (let y = 1; y < h - 1; y++) {
+                    if (darkRatios[y] > threshold &&
+                        darkRatios[y] >= darkRatios[y-1] &&
+                        darkRatios[y] >= darkRatios[y+1]) {
+                        // 인접 선은 하나로 합치기
+                        if (lineYs.length === 0 || y - lineYs[lineYs.length-1] > 5) {
+                            lineYs.push(y);
+                        }
+                    }
+                }
+
+                if (lineYs.length < 3) return 0;
+
+                // 격자선 간격의 중앙값 계산
+                const gaps = [];
+                for (let i = 1; i < lineYs.length; i++) {
+                    gaps.push(lineYs[i] - lineYs[i-1]);
+                }
+                gaps.sort((a, b) => a - b);
+                const median = gaps[Math.floor(gaps.length / 2)];
+
+                // zoom=1 기준으로 변환 (canvas는 dpr * zoom 배율로 렌더링됨)
+                const zoom = currentZoom || 1;
+                return median / (dpr * zoom);
+            } catch(e) {
+                console.error('detectRowHeight error:', e);
+                return 0;
+            }
+        },
+
+        // 페이지 너비 반환 (zoom=1 기준 px)
+        getPageWidth(pageNum) {
+            return getPageOrigW(pageNum);
         }
     };
 })();
