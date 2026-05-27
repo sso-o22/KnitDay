@@ -162,6 +162,7 @@ body {
 }
 
 .nav-icon { display: flex; align-items: center; justify-content: center; width: 32px; flex-shrink: 0; }
+.nav-icon img { display: block; }
 
 
 /* ── 메인 콘텐츠 ─────────────────────────────────────── */
@@ -802,6 +803,7 @@ body {
     font-size: 0.78rem;
     color: var(--theme-muted);
 }
+.sidebar-stat-row img { display: block; }
 
 .sidebar-stat-row strong {
     color: var(--theme-active);
