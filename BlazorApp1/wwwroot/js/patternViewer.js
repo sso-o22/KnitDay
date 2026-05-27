@@ -875,21 +875,47 @@ window.patternViewer = (() => {
                     console.log(`[행감지] 행경계 ${rowBoundaries.length}개, 실제행높이=${realRowHeightCss.toFixed(1)}px`);
                 }
 
-                // lineYs: rowBoundaries 기준 균등 간격으로 생성
-                // rowBoundaries의 첫/끝 범위 안에서만 생성 (도안 외부 제외)
-                const firstY = rowBoundaries[0] / dpr;
-                const lastY  = rowBoundaries[rowBoundaries.length - 1] / dpr;
-                const stepCss = realRowHeightCss;
+                // rowBoundaries 간격 분포에서 최빈값(mode) 찾기
+                // → 행 높이의 정수배인 경계들을 제거해서 실제 행만 남김
+                const rowGapsAll = [];
+                for (let i = 1; i < rowBoundaries.length; i++)
+                    rowGapsAll.push(rowBoundaries[i] - rowBoundaries[i-1]);
+                rowGapsAll.sort((a, b) => a - b);
+                const rowMedianFinal = rowGapsAll[Math.floor(rowGapsAll.length / 2)];
+
+                // 실제 행 경계: rowMedianFinal * 0.7 이상 간격인 것만 (작은 노이즈 제거)
+                const trueRowBoundaries = [rowBoundaries[0]];
+                let lastAccepted = rowBoundaries[0];
+                for (let i = 1; i < rowBoundaries.length; i++) {
+                    if (rowBoundaries[i] - lastAccepted >= rowMedianFinal * 0.7) {
+                        trueRowBoundaries.push(rowBoundaries[i]);
+                        lastAccepted = rowBoundaries[i];
+                    }
+                }
+
+                // 진짜 행 높이 재계산
+                const trueGaps = [];
+                for (let i = 1; i < trueRowBoundaries.length; i++)
+                    trueGaps.push(trueRowBoundaries[i] - trueRowBoundaries[i-1]);
+                trueGaps.sort((a, b) => a - b);
+                const trueMedian = trueGaps[Math.floor(trueGaps.length / 2)];
+                const trueFiltered = trueGaps.filter(g => g > trueMedian * 0.6 && g < trueMedian * 1.4);
+                const trueAvg = trueFiltered.length > 0
+                    ? trueFiltered.reduce((a, b) => a + b, 0) / trueFiltered.length
+                    : trueMedian;
+                const finalRowHeightCss = trueAvg / dpr;
+
+                const firstY = trueRowBoundaries[0] / dpr;
+                const lastY  = trueRowBoundaries[trueRowBoundaries.length - 1] / dpr;
                 const lineYs = [];
-                // 첫 행부터 마지막 행 + 1칸 여유까지만
-                for (let y = firstY; y <= lastY + stepCss * 0.5; y += stepCss) {
+                for (let y = firstY; y <= lastY + finalRowHeightCss * 0.5; y += finalRowHeightCss) {
                     lineYs.push(y);
                 }
 
-                console.log(`[행감지] 균등 lineYs: 시작=${firstY.toFixed(1)}px, 간격=${stepCss.toFixed(1)}px, 개수=${lineYs.length}`);
+                console.log(`[행감지] 최종 행경계 ${trueRowBoundaries.length}개, 높이=${finalRowHeightCss.toFixed(1)}px, lineYs=${lineYs.length}개`);
 
                 return {
-                    rowHeight: realRowHeightCss,
+                    rowHeight: finalRowHeightCss,
                     lineCount: lineYs.length,
                     lineYs
                 };
