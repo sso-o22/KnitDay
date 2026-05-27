@@ -824,14 +824,42 @@ window.patternViewer = (() => {
                 // CSS px 단위로 변환 (÷ dpr)
                 const rowHeightCss = avgGap / dpr;
 
-                // 행 시작 Y 위치 (CSS px)
-                const lineYs = darkLines.map(y => y / dpr);
-
                 console.log(`[행감지] avgGap=${avgGap.toFixed(1)}buf_px → CSS ${rowHeightCss.toFixed(1)}px`);
 
+                // darkLines에서 실제 행 경계만 추출
+                // avgGap보다 훨씬 가까운 줄들은 같은 행의 내부 격자선 → 병합
+                // 실제 행 높이 = 행당 격자선 수 * avgGap
+                // 방법: avgGap * 1.5 이상 벌어진 경우만 행 경계로 인정
+                const minRowGap = avgGap * 1.8; // 이 간격 이상이면 다음 행
+                const rowBoundaries = [darkLines[0]]; // 첫 번째 줄은 무조건 포함
+                for (let i = 1; i < darkLines.length; i++) {
+                    if (darkLines[i] - rowBoundaries[rowBoundaries.length - 1] >= minRowGap) {
+                        rowBoundaries.push(darkLines[i]);
+                    }
+                }
+
+                // 행 경계 간격으로 실제 행 높이 재계산
+                let realRowHeightCss = rowHeightCss;
+                if (rowBoundaries.length >= 3) {
+                    const rowGaps = [];
+                    for (let i = 1; i < rowBoundaries.length; i++)
+                        rowGaps.push(rowBoundaries[i] - rowBoundaries[i-1]);
+                    rowGaps.sort((a, b) => a - b);
+                    const rowMedian = rowGaps[Math.floor(rowGaps.length / 2)];
+                    const rowFiltered = rowGaps.filter(g => g > rowMedian * 0.6 && g < rowMedian * 1.4);
+                    const rowAvg = rowFiltered.length > 0
+                        ? rowFiltered.reduce((a, b) => a + b, 0) / rowFiltered.length
+                        : rowMedian;
+                    realRowHeightCss = rowAvg / dpr;
+                    console.log(`[행감지] 행경계 ${rowBoundaries.length}개, 실제행높이=${realRowHeightCss.toFixed(1)}px`);
+                }
+
+                // 행 시작 Y 위치 (CSS px)
+                const lineYs = rowBoundaries.map(y => y / dpr);
+
                 return {
-                    rowHeight: rowHeightCss,  // CSS px (현재 zoom 기준)
-                    lineCount: darkLines.length,
+                    rowHeight: realRowHeightCss,
+                    lineCount: rowBoundaries.length,
                     lineYs
                 };
             } catch(e) {
