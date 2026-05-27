@@ -2,6 +2,7 @@
 @inject HttpClient Http
 @inject IJSRuntime JS
 @inject AuthService Auth
+@inject StorageService Storage
 
 <div class="page-header">
     <div>
@@ -137,6 +138,26 @@
 
 </div>
 
+@if (_showImportModal)
+{
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
+        <div class="modal" style="max-width:360px;text-align:center;" @onclick:stopPropagation="true">
+            <div style="font-size:2rem;margin-bottom:12px;">📥</div>
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">어떻게 불러올까요?</div>
+            <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:20px;line-height:1.6;">
+                <b>덮어쓰기</b>는 현재 데이터를 파일 내용으로 완전히 교체해요.<br/>
+                <b>합치기</b>는 현재 데이터를 유지하면서 파일 내용을 추가해요.<br/>
+                <span style="color:#c05050;">중복 항목은 파일 쪽이 우선돼요.</span>
+            </div>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button class="btn btn-ghost" @onclick="() => { _showImportModal = false; _importDoc = null; }">취소</button>
+                <button class="btn btn-secondary" @onclick="() => ExecuteImport(true)">합치기</button>
+                <button class="btn btn-primary" @onclick="() => ExecuteImport(false)">덮어쓰기</button>
+            </div>
+        </div>
+    </div>
+}
+
 <style>
     .import-msg-ok    { background: var(--theme-pale); color: var(--text-dark); }
     .import-msg-error { background: #ffe0e0; color: #c00; }
@@ -172,6 +193,8 @@
     bool _debugMode = false;
     string _importMsg = "";
     bool _importError = false;
+    bool _showImportModal = false;
+    System.Text.Json.JsonDocument? _importDoc = null;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -217,7 +240,7 @@
         _importError = false;
         try
         {
-            using var stream = e.File.OpenReadStream(50 * 1024 * 1024); // 50MB
+            using var stream = e.File.OpenReadStream(50 * 1024 * 1024);
             using var ms = new System.IO.MemoryStream();
             await stream.CopyToAsync(ms);
             var json = System.Text.Encoding.UTF8.GetString(ms.ToArray()).Trim();
@@ -228,36 +251,102 @@
                 StateHasChanged();
                 return;
             }
-            var doc = System.Text.Json.JsonDocument.Parse(json);
+            // 파일 파싱만 해두고 팝업으로 선택 받기
+            _importDoc = System.Text.Json.JsonDocument.Parse(json);
+            _showImportModal = true;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _importMsg = "❌ 오류: " + ex.Message;
+            _importError = true;
+            StateHasChanged();
+        }
+    }
+
+    async Task ExecuteImport(bool merge)
+    {
+        _showImportModal = false;
+        if (_importDoc == null) return;
+        try
+        {
             var keys = new[] { "knittracker_projects", "knittracker_yarns", "knittracker_tools", "knittracker_swatches", "knitlog_todos" };
             int count = 0;
-            foreach (var key in keys)
+
+            if (merge)
             {
-                if (doc.RootElement.TryGetProperty(key, out var val))
+                // ── 합치기: Id 기준 merge, 파일 쪽 우선 ──
+                foreach (var key in keys)
                 {
-                    await JS.InvokeVoidAsync("localStorage.setItem", key, val.GetRawText());
+                    if (!_importDoc.RootElement.TryGetProperty(key, out var fileVal)) continue;
+
+                    var localJson = await JS.InvokeAsync<string?>("localStorage.getItem", key);
+                    var localArr  = string.IsNullOrEmpty(localJson)
+                        ? new List<System.Text.Json.JsonElement>()
+                        : System.Text.Json.JsonSerializer.Deserialize<List<System.Text.Json.JsonElement>>(localJson) ?? new();
+                    var fileArr   = System.Text.Json.JsonSerializer.Deserialize<List<System.Text.Json.JsonElement>>(fileVal.GetRawText()) ?? new();
+
+                    // Id 기준 merge (파일 우선)
+                    var merged = new Dictionary<string, System.Text.Json.JsonElement>();
+                    foreach (var item in localArr)
+                    {
+                        var id = GetItemId(item);
+                        if (id != null) merged[id] = item;
+                    }
+                    foreach (var item in fileArr)
+                    {
+                        var id = GetItemId(item);
+                        if (id != null) merged[id] = item;
+                        else merged[Guid.NewGuid().ToString()] = item;
+                    }
+
+                    var mergedJson = System.Text.Json.JsonSerializer.Serialize(merged.Values.ToList());
+                    await JS.InvokeVoidAsync("localStorage.setItem", key, mergedJson);
                     count++;
                 }
             }
-            // IndexedDB PDF 복원
-            if (doc.RootElement.TryGetProperty("knitlog_pdfs", out var pdfs))
+            else
+            {
+                // ── 덮어쓰기 ──
+                foreach (var key in keys)
+                {
+                    if (_importDoc.RootElement.TryGetProperty(key, out var val))
+                    {
+                        await JS.InvokeVoidAsync("localStorage.setItem", key, val.GetRawText());
+                        count++;
+                    }
+                }
+            }
+
+            // PDF 복원 (공통)
+            if (_importDoc.RootElement.TryGetProperty("knitlog_pdfs", out var pdfs))
             {
                 try
                 {
-                    // GetRawText()는 JSON 객체 문자열 → importAllPdfs는 JSON.parse()하므로 그대로 전달
                     var ok = await JS.InvokeAsync<bool>("patternViewer.importAllPdfs", pdfs.GetRawText());
                     if (ok) count++;
                 }
                 catch { }
             }
-            _importMsg = $"✅ 불러오기 완료! ({count}가지 데이터) 앱을 다시 시작하면 반영돼요.";
+
+            _importMsg = $"✅ {(merge ? "합치기" : "덮어쓰기")} 완료! ({count}가지 데이터) 앱을 다시 시작하면 반영돼요.";
+            try { await Storage.PushLocalToFirebaseAsync(); } catch { }
         }
         catch (Exception ex)
         {
             _importMsg = "❌ 오류: " + ex.Message;
             _importError = true;
         }
+        _importDoc = null;
         StateHasChanged();
+    }
+
+    static string? GetItemId(System.Text.Json.JsonElement el)
+    {
+        foreach (var key in new[] { "Id", "id" })
+            if (el.TryGetProperty(key, out var v))
+                return v.ValueKind == System.Text.Json.JsonValueKind.String ? v.GetString() : v.ToString();
+        return null;
     }
 
     async Task SignIn() => await Auth.SignInWithGoogleAsync();
