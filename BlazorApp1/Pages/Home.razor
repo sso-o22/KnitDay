@@ -89,10 +89,26 @@ else
             @foreach (var proj in _recentProjects)
             {
                 <div class="card">
-                    <div class="card-title">@proj.Title</div>
+                    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
+                        <div class="card-title" style="margin-bottom:0;">@proj.Title</div>
+                        @if (proj.EndDate.HasValue)
+                        {
+                            var days = (proj.EndDate.Value.Date - DateTime.Today).Days;
+                            var (ddayText, ddayColor) = days switch
+                            {
+                                < 0  => ($"D+{-days}", "#aaa"),
+                                0    => ("D-Day", "#e05050"),
+                                <= 7 => ($"D-{days}", "#e05050"),
+                                _    => ($"D-{days}", "var(--theme-active)")
+                            };
+                            <span style="font-size:0.75rem; font-weight:700; color:@ddayColor;
+                                         background:var(--theme-pale); border-radius:20px;
+                                         padding:2px 8px; white-space:nowrap; flex-shrink:0;">@ddayText</span>
+                        }
+                    </div>
                     @if (!string.IsNullOrEmpty(proj.PatternName))
                     {
-                        <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:8px;">도안: @proj.PatternName</div>
+                        <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:8px; margin-top:4px;">도안: @proj.PatternName</div>
                     }
                     @if (proj.StartDate.HasValue)
                     {

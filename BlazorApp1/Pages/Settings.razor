@@ -1,4 +1,5 @@
 @page "/settings"
+@inject HttpClient Http
 @inject IJSRuntime JS
 @inject AuthService Auth
 
@@ -111,7 +112,28 @@
         }
     </div>
 
-
+    <!-- 버전 정보 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:12px;">🆕 앱 정보</div>
+        @if (_versionInfo != null)
+        {
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                <span style="font-size:0.92rem; font-weight:600; color:var(--text-dark);">니트로그 v@(_versionInfo.Version)</span>
+                <span style="font-size:0.78rem; color:var(--text-light);">@(_versionInfo.Date)</span>
+            </div>
+            <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:6px;">이번 업데이트</div>
+            <ul style="margin:0; padding-left:18px; display:flex; flex-direction:column; gap:4px;">
+                @foreach (var item in _versionInfo.Updates)
+                {
+                    <li style="font-size:0.85rem; color:var(--text-dark);">@item</li>
+                }
+            </ul>
+        }
+        else
+        {
+            <div style="font-size:0.85rem; color:var(--text-light);">버전 정보를 불러오는 중...</div>
+        }
+    </div>
 
 </div>
 
@@ -121,6 +143,18 @@
 </style>
 
 @code {
+    class VersionInfo
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("version")]
+        public string Version { get; set; } = "";
+        [System.Text.Json.Serialization.JsonPropertyName("date")]
+        public string Date { get; set; } = "";
+        [System.Text.Json.Serialization.JsonPropertyName("updates")]
+        public List<string> Updates { get; set; } = new();
+    }
+
+    VersionInfo? _versionInfo;
+
     record ThemeOption(string Id, string Name, string DotColor);
 
     readonly List<ThemeOption> _themes = new()
@@ -149,6 +183,11 @@
             _isDark = dark == "true";
             var debug = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_debug");
             _debugMode = debug == "1";
+            try
+            {
+                _versionInfo = await Http.GetFromJsonAsync<VersionInfo>("version.json");
+            }
+            catch { }
             StateHasChanged();
         }
     }
