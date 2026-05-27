@@ -758,62 +758,100 @@ window.patternViewer = (() => {
             } catch(e) { console.error(e); return false; }
         },
 
-        // ── 행 높이 자동 감지 (텍스트 줄 간격 기반) ──────────────
+        // ── 행 높이 자동 감지 ──────────────────────────────────────
+        // 전략: 수평선(격자선) 사이의 여백(흰 줄) 간격으로 행 높이 계산
         detectRowHeight(pageNum) {
             try {
                 const canvas = document.getElementById('pdf-canvas-' + pageNum);
                 if (!canvas) return { rowHeight: 0, lineCount: 0, lineYs: [] };
                 const ctx = canvas.getContext('2d');
                 const w = canvas.width, h = canvas.height;
-                const data = ctx.getImageData(0, 0, w, h).data;
                 const dpr = window.devicePixelRatio || 1;
                 const zoom = currentZoom || 1;
 
-                // 각 Y 행의 잉크 픽셀 비율 (흰색이 아닌 픽셀)
-                const inkRatios = new Float32Array(h);
+                // 왼쪽 10% 영역만 스캔 (숫자 라벨 열 - 행 경계가 가장 명확)
+                const scanW = Math.max(Math.floor(w * 0.10), 20);
+                const data = ctx.getImageData(0, 0, scanW, h).data;
+
+                // Y별 평균 밝기
+                const brightness = new Float32Array(h);
                 for (let y = 0; y < h; y++) {
-                    let ink = 0;
-                    for (let x = 0; x < w; x++) {
-                        const i = (y * w + x) * 4;
-                        const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
-                        if (brightness < 200) ink++;
+                    let sum = 0;
+                    for (let x = 0; x < scanW; x++) {
+                        const i = (y * scanW + x) * 4;
+                        sum += (data[i] + data[i+1] + data[i+2]) / 3;
                     }
-                    inkRatios[y] = ink / w;
+                    brightness[y] = sum / scanW;
                 }
 
-                // 잉크 구간(텍스트 행) 감지
-                const threshold = 0.01;
-                const rowBands = [];
-                let inBand = false, bandStart = 0;
-                for (let y = 0; y < h; y++) {
-                    if (!inBand && inkRatios[y] > threshold) {
-                        inBand = true; bandStart = y;
-                    } else if (inBand && inkRatios[y] <= threshold) {
-                        inBand = false;
-                        rowBands.push({ start: bandStart, end: y, center: (bandStart + y) / 2 });
+                // 밝기 히스토그램으로 "밝은 행(여백)"과 "어두운 행(내용/선)" 구분
+                // 여백 행: 밝기 > 230 (거의 흰색)
+                const isLight = new Uint8Array(h);
+                for (let y = 0; y < h; y++) isLight[y] = brightness[y] > 230 ? 1 : 0;
+
+                // 어두운 구간(격자선 + 내용)의 시작점을 행 시작으로 판단
+                // 연속된 어두운 픽셀 묶음 = 한 행
+                const rowStarts = [];
+                let prevLight = true;
+                for (let y = 1; y < h; y++) {
+                    if (prevLight && !isLight[y]) {
+                        rowStarts.push(y); // 밝음→어두움 전환 = 행 시작
                     }
+                    prevLight = isLight[y] === 1;
                 }
-                if (inBand) rowBands.push({ start: bandStart, end: h, center: (bandStart + h) / 2 });
 
-                if (rowBands.length < 3) return { rowHeight: 0, lineCount: rowBands.length, lineYs: [] };
+                if (rowStarts.length < 3) {
+                    // fallback: 전체 너비로 재시도, threshold 낮춤
+                    const data2 = ctx.getImageData(0, 0, w, h).data;
+                    const ink = new Float32Array(h);
+                    for (let y = 0; y < h; y++) {
+                        let c = 0;
+                        for (let x = 0; x < w; x++) {
+                            const i = (y * w + x) * 4;
+                            if ((data2[i] + data2[i+1] + data2[i+2]) / 3 < 180) c++;
+                        }
+                        ink[y] = c / w;
+                    }
+                    const bands = [];
+                    let inB = false, bs = 0;
+                    for (let y = 0; y < h; y++) {
+                        if (!inB && ink[y] > 0.005) { inB = true; bs = y; }
+                        else if (inB && ink[y] <= 0.005) {
+                            inB = false;
+                            bands.push({ start: bs, end: y, center: (bs + y) / 2 });
+                        }
+                    }
+                    if (inB) bands.push({ start: bs, end: h, center: (bs + h) / 2 });
+                    if (bands.length < 3) return { rowHeight: 0, lineCount: bands.length, lineYs: [] };
+                    const gaps2 = [];
+                    for (let i = 1; i < bands.length; i++) gaps2.push(bands[i].center - bands[i-1].center);
+                    gaps2.sort((a, b) => a - b);
+                    const med = gaps2[Math.floor(gaps2.length / 2)];
+                    const filt = gaps2.filter(g => g > med * 0.6 && g < med * 1.4);
+                    const avg = filt.length > 0 ? filt.reduce((a,b) => a+b, 0) / filt.length : med;
+                    return {
+                        rowHeight: avg / (dpr * zoom),
+                        lineCount: bands.length,
+                        lineYs: bands.map(b => b.start / (dpr * zoom))
+                    };
+                }
 
-                // 인접 밴드 중심 간격의 중앙값
+                // 행 시작점 간격의 중앙값
                 const gaps = [];
-                for (let i = 1; i < rowBands.length; i++)
-                    gaps.push(rowBands[i].center - rowBands[i-1].center);
+                for (let i = 1; i < rowStarts.length; i++)
+                    gaps.push(rowStarts[i] - rowStarts[i-1]);
                 gaps.sort((a, b) => a - b);
-                const medianGap = gaps[Math.floor(gaps.length / 2)];
+                const med = gaps[Math.floor(gaps.length / 2)];
 
-                // 이상치 제거 후 평균
-                const filtered = gaps.filter(g => g > medianGap * 0.5 && g < medianGap * 1.5);
-                const avgGap = filtered.length > 0
-                    ? filtered.reduce((a, b) => a + b, 0) / filtered.length
-                    : medianGap;
+                // 이상치 제거 (중앙값 60~140% 범위)
+                const filtered = gaps.filter(g => g > med * 0.6 && g < med * 1.4);
+                const avg = filtered.length > 0
+                    ? filtered.reduce((a, b) => a + b, 0) / filtered.length : med;
 
-                const rowHeightPx = avgGap / (dpr * zoom);
-                const lineYs = rowBands.map(b => b.start / (dpr * zoom));
+                const rowHeightPx = avg / (dpr * zoom);
+                const lineYs = rowStarts.map(y => y / (dpr * zoom));
 
-                return { rowHeight: rowHeightPx, lineCount: rowBands.length, lineYs };
+                return { rowHeight: rowHeightPx, lineCount: rowStarts.length, lineYs };
             } catch(e) {
                 console.error('detectRowHeight error:', e);
                 return { rowHeight: 0, lineCount: 0, lineYs: [] };
@@ -823,6 +861,24 @@ window.patternViewer = (() => {
         // 페이지 너비 반환 (zoom=1 기준 px)
         getPageWidth(pageNum) {
             return getPageOrigW(pageNum);
+        },
+
+        // 이미지 크기 반환
+        getImageSize(imgId) {
+            const img = document.getElementById(imgId);
+            if (!img) return [0, 0];
+            return [img.naturalWidth, img.naturalHeight];
+        },
+
+        // anno-canvas 크기 조정 (이미지 모드용)
+        resizeAnnoCanvas(pageNum, w, h) {
+            const anno = document.getElementById('anno-canvas-' + pageNum);
+            if (!anno) return;
+            const dpr = window.devicePixelRatio || 1;
+            anno.width  = Math.round(w * dpr);
+            anno.height = Math.round(h * dpr);
+            anno.style.width  = w + 'px';
+            anno.style.height = h + 'px';
         }
     };
 })();
