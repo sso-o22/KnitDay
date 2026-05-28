@@ -844,22 +844,31 @@ window.patternViewer = (() => {
 
                 console.log(`[행감지] avgGap=${avgGap.toFixed(1)}buf_px → CSS ${(avgGap * bufToCss).toFixed(1)}px`);
 
-                // gap 분포에서 실제 행 높이 배수 자동 탐지
-                // avgGap은 격자선 최소 단위. 실제 행 = avgGap * N배 (N=1,2,3...)
-                // gaps 중 avgGap * N ± 20% 범위에 몰려 있는 N을 찾는다
+                // gap 분포에서 실제 행 높이 직접 탐지
+                // 모든 gap을 히스토그램으로 만들어 가장 뚜렷한 피크(= 실제 행 높이) 찾기
                 const allGaps = [];
                 for (let i = 1; i < darkLines.length; i++)
                     allGaps.push(darkLines[i] - darkLines[i-1]);
 
-                let bestN = 1, bestCount = 0;
-                for (let n = 1; n <= 8; n++) {
-                    const lo = avgGap * n * 0.75, hi = avgGap * n * 1.25;
-                    const cnt = allGaps.filter(g => g >= lo && g <= hi).length;
-                    if (cnt > bestCount) { bestCount = cnt; bestN = n; }
+                // 히스토그램: 1px 버킷
+                const maxGap = Math.max(...allGaps);
+                const hist = new Float32Array(maxGap + 2);
+                const sigma = Math.max(1.5, avgGap * 0.15); // 가우시안 스무딩
+                for (const g of allGaps) {
+                    for (let b = Math.max(1, g - Math.ceil(sigma*3)); b <= Math.min(maxGap, g + Math.ceil(sigma*3)); b++) {
+                        hist[b] += Math.exp(-0.5 * ((b - g) / sigma) ** 2);
+                    }
                 }
-                const rowUnitGap = avgGap * bestN; // buffer px 기준 실제 행 높이
 
-                console.log(`[행감지] bestN=${bestN}, rowUnitGap=${rowUnitGap.toFixed(1)}buf_px → CSS ${(rowUnitGap * bufToCss).toFixed(1)}px`);
+                // avgGap * 1.5 이상 구간에서 피크 찾기 (격자선 내부 간격 제외)
+                const searchFrom = Math.floor(avgGap * 1.5);
+                let peakVal = 0, peakIdx = searchFrom;
+                for (let b = searchFrom; b <= maxGap; b++) {
+                    if (hist[b] > peakVal) { peakVal = hist[b]; peakIdx = b; }
+                }
+                const rowUnitGap = peakIdx; // buffer px 기준 실제 행 높이
+
+                console.log(`[행감지] rowUnitGap=${rowUnitGap}buf_px → CSS ${(rowUnitGap * bufToCss).toFixed(1)}px (peak@${peakIdx})`);
 
                 // rowUnitGap * 0.7 이상 간격인 darkLines만 행 경계로 채택
                 const trueRowBoundaries = [darkLines[0]];
