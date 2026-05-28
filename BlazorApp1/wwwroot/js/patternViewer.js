@@ -762,7 +762,7 @@ window.patternViewer = (() => {
             try {
                 const canvas = document.getElementById('pdf-canvas-' + pageNum);
                 if (!canvas) return { rowHeight: 0, lineCount: 0, lineYs: [] };
-                const ctx = canvas.getContext('2d');
+                const ctx = canvas.getContext('2d', { willReadFrequently: true });
                 const dpr  = window.devicePixelRatio || 1;
                 // canvas buffer px — viewport scale = zoom*dpr, CSS 크기는 zoom 기준
                 // buffer(px) = cssSize * dpr  →  buffer → CSS 변환은 ÷ dpr
@@ -842,58 +842,36 @@ window.patternViewer = (() => {
                     ? filtered.reduce((a, b) => a + b, 0) / filtered.length
                     : median;
 
-                // CSS px 단위로 변환 (buffer → CSS)
-                const rowHeightCss = avgGap * bufToCss;
+                console.log(`[행감지] avgGap=${avgGap.toFixed(1)}buf_px → CSS ${(avgGap * bufToCss).toFixed(1)}px`);
 
-                console.log(`[행감지] avgGap=${avgGap.toFixed(1)}buf_px → CSS ${rowHeightCss.toFixed(1)}px`);
+                // gap 분포에서 실제 행 높이 배수 자동 탐지
+                // avgGap은 격자선 최소 단위. 실제 행 = avgGap * N배 (N=1,2,3...)
+                // gaps 중 avgGap * N ± 20% 범위에 몰려 있는 N을 찾는다
+                const allGaps = [];
+                for (let i = 1; i < darkLines.length; i++)
+                    allGaps.push(darkLines[i] - darkLines[i-1]);
 
-                // darkLines에서 실제 행 경계만 추출
-                // avgGap보다 훨씬 가까운 줄들은 같은 행의 내부 격자선 → 병합
-                // 실제 행 높이 = 행당 격자선 수 * avgGap
-                // 방법: avgGap * 1.5 이상 벌어진 경우만 행 경계로 인정
-                const minRowGap = avgGap * 2.2; // 이 간격 이상이면 다음 행
-                const rowBoundaries = [darkLines[0]]; // 첫 번째 줄은 무조건 포함
+                let bestN = 1, bestCount = 0;
+                for (let n = 1; n <= 8; n++) {
+                    const lo = avgGap * n * 0.75, hi = avgGap * n * 1.25;
+                    const cnt = allGaps.filter(g => g >= lo && g <= hi).length;
+                    if (cnt > bestCount) { bestCount = cnt; bestN = n; }
+                }
+                const rowUnitGap = avgGap * bestN; // buffer px 기준 실제 행 높이
+
+                console.log(`[행감지] bestN=${bestN}, rowUnitGap=${rowUnitGap.toFixed(1)}buf_px → CSS ${(rowUnitGap * bufToCss).toFixed(1)}px`);
+
+                // rowUnitGap * 0.7 이상 간격인 darkLines만 행 경계로 채택
+                const trueRowBoundaries = [darkLines[0]];
+                let lastAccepted = darkLines[0];
                 for (let i = 1; i < darkLines.length; i++) {
-                    if (darkLines[i] - rowBoundaries[rowBoundaries.length - 1] >= minRowGap) {
-                        rowBoundaries.push(darkLines[i]);
+                    if (darkLines[i] - lastAccepted >= rowUnitGap * 0.7) {
+                        trueRowBoundaries.push(darkLines[i]);
+                        lastAccepted = darkLines[i];
                     }
                 }
 
-                // 행 경계 간격으로 실제 행 높이 재계산
-                let realRowHeightCss = rowHeightCss;
-                if (rowBoundaries.length >= 3) {
-                    const rowGaps = [];
-                    for (let i = 1; i < rowBoundaries.length; i++)
-                        rowGaps.push(rowBoundaries[i] - rowBoundaries[i-1]);
-                    rowGaps.sort((a, b) => a - b);
-                    const rowMedian = rowGaps[Math.floor(rowGaps.length / 2)];
-                    const rowFiltered = rowGaps.filter(g => g > rowMedian * 0.6 && g < rowMedian * 1.4);
-                    const rowAvg = rowFiltered.length > 0
-                        ? rowFiltered.reduce((a, b) => a + b, 0) / rowFiltered.length
-                        : rowMedian;
-                    realRowHeightCss = rowAvg * bufToCss;
-                    console.log(`[행감지] 행경계 ${rowBoundaries.length}개, 실제행높이=${realRowHeightCss.toFixed(1)}px`);
-                }
-
-                // rowBoundaries 간격 분포에서 최빈값(mode) 찾기
-                // → 행 높이의 정수배인 경계들을 제거해서 실제 행만 남김
-                const rowGapsAll = [];
-                for (let i = 1; i < rowBoundaries.length; i++)
-                    rowGapsAll.push(rowBoundaries[i] - rowBoundaries[i-1]);
-                rowGapsAll.sort((a, b) => a - b);
-                const rowMedianFinal = rowGapsAll[Math.floor(rowGapsAll.length / 2)];
-
-                // 실제 행 경계: rowMedianFinal * 0.7 이상 간격인 것만 (작은 노이즈 제거)
-                const trueRowBoundaries = [rowBoundaries[0]];
-                let lastAccepted = rowBoundaries[0];
-                for (let i = 1; i < rowBoundaries.length; i++) {
-                    if (rowBoundaries[i] - lastAccepted >= rowMedianFinal * 0.7) {
-                        trueRowBoundaries.push(rowBoundaries[i]);
-                        lastAccepted = rowBoundaries[i];
-                    }
-                }
-
-                // 진짜 행 높이 재계산
+                // 최종 행 높이: trueRowBoundaries 간격 중앙값
                 const trueGaps = [];
                 for (let i = 1; i < trueRowBoundaries.length; i++)
                     trueGaps.push(trueRowBoundaries[i] - trueRowBoundaries[i-1]);
@@ -905,8 +883,6 @@ window.patternViewer = (() => {
                     : trueMedian;
                 const finalRowHeightCss = trueAvg * bufToCss;
 
-                const firstY = trueRowBoundaries[0] * bufToCss;
-                const lastY  = trueRowBoundaries[trueRowBoundaries.length - 1] * bufToCss;
                 // 실제 감지된 행 경계 좌표를 그대로 사용 (등간격 보간 대신)
                 const lineYs = trueRowBoundaries.map(y => y * bufToCss);
 
