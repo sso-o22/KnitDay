@@ -763,12 +763,15 @@ window.patternViewer = (() => {
                 const canvas = document.getElementById('pdf-canvas-' + pageNum);
                 if (!canvas) return { rowHeight: 0, lineCount: 0, lineYs: [] };
                 const ctx = canvas.getContext('2d');
-                const dpr = window.devicePixelRatio || 1;
-                // canvas buffer px (dpr 배율 적용됨)
+                const dpr  = window.devicePixelRatio || 1;
+                const zoom = currentZoom || 1;
+                // canvas buffer px — 이제 viewport scale = zoom*dpr 이므로 buffer = cssSize * zoom * dpr
                 const bw = canvas.width, bh = canvas.height;
                 // CSS px (화면에서 보이는 크기)
-                const cssW = canvas.offsetWidth || bw / dpr;
-                const cssH = canvas.offsetHeight || bh / dpr;
+                const cssW = canvas.offsetWidth  || bw / (zoom * dpr);
+                const cssH = canvas.offsetHeight || bh / (zoom * dpr);
+                // buffer → CSS px 변환 계수
+                const bufToCss = 1 / (zoom * dpr);
 
                 // 도안 내용이 있는 중앙 영역만 스캔 (여백 제외)
                 // 가로: 잉크가 있는 구간 자동 감지
@@ -839,8 +842,8 @@ window.patternViewer = (() => {
                     ? filtered.reduce((a, b) => a + b, 0) / filtered.length
                     : median;
 
-                // CSS px 단위로 변환 (÷ dpr)
-                const rowHeightCss = avgGap / dpr;
+                // CSS px 단위로 변환 (buffer → CSS)
+                const rowHeightCss = avgGap * bufToCss;
 
                 console.log(`[행감지] avgGap=${avgGap.toFixed(1)}buf_px → CSS ${rowHeightCss.toFixed(1)}px`);
 
@@ -868,7 +871,7 @@ window.patternViewer = (() => {
                     const rowAvg = rowFiltered.length > 0
                         ? rowFiltered.reduce((a, b) => a + b, 0) / rowFiltered.length
                         : rowMedian;
-                    realRowHeightCss = rowAvg / dpr;
+                    realRowHeightCss = rowAvg * bufToCss;
                     console.log(`[행감지] 행경계 ${rowBoundaries.length}개, 실제행높이=${realRowHeightCss.toFixed(1)}px`);
                 }
 
@@ -900,14 +903,12 @@ window.patternViewer = (() => {
                 const trueAvg = trueFiltered.length > 0
                     ? trueFiltered.reduce((a, b) => a + b, 0) / trueFiltered.length
                     : trueMedian;
-                const finalRowHeightCss = trueAvg / dpr;
+                const finalRowHeightCss = trueAvg * bufToCss;
 
-                const firstY = trueRowBoundaries[0] / dpr;
-                const lastY  = trueRowBoundaries[trueRowBoundaries.length - 1] / dpr;
-                const lineYs = [];
-                for (let y = firstY; y <= lastY + finalRowHeightCss * 0.5; y += finalRowHeightCss) {
-                    lineYs.push(y);
-                }
+                const firstY = trueRowBoundaries[0] * bufToCss;
+                const lastY  = trueRowBoundaries[trueRowBoundaries.length - 1] * bufToCss;
+                // 실제 감지된 행 경계 좌표를 그대로 사용 (등간격 보간 대신)
+                const lineYs = trueRowBoundaries.map(y => y * bufToCss);
 
                 console.log(`[행감지] 최종 행경계 ${trueRowBoundaries.length}개, 높이=${finalRowHeightCss.toFixed(1)}px, lineYs=${lineYs.length}개`);
 
