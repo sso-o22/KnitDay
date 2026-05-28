@@ -314,12 +314,28 @@ window.patternViewer = (() => {
         const ctx = anno.getContext('2d');
         ctx.save();
         ctx.beginPath();
-        ctx.lineWidth  = path.size * 4 * currentZoom * dpr;
-        ctx.lineCap    = 'square';
-        ctx.lineJoin   = 'miter';
-        ctx.globalAlpha = 0.35;
-        ctx.strokeStyle = path.color;
-        ctx.globalCompositeOperation = 'multiply';
+        if (path.tool === 'highlighter') {
+            ctx.lineWidth  = path.size * 4 * currentZoom * dpr;
+            ctx.lineCap    = 'square';
+            ctx.lineJoin   = 'miter';
+            ctx.globalAlpha = 0.35;
+            ctx.strokeStyle = path.color;
+            ctx.globalCompositeOperation = 'multiply';
+        } else if (path.isEraser) {
+            ctx.lineWidth  = path.size * currentZoom * dpr;
+            ctx.lineCap    = 'round';
+            ctx.lineJoin   = 'round';
+            ctx.globalAlpha = 1.0;
+            ctx.strokeStyle = 'rgba(0,0,0,1)';
+            ctx.globalCompositeOperation = 'destination-out';
+        } else {
+            ctx.lineWidth  = path.size * currentZoom * dpr;
+            ctx.lineCap    = 'round';
+            ctx.lineJoin   = 'round';
+            ctx.globalAlpha = path.opacity ?? 1.0;
+            ctx.strokeStyle = path.color;
+            ctx.globalCompositeOperation = 'source-over';
+        }
         ctx.moveTo(path.points[0].x * scaleX, path.points[0].y * scaleY);
         for (let i = 1; i < path.points.length; i++)
             ctx.lineTo(path.points[i].x * scaleX, path.points[i].y * scaleY);
