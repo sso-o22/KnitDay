@@ -62,26 +62,47 @@
                             <div style="position:absolute;left:@(Math.Min(_rulerStartX,_rulerStartX+_previewW))px;top:@(Math.Min(_rulerStartY,_rulerStartY+_previewH))px;width:@(Math.Abs(_previewW))px;height:@(Math.Abs(_previewH))px;border:2px dashed rgba(0,0,0,0.5);pointer-events:none;z-index:20;"></div>
                         }
 
-                        @* ── 행 높이 수동 지정 드래그 오버레이 ── *@
+                        @* ── 행 높이 수동 지정: 두 선 드래그 ── *@
                         @if (_tool == "rowheightdraw" && _rowDrawPage == pageNum)
                         {
-                            <div id="rowdraw-capture-@pageNum"
-                                 style="position:absolute;inset:0;cursor:ns-resize;z-index:30;touch-action:none;"
-                                 @onmousedown="e => OnRowDrawMouseDown(e, pageNum)"
-                                 @onmousedown:preventDefault="true">
+                            @* 선 A *@
+                            <div id="rowdraw-line-a-@pageNum"
+                                 style="position:absolute;left:0;top:@(_rowLineAY)px;width:100%;height:12px;
+                                        margin-top:-6px;cursor:ns-resize;z-index:32;touch-action:none;
+                                        display:flex;align-items:center;">
+                                <div style="width:100%;height:2px;background:rgba(30,120,255,0.9);pointer-events:none;"></div>
                             </div>
-                            @* 오버레이 rect는 JS가 직접 조작 *@
-                            <div id="rowdraw-overlay-@pageNum"
-                                 style="display:none;position:absolute;left:0;top:0;width:100%;height:0;
-                                        background:rgba(80,160,255,0.25);
-                                        border-top:2px solid rgba(80,160,255,0.9);
-                                        border-bottom:2px solid rgba(80,160,255,0.9);
-                                        pointer-events:none;z-index:31;">
-                                <span id="rowdraw-label-@pageNum"
-                                      style="position:absolute;right:6px;top:50%;transform:translateY(-50%);
-                                             font-size:10px;font-weight:700;color:rgba(30,80,200,0.9);
-                                             background:rgba(255,255,255,0.8);border-radius:3px;padding:1px 4px;"></span>
+                            @* 선 B *@
+                            <div id="rowdraw-line-b-@pageNum"
+                                 style="position:absolute;left:0;top:@(_rowLineBY)px;width:100%;height:12px;
+                                        margin-top:-6px;cursor:ns-resize;z-index:32;touch-action:none;
+                                        display:flex;align-items:center;">
+                                <div style="width:100%;height:2px;background:rgba(255,80,30,0.9);pointer-events:none;"></div>
                             </div>
+                            @* 두 선 사이 영역 + 거리 표시 *@
+                            <div style="position:absolute;left:0;top:@(Math.Min(_rowLineAY, _rowLineBY))px;width:100%;height:@(Math.Abs(_rowLineAY - _rowLineBY))px;
+                                        background:rgba(80,160,255,0.12);pointer-events:none;z-index:31;">
+                                @if (Math.Abs(_rowLineAY - _rowLineBY) > 14)
+                                {
+                                    <span style="position:absolute;right:8px;top:50%;transform:translateY(-50%);
+                                                 font-size:11px;font-weight:700;color:rgba(30,80,200,0.95);
+                                                 background:rgba(255,255,255,0.85);border-radius:4px;padding:2px 5px;">
+                                        @($"{Math.Abs(_rowLineAY - _rowLineBY) / _zoom:F1}px")
+                                    </span>
+                                }
+                            </div>
+                            @* 확인 버튼 *@
+                            @if (Math.Abs(_rowLineAY - _rowLineBY) > 4)
+                            {
+                                <div style="position:absolute;right:8px;bottom:8px;z-index:35;">
+                                    <button style="background:#2979ff;color:#fff;border:none;border-radius:20px;
+                                                   padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;
+                                                   box-shadow:0 2px 8px rgba(0,0,0,0.25);"
+                                            @onclick="ConfirmRowHeightLines" @onclick:stopPropagation="true">
+                                        ✓ 적용
+                                    </button>
+                                </div>
+                            }
                         }
                         @if (_showPreviewLines && _detectPage == pageNum)
                         {
@@ -1278,68 +1299,52 @@
     bool _showPreviewLines = false;
     int _detectPage = 0;
 
-    // ── 수동 행 높이 드래그 지정 ──────────────────────────────────────
-    int    _rowDrawPage    = 0;
-    bool   _rowDrawing     = false;
-    double _rowDrawStartY  = 0;
-    double _rowDrawH       = 0;
-    double _rowDrawClientY0 = 0; // mousedown clientY
+    // ── 수동 행 높이: 두 선 드래그 ───────────────────────────────────
+    int    _rowDrawPage  = 0;
+    double _rowLineAY    = 100; // CSS px, canvas 기준 (zoom 반영)
+    double _rowLineBY    = 160; // CSS px, canvas 기준 (zoom 반영)
 
     void StartRowHeightDraw()
     {
-        _tool = "rowheightdraw";
+        _tool        = "rowheightdraw";
         _rowDrawPage = _currentPage;
-        _rowDrawing  = false;
-        _rowDrawH    = 0;
-        StateHasChanged();
-    }
-
-    async Task OnRowDrawMouseDown(MouseEventArgs e, int pageNum)
-    {
-        _rowDrawing      = true;
-        _rowDrawClientY0 = e.ClientY;
-        // 오버레이 표시용: canvas 기준 CSS Y
-        _rowDrawStartY   = await JS.InvokeAsync<double>("patternViewer.getCanvasCssY", pageNum, e.ClientY);
-        _rowDrawH        = 0;
-        await JS.InvokeVoidAsync("patternViewer.startRowDraw", pageNum, e.ClientY,
-                                 DotNetObjectReference.Create(this));
+        // 현재 보이는 스크롤 중앙 근처에 두 선 배치
+        var center = 200 * _zoom; // 임시 기본값; JS에서 스크롤 중앙으로 이동
+        _rowLineAY   = center;
+        _rowLineBY   = center + 40 * _zoom;
+        _ = JS.InvokeVoidAsync("patternViewer.initRowLines", _currentPage,
+                               DotNetObjectReference.Create(this));
         StateHasChanged();
     }
 
     [JSInvokable]
-    public async Task OnRowDrawEnd(double clientY)
+    public void SetRowLineAY(double y) { _rowLineAY = y; StateHasChanged(); }
+    [JSInvokable]
+    public void SetRowLineBY(double y) { _rowLineBY = y; StateHasChanged(); }
+
+    async Task ConfirmRowHeightLines()
     {
-        _rowDrawing = false;
-        var totalDy = Math.Abs(clientY - _rowDrawClientY0);
-        if (totalDy < 4) { StateHasChanged(); return; }
+        var rowHCss   = Math.Abs(_rowLineAY - _rowLineBY); // 현재 zoom 기준
+        if (rowHCss < 4) return;
 
-        // 드래그한 높이 → zoom=1 기준으로 저장
-        var rowHCss = totalDy;           // 현재 zoom 기준 CSS px
-        _detectedRowH = rowHCss / _zoom; // zoom=1 기준
+        _detectedRowH = rowHCss / _zoom; // zoom=1 기준 저장
+        var topCssY   = Math.Min(_rowLineAY, _rowLineBY);
+        var startY1   = topCssY / _zoom;
 
-        // 드래그 위쪽 끝의 CSS Y (canvas 기준)
-        var topClientY = Math.Min(_rowDrawClientY0, clientY);
-        var startCssY  = await JS.InvokeAsync<double>("patternViewer.getCanvasCssY", _rowDrawPage, topClientY);
-
-        // lineYs 생성: 지정한 행 높이로 페이지 전체를 등간격으로 채움
-        _pageWidth = await JS.InvokeAsync<double>("patternViewer.getPageWidth", _rowDrawPage);
+        _pageWidth  = await JS.InvokeAsync<double>("patternViewer.getPageWidth",  _rowDrawPage);
         var pageHCss = await JS.InvokeAsync<double>("patternViewer.getPageHeight", _rowDrawPage);
-        // 드래그 시작점 기준으로 위아래로 행 격자 채우기
-        var startY1 = startCssY / _zoom; // zoom=1 기준
+
         _previewLineYs.Clear();
-        // 위쪽으로 채우기
         for (var y = startY1; y >= 0; y -= _detectedRowH)
             _previewLineYs.Add(y);
-        // 아래쪽으로 채우기
         for (var y = startY1 + _detectedRowH; y < pageHCss / _zoom; y += _detectedRowH)
             _previewLineYs.Add(y);
         _previewLineYs.Sort();
+
         _detectedLineCount = _previewLineYs.Count;
         _detectPage        = _rowDrawPage;
         _showPreviewLines  = true;
-
-        _tool      = "rowmarker"; // 바로 마커 모드로 전환
-        _rowDrawH  = 0;
+        _tool              = "rowmarker";
         StateHasChanged();
     }
 
