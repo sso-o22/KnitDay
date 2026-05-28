@@ -797,156 +797,130 @@ window.patternViewer = (() => {
         },
 
         // ── 행 높이 자동 감지 ──────────────────────────────────────
-        // canvas에 렌더링된 실제 픽셀 기준으로 행 높이 감지
-        // rowHeight는 canvas CSS px 단위 (zoom=currentZoom 기준)
         detectRowHeight(pageNum) {
             try {
                 const canvas = document.getElementById('pdf-canvas-' + pageNum);
                 if (!canvas) return { rowHeight: 0, lineCount: 0, lineYs: [] };
                 const ctx = canvas.getContext('2d', { willReadFrequently: true });
-                const dpr  = window.devicePixelRatio || 1;
-                // canvas buffer px — viewport scale = zoom*dpr, CSS 크기는 zoom 기준
-                // buffer(px) = cssSize * dpr  →  buffer → CSS 변환은 ÷ dpr
-                const bw = canvas.width, bh = canvas.height;
-                // CSS px (화면에서 보이는 크기)
-                const cssW = canvas.offsetWidth  || bw / dpr;
-                const cssH = canvas.offsetHeight || bh / dpr;
-                // buffer → CSS px 변환 계수
+                const dpr     = window.devicePixelRatio || 1;
+                const bw      = canvas.width, bh = canvas.height;
                 const bufToCss = 1 / dpr;
 
-                // 도안 내용이 있는 중앙 영역만 스캔 (여백 제외)
-                // 가로: 잉크가 있는 구간 자동 감지
-                const fullData = ctx.getImageData(0, 0, bw, bh).data;
+                const imgData = ctx.getImageData(0, 0, bw, bh).data;
 
-                // X방향으로 잉크 있는 범위 찾기 (상단 30% 영역 샘플링)
-                const sampleH = Math.floor(bh * 0.3);
+                // ── 1. 잉크 있는 X 범위 찾기 ─────────────────────────────
+                const sampleH = Math.floor(bh * 0.4);
                 let xMin = bw, xMax = 0;
                 for (let y = 0; y < sampleH; y++) {
                     for (let x = 0; x < bw; x++) {
                         const i = (y * bw + x) * 4;
-                        const b = (fullData[i] + fullData[i+1] + fullData[i+2]) / 3;
-                        if (b < 240) { xMin = Math.min(xMin, x); xMax = Math.max(xMax, x); }
-                    }
-                }
-                // 여백이 많으면 잉크 있는 영역만, 없으면 전체 사용
-                const scanX0 = xMin < bw ? Math.max(0, xMin) : 0;
-                const scanX1 = xMax > 0 ? Math.min(bw, xMax + 1) : bw;
-                const scanW  = Math.max(scanX1 - scanX0, Math.floor(bw * 0.3));
-                const actualX0 = Math.max(0, Math.floor((scanX0 + scanX1) / 2) - Math.floor(scanW / 2));
-                const actualX1 = Math.min(bw, actualX0 + scanW);
-
-                // 밝기 프로파일 (잉크 범위만)
-                const data = ctx.getImageData(actualX0, 0, actualX1 - actualX0, bh).data;
-                const sw = actualX1 - actualX0;
-                const profile = new Float32Array(bh);
-                for (let y = 0; y < bh; y++) {
-                    let sum = 0;
-                    for (let x = 0; x < sw; x++) {
-                        const i = (y * sw + x) * 4;
-                        sum += (data[i] + data[i+1] + data[i+2]) / 3;
-                    }
-                    profile[y] = sum / sw;
-                }
-
-                // 어두운 줄 찾기
-                const sorted = Float32Array.from(profile).sort();
-                const p10 = sorted[Math.floor(bh * 0.10)];
-                const p90 = sorted[Math.floor(bh * 0.90)];
-                const threshold = p10 + (p90 - p10) * 0.35;
-
-                const darkLines = []; // buffer px 단위
-                for (let y = 1; y < bh - 1; y++) {
-                    if (profile[y] < threshold &&
-                        profile[y] <= profile[y-1] &&
-                        profile[y] <= profile[y+1]) {
-                        if (darkLines.length === 0 || y - darkLines[darkLines.length-1] > 2) {
-                            darkLines.push(y);
+                        if ((imgData[i]+imgData[i+1]+imgData[i+2])/3 < 200) {
+                            xMin = Math.min(xMin, x); xMax = Math.max(xMax, x);
                         }
                     }
                 }
+                if (xMax <= xMin) return { rowHeight: 0, lineCount: 0, lineYs: [] };
+                const inkW = xMax - xMin;
 
-                console.log(`[행감지] p10=${p10.toFixed(0)}, p90=${p90.toFixed(0)}, threshold=${threshold.toFixed(0)}`);
-                console.log(`[행감지] 어두운 줄 수: ${darkLines.length}, 처음 10개: ${darkLines.slice(0,10)}`);
+                // ── 2. 각 행(y)에서 "가로 연속 어두운 픽셀 비율" 계산 ───
+                // 행 경계선은 페이지 폭 전체를 가로지르므로 비율이 높음
+                // 격자 교차점, 문자, 기호는 국소적이라 비율이 낮음
+                const horizScore = new Float32Array(bh);
+                const threshold  = 180; // 어둡다고 볼 밝기 기준
+                for (let y = 0; y < bh; y++) {
+                    let darkCount = 0;
+                    for (let x = xMin; x <= xMax; x++) {
+                        const i = (y * bw + x) * 4;
+                        if ((imgData[i]+imgData[i+1]+imgData[i+2])/3 < threshold) darkCount++;
+                    }
+                    horizScore[y] = darkCount / inkW;
+                }
 
-                if (darkLines.length < 3) return { rowHeight: 0, lineCount: darkLines.length, lineYs: [] };
+                // ── 3. 점수 분포 파악 (상위 5%가 행 경계선 후보) ──────────
+                const scoresSorted = Float32Array.from(horizScore).sort().reverse();
+                // 점수가 높은 쪽 상위 5%의 최솟값을 문턱으로
+                const topN     = Math.max(3, Math.floor(bh * 0.05));
+                const lineThresh = scoresSorted[topN] * 0.6;
 
-                // 간격 계산 및 중앙값
-                const gaps = [];
-                for (let i = 1; i < darkLines.length; i++)
-                    gaps.push(darkLines[i] - darkLines[i-1]);
-                gaps.sort((a, b) => a - b);
-                const median = gaps[Math.floor(gaps.length / 2)];
+                console.log(`[행감지] inkX=${xMin}~${xMax}(${inkW}px), lineThresh=${lineThresh.toFixed(3)}`);
 
-                // 이상치 제거 후 평균 (중앙값 60~140% 범위)
-                const filtered = gaps.filter(g => g > median * 0.6 && g < median * 1.4);
-                const avgGap = filtered.length > 0
-                    ? filtered.reduce((a, b) => a + b, 0) / filtered.length
-                    : median;
+                // ── 4. 행 경계선 후보 추출 (로컬 피크) ────────────────────
+                const candidates = [];
+                for (let y = 2; y < bh - 2; y++) {
+                    if (horizScore[y] >= lineThresh &&
+                        horizScore[y] >= horizScore[y-1] &&
+                        horizScore[y] >= horizScore[y+1] &&
+                        horizScore[y] >= horizScore[y-2] &&
+                        horizScore[y] >= horizScore[y+2]) {
+                        candidates.push(y);
+                    }
+                }
+                console.log(`[행감지] 후보 수: ${candidates.length}, 처음 10개: ${candidates.slice(0,10)}`);
+                if (candidates.length < 3) return { rowHeight: 0, lineCount: candidates.length, lineYs: [] };
 
-                console.log(`[행감지] avgGap=${avgGap.toFixed(1)}buf_px → CSS ${(avgGap * bufToCss).toFixed(1)}px`);
+                // ── 5. 후보 간격 히스토그램으로 행 높이 탐지 ─────────────
+                const candGaps = [];
+                for (let i = 1; i < candidates.length; i++)
+                    candGaps.push(candidates[i] - candidates[i-1]);
 
-                // gap 분포에서 실제 행 높이 직접 탐지
-                // 모든 gap을 히스토그램으로 만들어 가장 뚜렷한 피크(= 실제 행 높이) 찾기
-                const allGaps = [];
-                for (let i = 1; i < darkLines.length; i++)
-                    allGaps.push(darkLines[i] - darkLines[i-1]);
+                candGaps.sort((a, b) => a - b);
+                const medGap = candGaps[Math.floor(candGaps.length / 2)];
 
-                // 히스토그램: 1px 버킷
-                const maxGap = Math.max(...allGaps);
-                const hist = new Float32Array(maxGap + 2);
-                const sigma = Math.max(1.5, avgGap * 0.15); // 가우시안 스무딩
-                for (const g of allGaps) {
-                    for (let b = Math.max(1, g - Math.ceil(sigma*3)); b <= Math.min(maxGap, g + Math.ceil(sigma*3)); b++) {
-                        hist[b] += Math.exp(-0.5 * ((b - g) / sigma) ** 2);
+                // 중앙값 60~140% 범위 평균 → 기본 행 높이 추정
+                const filtGaps = candGaps.filter(g => g > medGap * 0.6 && g < medGap * 1.4);
+                const avgGap   = filtGaps.length > 0
+                    ? filtGaps.reduce((a,b)=>a+b,0) / filtGaps.length : medGap;
+
+                console.log(`[행감지] avgGap=${avgGap.toFixed(1)}buf_px → CSS ${(avgGap*bufToCss).toFixed(1)}px`);
+
+                // ── 6. 히스토그램 피크로 실제 행 높이 확정 ───────────────
+                const maxCandGap = Math.max(...candGaps);
+                const hist = new Float32Array(maxCandGap + 2);
+                const sigma = Math.max(1.5, avgGap * 0.1);
+                for (const g of candGaps) {
+                    for (let b = Math.max(1, g - Math.ceil(sigma*3)); b <= Math.min(maxCandGap, g + Math.ceil(sigma*3)); b++)
+                        hist[b] += Math.exp(-0.5 * ((b-g)/sigma)**2);
+                }
+                // avgGap * 0.7 이상에서 첫 피크 찾기
+                const searchFrom = Math.floor(avgGap * 0.7);
+                let peakVal = 0, rowUnitGap = searchFrom;
+                for (let b = searchFrom; b <= maxCandGap; b++) {
+                    if (hist[b] > peakVal) { peakVal = hist[b]; rowUnitGap = b; }
+                }
+                console.log(`[행감지] rowUnitGap=${rowUnitGap}buf_px → CSS ${(rowUnitGap*bufToCss).toFixed(1)}px`);
+
+                // ── 7. 실제 행 경계만 추출 (rowUnitGap * 0.7 이상 간격) ──
+                const rowBounds = [candidates[0]];
+                let lastY = candidates[0];
+                for (let i = 1; i < candidates.length; i++) {
+                    if (candidates[i] - lastY >= rowUnitGap * 0.7) {
+                        rowBounds.push(candidates[i]);
+                        lastY = candidates[i];
                     }
                 }
 
-                // avgGap * 1.5 이상 구간에서 피크 찾기 (격자선 내부 간격 제외)
-                const searchFrom = Math.floor(avgGap * 1.5);
-                let peakVal = 0, peakIdx = searchFrom;
-                for (let b = searchFrom; b <= maxGap; b++) {
-                    if (hist[b] > peakVal) { peakVal = hist[b]; peakIdx = b; }
-                }
-                const rowUnitGap = peakIdx; // buffer px 기준 실제 행 높이
+                // ── 8. 최종 행 높이 재계산 ────────────────────────────────
+                const finalGaps = [];
+                for (let i = 1; i < rowBounds.length; i++)
+                    finalGaps.push(rowBounds[i] - rowBounds[i-1]);
+                finalGaps.sort((a,b)=>a-b);
+                const finalMed = finalGaps[Math.floor(finalGaps.length/2)];
+                const finalFilt = finalGaps.filter(g => g > finalMed*0.6 && g < finalMed*1.4);
+                const finalAvg  = finalFilt.length > 0
+                    ? finalFilt.reduce((a,b)=>a+b,0)/finalFilt.length : finalMed;
+                const finalRowHeightCss = finalAvg * bufToCss;
 
-                console.log(`[행감지] rowUnitGap=${rowUnitGap}buf_px → CSS ${(rowUnitGap * bufToCss).toFixed(1)}px (peak@${peakIdx})`);
+                // 실제 감지된 행 경계 좌표를 CSS px로 변환해 그대로 사용
+                const lineYs = rowBounds.map(y => y * bufToCss);
 
-                // rowUnitGap * 0.7 이상 간격인 darkLines만 행 경계로 채택
-                const trueRowBoundaries = [darkLines[0]];
-                let lastAccepted = darkLines[0];
-                for (let i = 1; i < darkLines.length; i++) {
-                    if (darkLines[i] - lastAccepted >= rowUnitGap * 0.7) {
-                        trueRowBoundaries.push(darkLines[i]);
-                        lastAccepted = darkLines[i];
-                    }
-                }
+                console.log(`[행감지] 최종 ${rowBounds.length}행, 높이=${finalRowHeightCss.toFixed(1)}px, lineYs=${lineYs.length}개`);
+                return { rowHeight: finalRowHeightCss, lineCount: lineYs.length, lineYs };
 
-                // 최종 행 높이: trueRowBoundaries 간격 중앙값
-                const trueGaps = [];
-                for (let i = 1; i < trueRowBoundaries.length; i++)
-                    trueGaps.push(trueRowBoundaries[i] - trueRowBoundaries[i-1]);
-                trueGaps.sort((a, b) => a - b);
-                const trueMedian = trueGaps[Math.floor(trueGaps.length / 2)];
-                const trueFiltered = trueGaps.filter(g => g > trueMedian * 0.6 && g < trueMedian * 1.4);
-                const trueAvg = trueFiltered.length > 0
-                    ? trueFiltered.reduce((a, b) => a + b, 0) / trueFiltered.length
-                    : trueMedian;
-                const finalRowHeightCss = trueAvg * bufToCss;
-
-                // 실제 감지된 행 경계 좌표를 그대로 사용 (등간격 보간 대신)
-                const lineYs = trueRowBoundaries.map(y => y * bufToCss);
-
-                console.log(`[행감지] 최종 행경계 ${trueRowBoundaries.length}개, 높이=${finalRowHeightCss.toFixed(1)}px, lineYs=${lineYs.length}개`);
-
-                return {
-                    rowHeight: finalRowHeightCss,
-                    lineCount: lineYs.length,
-                    lineYs
-                };
             } catch(e) {
                 console.error('detectRowHeight error:', e);
                 return { rowHeight: 0, lineCount: 0, lineYs: [] };
-            }        },
+            }
+        },
 
         // 클릭 이벤트의 canvas 기준 CSS Y 좌표 반환 (스크롤 보정 포함)
         getCanvasCssY(pageNum, clientY) {
