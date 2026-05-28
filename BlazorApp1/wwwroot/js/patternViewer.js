@@ -388,9 +388,9 @@ window.patternViewer = (() => {
         const cssW = Math.floor(vp.width);
         const cssH = Math.floor(vp.height);
 
-        // 모바일 OOM 방지: canvas buffer 픽셀 수 상한 (16MP)
+        // 모바일 OOM 방지: canvas buffer 픽셀 수 상한 (32MP)
         // 초과 시 render scale을 줄여서 buffer 크기를 제한
-        const MAX_BUF_PX = 16 * 1024 * 1024;
+        const MAX_BUF_PX = 32 * 1024 * 1024;
         const rawBufW = Math.floor(cssW * dpr);
         const rawBufH = Math.floor(cssH * dpr);
         const rawPx   = rawBufW * rawBufH;
