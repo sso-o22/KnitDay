@@ -368,13 +368,10 @@ window.patternViewer = (() => {
         annoCanvas.style.cursor = cursor;
 
         const ctx = pdfCanvas.getContext('2d');
-        ctx.save();
-        ctx.scale(dpr, dpr);
-        const task = page.render({ canvasContext: ctx, viewport: page.getViewport({ scale: zoom }) });
+        const task = page.render({ canvasContext: ctx, viewport: page.getViewport({ scale: zoom * dpr }) });
         _renderTasks[pageNum] = task;
         try { await task.promise; }
-        catch (err) { if (err?.name !== 'RenderingCancelledException') console.warn('render err', pageNum, err); ctx.restore(); return; }
-        ctx.restore();
+        catch (err) { if (err?.name !== 'RenderingCancelledException') console.warn('render err', pageNum, err); return; }
         _renderTasks[pageNum] = null;
         _renderedPages.add(pageNum);
         redrawPage(pageNum);
