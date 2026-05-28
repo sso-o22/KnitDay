@@ -47,13 +47,7 @@ window.patternViewer = (() => {
 
     function getPageOrigW(pageNum) { return (_pageSizes[pageNum] || _pageSizes[1] || {w:1}).w; }
 
-    // 모바일 OOM 방지: dpr이 높을수록 zoom 상한을 낮춤
-    // 16MP 상한 기준: maxZoom = sqrt(16MP / (cssW * cssH)) / dpr
-    function getMaxZoom() {
-        const dpr = window.devicePixelRatio || 1;
-        // dpr 1→4.0, dpr 2→3.0, dpr 3→2.5 수준
-        return Math.max(2.0, 4.0 / dpr);
-    }
+    function getMaxZoom() { return 8.0; } // 줌 상한 8배 (buffer 상한이 OOM 실제 방어)
     function getPageOrigH(pageNum) { return (_pageSizes[pageNum] || _pageSizes[1] || {h:1}).h; }
 
     // 터치/마우스 → 정규화 좌표 (0~1)
