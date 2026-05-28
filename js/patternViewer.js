@@ -923,6 +923,54 @@ window.patternViewer = (() => {
             return getPageOrigW(pageNum);
         },
 
+        // 페이지 높이 반환 (현재 CSS px — zoom 반영됨)
+        getPageHeight(pageNum) {
+            const canvas = document.getElementById('pdf-canvas-' + pageNum);
+            return canvas ? canvas.offsetHeight : 0;
+        },
+
+        // 수동 행 높이 드래그: overlay div를 JS에서 직접 조작하여 부드러운 피드백
+        startRowDraw(pageNum, startClientY, dotNetRef) {
+            const overlay = document.getElementById('rowdraw-overlay-' + pageNum);
+            const label   = document.getElementById('rowdraw-label-'   + pageNum);
+            const canvas  = document.getElementById('anno-canvas-' + pageNum);
+            if (!overlay || !canvas) return;
+
+            const canvasRect = canvas.getBoundingClientRect();
+            const scrollEl   = document.getElementById('scroll-container');
+            const scrollTop  = scrollEl ? scrollEl.scrollTop : 0;
+            // canvas 기준 시작 Y (CSS px, 스크롤 보정)
+            const startCanvasY = startClientY - canvasRect.top + (scrollEl ? 0 : 0);
+
+            overlay.style.display = 'block';
+            overlay.style.top    = startCanvasY + 'px';
+            overlay.style.height = '0px';
+            if (label) label.textContent = '';
+
+            function onMove(e) {
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                const dy      = clientY - startClientY;
+                const h       = Math.abs(dy);
+                const top     = dy >= 0 ? startCanvasY : startCanvasY + dy;
+                overlay.style.top    = top + 'px';
+                overlay.style.height = h  + 'px';
+                if (label) label.textContent = Math.round(h) + 'px';
+            }
+            function onUp(e) {
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup',   onUp);
+                window.removeEventListener('touchmove', onMove);
+                window.removeEventListener('touchend',  onUp);
+                overlay.style.display = 'none';
+                const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+                dotNetRef.invokeMethodAsync('OnRowDrawEnd', clientY);
+            }
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup',   onUp);
+            window.addEventListener('touchmove', onMove, { passive: true });
+            window.addEventListener('touchend',  onUp);
+        },
+
         // 이미지 크기 반환
         getImageSize(imgId) {
             const img = document.getElementById(imgId);
