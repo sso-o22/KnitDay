@@ -764,14 +764,14 @@ window.patternViewer = (() => {
                 if (!canvas) return { rowHeight: 0, lineCount: 0, lineYs: [] };
                 const ctx = canvas.getContext('2d');
                 const dpr  = window.devicePixelRatio || 1;
-                const zoom = currentZoom || 1;
-                // canvas buffer px — 이제 viewport scale = zoom*dpr 이므로 buffer = cssSize * zoom * dpr
+                // canvas buffer px — viewport scale = zoom*dpr, CSS 크기는 zoom 기준
+                // buffer(px) = cssSize * dpr  →  buffer → CSS 변환은 ÷ dpr
                 const bw = canvas.width, bh = canvas.height;
                 // CSS px (화면에서 보이는 크기)
-                const cssW = canvas.offsetWidth  || bw / (zoom * dpr);
-                const cssH = canvas.offsetHeight || bh / (zoom * dpr);
+                const cssW = canvas.offsetWidth  || bw / dpr;
+                const cssH = canvas.offsetHeight || bh / dpr;
                 // buffer → CSS px 변환 계수
-                const bufToCss = 1 / (zoom * dpr);
+                const bufToCss = 1 / dpr;
 
                 // 도안 내용이 있는 중앙 영역만 스캔 (여백 제외)
                 // 가로: 잉크가 있는 구간 자동 감지
