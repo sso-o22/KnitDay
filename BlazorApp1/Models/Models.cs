@@ -162,6 +162,7 @@ namespace KnitLog.Models
         public int ViewerPenSize { get; set; } = 4;              // 펜 굵기
         public int ViewerPenOpacity { get; set; } = 100;         // 펜 투명도
         public string ViewerRowMarkerColor { get; set; } = "#ffeb3b"; // 행 마커 색상
+        public string ViewerGridLineColor { get; set; } = "";    // 감지선 색상
     }
 
     public class ProjectYarnUsage
