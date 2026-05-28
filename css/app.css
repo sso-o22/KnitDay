@@ -118,7 +118,7 @@ body {
     border-bottom: 1px solid var(--theme-mid);
 }
 
-.brand-icon { font-size: 1.6rem; }
+.brand-icon { display:flex; align-items:center; }
 .brand-name {
     font-family: 'DM Sans', sans-serif;
     font-size: 1.05rem;
@@ -192,6 +192,16 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+}
+.page-title img {
+    vertical-align: middle;
+    position: relative;
+    top: 2px;
+}
+.page-title img {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
 }
 
 .page-subtitle {
