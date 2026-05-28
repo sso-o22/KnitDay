@@ -136,8 +136,6 @@
         }
     </div>
 
-<<<<<<< HEAD
-=======
     <!-- 디버그 모드 -->
     <div class="card">
         <div style="display:flex; align-items:center; justify-content:space-between;">
@@ -151,7 +149,6 @@
         </div>
     </div>
 
->>>>>>> ce8fc07f65329d52d531c687cba2df6b791b27dd
 </div>
 
 @if (_showImportModal)
@@ -245,8 +242,6 @@
         await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark', '{_isDark.ToString().ToLower()}')");
     }
 
-<<<<<<< HEAD
-=======
     async Task ToggleDebug()
     {
         _debugMode = !_debugMode;
@@ -258,7 +253,6 @@
             await JS.InvokeVoidAsync("eval", "localStorage.setItem('knitlog_debug','0'); location.reload();");
     }
 
->>>>>>> ce8fc07f65329d52d531c687cba2df6b791b27dd
     void ImportDataClick()
     {
         _ = JS.InvokeVoidAsync("eval", "document.getElementById('import-file-input').click()");
