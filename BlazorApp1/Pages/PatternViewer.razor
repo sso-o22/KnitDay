@@ -91,18 +91,6 @@
                                     </span>
                                 }
                             </div>
-                            @* 확인 버튼 *@
-                            @if (Math.Abs(_rowLineAY - _rowLineBY) > 4)
-                            {
-                                <div style="position:absolute;right:8px;bottom:8px;z-index:35;">
-                                    <button style="background:#2979ff;color:#fff;border:none;border-radius:20px;
-                                                   padding:6px 16px;font-size:12px;font-weight:700;cursor:pointer;
-                                                   box-shadow:0 2px 8px rgba(0,0,0,0.25);"
-                                            @onclick="ConfirmRowHeightLines" @onclick:stopPropagation="true">
-                                        ✓ 적용
-                                    </button>
-                                </div>
-                            }
                         }
                         @if (_showPreviewLines && _detectPage == pageNum)
                         {
@@ -230,6 +218,17 @@
                         <button class="dp-btn" title="자동 행 감지" @onclick="DetectRowHeight" style="font-size:11px;width:28px;height:28px;">🔍</button>
                         <button class="dp-btn @(_tool=="rowheightdraw"?"dp-on":"")" title="직접 한 행 높이 지정" @onclick="StartRowHeightDraw" style="font-size:13px;width:28px;height:28px;">↕</button>
                     </div>
+                    @* 두 선 지정 모드: 적용 버튼 *@
+                    @if (_tool == "rowheightdraw")
+                    {
+                        <div class="dp-row" style="justify-content:center;margin-top:4px;">
+                            <button class="dp-btn" style="width:52px;height:26px;font-size:11px;font-weight:700;background:#2979ff;color:#fff;border-radius:6px;"
+                                    @onclick="ConfirmRowHeightLines">✓ 적용</button>
+                        </div>
+                        <div class="dp-val" style="font-size:9px;text-align:center;color:#555;margin-top:2px;">
+                            @($"{Math.Abs(_rowLineAY - _rowLineBY) / _zoom:F1}px")
+                        </div>
+                    }
                     @* 감지 결과 피드백 *@
                     @if (_detectPage > 0)
                     {
