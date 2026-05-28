@@ -680,6 +680,7 @@ window.patternViewer = (() => {
             scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top - 8;
             currentPageNum = pageNum;
         },
+<<<<<<< HEAD
 
         preventScroll() {},
 
@@ -694,6 +695,22 @@ window.patternViewer = (() => {
 
         getPaths() { return JSON.stringify(paths); },
 
+=======
+
+        preventScroll() {},
+
+        setDrawPanelOpen(open) {
+            document.getElementById('draw-fab-btn')?.classList.toggle('draw-fab-on', open);
+            document.getElementById('draw-panel-div')?.classList.toggle('draw-panel-open', open);
+            _isPanelAnimating = true;
+            setTimeout(() => { _isPanelAnimating = false; }, 350);
+        },
+
+        triggerFileInput() { document.getElementById('pdf-file-input')?.click(); },
+
+        getPaths() { return JSON.stringify(paths); },
+
+>>>>>>> ce8fc07f65329d52d531c687cba2df6b791b27dd
         setPaths(json) {
             try { paths = JSON.parse(json) || []; } catch(_) { paths = []; }
             for (let i=1; i<=totalPages; i++) { if (_renderedPages.has(i)) redrawPage(i); }
@@ -703,6 +720,7 @@ window.patternViewer = (() => {
             if (!_lastPdfBytes) return false;
             try { await savePdfToIDB(projectId, _lastPdfBytes, fileName); return true; }
             catch(e) { console.error(e); return false; }
+<<<<<<< HEAD
         },
 
         async loadPdfFromProject(projectId) {
@@ -817,6 +835,261 @@ window.patternViewer = (() => {
         // 페이지 너비 반환 (zoom=1 기준 px)
         getPageWidth(pageNum) {
             return getPageOrigW(pageNum);
+=======
+        },
+
+        async loadPdfFromProject(projectId) {
+            try { const r = await loadPdfFromIDB(projectId); return r?.fileName || null; }
+            catch(e) { return null; }
+        },
+
+        async renderSavedPdf(projectId) {
+            try {
+                const r = await loadPdfFromIDB(projectId);
+                if (!r?.bytes) return 0;
+                await ensurePdfJs();
+                const base = getPdfjsBase();
+                pdfDoc = await window.pdfjsLib.getDocument({ data: r.bytes, cMapUrl: base+'/pdfjs/web/cmaps/', cMapPacked: true, standardFontDataUrl: base+'/pdfjs/web/standard_fonts/' }).promise;
+                totalPages = pdfDoc.numPages; abortAllPageHandlers(); _renderedPages=new Set(); _pageSizes={}; _lastPdfBytes=r.bytes;
+                const p1 = await pdfDoc.getPage(1), vp1 = p1.getViewport({scale:1.0});
+                for (let i=1;i<=totalPages;i++) _pageSizes[i]={w:vp1.width,h:vp1.height};
+                return totalPages;
+            } catch(e) { console.error(e); return 0; }
+        },
+
+        async deleteSavedPdf(projectId) { try { await deletePdfFromIDB(projectId); return true; } catch(e) { return false; } },
+
+        async exportAllPdfs() {
+            try {
+                const db = await openDB();
+                return new Promise((res, rej) => {
+                    const req = db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).getAll();
+                    req.onsuccess = e => {
+                        const result = {};
+                        for (const item of e.target.result) {
+                            const bytes = item.bytes instanceof Uint8Array ? item.bytes : new Uint8Array(item.bytes);
+                            let bin = ''; for (let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+                            result[item.projectId] = { fileName: item.fileName, data: btoa(bin) };
+                        }
+                        res(JSON.stringify(result));
+                    };
+                    req.onerror = e => rej(e.target.error);
+                });
+            } catch(e) { return '{}'; }
+        },
+
+        async importAllPdfs(jsonStr) {
+            try {
+                const map = JSON.parse(jsonStr);
+                const db = await openDB();
+                for (const [pid, val] of Object.entries(map)) {
+                    const bin = atob(val.data), bytes = new Uint8Array(bin.length);
+                    for (let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+                    await savePdfToIDB(pid, bytes, val.fileName);
+                }
+                return true;
+            } catch(e) { console.error(e); return false; }
+        },
+
+        // ── 행 높이 자동 감지 ──────────────────────────────────────
+        // canvas에 렌더링된 실제 픽셀 기준으로 행 높이 감지
+        // rowHeight는 canvas CSS px 단위 (zoom=currentZoom 기준)
+        detectRowHeight(pageNum) {
+            try {
+                const canvas = document.getElementById('pdf-canvas-' + pageNum);
+                if (!canvas) return { rowHeight: 0, lineCount: 0, lineYs: [] };
+                const ctx = canvas.getContext('2d');
+                const dpr = window.devicePixelRatio || 1;
+                // canvas buffer px (dpr 배율 적용됨)
+                const bw = canvas.width, bh = canvas.height;
+                // CSS px (화면에서 보이는 크기)
+                const cssW = canvas.offsetWidth || bw / dpr;
+                const cssH = canvas.offsetHeight || bh / dpr;
+
+                // 도안 내용이 있는 중앙 영역만 스캔 (여백 제외)
+                // 가로: 잉크가 있는 구간 자동 감지
+                const fullData = ctx.getImageData(0, 0, bw, bh).data;
+
+                // X방향으로 잉크 있는 범위 찾기 (상단 30% 영역 샘플링)
+                const sampleH = Math.floor(bh * 0.3);
+                let xMin = bw, xMax = 0;
+                for (let y = 0; y < sampleH; y++) {
+                    for (let x = 0; x < bw; x++) {
+                        const i = (y * bw + x) * 4;
+                        const b = (fullData[i] + fullData[i+1] + fullData[i+2]) / 3;
+                        if (b < 240) { xMin = Math.min(xMin, x); xMax = Math.max(xMax, x); }
+                    }
+                }
+                // 여백이 많으면 잉크 있는 영역만, 없으면 전체 사용
+                const scanX0 = xMin < bw ? Math.max(0, xMin) : 0;
+                const scanX1 = xMax > 0 ? Math.min(bw, xMax + 1) : bw;
+                const scanW  = Math.max(scanX1 - scanX0, Math.floor(bw * 0.3));
+                const actualX0 = Math.max(0, Math.floor((scanX0 + scanX1) / 2) - Math.floor(scanW / 2));
+                const actualX1 = Math.min(bw, actualX0 + scanW);
+
+                // 밝기 프로파일 (잉크 범위만)
+                const data = ctx.getImageData(actualX0, 0, actualX1 - actualX0, bh).data;
+                const sw = actualX1 - actualX0;
+                const profile = new Float32Array(bh);
+                for (let y = 0; y < bh; y++) {
+                    let sum = 0;
+                    for (let x = 0; x < sw; x++) {
+                        const i = (y * sw + x) * 4;
+                        sum += (data[i] + data[i+1] + data[i+2]) / 3;
+                    }
+                    profile[y] = sum / sw;
+                }
+
+                // 어두운 줄 찾기
+                const sorted = Float32Array.from(profile).sort();
+                const p10 = sorted[Math.floor(bh * 0.10)];
+                const p90 = sorted[Math.floor(bh * 0.90)];
+                const threshold = p10 + (p90 - p10) * 0.35;
+
+                const darkLines = []; // buffer px 단위
+                for (let y = 1; y < bh - 1; y++) {
+                    if (profile[y] < threshold &&
+                        profile[y] <= profile[y-1] &&
+                        profile[y] <= profile[y+1]) {
+                        if (darkLines.length === 0 || y - darkLines[darkLines.length-1] > 2) {
+                            darkLines.push(y);
+                        }
+                    }
+                }
+
+                console.log(`[행감지] p10=${p10.toFixed(0)}, p90=${p90.toFixed(0)}, threshold=${threshold.toFixed(0)}`);
+                console.log(`[행감지] 어두운 줄 수: ${darkLines.length}, 처음 10개: ${darkLines.slice(0,10)}`);
+
+                if (darkLines.length < 3) return { rowHeight: 0, lineCount: darkLines.length, lineYs: [] };
+
+                // 간격 계산 및 중앙값
+                const gaps = [];
+                for (let i = 1; i < darkLines.length; i++)
+                    gaps.push(darkLines[i] - darkLines[i-1]);
+                gaps.sort((a, b) => a - b);
+                const median = gaps[Math.floor(gaps.length / 2)];
+
+                // 이상치 제거 후 평균 (중앙값 60~140% 범위)
+                const filtered = gaps.filter(g => g > median * 0.6 && g < median * 1.4);
+                const avgGap = filtered.length > 0
+                    ? filtered.reduce((a, b) => a + b, 0) / filtered.length
+                    : median;
+
+                // CSS px 단위로 변환 (÷ dpr)
+                const rowHeightCss = avgGap / dpr;
+
+                console.log(`[행감지] avgGap=${avgGap.toFixed(1)}buf_px → CSS ${rowHeightCss.toFixed(1)}px`);
+
+                // darkLines에서 실제 행 경계만 추출
+                // avgGap보다 훨씬 가까운 줄들은 같은 행의 내부 격자선 → 병합
+                // 실제 행 높이 = 행당 격자선 수 * avgGap
+                // 방법: avgGap * 1.5 이상 벌어진 경우만 행 경계로 인정
+                const minRowGap = avgGap * 2.2; // 이 간격 이상이면 다음 행
+                const rowBoundaries = [darkLines[0]]; // 첫 번째 줄은 무조건 포함
+                for (let i = 1; i < darkLines.length; i++) {
+                    if (darkLines[i] - rowBoundaries[rowBoundaries.length - 1] >= minRowGap) {
+                        rowBoundaries.push(darkLines[i]);
+                    }
+                }
+
+                // 행 경계 간격으로 실제 행 높이 재계산
+                let realRowHeightCss = rowHeightCss;
+                if (rowBoundaries.length >= 3) {
+                    const rowGaps = [];
+                    for (let i = 1; i < rowBoundaries.length; i++)
+                        rowGaps.push(rowBoundaries[i] - rowBoundaries[i-1]);
+                    rowGaps.sort((a, b) => a - b);
+                    const rowMedian = rowGaps[Math.floor(rowGaps.length / 2)];
+                    const rowFiltered = rowGaps.filter(g => g > rowMedian * 0.6 && g < rowMedian * 1.4);
+                    const rowAvg = rowFiltered.length > 0
+                        ? rowFiltered.reduce((a, b) => a + b, 0) / rowFiltered.length
+                        : rowMedian;
+                    realRowHeightCss = rowAvg / dpr;
+                    console.log(`[행감지] 행경계 ${rowBoundaries.length}개, 실제행높이=${realRowHeightCss.toFixed(1)}px`);
+                }
+
+                // rowBoundaries 간격 분포에서 최빈값(mode) 찾기
+                // → 행 높이의 정수배인 경계들을 제거해서 실제 행만 남김
+                const rowGapsAll = [];
+                for (let i = 1; i < rowBoundaries.length; i++)
+                    rowGapsAll.push(rowBoundaries[i] - rowBoundaries[i-1]);
+                rowGapsAll.sort((a, b) => a - b);
+                const rowMedianFinal = rowGapsAll[Math.floor(rowGapsAll.length / 2)];
+
+                // 실제 행 경계: rowMedianFinal * 0.7 이상 간격인 것만 (작은 노이즈 제거)
+                const trueRowBoundaries = [rowBoundaries[0]];
+                let lastAccepted = rowBoundaries[0];
+                for (let i = 1; i < rowBoundaries.length; i++) {
+                    if (rowBoundaries[i] - lastAccepted >= rowMedianFinal * 0.7) {
+                        trueRowBoundaries.push(rowBoundaries[i]);
+                        lastAccepted = rowBoundaries[i];
+                    }
+                }
+
+                // 진짜 행 높이 재계산
+                const trueGaps = [];
+                for (let i = 1; i < trueRowBoundaries.length; i++)
+                    trueGaps.push(trueRowBoundaries[i] - trueRowBoundaries[i-1]);
+                trueGaps.sort((a, b) => a - b);
+                const trueMedian = trueGaps[Math.floor(trueGaps.length / 2)];
+                const trueFiltered = trueGaps.filter(g => g > trueMedian * 0.6 && g < trueMedian * 1.4);
+                const trueAvg = trueFiltered.length > 0
+                    ? trueFiltered.reduce((a, b) => a + b, 0) / trueFiltered.length
+                    : trueMedian;
+                const finalRowHeightCss = trueAvg / dpr;
+
+                const firstY = trueRowBoundaries[0] / dpr;
+                const lastY  = trueRowBoundaries[trueRowBoundaries.length - 1] / dpr;
+                const lineYs = [];
+                for (let y = firstY; y <= lastY + finalRowHeightCss * 0.5; y += finalRowHeightCss) {
+                    lineYs.push(y);
+                }
+
+                console.log(`[행감지] 최종 행경계 ${trueRowBoundaries.length}개, 높이=${finalRowHeightCss.toFixed(1)}px, lineYs=${lineYs.length}개`);
+
+                return {
+                    rowHeight: finalRowHeightCss,
+                    lineCount: lineYs.length,
+                    lineYs
+                };
+            } catch(e) {
+                console.error('detectRowHeight error:', e);
+                return { rowHeight: 0, lineCount: 0, lineYs: [] };
+            }        },
+
+        // 클릭 이벤트의 canvas 기준 CSS Y 좌표 반환 (스크롤 보정 포함)
+        getCanvasCssY(pageNum, clientY) {
+            const anno = document.getElementById('anno-canvas-' + pageNum);
+            if (!anno) return clientY;
+            const scrollEl = document.getElementById('scroll-container');
+            const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+            const off = getOffsetPos(anno);
+            const scrollContainerTop = scrollEl ? scrollEl.getBoundingClientRect().top : 0;
+            return clientY - (off.y - scrollTop + scrollContainerTop);
+        },
+
+        // 페이지 너비 반환 (zoom=1 기준 px)
+        getPageWidth(pageNum) {
+            return getPageOrigW(pageNum);
+        },
+
+        // 이미지 크기 반환
+        getImageSize(imgId) {
+            const img = document.getElementById(imgId);
+            if (!img) return [0, 0];
+            return [img.naturalWidth, img.naturalHeight];
+        },
+
+        // anno-canvas 크기 조정 (이미지 모드용)
+        resizeAnnoCanvas(pageNum, w, h) {
+            const anno = document.getElementById('anno-canvas-' + pageNum);
+            if (!anno) return;
+            const dpr = window.devicePixelRatio || 1;
+            anno.width  = Math.round(w * dpr);
+            anno.height = Math.round(h * dpr);
+            anno.style.width  = w + 'px';
+            anno.style.height = h + 'px';
+>>>>>>> ce8fc07f65329d52d531c687cba2df6b791b27dd
         }
     };
 })();
