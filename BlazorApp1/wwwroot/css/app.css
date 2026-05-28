@@ -189,6 +189,9 @@ body {
     font-weight: 800;
     color: var(--black);
     outline: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .page-subtitle {
