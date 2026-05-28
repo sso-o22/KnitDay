@@ -9,7 +9,11 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const firebaseConfig = {
+<<<<<<< HEAD
     apiKey:            "AIzaSyDO6b38CHxrbN0QrKRyzOuk-k7yOitDyKU",
+=======
+    apiKey:            "AIzaSyDO6b38CHxrbN0QrKRyzOuk-k7yOitDyKU",
+>>>>>>> ce8fc07f65329d52d531c687cba2df6b791b27dd
     authDomain:        "knitlog-94c63.firebaseapp.com",
     projectId:         "knitlog-94c63",
     storageBucket:     "knitlog-94c63.firebasestorage.app",
