@@ -37,31 +37,6 @@
                         <canvas id="anno-canvas-@pageNum" style="position:absolute;top:0;left:0;z-index:10;cursor:@GetCursor();"
                                 @onclick="e => OnAnnoCanvasClick(e, pageNum)"></canvas>
 
-                        @foreach (var ruler in _rulers.Where(r => r.Page == pageNum))
-                        {
-                            var isSelected = _selectedRuler == ruler && _tool == "ruler";
-                            <div class="ruler-item @(isSelected ? "ruler-selected" : "")"
-                                 style="position:absolute;left:@(ruler.X * _zoom)px;top:@(ruler.Y * _zoom)px;width:@(ruler.Width * _zoom)px;height:@(ruler.Height * _zoom)px;
-                                        background:rgba(@(ruler.ColorRgb),@(ruler.Opacity.ToString("F2",System.Globalization.CultureInfo.InvariantCulture)));
-                                        border:2px solid rgba(@(ruler.ColorRgb),@(isSelected?"1.0":"0.8"));
-                                        cursor:@(_tool=="ruler"?(isSelected?"move":"pointer"):"default");
-                                        pointer-events:@(_tool=="ruler"?"auto":"none");"
-                                 @onclick:stopPropagation="true" @onclick="() => OnRulerClick(ruler)"
-                                 @onmousedown="e => OnRulerMouseDown(e, ruler)" @onmousedown:stopPropagation="true"
-                                 @ontouchstart="e => OnRulerTouchStart(e, ruler)" @ontouchstart:stopPropagation="true">
-                                @if (isSelected)
-                                {
-                                    <div class="resize-handle"
-                                         @onmousedown="e => OnResizeMouseDown(e,ruler)" @onmousedown:stopPropagation="true"
-                                         @ontouchstart="e => OnResizeTouchStart(e,ruler)" @ontouchstart:stopPropagation="true"></div>
-                                }
-                            </div>
-                        }
-                        @if (_isDrawingRuler && _rulerPage == pageNum)
-                        {
-                            <div style="position:absolute;left:@(Math.Min(_rulerStartX,_rulerStartX+_previewW))px;top:@(Math.Min(_rulerStartY,_rulerStartY+_previewH))px;width:@(Math.Abs(_previewW))px;height:@(Math.Abs(_previewH))px;border:2px dashed rgba(0,0,0,0.5);pointer-events:none;z-index:20;"></div>
-                        }
-
                         @* ── 행 높이 수동 지정: 두 선 드래그 ── *@
                         @if (_tool == "rowheightdraw" && _rowDrawPage == pageNum)
                         {
@@ -197,7 +172,6 @@
             <div class="draw-panel-inner">
                 <!-- 행1: 도구 선택 (도형 → 펜 → 지우개) -->
                 <div class="dp-row">
-                    <button class="dp-btn @(_tool=="ruler"?"dp-on":"")"       @onclick='()=>SetTool("ruler")'>📏</button>
                     <button class="dp-btn @(_tool=="pen"?"dp-on":"")"         @onclick='()=>SetTool("pen")'>🖋️</button>
                     <button class="dp-btn @(_tool=="highlighter"?"dp-on":"")" @onclick='()=>SetTool("highlighter")'>🖊️</button>
                     <button class="dp-btn @(_tool=="eraser"?"dp-on":"")"       @onclick='()=>SetTool("eraser")'>🧽</button>
@@ -370,23 +344,7 @@
             <button class="cw-fab" @onclick="()=>_showCounterWidget=true">🧶</button>
         }
     }
-    <!-- ── 도형 컨트롤 팝업 (마우스 위치 기준 fixed) ── -->
-    @if (_selectedRuler != null && _tool == "ruler")
-    {
-        var _sr = _selectedRuler;
-        <div class="ruler-popup"
-             style="position:fixed; left:@(_rulerPopupX)px; top:@(_rulerPopupY)px; z-index:800;"
-             @onmousedown:stopPropagation="true"
-             @onclick:stopPropagation="true"
-             @ontouchstart:stopPropagation="true">
-            <input type="color" value="@RgbToHex(_sr.ColorRgb)" @oninput="e => UpdateRulerColor(_sr, e)" title="색상" />
-            <input type="range" min="10" max="90" step="5" value="@((int)(_sr.Opacity*100))"
-                   @oninput="e => ChangeRulerOpacity(_sr, e)" style="width:48px;" title="투명도" />
-            <button class="ctrl-btn" @onclick="() => { _sr.Y -= _sr.Height; StateHasChanged(); }">▲</button>
-            <button class="ctrl-btn" @onclick="() => { _sr.Y += _sr.Height; StateHasChanged(); }">▼</button>
-            <button class="ctrl-btn del" @onclick="() => { _rulers.Remove(_sr); _selectedRuler = null; _ = SaveRulersAsync(); StateHasChanged(); }">✕</button>
-        </div>
-    }
+    <!-- ── (도형 기능 제거됨) ── -->
 </div>
 
 <style>
@@ -722,30 +680,6 @@
     [data-dark="true"] .cw-close { color: #888 !important; }
     [data-dark="true"] .cw-nav-btn { color: #eee !important; }
     [data-dark="true"] .cw-fab { background: rgba(32,32,32,0.92); border-color: rgba(255,255,255,0.12); }
-
-    [data-dark="true"] .ruler-ctrl { background: #2a2a2a; border-color: rgba(255,255,255,0.1); }
-    [data-dark="true"] .ctrl-btn { background: #3a3a3a; color: #ddd; }
-    [data-dark="true"] .ctrl-btn.del { background: #4a1a1a; color: #ff9999; }
-    [data-dark="true"] .resize-handle { background: #444; border-color: #777; }
-
-    /* ── 자 ── */
-    .ruler-item { z-index: 50; touch-action: none; }
-    .ruler-selected { outline: 2px dashed rgba(0,0,0,0.5); outline-offset: 2px; touch-action: none; }
-    /* 도형 컨트롤은 이제 fixed popup으로 → ruler-ctrl 미사용 */
-    .ruler-popup {
-        background: #fff; padding: 5px 10px; display: flex; gap: 6px;
-        border-radius: 8px; align-items: center;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
-        border: 1px solid rgba(0,0,0,0.1);
-        pointer-events: all;
-    }
-    .ctrl-btn { background: #f0f0f0; border: none; color: #333; padding: 4px 8px; border-radius: 4px; font-size: 12px; cursor: pointer; }
-    .ctrl-btn.del { background: #ffe0e0; color: #c00; }
-    .resize-handle {
-        position: absolute; right: -7px; bottom: -7px; width: 14px; height: 14px;
-        background: white; border: 2px solid #999; border-radius: 50%;
-        cursor: nwse-resize; box-shadow: 0 1px 4px rgba(0,0,0,0.2); touch-action: none;
-    }
 </style>
 
 @if (_showLoadWarning)
@@ -791,16 +725,11 @@
     int _penOpacity=100; // 투명도 (100=불투명, 낮을수록 형광펜)
     int _currentPage=1, _totalPages=1;
     double _zoom=1.0;
-    bool _pdfLoaded=false, _isDrawing=false, _isDrawingRuler=false;
+    bool _pdfLoaded=false, _isDrawing=false;
     bool _drawMode=false, _showCounterWidget=true;
     bool _suppressRender = false;
     protected override bool ShouldRender() { if (_suppressRender) { _suppressRender = false; return false; } return true; }
     int _activeCounterIndex=0;
-    double _rulerStartX,_rulerStartY,_previewW,_previewH,_dragOffsetX,_dragOffsetY;
-    double _rulerPopupX=200, _rulerPopupY=200; // 도형 컨트롤 팝업 위치
-    int _rulerPage=1;
-    List<RulerOverlay> _rulers=new();
-    RulerOverlay? _draggingRuler,_resizingRuler,_selectedRuler;
     DotNetObjectReference<PatternViewer>? _dotNetRef;
 
     // ── 카운터 위젯 드래그 ──
@@ -840,20 +769,7 @@
     async Task DecrementCounter(ProjectCounter c){c.Value=Math.Max(0,c.Value-c.Step);c.LastUpdatedAt=DateTime.Now;await SaveProject();StateHasChanged();}
     async Task SaveProject(){if(_project is KnitProject p)await Storage.SaveProjectAsync(p);}
 
-    // 도형만 즉시 저장 (디바운스 없이)
-    async Task SaveRulersAsync()
-    {
-        if (_project == null) return;
-        try
-        {
-            _project.ViewerRulers = System.Text.Json.JsonSerializer.Serialize(_rulers);
-            _project.ViewerAnnotations = await JS.InvokeAsync<string>("patternViewer.getPaths");
-            await SaveProject();
-        }
-        catch { }
-    }
-
-    // 필기+도형+줌+페이지 자동 저장 (디바운스)
+    // 필기+줌+페이지 자동 저장 (디바운스)
     System.Threading.CancellationTokenSource? _saveCts;
     async Task SaveViewerStateAsync()
     {
@@ -870,9 +786,6 @@
             // 필기 paths를 JS에서 가져와서 저장
             var pathsJson = await JS.InvokeAsync<string>("patternViewer.getPaths");
             _project.ViewerAnnotations = pathsJson;
-
-            // 도형 저장
-            _project.ViewerRulers = System.Text.Json.JsonSerializer.Serialize(_rulers);
 
             // 행 마커 저장
             _project.ViewerRowMarkers = System.Text.Json.JsonSerializer.Serialize(_rowMarkers);
@@ -948,18 +861,6 @@
             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
                 await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
 
-            if (!string.IsNullOrEmpty(_project.ViewerRulers))
-            {
-                try
-                {
-                    var rulers = System.Text.Json.JsonSerializer.Deserialize<List<RulerOverlay>>(
-                        _project.ViewerRulers,
-                        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    if (rulers != null) _rulers = rulers;
-                }
-                catch { }
-            }
-
             if (!string.IsNullOrEmpty(_project.ViewerRowMarkers))
             {
                 try
@@ -1024,7 +925,7 @@
     {
         _showLoadWarning = false;
         // 기존 필기/도형/줌/페이지 초기화
-        _rulers.Clear();
+        
         _rowMarkers.Clear();
         _detectedRowH = 0;
         _zoom = 1.0;
@@ -1034,7 +935,7 @@
         if (_project != null)
         {
             _project.ViewerAnnotations = "";
-            _project.ViewerRulers = "";
+            
             _project.ViewerRowMarkers = "";
             _project.ViewerLastZoom = 0;
             _project.ViewerLastPage = 1;
@@ -1059,7 +960,7 @@
             if (isImage)
             {
                 // 도안 초기화
-                _rulers.Clear();
+                
                 _rowMarkers.Clear();
                 _detectedRowH = 0;
                 _zoom = 1.0;
@@ -1183,96 +1084,24 @@
     async Task SizeUp(){_penSize=Math.Min(40,_penSize+1);await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool,_penOpacity);}
     async Task OnOpacityChange(ChangeEventArgs e){if(int.TryParse(e.Value?.ToString(),out var v))_penOpacity=v;await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool,_penOpacity);}
 
-    // ── 자 ──
-    [JSInvokable] public void OnCanvasPointerDown(double x,double y,int pageNum){if(_tool=="ruler"){_isDrawingRuler=true;_rulerStartX=x;_rulerStartY=y;_rulerPage=pageNum;_previewW=0;_previewH=0;StateHasChanged();}}
-    [JSInvokable] public void OnRulerTouchMove(double x,double y){if(_isDrawingRuler){_previewW=x-_rulerStartX;_previewH=y-_rulerStartY;StateHasChanged();}}
-    [JSInvokable] public void OnRulerTouchEnd(){if(_isDrawingRuler&&Math.Abs(_previewW)>5)_rulers.Add(new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage});_isDrawingRuler=false;_=SaveRulersAsync();StateHasChanged();}
-
     async Task OnGlobalMouseMove(MouseEventArgs e)
     {
-        // 카운터 위젯 드래그
-        if(_cwDragging){_cwX=e.ClientX-_cwOffX;_cwY=e.ClientY-_cwOffY;StateHasChanged();return;}
-        if(_isDrawingRuler||_draggingRuler!=null||_resizingRuler!=null)
-        {
-            var pg=_draggingRuler?.Page??_resizingRuler?.Page??_rulerPage;
-            var rect=await JS.InvokeAsync<double[]>("patternViewer.getRect",pg);
-            double curX=e.ClientX-rect[0];double curY=e.ClientY-rect[1];
-            if(_isDrawingRuler){_previewW=curX-_rulerStartX;_previewH=curY-_rulerStartY;}
-            else if(_draggingRuler!=null){_draggingRuler.X=(curX-_dragOffsetX)/_zoom;_draggingRuler.Y=(curY-_dragOffsetY)/_zoom;}
-            else if(_resizingRuler!=null){_resizingRuler.Width=Math.Max(30/_zoom,curX/_zoom-_resizingRuler.X);_resizingRuler.Height=Math.Max(10/_zoom,curY/_zoom-_resizingRuler.Y);}
-            StateHasChanged();
-        }
+        if(_cwDragging){_cwX=e.ClientX-_cwOffX;_cwY=e.ClientY-_cwOffY;StateHasChanged();}
     }
     async Task OnGlobalMouseUp(MouseEventArgs e)
     {
         _cwDragging=false;
-        if(_isDrawingRuler&&Math.Abs(_previewW)>5){var r=new RulerOverlay{X=(_previewW>0?_rulerStartX:_rulerStartX+_previewW)/_zoom,Y=(_previewH>0?_rulerStartY:_rulerStartY+_previewH)/_zoom,Width=Math.Abs(_previewW)/_zoom,Height=Math.Abs(_previewH)/_zoom,Page=_rulerPage};_rulers.Add(r);_selectedRuler=r;_=SaveRulersAsync();}
-        bool _hadRulerAction = _isDrawingRuler || _draggingRuler!=null || _resizingRuler!=null;
-        _isDrawingRuler=false;_draggingRuler=null;_resizingRuler=null;
         if(_isDrawing&&_pdfLoaded&&(_tool=="pen"||_tool=="eraser"||_tool=="highlighter"))await JS.InvokeVoidAsync("patternViewer.endDraw");
         _isDrawing=false;
-        if(_hadRulerAction)_=SaveRulersAsync();
         StateHasChanged();
     }
-    void DeselectRuler(){if(_tool=="ruler")_selectedRuler=null;}
-    void OnRulerClick(RulerOverlay ruler)
-    {
-        if (_tool != "ruler") return;
-        _selectedRuler = ruler; // 클릭 시 항상 선택 (토글 제거 → 이동하려다 해제되는 문제 방지)
-    }
-    async Task OnRulerMouseDown(MouseEventArgs e, RulerOverlay ruler)
-    {
-        if (_tool != "ruler") return;
-        // 선택 + 팝업 위치 갱신
-        _selectedRuler = ruler;
-        _rulerPopupX = Math.Min(e.ClientX + 8, e.ClientX - 20);
-        _rulerPopupY = Math.Max(e.ClientY - 60, 60);
-        // 드래그 시작
-        var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect", ruler.Page);
-        _draggingRuler = ruler;
-        _dragOffsetX = (e.ClientX - rect[0]) - ruler.X * _zoom;
-        _dragOffsetY = (e.ClientY - rect[1]) - ruler.Y * _zoom;
-    }
-    async Task OnRulerTouchStart(TouchEventArgs e, RulerOverlay ruler)
-    {
-        if (_tool != "ruler") return;
-        var t = e.Touches[0];
-        if (_selectedRuler != ruler)
-        {
-            _selectedRuler = ruler;
-            // 팝업을 도형 위에 표시
-            _rulerPopupX = Math.Max(10, Math.Min(t.ClientX - 80, t.ClientX + 8));
-            _rulerPopupY = Math.Max(60, t.ClientY - 70);
-            StateHasChanged();
-            return;
-        }
-        // 이미 선택된 도형 → 드래그 시작
-        var rect = await JS.InvokeAsync<double[]>("patternViewer.getRect", ruler.Page);
-        _draggingRuler = ruler;
-        _dragOffsetX = (t.ClientX - rect[0]) - ruler.X * _zoom;
-        _dragOffsetY = (t.ClientY - rect[1]) - ruler.Y * _zoom;
-    }
-    void OnResizeMouseDown(MouseEventArgs e,RulerOverlay ruler)=>_resizingRuler=ruler;
-    void OnResizeTouchStart(TouchEventArgs e,RulerOverlay ruler)=>_resizingRuler=ruler;
 
     async Task OnGlobalTouchMove(TouchEventArgs e)
     {
-        if(_cwDragging&&e.Touches.Length>0){_cwX=e.Touches[0].ClientX-_cwOffX;_cwY=e.Touches[0].ClientY-_cwOffY;StateHasChanged();return;}
-        if(_draggingRuler!=null||_resizingRuler!=null)
-        {
-            var pg=_draggingRuler?.Page??_resizingRuler?.Page??_currentPage;
-            await JS.InvokeVoidAsync("patternViewer.preventScroll");
-            var rect=await JS.InvokeAsync<double[]>("patternViewer.getRect",pg);
-            var t=e.Touches[0];double curX=t.ClientX-rect[0];double curY=t.ClientY-rect[1];
-            if(_draggingRuler!=null){_draggingRuler.X=curX-_dragOffsetX;_draggingRuler.Y=curY-_dragOffsetY;}
-            else if(_resizingRuler!=null){_resizingRuler.Width=Math.Max(30,curX-_resizingRuler.X);_resizingRuler.Height=Math.Max(10,curY-_resizingRuler.Y);}
-            StateHasChanged();
-        }
+        if(_cwDragging&&e.Touches.Length>0){_cwX=e.Touches[0].ClientX-_cwOffX;_cwY=e.Touches[0].ClientY-_cwOffY;StateHasChanged();}
     }
-    Task OnGlobalTouchEnd(TouchEventArgs e){_cwDragging=false;bool _hadRuler=_draggingRuler!=null||_resizingRuler!=null;_draggingRuler=null;_resizingRuler=null;if(_hadRuler)_=SaveRulersAsync();StateHasChanged();return Task.CompletedTask;}
+    Task OnGlobalTouchEnd(TouchEventArgs e){_cwDragging=false;StateHasChanged();return Task.CompletedTask;}
 
-    void UpdateRulerColor(RulerOverlay r,ChangeEventArgs e)=>r.ColorRgb=HexToRgb(e.Value?.ToString()??"#ffffff");
-    void ChangeRulerOpacity(RulerOverlay r,ChangeEventArgs e)=>r.Opacity=(double.TryParse(e.Value?.ToString(),out var v)?v:35)/100.0;
     string HexToRgb(string hex){hex=hex.TrimStart('#');return $"{Convert.ToInt32(hex[..2],16)},{Convert.ToInt32(hex[2..4],16)},{Convert.ToInt32(hex[4..6],16)}";}
     string RgbToHex(string rgb){var p=rgb.Split(',');return $"#{int.Parse(p[0]):X2}{int.Parse(p[1]):X2}{int.Parse(p[2]):X2}";}
     string DarkenRgb(string hex)
@@ -1349,7 +1178,6 @@
 
     async Task OnAnnoCanvasClick(MouseEventArgs e, int pageNum)
     {
-        if (_tool == "ruler") { DeselectRuler(); return; }
         if (_tool != "rowmarker") return;
         if (_detectedRowH <= 0) return;
 
@@ -1534,7 +1362,7 @@
             _saveCts?.Cancel();
             var pathsJson = await JS.InvokeAsync<string>("patternViewer.getPaths");
             _project.ViewerAnnotations = pathsJson;
-            _project.ViewerRulers      = System.Text.Json.JsonSerializer.Serialize(_rulers);
+
             _project.ViewerRowMarkers  = System.Text.Json.JsonSerializer.Serialize(_rowMarkers);
             _project.ViewerLastZoom    = _zoom;
             _project.ViewerLastPage    = _currentPage;
@@ -1553,16 +1381,5 @@
         StopRefreshTimer();
         _dotNetRef?.Dispose();
         try { await JS.InvokeVoidAsync("patternViewer.dispose"); } catch { }
-    }
-    class RulerOverlay
-    {
-        public double X { get; set; }
-        public double Y { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
-        public double Opacity { get; set; } = 0.35;
-        public string ColorRgb { get; set; } = "180,220,190";
-        public int Page { get; set; }
-        public double SavedAtZoom { get; set; } = 0;
     }
 }

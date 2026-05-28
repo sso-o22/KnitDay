@@ -204,12 +204,6 @@ window.patternViewer = (() => {
         function onDown(e) {
             if (_isPinching || _isZooming) return;
             const {normX, normY} = getNormPos(anno, e, pageNum);
-            if (_tool === 'ruler') {
-                const {cx, cy} = normToCss(normX, normY, pageNum);
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnCanvasPointerDown', cx, cy, pageNum);
-                if (e.touches) e.preventDefault();
-                return;
-            }
             if (_tool !== 'pen' && _tool !== 'eraser' && _tool !== 'highlighter') return;
             if (e.touches) e.preventDefault();
             currentPageNum = pageNum;
@@ -250,13 +244,6 @@ window.patternViewer = (() => {
 
         function onMove(e) {
             if (_isPinching || _isZooming) return;
-            if (_tool === 'ruler') {
-                if (e.touches) e.preventDefault();
-                const {normX, normY} = getNormPos(anno, e, pageNum);
-                const {cx, cy} = normToCss(normX, normY, pageNum);
-                if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchMove', cx, cy);
-                return;
-            }
             if (!isDrawing || currentPageNum !== pageNum ||
                 (_tool !== 'pen' && _tool !== 'eraser' && _tool !== 'highlighter')) return;
             if (e.touches) e.preventDefault();
@@ -290,7 +277,6 @@ window.patternViewer = (() => {
         function onUp(e) {
             if (_isPinching) return;
             if (_snapTimer) { clearTimeout(_snapTimer); _snapTimer = null; }
-            if (_tool === 'ruler') { if (dotNetRef) dotNetRef.invokeMethodAsync('OnRulerTouchEnd'); return; }
             if (!isDrawing || currentPageNum !== pageNum) return;
             isDrawing = false;
             _snapTriggered = false;
@@ -405,7 +391,7 @@ window.patternViewer = (() => {
         annoCanvas._dpr  = dpr;
         annoCanvas._zoom = zoom;
 
-        const cursor = _tool === 'pen' || _tool === 'ruler' ? 'crosshair' : _tool === 'eraser' ? 'cell' : 'default';
+        const cursor = _tool === 'pen' ? 'crosshair' : _tool === 'eraser' ? 'cell' : 'default';
         annoCanvas.style.cursor = cursor;
 
         const ctx = pdfCanvas.getContext('2d');
@@ -573,7 +559,7 @@ window.patternViewer = (() => {
         }, { passive: false });
 
         scrollEl.addEventListener('touchmove', e => {
-            if (_tool === 'ruler' && e.touches.length === 1) { e.preventDefault(); return; }
+            
             if (e.touches.length !== 2) return;
             e.preventDefault();
             _pinchLatestDist = Math.hypot(e.touches[0].clientX-e.touches[1].clientX, e.touches[0].clientY-e.touches[1].clientY);
@@ -680,7 +666,7 @@ window.patternViewer = (() => {
             _color = color; _size = size; _isEraser = isEraser;
             _opacity = opacity !== undefined ? Math.max(0.1, Math.min(1.0, opacity/100)) : 1.0;
             if (tool !== undefined) _tool = tool;
-            const cursor = (tool==='pen'||tool==='ruler') ? 'crosshair' : tool==='eraser' ? 'cell' : 'default';
+            const cursor = (tool==='pen') ? 'crosshair' : tool==='eraser' ? 'cell' : 'default';
             for (let i = 1; i <= totalPages; i++) { const a = getAnnoCanvas(i); if (a) a.style.cursor = cursor; }
         },
 
