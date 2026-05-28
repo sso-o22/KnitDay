@@ -680,7 +680,6 @@ window.patternViewer = (() => {
             scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top - 8;
             currentPageNum = pageNum;
         },
-<<<<<<< HEAD
 
         preventScroll() {},
 
@@ -695,22 +694,6 @@ window.patternViewer = (() => {
 
         getPaths() { return JSON.stringify(paths); },
 
-=======
-
-        preventScroll() {},
-
-        setDrawPanelOpen(open) {
-            document.getElementById('draw-fab-btn')?.classList.toggle('draw-fab-on', open);
-            document.getElementById('draw-panel-div')?.classList.toggle('draw-panel-open', open);
-            _isPanelAnimating = true;
-            setTimeout(() => { _isPanelAnimating = false; }, 350);
-        },
-
-        triggerFileInput() { document.getElementById('pdf-file-input')?.click(); },
-
-        getPaths() { return JSON.stringify(paths); },
-
->>>>>>> ce8fc07f65329d52d531c687cba2df6b791b27dd
         setPaths(json) {
             try { paths = JSON.parse(json) || []; } catch(_) { paths = []; }
             for (let i=1; i<=totalPages; i++) { if (_renderedPages.has(i)) redrawPage(i); }
@@ -720,122 +703,6 @@ window.patternViewer = (() => {
             if (!_lastPdfBytes) return false;
             try { await savePdfToIDB(projectId, _lastPdfBytes, fileName); return true; }
             catch(e) { console.error(e); return false; }
-<<<<<<< HEAD
-        },
-
-        async loadPdfFromProject(projectId) {
-            try { const r = await loadPdfFromIDB(projectId); return r?.fileName || null; }
-            catch(e) { return null; }
-        },
-
-        async renderSavedPdf(projectId) {
-            try {
-                const r = await loadPdfFromIDB(projectId);
-                if (!r?.bytes) return 0;
-                await ensurePdfJs();
-                const base = getPdfjsBase();
-                pdfDoc = await window.pdfjsLib.getDocument({ data: r.bytes, cMapUrl: base+'/pdfjs/web/cmaps/', cMapPacked: true, standardFontDataUrl: base+'/pdfjs/web/standard_fonts/' }).promise;
-                totalPages = pdfDoc.numPages; abortAllPageHandlers(); _renderedPages=new Set(); _pageSizes={}; _lastPdfBytes=r.bytes;
-                const p1 = await pdfDoc.getPage(1), vp1 = p1.getViewport({scale:1.0});
-                for (let i=1;i<=totalPages;i++) _pageSizes[i]={w:vp1.width,h:vp1.height};
-                return totalPages;
-            } catch(e) { console.error(e); return 0; }
-        },
-
-        async deleteSavedPdf(projectId) { try { await deletePdfFromIDB(projectId); return true; } catch(e) { return false; } },
-
-        async exportAllPdfs() {
-            try {
-                const db = await openDB();
-                return new Promise((res, rej) => {
-                    const req = db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).getAll();
-                    req.onsuccess = e => {
-                        const result = {};
-                        for (const item of e.target.result) {
-                            const bytes = item.bytes instanceof Uint8Array ? item.bytes : new Uint8Array(item.bytes);
-                            let bin = ''; for (let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
-                            result[item.projectId] = { fileName: item.fileName, data: btoa(bin) };
-                        }
-                        res(JSON.stringify(result));
-                    };
-                    req.onerror = e => rej(e.target.error);
-                });
-            } catch(e) { return '{}'; }
-        },
-
-        async importAllPdfs(jsonStr) {
-            try {
-                const map = JSON.parse(jsonStr);
-                const db = await openDB();
-                for (const [pid, val] of Object.entries(map)) {
-                    const bin = atob(val.data), bytes = new Uint8Array(bin.length);
-                    for (let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-                    await savePdfToIDB(pid, bytes, val.fileName);
-                }
-                return true;
-            } catch(e) { console.error(e); return false; }
-        },
-
-        // ── 행 높이 자동 감지 ──────────────────────────────────────
-        // canvas 픽셀 데이터에서 수평 격자선을 감지해 행 높이를 반환 (zoom=1 기준 px)
-        detectRowHeight(pageNum) {
-            try {
-                const canvas = document.getElementById('pdf-canvas-' + pageNum);
-                if (!canvas) return 0;
-                const ctx = canvas.getContext('2d');
-                const w = canvas.width, h = canvas.height;
-                const data = ctx.getImageData(0, 0, w, h).data;
-                const dpr = window.devicePixelRatio || 1;
-
-                // 각 Y 행의 "어두운 픽셀" 비율 계산
-                const darkRatios = new Float32Array(h);
-                for (let y = 0; y < h; y++) {
-                    let dark = 0;
-                    for (let x = 0; x < w; x++) {
-                        const i = (y * w + x) * 4;
-                        const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
-                        if (brightness < 80) dark++;
-                    }
-                    darkRatios[y] = dark / w;
-                }
-
-                // 어두운 픽셀 비율이 높은 행 = 격자선
-                const threshold = 0.3;
-                const lineYs = [];
-                for (let y = 1; y < h - 1; y++) {
-                    if (darkRatios[y] > threshold &&
-                        darkRatios[y] >= darkRatios[y-1] &&
-                        darkRatios[y] >= darkRatios[y+1]) {
-                        // 인접 선은 하나로 합치기
-                        if (lineYs.length === 0 || y - lineYs[lineYs.length-1] > 5) {
-                            lineYs.push(y);
-                        }
-                    }
-                }
-
-                if (lineYs.length < 3) return 0;
-
-                // 격자선 간격의 중앙값 계산
-                const gaps = [];
-                for (let i = 1; i < lineYs.length; i++) {
-                    gaps.push(lineYs[i] - lineYs[i-1]);
-                }
-                gaps.sort((a, b) => a - b);
-                const median = gaps[Math.floor(gaps.length / 2)];
-
-                // zoom=1 기준으로 변환 (canvas는 dpr * zoom 배율로 렌더링됨)
-                const zoom = currentZoom || 1;
-                return median / (dpr * zoom);
-            } catch(e) {
-                console.error('detectRowHeight error:', e);
-                return 0;
-            }
-        },
-
-        // 페이지 너비 반환 (zoom=1 기준 px)
-        getPageWidth(pageNum) {
-            return getPageOrigW(pageNum);
-=======
         },
 
         async loadPdfFromProject(projectId) {
@@ -1089,7 +956,6 @@ window.patternViewer = (() => {
             anno.height = Math.round(h * dpr);
             anno.style.width  = w + 'px';
             anno.style.height = h + 'px';
->>>>>>> ce8fc07f65329d52d531c687cba2df6b791b27dd
         }
     };
 })();
