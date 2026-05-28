@@ -157,6 +157,11 @@ namespace KnitLog.Models
         public string ViewerRowMarkers { get; set; } = "";       // 행 마커 JSON
         public int ViewerLastPage { get; set; } = 1;             // 마지막 페이지
         public double ViewerLastZoom { get; set; } = 0;          // 마지막 줌 (0=fit)
+        public string ViewerLastTool { get; set; } = "pen";      // 마지막 툴
+        public string ViewerPenColor { get; set; } = "#000000";  // 펜 색상
+        public int ViewerPenSize { get; set; } = 4;              // 펜 굵기
+        public int ViewerPenOpacity { get; set; } = 100;         // 펜 투명도
+        public string ViewerRowMarkerColor { get; set; } = "#ffeb3b"; // 행 마커 색상
     }
 
     public class ProjectYarnUsage

@@ -794,6 +794,13 @@
             _project.ViewerLastZoom = _zoom;
             _project.ViewerLastPage = _currentPage;
 
+            // 필기 설정 저장
+            _project.ViewerLastTool       = _tool is "rowmarker" or "rowheightdraw" ? _tool : _tool;
+            _project.ViewerPenColor       = _penColor;
+            _project.ViewerPenSize        = _penSize;
+            _project.ViewerPenOpacity     = _penOpacity;
+            _project.ViewerRowMarkerColor = _rowMarkerColor;
+
             await SaveProject();
         }
         catch (OperationCanceledException) { }
@@ -885,7 +892,16 @@
 
             StateHasChanged();
 
-            // 마지막으로 보던 페이지로 스크롤
+            // 필기 설정 복원
+            _penColor       = _project.ViewerPenColor;
+            _penSize        = _project.ViewerPenSize > 0 ? _project.ViewerPenSize : 4;
+            _penOpacity     = _project.ViewerPenOpacity > 0 ? _project.ViewerPenOpacity : 100;
+            _rowMarkerColor = !string.IsNullOrEmpty(_project.ViewerRowMarkerColor) ? _project.ViewerRowMarkerColor : "#ffeb3b";
+            // rowheightdraw는 진입 시 초기화가 필요하므로 rowmarker로 복원
+            var savedTool = _project.ViewerLastTool;
+            _tool = savedTool is "pen" or "highlighter" or "eraser" or "rowmarker" ? savedTool : "pen";
+            await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, _tool == "eraser", _tool, _penOpacity);
+            StateHasChanged();
             if (_currentPage > 1)
             {
                 await Task.Delay(150); // 렌더 완료 대기
@@ -1077,7 +1093,7 @@
             SetTool("select");
         _suppressRender = false;
     }
-    void SetTool(string t){_tool=t;_=JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,t=="eraser",t,_penOpacity);}
+    void SetTool(string t){_tool=t;_=JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,t=="eraser",t,_penOpacity);_ = SaveViewerStateAsync();}
     async Task OnColorChange(ChangeEventArgs e){_penColor=e.Value?.ToString()??_penColor;await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool,_penOpacity);}
     async Task OnSizeChange(ChangeEventArgs e){if(int.TryParse(e.Value?.ToString(),out var v))_penSize=v;await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool,_penOpacity);}
     async Task SizeDown(){_penSize=Math.Max(1,_penSize-1);await JS.InvokeVoidAsync("patternViewer.setTool",_penColor,_penSize,_tool=="eraser",_tool,_penOpacity);}
@@ -1363,9 +1379,14 @@
             var pathsJson = await JS.InvokeAsync<string>("patternViewer.getPaths");
             _project.ViewerAnnotations = pathsJson;
 
-            _project.ViewerRowMarkers  = System.Text.Json.JsonSerializer.Serialize(_rowMarkers);
-            _project.ViewerLastZoom    = _zoom;
-            _project.ViewerLastPage    = _currentPage;
+            _project.ViewerRowMarkers      = System.Text.Json.JsonSerializer.Serialize(_rowMarkers);
+            _project.ViewerLastZoom        = _zoom;
+            _project.ViewerLastPage        = _currentPage;
+            _project.ViewerLastTool        = _tool;
+            _project.ViewerPenColor        = _penColor;
+            _project.ViewerPenSize         = _penSize;
+            _project.ViewerPenOpacity      = _penOpacity;
+            _project.ViewerRowMarkerColor  = _rowMarkerColor;
             await SaveProject();
         }
         catch (Exception ex)
