@@ -36,7 +36,7 @@
     <link rel="preload" href="icons/Octopus.svg"    as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/Done.svg"       as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/Wish.svg"       as="image" type="image/svg+xml" />
-    <link rel="preload" href="icons/Yarn_ball_blue.svg"  as="image" type="image/svg+xml" />
+    <link rel="preload" href="icons/Yarn_ball.svg"  as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/Swatch.svg"     as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/Tool.svg"       as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/Chart.svg"      as="image" type="image/svg+xml" />
@@ -76,6 +76,10 @@
             if (el) { el.style.display = 'block'; el.textContent = '오류: ' + (e.reason?.message || e.reason || '알 수 없는 오류'); }
         });
     </script>
+
+    <!-- 모바일 디버깅용 콘솔 (문제 해결 후 제거) -->
+    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+    <script>eruda.init();</script>
 
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="js/patternViewer.js"></script>
