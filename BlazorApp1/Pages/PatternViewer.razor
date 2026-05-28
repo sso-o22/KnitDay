@@ -688,10 +688,10 @@
 @if (_showLoadWarning)
 {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
-        <div class="modal" style="max-width:360px;text-align:center;" @onclick:stopPropagation="true">
+        <div style="background:var(--white);border-radius:20px;padding:28px 24px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
             <div style="font-size:2rem;margin-bottom:12px;">📄</div>
             <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">도안을 교체할까요?</div>
-            <div style="font-size:0.88rem;color:var(--text-mid);margin-bottom:20px;">이미 불러온 도안이 있어요.<br/>새 파일로 교체하면 기존 필기와 도형이 모두 사라져요.</div>
+            <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:20px;">이미 불러온 도안이 있어요.<br/>새 파일로 교체하면 기존 필기가 사라져요.</div>
             <div style="display:flex;gap:10px;justify-content:center;">
                 <button class="btn btn-ghost" @onclick="()=>_showLoadWarning=false">취소</button>
                 <button class="btn btn-primary" @onclick="ConfirmLoadPattern">교체</button>
@@ -1107,7 +1107,10 @@
         if (_drawMode)
             SetTool(_tool is "pen" or "highlighter" or "eraser" or "rowmarker" ? _tool : "pen");
         else
-            SetTool("select");
+        {
+            // 닫을 때는 _tool은 기억해두고 JS만 select로
+            _ = JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, false, "select", _penOpacity);
+        }
         _suppressRender = false;
     }
     void SetTool(string t)
