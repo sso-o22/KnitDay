@@ -60,6 +60,47 @@ window.patternViewer = (() => {
         return { x, y };
     }
 
+    // 두 선 드래그: 선 엘리먼트에 mouse/touch 이벤트 부착
+    function attachLineDrag(elId, pageNum, dotNetRef, callbackName) {
+        const el = document.getElementById(elId);
+        if (!el) return;
+
+        function startDrag(e) {
+            e.preventDefault();
+            const startClientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const canvas = document.getElementById('anno-canvas-' + pageNum);
+            const scrollEl = document.getElementById('scroll-container');
+
+            function getCanvasY(clientY) {
+                if (!canvas) return clientY;
+                const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+                const off = getOffsetPos(canvas);
+                const scrollContainerTop = scrollEl ? scrollEl.getBoundingClientRect().top : 0;
+                return clientY - (off.y - scrollTop + scrollContainerTop);
+            }
+
+            function onMove(ev) {
+                const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
+                const canvasY = getCanvasY(cy);
+                el.style.top = canvasY + 'px';
+                dotNetRef.invokeMethodAsync(callbackName, canvasY);
+            }
+            function onUp(ev) {
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup',   onUp);
+                window.removeEventListener('touchmove', onMove);
+                window.removeEventListener('touchend',  onUp);
+            }
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup',   onUp);
+            window.addEventListener('touchmove', onMove, { passive: false });
+            window.addEventListener('touchend',  onUp);
+        }
+
+        el.addEventListener('mousedown',  startDrag);
+        el.addEventListener('touchstart', startDrag, { passive: false });
+    }
+
     function getNormPos(anno, e, pageNum) {
         const src = e.touches ? e.touches[0] : e;
         const scrollEl = document.getElementById('scroll-container');
@@ -929,46 +970,32 @@ window.patternViewer = (() => {
             return canvas ? canvas.offsetHeight : 0;
         },
 
-        // 수동 행 높이 드래그: overlay div를 JS에서 직접 조작하여 부드러운 피드백
-        startRowDraw(pageNum, startClientY, dotNetRef) {
-            const overlay = document.getElementById('rowdraw-overlay-' + pageNum);
-            const label   = document.getElementById('rowdraw-label-'   + pageNum);
-            const canvas  = document.getElementById('anno-canvas-' + pageNum);
-            if (!overlay || !canvas) return;
+        // 수동 행 높이: 두 선을 각각 드래그해서 한 행 높이 지정
+        initRowLines(pageNum, dotNetRef) {
+            // 스크롤 중앙 위치 기준으로 두 선 초기 배치
+            const scrollEl = document.getElementById('scroll-container');
+            const canvas   = document.getElementById('anno-canvas-' + pageNum);
+            if (!canvas) return;
 
-            const canvasRect = canvas.getBoundingClientRect();
-            const scrollEl   = document.getElementById('scroll-container');
-            const scrollTop  = scrollEl ? scrollEl.scrollTop : 0;
-            // canvas 기준 시작 Y (CSS px, 스크롤 보정)
-            const startCanvasY = startClientY - canvasRect.top + (scrollEl ? 0 : 0);
+            const scrollTop    = scrollEl ? scrollEl.scrollTop : 0;
+            const scrollH      = scrollEl ? scrollEl.clientHeight : window.innerHeight;
+            const canvasRect   = canvas.getBoundingClientRect();
+            const canvasTop    = canvasRect.top + scrollTop - (scrollEl ? scrollEl.getBoundingClientRect().top : 0);
 
-            overlay.style.display = 'block';
-            overlay.style.top    = startCanvasY + 'px';
-            overlay.style.height = '0px';
-            if (label) label.textContent = '';
+            // 현재 보이는 영역의 canvas 기준 중앙
+            const viewCenter = scrollTop + scrollH / 2 - canvasTop;
+            const dpr = window.devicePixelRatio || 1;
 
-            function onMove(e) {
-                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-                const dy      = clientY - startClientY;
-                const h       = Math.abs(dy);
-                const top     = dy >= 0 ? startCanvasY : startCanvasY + dy;
-                overlay.style.top    = top + 'px';
-                overlay.style.height = h  + 'px';
-                if (label) label.textContent = Math.round(h) + 'px';
-            }
-            function onUp(e) {
-                window.removeEventListener('mousemove', onMove);
-                window.removeEventListener('mouseup',   onUp);
-                window.removeEventListener('touchmove', onMove);
-                window.removeEventListener('touchend',  onUp);
-                overlay.style.display = 'none';
-                const clientY = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
-                dotNetRef.invokeMethodAsync('OnRowDrawEnd', clientY);
-            }
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup',   onUp);
-            window.addEventListener('touchmove', onMove, { passive: true });
-            window.addEventListener('touchend',  onUp);
+            const initA = Math.max(20, viewCenter - 30);
+            const initB = initA + 60;
+            dotNetRef.invokeMethodAsync('SetRowLineAY', initA);
+            dotNetRef.invokeMethodAsync('SetRowLineBY', initB);
+
+            // 각 선에 드래그 이벤트 부착 (마운트 후 잠깐 기다림)
+            setTimeout(() => {
+                attachLineDrag('rowdraw-line-a-' + pageNum, pageNum, dotNetRef, 'SetRowLineAY');
+                attachLineDrag('rowdraw-line-b-' + pageNum, pageNum, dotNetRef, 'SetRowLineBY');
+            }, 50);
         },
 
         // 이미지 크기 반환
