@@ -46,6 +46,14 @@ window.patternViewer = (() => {
     // Blazor용: cssX = normX * pageOrigW * zoom
 
     function getPageOrigW(pageNum) { return (_pageSizes[pageNum] || _pageSizes[1] || {w:1}).w; }
+
+    // 모바일 OOM 방지: dpr이 높을수록 zoom 상한을 낮춤
+    // 16MP 상한 기준: maxZoom = sqrt(16MP / (cssW * cssH)) / dpr
+    function getMaxZoom() {
+        const dpr = window.devicePixelRatio || 1;
+        // dpr 1→4.0, dpr 2→3.0, dpr 3→2.5 수준
+        return Math.max(2.0, 4.0 / dpr);
+    }
     function getPageOrigH(pageNum) { return (_pageSizes[pageNum] || _pageSizes[1] || {h:1}).h; }
 
     // 터치/마우스 → 정규화 좌표 (0~1)
@@ -369,8 +377,17 @@ window.patternViewer = (() => {
         const vp   = page.getViewport({ scale: zoom });
         const cssW = Math.floor(vp.width);
         const cssH = Math.floor(vp.height);
-        const bufW = Math.floor(cssW * dpr);
-        const bufH = Math.floor(cssH * dpr);
+
+        // 모바일 OOM 방지: canvas buffer 픽셀 수 상한 (16MP)
+        // 초과 시 render scale을 줄여서 buffer 크기를 제한
+        const MAX_BUF_PX = 16 * 1024 * 1024;
+        const rawBufW = Math.floor(cssW * dpr);
+        const rawBufH = Math.floor(cssH * dpr);
+        const rawPx   = rawBufW * rawBufH;
+        const scale   = rawPx > MAX_BUF_PX ? Math.sqrt(MAX_BUF_PX / rawPx) : 1.0;
+        const bufW    = Math.floor(rawBufW * scale);
+        const bufH    = Math.floor(rawBufH * scale);
+        const renderDpr = dpr * scale; // 실제 render에 쓸 배율
 
         pdfCanvas.width  = bufW; pdfCanvas.height  = bufH;
         annoCanvas.width = bufW; annoCanvas.height = bufH;
@@ -388,14 +405,14 @@ window.patternViewer = (() => {
             });
             annoCanvas._sizeObserver.observe(annoCanvas, { attributes: true, attributeFilter: ['style'] });
         }
-        annoCanvas._dpr  = dpr;
+        annoCanvas._dpr  = renderDpr;
         annoCanvas._zoom = zoom;
 
         const cursor = _tool === 'pen' ? 'crosshair' : _tool === 'eraser' ? 'cell' : 'default';
         annoCanvas.style.cursor = cursor;
 
         const ctx = pdfCanvas.getContext('2d');
-        const task = page.render({ canvasContext: ctx, viewport: page.getViewport({ scale: zoom * dpr }) });
+        const task = page.render({ canvasContext: ctx, viewport: page.getViewport({ scale: zoom * renderDpr }) });
         _renderTasks[pageNum] = task;
         try { await task.promise; }
         catch (err) { if (err?.name !== 'RenderingCancelledException') console.warn('render err', pageNum, err); return; }
@@ -522,7 +539,7 @@ window.patternViewer = (() => {
         scrollEl.addEventListener('wheel', e => {
             if (!e.ctrlKey) return;
             e.preventDefault();
-            const maxZ = Math.min(4.0, _fitZoom * 6), minZ = _fitZoom * 0.3;
+            const maxZ = Math.min(getMaxZoom(), _fitZoom * 6), minZ = _fitZoom * 0.3;
             let dy = e.deltaY;
             if (e.deltaMode === 1) dy *= 20;
             if (e.deltaMode === 2) dy *= 300;
@@ -569,7 +586,7 @@ window.patternViewer = (() => {
             _pinchRafId = requestAnimationFrame(() => {
                 _pinchRafId = null;
                 if (!_isPinching) return;
-                const newZ = Math.min(Math.min(4.0,_fitZoom*6), Math.max(_fitZoom*0.3, _pinchStartZoom*_pinchLatestDist/_pinchStartDist));
+                const newZ = Math.min(Math.min(getMaxZoom(),_fitZoom*6), Math.max(_fitZoom*0.3, _pinchStartZoom*_pinchLatestDist/_pinchStartDist));
                 const wrapper = document.getElementById('pdf-wrapper');
                 if (wrapper && _pinchWrapperRect) {
                     wrapper.style.transformOrigin = (_pinchLatestCx-_pinchWrapperRect.left)+'px '+(_pinchLatestCy-_pinchWrapperRect.top)+'px';
@@ -653,7 +670,7 @@ window.patternViewer = (() => {
             if (_renderDebounceTimer) { clearTimeout(_renderDebounceTimer); _renderDebounceTimer = null; }
             const wrapper = document.getElementById('pdf-wrapper');
             if (wrapper) { wrapper.style.transform=''; wrapper.style.transformOrigin=''; wrapper.style.opacity='1'; }
-            const maxZ = Math.min(4.0, _fitZoom*6), minZ = _fitZoom*0.3;
+            const maxZ = Math.min(getMaxZoom(), _fitZoom*6), minZ = _fitZoom*0.3;
             zoom = Math.min(maxZ, Math.max(minZ, zoom));
             currentZoom = zoom; _renderedPages = new Set(); abortAllPageHandlers();
             syncContainerSizes(zoom);
