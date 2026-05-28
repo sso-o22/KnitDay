@@ -30,7 +30,8 @@
     <link rel="stylesheet" href="css/app.css" />
     <link rel="icon" href="icons/Knit.svg" type="image/svg+xml" />
 
-    <!-- SVG 아이콘 preload -->
+    <!-- SVG 아이콘 preload — Knit.svg 최우선 (로딩 화면용) -->
+    <link rel="preload" href="icons/Knit.svg"        as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/Home.svg"       as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/Calendar.svg"   as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/Octopus.svg"    as="image" type="image/svg+xml" />
@@ -76,10 +77,6 @@
             if (el) { el.style.display = 'block'; el.textContent = '오류: ' + (e.reason?.message || e.reason || '알 수 없는 오류'); }
         });
     </script>
-
-    <!-- 모바일 디버깅용 콘솔 (문제 해결 후 제거) -->
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
 
     <script src="_framework/blazor.webassembly.js"></script>
     <script src="js/patternViewer.js"></script>
