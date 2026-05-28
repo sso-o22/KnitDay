@@ -216,7 +216,7 @@
                     <button class="dp-btn @(_tool=="rowmarker"?"dp-on":"")"   @onclick='()=>SetTool("rowmarker")' title="행 마커">☰</button>
                 </div>
 
-                @if (_tool == "rowmarker")
+                @if (_tool == "rowmarker" || _tool == "rowheightdraw")
                 {
                     <div class="dp-sep"></div>
                     @* 색상 *@
