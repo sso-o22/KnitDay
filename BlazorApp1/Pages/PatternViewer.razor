@@ -1259,6 +1259,7 @@
 
     async Task OnAnnoCanvasClick(MouseEventArgs e, int pageNum)
     {
+        if (!_drawMode) return;
         if (_tool != "rowmarker") return;
         if (_detectedRowH <= 0) return;
 
