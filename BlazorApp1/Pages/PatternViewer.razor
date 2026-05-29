@@ -168,33 +168,20 @@
     <!-- ── 필기 도구 플로팅 위젯 (좌측 상단, 툴바 아래) ── -->
     <div class="draw-wrap">
         <button class="draw-fab" id="draw-fab-btn" @onclick="ToggleDrawMode" title="필기 모드">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 20h4L18.5 9.5a2.828 2.828 0 1 0-4-4L4 16v4z"/>
-                <path d="M14.5 5.5l4 4"/>
-            </svg>
+            <img src="@(_drawMode ? "icons/draw-mode-on.svg" : "icons/draw-mode-off.svg")" style="width:22px;height:22px;" />
         </button>
         <div class="draw-panel" id="draw-panel-div">
             <div class="draw-panel-inner">
                 <!-- 행1: 도구 선택 (펜 → 형광펜 → 지우개 → 행감지) -->
                 <div class="dp-row">
                     <button class="dp-btn @(_tool=="pen"?"dp-on":"")" @onclick='()=>SetTool("pen")' title="펜">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M4 20h4L18.5 9.5a2.828 2.828 0 1 0-4-4L4 16v4z"/>
-                            <path d="M14.5 5.5l4 4"/>
-                        </svg>
+                        <img src="icons/pen.svg" style="width:20px;height:20px;" />
                     </button>
                     <button class="dp-btn @(_tool=="highlighter"?"dp-on":"")" @onclick='()=>SetTool("highlighter")' title="형광펜">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M9 3h6l4 6-7 4-7-4 4-6z"/>
-                            <path d="M12 13v8"/>
-                            <path d="M9 21h6"/>
-                        </svg>
+                        <img src="icons/highlighter.svg" style="width:20px;height:20px;" />
                     </button>
                     <button class="dp-btn @(_tool=="eraser"?"dp-on":"")" @onclick='()=>SetTool("eraser")' title="지우개">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M20 20H7L3 16l10-10 7 7-2.5 2.5"/>
-                            <path d="M6.0001 17.0001 L10 13"/>
-                        </svg>
+                        <img src="icons/eraser.svg" style="width:20px;height:20px;" />
                     </button>
                     <button class="dp-btn @(_tool=="rowmarker"?"dp-on":"")" @onclick='()=>SetTool("rowmarker")' title="행 감지">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
