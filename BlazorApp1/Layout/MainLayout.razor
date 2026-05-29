@@ -51,63 +51,6 @@
 
     <main class="main-content">@Body</main>
 
-    <!-- 아이패드 전용 오른쪽 인덱스 탭 -->
-    <nav class="right-index">
-        <NavLink href="" Match="NavLinkMatch.All" class="right-tab">
-            <img src="icons/Home.svg" class="right-tab-icon" />
-            <span class="right-tab-label">홈</span>
-        </NavLink>
-        <NavLink href="schedule" class="right-tab">
-            <img src="icons/Calendar.svg" class="right-tab-icon" />
-            <span class="right-tab-label">뜨케줄</span>
-        </NavLink>
-        <NavLink href="projects" class="right-tab">
-            <img src="icons/Octopus.svg" class="right-tab-icon" />
-            <span class="right-tab-label">문어발</span>
-        </NavLink>
-        <NavLink href="finished" class="right-tab">
-            <img src="icons/Done.svg" class="right-tab-icon" />
-            <span class="right-tab-label">완성작</span>
-        </NavLink>
-        <NavLink href="wishlist" class="right-tab">
-            <img src="icons/Wish.svg" class="right-tab-icon" />
-            <span class="right-tab-label">위시</span>
-        </NavLink>
-        <NavLink href="yarns" class="right-tab">
-            <img src="icons/Yarn_ball.svg" class="right-tab-icon" />
-            <span class="right-tab-label">실창고</span>
-        </NavLink>
-        <NavLink href="swatches" class="right-tab">
-            <img src="icons/Swatch.svg" class="right-tab-icon" />
-            <span class="right-tab-label">스와치</span>
-        </NavLink>
-        <NavLink href="tools" class="right-tab">
-            <img src="icons/Tool.svg" class="right-tab-icon" />
-            <span class="right-tab-label">도구</span>
-        </NavLink>
-        <NavLink href="stats" class="right-tab">
-            <img src="icons/Chart.svg" class="right-tab-icon" />
-            <span class="right-tab-label">통계</span>
-        </NavLink>
-        <NavLink href="settings" class="right-tab">
-            <img src="icons/Setting.svg" class="right-tab-icon" />
-            <span class="right-tab-label">설정</span>
-        </NavLink>
-        <!-- 다크모드 토글 -->
-        <div class="right-tab right-tab-dark" @onclick="ToggleDark">
-            @if (_isDark)
-            {
-                <img src="icons/Light.svg" class="right-tab-icon" />
-                <span class="right-tab-label">라이트</span>
-            }
-            else
-            {
-                <img src="icons/Dark.svg" class="right-tab-icon" />
-                <span class="right-tab-label">다크</span>
-            }
-        </div>
-    </nav>
-
     <nav class="bottom-nav">
         <NavLink href="" Match="NavLinkMatch.All" class="bottom-nav-item">
             <span class="bottom-nav-icon"><img src="icons/Home.svg" style="width:36px;height:36px;" /></span><span class="bottom-nav-label">홈</span>
