@@ -254,7 +254,9 @@
                     @if (_rowMarkers.Any(m => m.IsCurrent))
                     {
                         <div class="dp-row" style="justify-content:center;gap:4px;">
-                            <button class="dp-btn" title="다음 행으로" @onclick="MoveRowMarkerUp" style="font-size:16px;">+</button>
+                            <button class="dp-btn" title="다음 행으로" @onclick="MoveRowMarkerUp" style="width:28px;height:28px;">
+                                <img src="icons/Plus.svg" style="width:20px;height:20px;" />
+                            </button>
                             <button class="dp-btn" title="되돌리기" @onclick="UndoRowMarker" style="width:28px;height:28px;">
                                 <img src="icons/Undo.svg" style="width:18px;height:18px;" />
                             </button>
