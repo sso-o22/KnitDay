@@ -51,13 +51,29 @@ else
                     {
                         @if (_used > 0)
                         {
-                            <span class="badge" style="background:var(--theme-mid);color:var(--text-dark);font-size:0.75rem;">
-                                @(_remain.ToString("G29")) / @(yarn.Quantity.ToString("G29")) @_qtyUnit
-                            </span>
+                            @if (yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0)
+                            {
+                                <span class="badge" style="background:var(--theme-mid);color:var(--text-dark);font-size:0.75rem;">
+                                    @((yarn.WeightGram * _remain).ToString("G29"))g / @((yarn.WeightGram * yarn.Quantity).ToString("G29"))g
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge" style="background:var(--theme-mid);color:var(--text-dark);font-size:0.75rem;">
+                                    @(_remain.ToString("G29")) / @(yarn.Quantity.ToString("G29")) @_qtyUnit
+                                </span>
+                            }
                         }
                         else
                         {
-                            <span class="badge badge-done">x @(yarn.Quantity.ToString("G29")) @_qtyUnit</span>
+                            @if (yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0)
+                            {
+                                <span class="badge badge-done">@((yarn.WeightGram * yarn.Quantity).ToString("G29"))g</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-done">x @(yarn.Quantity.ToString("G29")) @_qtyUnit</span>
+                            }
                         }
                     }
                 </div>
