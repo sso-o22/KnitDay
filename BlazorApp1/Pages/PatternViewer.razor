@@ -184,11 +184,7 @@
                         <img src="icons/eraser.svg" style="width:20px;height:20px;" />
                     </button>
                     <button class="dp-btn @(_tool=="rowmarker"?"dp-on":"")" @onclick='()=>SetTool("rowmarker")' title="행 감지">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="3" y1="6"  x2="21" y2="6"/>
-                            <line x1="3" y1="12" x2="21" y2="12"/>
-                            <line x1="3" y1="18" x2="21" y2="18"/>
-                        </svg>
+                        <img src="icons/row-detect.svg" style="width:20px;height:20px;" />
                     </button>
                 </div>
 
@@ -206,12 +202,11 @@
                     @* 행 높이 감지 버튼 *@
                     <div class="dp-row" style="justify-content:center;gap:3px;">
                         <button class="dp-btn" title="자동 행 감지" @onclick="DetectRowHeight" style="width:28px;height:28px;">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="11" cy="11" r="7"/>
-                                <line x1="16.5" y1="16.5" x2="21" y2="21"/>
-                            </svg>
+                            <img src="icons/search.svg" style="width:18px;height:18px;" />
                         </button>
-                        <button class="dp-btn @(_tool=="rowheightdraw"?"dp-on":"")" title="직접 한 행 높이 지정" @onclick="StartRowHeightDraw" style="font-size:13px;width:28px;height:28px;">↕</button>
+                        <button class="dp-btn @(_tool=="rowheightdraw"?"dp-on":"")" title="직접 한 행 높이 지정" @onclick="StartRowHeightDraw" style="width:28px;height:28px;">
+                            <img src="icons/row-height.svg" style="width:18px;height:18px;" />
+                        </button>
                     </div>
                     @* 두 선 지정 모드: 적용 버튼 *@
                     @if (_tool == "rowheightdraw")
