@@ -787,7 +787,7 @@ else
                             <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
                             <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
                         }
-                        <input class="form-control" type="number" min="1" style="width:64px;"
+                        <input class="form-control" type="number" min="1" style="width:80px;"
                                value="@displayVal"
                                @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), out var n)) usage.BallsUsed = hasConeWeight ? n / yarn!.WeightGram : n; }" />
                         <span style="font-size:0.82rem; color:var(--text-mid);">@unitLabel</span>

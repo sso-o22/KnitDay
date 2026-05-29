@@ -57,6 +57,52 @@
     <meta name="apple-mobile-web-app-title" content="니트로그" />
 </head>
 <body>
+    <!-- 회전 안내 오버레이 -->
+    <div id="rotate-overlay" style="
+        display:none;
+        position:fixed; inset:0; z-index:99999;
+        background:#fff;
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        font-family:'Noto Sans KR',sans-serif;
+        color:#6b4c3b;
+        gap:20px;
+        text-align:center;
+        padding:32px;
+    ">
+        <img src="icons/Knit.svg" style="width:72px;height:72px;opacity:0.7;" />
+        <div id="rotate-message" style="font-size:1.1rem;font-weight:600;line-height:1.6;"></div>
+    </div>
+
+    <style>
+        /* 모바일(max-width:767px): 가로 방향이면 오버레이 표시 */
+        @media (max-width: 767px) and (orientation: landscape) {
+            #rotate-overlay { display: flex !important; }
+        }
+        /* 태블릿(min-width:768px): 세로 방향이면 오버레이 표시 */
+        @media (min-width: 768px) and (orientation: portrait) {
+            #rotate-overlay { display: flex !important; }
+        }
+    </style>
+
+    <script>
+        (function () {
+            var msg = document.getElementById('rotate-message');
+            function updateMessage() {
+                var isTablet = Math.max(window.screen.width, window.screen.height) >= 768;
+                if (isTablet) {
+                    msg.textContent = '가로 모드로 회전해주세요 🔄';
+                } else {
+                    msg.textContent = '세로 모드로 회전해주세요 🔄';
+                }
+            }
+            updateMessage();
+            window.addEventListener('resize', updateMessage);
+            window.addEventListener('orientationchange', updateMessage);
+        })();
+    </script>
+
     <div id="app">
         <div id="loading-screen" style="display:flex; flex-direction:column; align-items:center; justify-content:center;
                     height:100vh; font-family:'Noto Sans KR',sans-serif; color:#6b4c3b;">
