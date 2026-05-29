@@ -134,10 +134,16 @@ else
 @code {
     async Task SignIn() => await Auth.SignInWithGoogleAsync();
 
-    void OnAuthChanged()
+    // 인증 상태 변경 콜백 — 로그인 완료 후 데이터 재로딩
+    async void OnAuthChanged()
     {
         _authLoading = false;
-        InvokeAsync(StateHasChanged);
+        // 로그인 상태이면 데이터를 다시 불러온다
+        if (Auth.IsLoggedIn)
+        {
+            await LoadDataAsync();
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     bool _loading = true;
@@ -156,6 +162,15 @@ else
             while (!Auth.IsInitialized && waited < 60) { await Task.Delay(100); waited++; }
         }
         _authLoading = false;
+        await LoadDataAsync();
+    }
+
+    // 데이터 로딩 로직을 별도 메서드로 분리
+    async Task LoadDataAsync()
+    {
+        _loading = true;
+        await InvokeAsync(StateHasChanged);
+
         var projects = await Storage.GetProjectsAsync();
         _inProgress = projects.Count(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단);
         _finished   = projects.Count(p => p.Status == ProjectStatus.완료);
