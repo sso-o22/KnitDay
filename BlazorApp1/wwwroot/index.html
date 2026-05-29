@@ -76,12 +76,12 @@
     </div>
 
     <style>
-        /* 모바일(max-width:767px): 가로 방향이면 오버레이 표시 */
-        @media (max-width: 767px) and (orientation: landscape) {
+        /* 모바일(max-width:1023px): 가로 방향이면 오버레이 표시 */
+        @media (max-width: 1023px) and (orientation: landscape) {
             #rotate-overlay { display: flex !important; }
         }
-        /* 태블릿(min-width:768px): 세로 방향이면 오버레이 표시 */
-        @media (min-width: 768px) and (orientation: portrait) {
+        /* 태블릿(min-width:1024px): 세로 방향이면 오버레이 표시 */
+        @media (min-width: 1024px) and (orientation: portrait) {
             #rotate-overlay { display: flex !important; }
         }
     </style>
@@ -90,7 +90,9 @@
         (function () {
             var msg = document.getElementById('rotate-message');
             function updateMessage() {
-                var isTablet = Math.max(window.screen.width, window.screen.height) >= 768;
+                // 기기의 긴 쪽 길이로 태블릿 여부 판단
+                var longerSide = Math.max(window.screen.width, window.screen.height);
+                var isTablet = longerSide >= 1024;
                 if (isTablet) {
                     msg.textContent = '가로 모드로 회전해주세요 🔄';
                 } else {
