@@ -264,6 +264,10 @@ else
                     @foreach (var usage in _editingProject.YarnUsages)
                     {
                         var yarn = _yarns.Find(y => y.Id == usage.YarnId);
+                        bool isCone = yarn?.YarnType == YarnType.콘사;
+                        bool hasConeWeight = isCone && yarn?.WeightGram > 0;
+                        string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
+                        decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
                                     border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
                             @if (yarn != null)
@@ -272,9 +276,9 @@ else
                                 <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
                             }
                             <input class="form-control" type="number" min="1" style="width:64px;"
-                                   value="@usage.BallsUsed.ToString("G29")"
-                                   @onchange="e => usage.BallsUsed = decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n) ? n : 1" />
-                            <span style="font-size:0.82rem; color:var(--text-mid);">볼(콘)</span>
+                                   value="@displayVal.ToString("G29")"
+                                   @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) usage.BallsUsed = hasConeWeight ? n / yarn!.WeightGram : n; }" />
+                            <span style="font-size:0.82rem; color:var(--text-mid);">@unitLabel</span>
                             <button class="btn btn-danger btn-sm" @onclick="() => _editingProject.YarnUsages.Remove(usage)">✕</button>
                         </div>
                     }

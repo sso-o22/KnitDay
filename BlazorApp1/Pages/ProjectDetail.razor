@@ -95,12 +95,15 @@ else
                             var yarn = _yarns.Find(y => y.Id == usage.YarnId);
                             if (yarn != null)
                             {
+                                bool _isConeC = yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0;
                                 <div style="display:flex; align-items:center; gap:5px; margin-bottom:3px;">
                                     <span class="color-dot" style="background:@yarn.ColorCode; width:12px; height:12px;"></span>
                                     <span style="font-size:0.85rem; font-weight:500;">@yarn.Brand @yarn.Name</span>
                                     @if (usage.BallsUsed > 0)
                                     {
-                                        <span style="font-size:0.78rem; color:var(--text-light);">@(usage.BallsUsed)볼</span>
+                                        <span style="font-size:0.78rem; color:var(--text-light);">
+                                            @(_isConeC ? $"{usage.BallsUsed * yarn.WeightGram:G29}g" : $"{usage.BallsUsed}볼")
+                                        </span>
                                     }
                                 </div>
                             }
@@ -598,6 +601,7 @@ else
                         var yarn = _yarns.Find(y => y.Id == usage.YarnId);
                         if (yarn != null)
                         {
+                            bool _isConeD = yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0;
                             <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 14px; display:flex; align-items:center; gap:10px; min-width:180px;">
                                 <span class="color-dot" style="background:@yarn.ColorCode; width:20px; height:20px; border-radius:50%; flex-shrink:0; border:1px solid rgba(0,0,0,0.08);"></span>
                                 <div>
@@ -605,7 +609,9 @@ else
                                     <div style="font-size:0.78rem; color:var(--text-mid);">@yarn.Color</div>
                                     @if (usage.BallsUsed > 0)
                                     {
-                                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:1px;">@(usage.BallsUsed)볼 사용</div>
+                                        <div style="font-size:0.75rem; color:var(--text-light); margin-top:1px;">
+                                            @(_isConeD ? $"{usage.BallsUsed * yarn.WeightGram:G29}g 사용" : $"{usage.BallsUsed}볼 사용")
+                                        </div>
                                     }
                                 </div>
                             </div>
@@ -770,6 +776,10 @@ else
                 @foreach (var usage in _project.YarnUsages)
                 {
                     var yarn = _yarns.Find(y => y.Id == usage.YarnId);
+                    bool isCone = yarn?.YarnType == YarnType.콘사;
+                    bool hasConeWeight = isCone && yarn?.WeightGram > 0;
+                    string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
+                    decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
                                 border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
                         @if (yarn != null)
@@ -778,9 +788,9 @@ else
                             <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
                         }
                         <input class="form-control" type="number" min="1" style="width:64px;"
-                               value="@usage.BallsUsed"
-                               @onchange="e => usage.BallsUsed = int.TryParse(e.Value?.ToString(), out var n) ? n : 1" />
-                        <span style="font-size:0.82rem; color:var(--text-mid);">볼(콘)</span>
+                               value="@displayVal"
+                               @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), out var n)) usage.BallsUsed = hasConeWeight ? n / yarn!.WeightGram : n; }" />
+                        <span style="font-size:0.82rem; color:var(--text-mid);">@unitLabel</span>
                         <button class="btn btn-danger btn-sm" @onclick="() => _project.YarnUsages.Remove(usage)">✕</button>
                     </div>
                 }
