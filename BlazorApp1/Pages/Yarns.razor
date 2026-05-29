@@ -28,9 +28,18 @@ else if (_yarns.Count == 0)
 else
 {
     <!-- 검색 -->
-    <div class="form-group" style="max-width:320px; margin-bottom:20px;">
+    <div class="form-group" style="max-width:320px; margin-bottom:12px;">
         <input class="form-control" @bind-value="_searchText" @bind-value:event="oninput"
                placeholder="🔍 실 이름, 브랜드, 색상으로 검색..." />
+    </div>
+
+    <!-- 필터 -->
+    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px;">
+        @foreach (var (label, val) in new[]{("전체","all"),("사용 중","linked"),("미사용","unlinked"),("부족","low"),("소진","empty")})
+        {
+            <button class="btn btn-sm @(_filter==val?"btn-primary":"btn-ghost")"
+                    @onclick='()=>{ _filter=val; }'>@label</button>
+        }
     </div>
 
     <div class="grid-3">
@@ -355,16 +364,46 @@ else
     bool _loading = true;
     bool _showModal = false;
     string _searchText = "";
+    string _filter = "all";
     List<Yarn> _yarns = new();
     Yarn? _editingYarn;
 
-    IEnumerable<Yarn> FilteredYarns => string.IsNullOrWhiteSpace(_searchText)
-        ? _yarns
-        : _yarns.Where(y =>
-            y.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
-            y.Brand.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
-            y.Color.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
-            y.Material.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+    IEnumerable<Yarn> FilteredYarns
+    {
+        get
+        {
+            var list = _yarns.AsEnumerable();
+
+            // 텍스트 검색
+            if (!string.IsNullOrWhiteSpace(_searchText))
+                list = list.Where(y =>
+                    y.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+                    y.Brand.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+                    y.Color.Contains(_searchText, StringComparison.OrdinalIgnoreCase) ||
+                    y.Material.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
+
+            // 통합 필터
+            list = _filter switch
+            {
+                "linked"   => list.Where(y => _usedQty.ContainsKey(y.Id)),
+                "unlinked" => list.Where(y => !_usedQty.ContainsKey(y.Id)),
+                "low"      => list.Where(y =>
+                {
+                    decimal used = _usedQty.TryGetValue(y.Id, out var u) ? u : 0;
+                    decimal remain = y.Quantity - used;
+                    return _usedQty.ContainsKey(y.Id) && y.Quantity > 0 && remain > 0 && (remain / y.Quantity) < 0.5m;
+                }),
+                "empty"    => list.Where(y =>
+                {
+                    decimal used = _usedQty.TryGetValue(y.Id, out var u) ? u : 0;
+                    return (y.Quantity - used) <= 0;
+                }),
+                _          => list
+            };
+
+            return list;
+        }
+    }
 
     List<KnitProject> _projects = new();
     // yarnId → 총 사용량 (모든 프로젝트 합산)
