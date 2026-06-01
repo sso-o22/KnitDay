@@ -242,11 +242,25 @@ namespace KnitLog.Services
         }
 
         // ── 통합 저장 (로컬 + Firebase) ──────────────────────────────
+        // Firebase는 5초 타임아웃 내에서 await — UI는 블로킹되지 않음(caller가 fire-and-forget 가능)
         private async Task SaveAsync<T>(string key, string collectionName, string idField, List<T> list)
         {
             await SaveLocalAsync(key, list);
-            // Firebase는 백그라운드에서 처리 (UI 블로킹 방지)
-            _ = SaveFirebaseAsync(collectionName, list, idField);
+            // Firebase도 await로 처리 (앱 종료 직전 저장 유실 방지)
+            // 단, 5초 타임아웃을 두어 네트워크 문제 시 UI가 멈추지 않도록 함
+            try
+            {
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                await SaveFirebaseAsync(collectionName, list, idField).WaitAsync(cts.Token);
+            }
+            catch (OperationCanceledException)
+            {
+                Console.Error.WriteLine($"Firebase save timeout ({collectionName}) — 로컬에는 저장됨");
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Firebase save error ({collectionName}): {ex.Message}");
+            }
         }
 
         // ── 프로젝트 ─────────────────────────────────────────────────
@@ -254,6 +268,7 @@ namespace KnitLog.Services
 
         public async Task SaveProjectAsync(KnitProject project)
         {
+            project.UpdatedAt = DateTime.Now;  // 저장 시각 갱신 → 기기간 merge 시 최신 판단 기준
             var list = await GetProjectsAsync();
             var idx  = list.FindIndex(p => p.Id == project.Id);
             if (idx >= 0) list[idx] = project; else list.Add(project);

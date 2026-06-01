@@ -133,6 +133,7 @@ namespace KnitLog.Models
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public DateTime UpdatedAt { get; set; } = DateTime.Now;  // 기기간 동기화 충돌 해결용
         public List<ProjectYarnUsage> YarnUsages { get; set; } = new();
         public List<Guid> ToolIds { get; set; } = new();
         public NeedleType? NeedleType { get; set; }          // 대바늘/코바늘 선택
