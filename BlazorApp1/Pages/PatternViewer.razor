@@ -299,7 +299,8 @@
                     <!-- 굵기 팝오버 버튼 -->
                     <button id="dp-size-btn" class="dp-btn @(_showSizePopup ? "dp-on" : "")"
                             title="굵기"
-                            @onclick="OpenSizePopup">
+                            @onclick="OpenSizePopup"
+                            @onclick:stopPropagation="true">
                         <span style="font-size:13px;font-weight:700;">@ActiveSize</span>
                     </button>
 
@@ -309,7 +310,8 @@
                         <!-- 투명도 팝오버 버튼 -->
                         <button id="dp-opacity-btn" class="dp-btn @(_showOpacityPopup ? "dp-on" : "")"
                                 title="투명도"
-                                @onclick="OpenOpacityPopup">
+                                @onclick="OpenOpacityPopup"
+                                @onclick:stopPropagation="true">
                             <span style="font-size:9px;font-weight:700;line-height:1.1;text-align:center;">@ActiveOpacity<br/>%</span>
                         </button>
                     }
@@ -1233,33 +1235,42 @@
     void ApplyCurrentTool() => SetTool(_tool);
 
     // ── 팝오버 열기: 버튼 위치 읽어서 fixed 좌표 계산 ─────────────────
+    DateTime _sizePopupLastOpened = DateTime.MinValue;
+    DateTime _opacityPopupLastOpened = DateTime.MinValue;
+
     async Task OpenSizePopup()
     {
+        // 열린 지 300ms 이내 재호출은 내부 클릭 버블링으로 간주, 무시
+        if (_showSizePopup && (DateTime.Now - _sizePopupLastOpened).TotalMilliseconds < 300) return;
         if (_showSizePopup) { _showSizePopup = false; StateHasChanged(); return; }
         _showOpacityPopup = false;
         try
         {
             var rect = await JS.InvokeAsync<double[]>("patternViewer.getBtnRect", "dp-size-btn");
             // rect: [top, right, bottom, left, width, height]
-            _sizePopoverTop = rect[0];      // 버튼 top → 팝오버 top
-            _popoverLeft    = rect[1] + 8;  // 버튼 right + 8px
+            _sizePopoverTop = rect[2] + 4;  // 버튼 bottom + 4px (버튼 바로 아래)
+            _popoverLeft    = rect[3];      // 버튼 left (왼쪽 정렬)
         }
         catch { /* JS 실패 시 기본값 사용 */ }
+        _sizePopupLastOpened = DateTime.Now;
         _showSizePopup = true;
         StateHasChanged();
     }
 
     async Task OpenOpacityPopup()
     {
+        // 열린 지 300ms 이내 재호출은 내부 클릭 버블링으로 간주, 무시
+        if (_showOpacityPopup && (DateTime.Now - _opacityPopupLastOpened).TotalMilliseconds < 300) return;
         if (_showOpacityPopup) { _showOpacityPopup = false; StateHasChanged(); return; }
         _showSizePopup = false;
         try
         {
             var rect = await JS.InvokeAsync<double[]>("patternViewer.getBtnRect", "dp-opacity-btn");
-            _opacityPopoverTop = rect[0];
-            _popoverLeft       = rect[1] + 8;
+            _opacityPopoverTop = rect[2] + 4;
+            _popoverLeft       = rect[3];
         }
         catch { /* JS 실패 시 기본값 사용 */ }
+        _opacityPopupLastOpened = DateTime.Now;
         _showOpacityPopup = true;
         StateHasChanged();
     }
@@ -1277,6 +1288,7 @@
         if (_tool == "highlighter") _hlSize     = v;
         else if (_tool == "eraser") _eraserSize = v;
         else                        _penSize    = v;
+        _showSizePopup = true; // 슬라이더 조작 중 팝오버 유지
         ApplyCurrentTool();
     }
     async Task SizeDown()
@@ -1284,6 +1296,7 @@
         if (_tool == "highlighter") _hlSize     = Math.Max(1, _hlSize     - 1);
         else if (_tool == "eraser") _eraserSize = Math.Max(1, _eraserSize - 1);
         else                        _penSize    = Math.Max(1, _penSize    - 1);
+        _showSizePopup = true; // 버튼 클릭 후 팝오버 유지
         ApplyCurrentTool();
         StateHasChanged();
     }
@@ -1292,12 +1305,14 @@
         if (_tool == "highlighter") _hlSize     = Math.Min(40, _hlSize     + 1);
         else if (_tool == "eraser") _eraserSize = Math.Min(40, _eraserSize + 1);
         else                        _penSize    = Math.Min(40, _penSize    + 1);
+        _showSizePopup = true; // 버튼 클릭 후 팝오버 유지
         ApplyCurrentTool();
         StateHasChanged();
     }
     async Task OnOpacityChange(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var v)) _penOpacity = v;
+        _showOpacityPopup = true; // 슬라이더 조작 중 팝오버 유지
         ApplyCurrentTool();
     }
 
