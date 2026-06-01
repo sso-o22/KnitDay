@@ -26,7 +26,10 @@ const provider = new GoogleAuthProvider();
 // setPersistence는 비동기지만 auth 객체에 즉시 반영됨
 // waitForAuthReady보다 먼저 설정되도록 모듈 최상단에서 호출
 const _persistenceReady = setPersistence(auth, indexedDBLocalPersistence)
-    .catch(e => console.warn('setPersistence failed:', e));
+    .catch(e => {
+        // 실패해도 앱은 계속 동작하되, 세션 유지가 안 될 수 있음을 경고
+        console.error('setPersistence failed — 세션이 유지되지 않을 수 있습니다:', e);
+    });
 
 // ── Auth ─────────────────────────────────────────────────────────
 window.firebaseAuth = {
@@ -69,9 +72,9 @@ window.firebaseAuth = {
         await _persistenceReady;
         return new Promise(resolve => {
             const timer = setTimeout(() => {
-                console.warn('waitForAuthReady timeout');
+                console.warn('waitForAuthReady timeout (12s) — 네트워크가 느리거나 Firebase 초기화가 지연됐습니다.');
                 resolve(null);
-            }, 6000);
+            }, 12000);
             const unsubscribe = onAuthStateChanged(auth, user => {
                 clearTimeout(timer);
                 unsubscribe();
