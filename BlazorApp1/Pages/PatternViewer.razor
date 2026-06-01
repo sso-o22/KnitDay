@@ -298,9 +298,9 @@
 
                     <!-- 굵기 팝오버 버튼 -->
                     <div class="dp-row" style="justify-content:center;position:relative;">
-                        <button class="dp-btn @(_showSizePopup ? "dp-on" : "")"
+                        <button id="dp-size-btn" class="dp-btn @(_showSizePopup ? "dp-on" : "")"
                                 title="굵기"
-                                @onclick="() => { _showSizePopup = !_showSizePopup; _showOpacityPopup = false; }">
+                                @onclick="ToggleSizePopup">
                             <span style="font-size:13px;font-weight:700;">@ActiveSize</span>
                         </button>
                     </div>
@@ -310,9 +310,9 @@
                         <div class="dp-sep"></div>
                         <!-- 투명도 팝오버 버튼 -->
                         <div class="dp-row" style="justify-content:center;position:relative;">
-                            <button class="dp-btn @(_showOpacityPopup ? "dp-on" : "")"
+                            <button id="dp-opacity-btn" class="dp-btn @(_showOpacityPopup ? "dp-on" : "")"
                                     title="투명도"
-                                    @onclick="() => { _showOpacityPopup = !_showOpacityPopup; _showSizePopup = false; }">
+                                    @onclick="ToggleOpacityPopup">
                                 <span style="font-size:9px;font-weight:700;line-height:1.1;text-align:center;">@ActiveOpacity<br/>%</span>
                             </button>
                         </div>
@@ -331,9 +331,14 @@
     </div>
 
     <!-- ── 필기툴 팝오버: 굵기 ── -->
-    @if (_showSizePopup && (_tool == "pen" || _tool == "eraser" || _tool == "highlighter"))
+    @if (_drawMode && _showSizePopup && (_tool == "pen" || _tool == "eraser" || _tool == "highlighter"))
     {
-        <div class="dp-popover" @onclick:stopPropagation="true">
+        <!-- 투명 오버레이: 팝오버 외부 클릭 시 닫힘 -->
+        <div style="position:fixed;inset:0;z-index:699;"
+             @onclick="() => _showSizePopup = false"></div>
+        <!-- 팝오버 본체 -->
+        <div class="dp-popover" style="top:@(_popoverTop)px;left:@(_popoverLeft)px;"
+             @onclick:stopPropagation="true">
             <div class="dp-popover-inner">
                 <div class="dp-popover-title">굵기</div>
                 <div style="display:flex;align-items:center;gap:8px;">
@@ -349,9 +354,14 @@
     }
 
     <!-- ── 필기툴 팝오버: 투명도 ── -->
-    @if (_showOpacityPopup && _tool == "pen")
+    @if (_drawMode && _showOpacityPopup && _tool == "pen")
     {
-        <div class="dp-popover" @onclick:stopPropagation="true">
+        <!-- 투명 오버레이: 팝오버 외부 클릭 시 닫힘 -->
+        <div style="position:fixed;inset:0;z-index:699;"
+             @onclick="() => _showOpacityPopup = false"></div>
+        <!-- 팝오버 본체 -->
+        <div class="dp-popover" style="top:@(_popoverTop)px;left:@(_popoverLeft)px;"
+             @onclick:stopPropagation="true">
             <div class="dp-popover-inner">
                 <div class="dp-popover-title">투명도</div>
                 <div style="display:flex;align-items:center;gap:8px;">
@@ -623,15 +633,7 @@
     /* ── 필기툴 팝오버 ── */
     .dp-popover {
         position: fixed;
-        top: 120px;
-        left: 60px;
         z-index: 700;
-    }
-    @@media (max-width: 1024px) and (min-width: 641px) {
-        .dp-popover { left: 92px; }
-    }
-    @@media (max-width: 640px) {
-        .dp-popover { left: 60px; top: 130px; }
     }
     .dp-popover-inner {
         background: rgba(255,255,255,0.97);
@@ -820,6 +822,8 @@
     // 필기 팝오버 상태
     bool _showSizePopup = false;
     bool _showOpacityPopup = false;
+    double _popoverTop = 0;   // 팝오버 표시 위치 (버튼 기준 계산)
+    double _popoverLeft = 0;
     // 툴별 독립 설정
     string _penColor      = "#000000"; int _penSize      = 4;  int _penOpacity   = 100;
     string _hlColor       = "#ffeb3b"; int _hlSize       = 8;
@@ -870,7 +874,22 @@
     // ── 카운터 ──
     void PrevCounter(){if(_project==null||_project.Counters.Count==0)return;_activeCounterIndex=(_activeCounterIndex-1+_project.Counters.Count)%_project.Counters.Count;}
     void NextCounter(){if(_project==null||_project.Counters.Count==0)return;_activeCounterIndex=(_activeCounterIndex+1)%_project.Counters.Count;}
-    async Task IncrementCounter(ProjectCounter c){c.Value+=c.Step;c.LastUpdatedAt=DateTime.Now;await SaveProject();StateHasChanged();}
+    async Task IncrementCounter(ProjectCounter c)
+    {
+        c.Value += c.Step;
+        c.LastUpdatedAt = DateTime.Now;
+        await SaveProject();
+        // 목표 달성 시 다음 미완료 카운터로 자동 이동
+        if (_project != null && c.Target > 0 && c.Value >= c.Target)
+        {
+            var next = _project.Counters
+                .Select((x, i) => (x, i))
+                .FirstOrDefault(t => !(t.x.Target > 0 && t.x.Value >= t.x.Target));
+            if (next.x != null)
+                _activeCounterIndex = next.i;
+        }
+        StateHasChanged();
+    }
     async Task DecrementCounter(ProjectCounter c){c.Value=Math.Max(0,c.Value-c.Step);c.LastUpdatedAt=DateTime.Now;await SaveProject();StateHasChanged();}
     async Task SaveProject(){if(_project is KnitProject p)await Storage.SaveProjectAsync(p);}
 
@@ -924,6 +943,14 @@
     {
         _project=(await Storage.GetProjectsAsync()).FirstOrDefault(p=>p.Id==ProjectId);
         if(_project?.Sessions.Any(s=>s.IsActive)==true)StartRefreshTimer();
+        // 완료된 카운터(Target > 0 && Value >= Target)를 건너뛰고 첫 미완료 카운터부터 표시
+        if (_project?.Counters.Any() == true)
+        {
+            var firstActive = _project.Counters
+                .Select((c, i) => (c, i))
+                .FirstOrDefault(x => !(x.c.Target > 0 && x.c.Value >= x.c.Target));
+            _activeCounterIndex = firstActive.c != null ? firstActive.i : 0;
+        }
     }
 
     // OnAfterRenderAsync 첫 렌더 후 저장된 데이터 복원
@@ -1204,7 +1231,9 @@
             SetTool(_tool is "pen" or "highlighter" or "eraser" or "rowmarker" ? _tool : "pen");
         else
         {
-            // 닫을 때는 _tool은 기억해두고 JS만 select로
+            // 닫을 때는 _tool은 기억해두고 JS만 select로, 팝오버도 닫기
+            _showSizePopup = false;
+            _showOpacityPopup = false;
             _ = JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, false, "select", _penOpacity);
         }
         _suppressRender = false;
@@ -1222,6 +1251,29 @@
         _ = JS.InvokeVoidAsync("patternViewer.setTool", color, size, isEraser, t, opacity);
         _ = SaveViewerStateAsync();
         StateHasChanged();
+    }
+
+    // ── 팝오버 토글: 버튼 위치 읽어서 팝오버 위치 계산 ──────────────
+    async Task ToggleSizePopup()
+    {
+        if (_showSizePopup) { _showSizePopup = false; return; }
+        _showOpacityPopup = false;
+        var rect = await JS.InvokeAsync<double[]>("patternViewer.getBtnRect", "dp-size-btn");
+        // rect: [top, right, bottom, left, width, height]
+        // 팝오버를 버튼 오른쪽에, 수직 중앙으로 배치
+        _popoverTop  = rect[0] - 30; // 팝오버 위쪽이 버튼 중앙 근처
+        _popoverLeft = rect[1] + 8;  // 버튼 right + 간격
+        _showSizePopup = true;
+    }
+
+    async Task ToggleOpacityPopup()
+    {
+        if (_showOpacityPopup) { _showOpacityPopup = false; return; }
+        _showSizePopup = false;
+        var rect = await JS.InvokeAsync<double[]>("patternViewer.getBtnRect", "dp-opacity-btn");
+        _popoverTop  = rect[0] - 30;
+        _popoverLeft = rect[1] + 8;
+        _showOpacityPopup = true;
     }
     void ApplyCurrentTool() => SetTool(_tool);
 
