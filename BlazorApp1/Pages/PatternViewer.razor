@@ -296,27 +296,25 @@
                         </div>
                     }
 
-                    <!-- 굵기: 세로 슬라이더 + ± -->
-                    <div class="dp-slider-col">
-                        <button class="dp-size-btn" @onclick="SizeUp">+</button>
-                        <input type="range" min="1" max="40" step="1" value="@ActiveSize"
-                               @oninput="OnSizeChange"
-                               class="dp-range-v" />
-                        <button class="dp-size-btn" @onclick="SizeDown">−</button>
-                        <span class="dp-val">@ActiveSize</span>
+                    <!-- 굵기 팝오버 버튼 -->
+                    <div class="dp-row" style="justify-content:center;position:relative;">
+                        <button class="dp-btn @(_showSizePopup ? "dp-on" : "")"
+                                title="굵기"
+                                @onclick="() => { _showSizePopup = !_showSizePopup; _showOpacityPopup = false; }">
+                            <span style="font-size:13px;font-weight:700;">@ActiveSize</span>
+                        </button>
                     </div>
 
                     @if (_tool == "pen")
                     {
                         <div class="dp-sep"></div>
-                        <!-- 투명도 세로 슬라이더 -->
-                        <div class="dp-slider-col">
-                            <span class="dp-label">100</span>
-                            <input type="range" min="5" max="100" step="5" value="@ActiveOpacity"
-                                   @oninput="OnOpacityChange"
-                                   class="dp-range-v" />
-                            <span class="dp-label">5</span>
-                            <span class="dp-val" style="font-size:8px;">투명</span>
+                        <!-- 투명도 팝오버 버튼 -->
+                        <div class="dp-row" style="justify-content:center;position:relative;">
+                            <button class="dp-btn @(_showOpacityPopup ? "dp-on" : "")"
+                                    title="투명도"
+                                    @onclick="() => { _showOpacityPopup = !_showOpacityPopup; _showSizePopup = false; }">
+                                <span style="font-size:9px;font-weight:700;line-height:1.1;text-align:center;">@ActiveOpacity<br/>%</span>
+                            </button>
                         </div>
                     }
 
@@ -331,6 +329,42 @@
             </div>
         </div>
     </div>
+
+    <!-- ── 필기툴 팝오버: 굵기 ── -->
+    @if (_showSizePopup && (_tool == "pen" || _tool == "eraser" || _tool == "highlighter"))
+    {
+        <div class="dp-popover" @onclick:stopPropagation="true">
+            <div class="dp-popover-inner">
+                <div class="dp-popover-title">굵기</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="dp-size-btn" @onclick="SizeDown">−</button>
+                    <input type="range" min="1" max="40" step="1" value="@ActiveSize"
+                           @oninput="OnSizeChange"
+                           style="flex:1;height:22px;cursor:pointer;accent-color:#555;" />
+                    <button class="dp-size-btn" @onclick="SizeUp">+</button>
+                </div>
+                <div class="dp-popover-val">@ActiveSize</div>
+            </div>
+        </div>
+    }
+
+    <!-- ── 필기툴 팝오버: 투명도 ── -->
+    @if (_showOpacityPopup && _tool == "pen")
+    {
+        <div class="dp-popover" @onclick:stopPropagation="true">
+            <div class="dp-popover-inner">
+                <div class="dp-popover-title">투명도</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:10px;color:#999;">5</span>
+                    <input type="range" min="5" max="100" step="5" value="@ActiveOpacity"
+                           @oninput="OnOpacityChange"
+                           style="flex:1;height:22px;cursor:pointer;accent-color:#555;" />
+                    <span style="font-size:10px;color:#999;">100</span>
+                </div>
+                <div class="dp-popover-val">@ActiveOpacity %</div>
+            </div>
+        </div>
+    }
 
     <!-- ── 카운터 플로팅 위젯 (드래그 가능) ── -->
     @if (_project is not null && _project.Counters.Any())
@@ -563,7 +597,7 @@
     .dp-on { background: rgba(0,0,0,0.1); }
     /* 구분선 */
     .dp-sep { width: 28px; height: 1px; background: rgba(0,0,0,0.08); margin: 2px 0; flex-shrink: 0; }
-    /* 세로 슬라이더 컬럼 */
+    /* 세로 슬라이더 컬럼 (미사용, 하위호환 유지) */
     .dp-slider-col {
         display: flex; flex-direction: column; align-items: center; gap: 3px;
     }
@@ -585,6 +619,37 @@
     .dp-confirm-btn { background: #e8f5e8; color: #2a7a2a; }
     .dp-label { font-size: 8px; color: #999; }
     .dp-div { display: none; } /* 이전 구분선 (미사용) */
+
+    /* ── 필기툴 팝오버 ── */
+    .dp-popover {
+        position: fixed;
+        top: 120px;
+        left: 60px;
+        z-index: 700;
+    }
+    @@media (max-width: 1024px) and (min-width: 641px) {
+        .dp-popover { left: 92px; }
+    }
+    @@media (max-width: 640px) {
+        .dp-popover { left: 60px; top: 130px; }
+    }
+    .dp-popover-inner {
+        background: rgba(255,255,255,0.97);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        border: 1.5px solid rgba(0,0,0,0.1);
+        border-radius: 14px;
+        padding: 12px 14px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        min-width: 180px;
+    }
+    .dp-popover-title {
+        font-size: 13px; font-weight: 700; color: #333;
+        margin-bottom: 10px; text-align: center;
+    }
+    .dp-popover-val {
+        font-size: 11px; font-weight: 600; color: #555;
+        text-align: center; margin-top: 6px;
+    }
 
     /* ── 카운터 위젯: 라이트 계열 ── */
     .cw-wrap { user-select: none; }
@@ -752,6 +817,9 @@
     [Parameter] public Guid ProjectId { get; set; }
     KnitProject? _project;
     string _tool="select";
+    // 필기 팝오버 상태
+    bool _showSizePopup = false;
+    bool _showOpacityPopup = false;
     // 툴별 독립 설정
     string _penColor      = "#000000"; int _penSize      = 4;  int _penOpacity   = 100;
     string _hlColor       = "#ffeb3b"; int _hlSize       = 8;
@@ -1144,6 +1212,8 @@
     void SetTool(string t)
     {
         _tool = t;
+        _showSizePopup = false;
+        _showOpacityPopup = false;
         var (color, size, isEraser, opacity) = t switch {
             "highlighter" => (_hlColor,    _hlSize,    false, _penOpacity),
             "eraser"      => (_penColor,   _eraserSize,true,  _penOpacity),
