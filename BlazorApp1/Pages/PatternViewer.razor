@@ -297,53 +297,21 @@
                     }
 
                     <!-- 굵기 팝오버 버튼 -->
-                    <div style="position:relative;">
-                        <button id="dp-size-btn" class="dp-btn @(_showSizePopup ? "dp-on" : "")"
-                                title="굵기"
-                                @onclick="() => { _showSizePopup = !_showSizePopup; _showOpacityPopup = false; }">
-                            <span style="font-size:13px;font-weight:700;">@ActiveSize</span>
-                        </button>
-                        @if (_showSizePopup)
-                        {
-                            <div class="dp-popover-abs" @onclick:stopPropagation="true">
-                                <div class="dp-popover-title">굵기</div>
-                                <div style="display:flex;align-items:center;gap:8px;">
-                                    <button class="dp-size-btn" @onclick="SizeDown">−</button>
-                                    <input type="range" min="1" max="40" step="1" value="@ActiveSize"
-                                           @oninput="OnSizeChange"
-                                           style="flex:1;min-width:120px;cursor:pointer;accent-color:#555;" />
-                                    <button class="dp-size-btn" @onclick="SizeUp">+</button>
-                                </div>
-                                <div class="dp-popover-val">@ActiveSize</div>
-                            </div>
-                        }
-                    </div>
+                    <button id="dp-size-btn" class="dp-btn @(_showSizePopup ? "dp-on" : "")"
+                            title="굵기"
+                            @onclick="() => { _showSizePopup = !_showSizePopup; _showOpacityPopup = false; }">
+                        <span style="font-size:13px;font-weight:700;">@ActiveSize</span>
+                    </button>
 
                     @if (_tool == "pen")
                     {
                         <div class="dp-sep"></div>
                         <!-- 투명도 팝오버 버튼 -->
-                        <div style="position:relative;">
-                            <button id="dp-opacity-btn" class="dp-btn @(_showOpacityPopup ? "dp-on" : "")"
-                                    title="투명도"
-                                    @onclick="() => { _showOpacityPopup = !_showOpacityPopup; _showSizePopup = false; }">
-                                <span style="font-size:9px;font-weight:700;line-height:1.1;text-align:center;">@ActiveOpacity<br/>%</span>
-                            </button>
-                            @if (_showOpacityPopup)
-                            {
-                                <div class="dp-popover-abs" @onclick:stopPropagation="true">
-                                    <div class="dp-popover-title">투명도</div>
-                                    <div style="display:flex;align-items:center;gap:8px;">
-                                        <span style="font-size:10px;color:#999;white-space:nowrap;">5%</span>
-                                        <input type="range" min="5" max="100" step="5" value="@ActiveOpacity"
-                                               @oninput="OnOpacityChange"
-                                               style="flex:1;min-width:120px;cursor:pointer;accent-color:#555;" />
-                                        <span style="font-size:10px;color:#999;white-space:nowrap;">100%</span>
-                                    </div>
-                                    <div class="dp-popover-val">@ActiveOpacity %</div>
-                                </div>
-                            }
-                        </div>
+                        <button id="dp-opacity-btn" class="dp-btn @(_showOpacityPopup ? "dp-on" : "")"
+                                title="투명도"
+                                @onclick="() => { _showOpacityPopup = !_showOpacityPopup; _showSizePopup = false; }">
+                            <span style="font-size:9px;font-weight:700;line-height:1.1;text-align:center;">@ActiveOpacity<br/>%</span>
+                        </button>
                     }
 
                     <div class="dp-sep"></div>
@@ -356,6 +324,36 @@
                 }
             </div>
         </div>
+
+        <!-- ── 필기툴 팝오버: draw-panel 바깥, draw-wrap 안 (overflow 클리핑 회피) ── -->
+        @if (_drawMode && _showSizePopup && (_tool == "pen" || _tool == "eraser" || _tool == "highlighter"))
+        {
+            <div class="dp-popover-wrap" @onclick:stopPropagation="true">
+                <div class="dp-popover-title">굵기</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="dp-size-btn" @onclick="SizeDown">−</button>
+                    <input type="range" min="1" max="40" step="1" value="@ActiveSize"
+                           @oninput="OnSizeChange"
+                           style="flex:1;min-width:130px;cursor:pointer;accent-color:#555;" />
+                    <button class="dp-size-btn" @onclick="SizeUp">+</button>
+                </div>
+                <div class="dp-popover-val">@ActiveSize</div>
+            </div>
+        }
+        @if (_drawMode && _showOpacityPopup && _tool == "pen")
+        {
+            <div class="dp-popover-wrap" @onclick:stopPropagation="true">
+                <div class="dp-popover-title">투명도</div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:10px;color:#999;white-space:nowrap;">5%</span>
+                    <input type="range" min="5" max="100" step="5" value="@ActiveOpacity"
+                           @oninput="OnOpacityChange"
+                           style="flex:1;min-width:130px;cursor:pointer;accent-color:#555;" />
+                    <span style="font-size:10px;color:#999;white-space:nowrap;">100%</span>
+                </div>
+                <div class="dp-popover-val">@ActiveOpacity %</div>
+            </div>
+        }
     </div>
 
     <!-- ── 카운터 플로팅 위젯 (드래그 가능) ── -->
@@ -618,12 +616,13 @@
     .dp-label { font-size: 8px; color: #999; }
     .dp-div { display: none; } /* 이전 구분선 (미사용) */
 
-    /* ── 필기툴 팝오버 (버튼 오른쪽에 absolute 배치) ── */
-    .dp-popover-abs {
+    /* ── 필기툴 팝오버 ── */
+    /* draw-wrap(position:fixed) 안에서 absolute로 패널 오른쪽에 배치
+       draw-panel의 overflow:hidden을 피하기 위해 draw-panel의 형제로 렌더링 */
+    .dp-popover-wrap {
         position: absolute;
-        left: calc(100% + 10px); /* 버튼 오른쪽 끝 + 10px */
-        top: 50%;
-        transform: translateY(-50%);
+        left: calc(100% + 8px); /* draw-wrap 오른쪽 끝 + 8px */
+        top: 44px;              /* draw-fab(40px) + gap(4px) 아래, 패널 시작 지점 */
         z-index: 700;
         background: rgba(255,255,255,0.97);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
