@@ -1219,9 +1219,14 @@
     }
     void SetTool(string t)
     {
+        bool toolChanged = _tool != t;
         _tool = t;
-        _showSizePopup = false;
-        _showOpacityPopup = false;
+        // 툴이 바뀔 때만 팝오버 닫기 (같은 툴 재적용 시 유지)
+        if (toolChanged)
+        {
+            _showSizePopup = false;
+            _showOpacityPopup = false;
+        }
         var (color, size, isEraser, opacity) = t switch {
             "highlighter" => (_hlColor,    _hlSize,    false, _penOpacity),
             "eraser"      => (_penColor,   _eraserSize,true,  _penOpacity),
@@ -1232,7 +1237,7 @@
         StateHasChanged();
     }
 
-    void ApplyCurrentTool() => SetTool(_tool);
+    void ApplyCurrentTool() => SetTool(_tool); // 같은 툴 재적용 → 팝오버 닫히지 않음
 
     // ── 팝오버 열기: 버튼 위치 읽어서 fixed 좌표 계산 ─────────────────
     DateTime _sizePopupLastOpened = DateTime.MinValue;
