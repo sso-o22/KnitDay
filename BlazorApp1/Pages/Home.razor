@@ -15,27 +15,21 @@
     </div>
 </div>
 
+@* ── 로그인 배너 ── *@
 @if (_authLoading)
 {
-    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;
-                margin-bottom:16px;background:var(--theme-pale);border:1.5px solid var(--theme-mid);">
-        <span style="font-size:1.1rem;">⏳</span>
+    <div class="home-banner">
         <div style="font-size:0.85rem;color:var(--text-mid);">로그인 상태 확인 중...</div>
     </div>
 }
 else if (!Auth.IsLoggedIn)
 {
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;
-                padding:12px 16px;border-radius:12px;margin-bottom:16px;
-                background:var(--theme-pale);border:1.5px solid var(--theme-mid);">
-        <div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-size:1.3rem;">☁️</span>
-            <div>
-                <div style="font-size:0.88rem;font-weight:600;color:var(--text-dark);">여러 기기에서 동기화하세요</div>
-                <div style="font-size:0.78rem;color:var(--text-mid);">구글 로그인하면 데이터가 자동으로 백업돼요</div>
-            </div>
+    <div class="home-banner">
+        <div>
+            <div style="font-size:0.88rem;font-weight:600;color:var(--text-dark);">여러 기기에서 동기화하세요</div>
+            <div style="font-size:0.78rem;color:var(--text-mid);margin-top:2px;">구글 로그인하면 데이터가 자동으로 백업돼요</div>
         </div>
-        <button class="btn btn-primary" style="white-space:nowrap;font-size:0.82rem;padding:6px 14px;" @onclick="SignIn">
+        <button class="btn btn-primary" style="white-space:nowrap;font-size:0.82rem;padding:6px 14px;flex-shrink:0;" @onclick="SignIn">
             로그인
         </button>
     </div>
@@ -47,89 +41,203 @@ else if (!Auth.IsLoggedIn)
 }
 else
 {
-    <!-- 요약 카드 4개 -->
+    @* ── 요약 통계 카드 ── *@
     <div class="stats-grid">
-        <a href="projects" class="card" style="text-decoration:none; text-align:center;">
-            <div style="margin-bottom:8px;"><img src="icons/Octopus.svg" style="width:52px;height:52px;" /></div>
-            <div style="font-size:2rem; font-weight:700; color:#8a6a08;">@_inProgress</div>
-            <div style="color:var(--text-mid); font-size:0.88rem;">문어발</div>
+        <a href="projects" class="home-stat-card" style="text-decoration:none;">
+            <div class="home-stat-icon" style="background:var(--theme-pale);">
+                <img src="icons/Octopus.svg" style="width:22px;height:22px;" />
+            </div>
+            <div>
+                <div class="home-stat-num" style="color:var(--theme-active);">@_inProgress</div>
+                <div class="home-stat-label">문어발</div>
+            </div>
         </a>
-        <a href="finished" class="card" style="text-decoration:none; text-align:center;">
-            <div style="margin-bottom:8px;"><img src="icons/Done.svg" style="width:52px;height:52px;" /></div>
-            <div style="font-size:2rem; font-weight:700; color:#267848;">@_finished</div>
-            <div style="color:var(--text-mid); font-size:0.88rem;">완성작</div>
+        <a href="finished" class="home-stat-card" style="text-decoration:none;">
+            <div class="home-stat-icon" style="background:var(--theme-pale);">
+                <img src="icons/Done.svg" style="width:22px;height:22px;" />
+            </div>
+            <div>
+                <div class="home-stat-num" style="color:var(--theme-active);">@_finished</div>
+                <div class="home-stat-label">완성작</div>
+            </div>
         </a>
-        <a href="wishlist" class="card" style="text-decoration:none; text-align:center;">
-            <div style="margin-bottom:8px;"><img src="icons/Wish.svg" style="width:52px;height:52px;" /></div>
-            <div style="font-size:2rem; font-weight:700; color:#4e3290;">@_wishlist</div>
-            <div style="color:var(--text-mid); font-size:0.88rem;">위시리스트</div>
+        <a href="wishlist" class="home-stat-card" style="text-decoration:none;">
+            <div class="home-stat-icon" style="background:var(--theme-pale);">
+                <img src="icons/Wish.svg" style="width:22px;height:22px;" />
+            </div>
+            <div>
+                <div class="home-stat-num" style="color:var(--theme-active);">@_wishlist</div>
+                <div class="home-stat-label">위시리스트</div>
+            </div>
         </a>
-        <a href="yarns" class="card" style="text-decoration:none; text-align:center;">
-            <div style="margin-bottom:8px;"><img src="icons/Yarn_ball.svg" style="width:52px;height:52px;" /></div>
-            <div style="font-size:2rem; font-weight:700; color:var(--text-dark);">@_yarns</div>
-            <div style="color:var(--text-mid); font-size:0.88rem;">실 창고</div>
+        <a href="yarns" class="home-stat-card" style="text-decoration:none;">
+            <div class="home-stat-icon" style="background:var(--theme-pale);">
+                <img src="icons/Yarn_ball.svg" style="width:22px;height:22px;" />
+            </div>
+            <div>
+                <div class="home-stat-num" style="color:var(--theme-active);">@_yarns</div>
+                <div class="home-stat-label">실 창고</div>
+            </div>
         </a>
-        <a href="swatches" class="card" style="text-decoration:none; text-align:center;">
-            <div style="margin-bottom:8px;"><img src="icons/Swatch.svg" style="width:52px;height:52px;" /></div>
-            <div style="font-size:2rem; font-weight:700; color:var(--text-dark);">@_swatches</div>
-            <div style="color:var(--text-mid); font-size:0.88rem;">스와치</div>
+        <a href="swatches" class="home-stat-card" style="text-decoration:none;">
+            <div class="home-stat-icon" style="background:var(--theme-pale);">
+                <img src="icons/Swatch.svg" style="width:22px;height:22px;" />
+            </div>
+            <div>
+                <div class="home-stat-num" style="color:var(--theme-active);">@_swatches</div>
+                <div class="home-stat-label">스와치</div>
+            </div>
         </a>
-        <a href="tools" class="card" style="text-decoration:none; text-align:center;">
-            <div style="margin-bottom:8px;"><img src="icons/Tool.svg" style="width:52px;height:52px;" /></div>
-            <div style="font-size:2rem; font-weight:700; color:var(--text-dark);">@_tools</div>
-            <div style="color:var(--text-mid); font-size:0.88rem;">도구</div>
+        <a href="tools" class="home-stat-card" style="text-decoration:none;">
+            <div class="home-stat-icon" style="background:var(--theme-pale);">
+                <img src="icons/Tool.svg" style="width:22px;height:22px;" />
+            </div>
+            <div>
+                <div class="home-stat-num" style="color:var(--theme-active);">@_tools</div>
+                <div class="home-stat-label">도구</div>
+            </div>
         </a>
     </div>
 
-    <!-- 진행중인 프로젝트 미리보기 -->
+    @* ── 진행중 프로젝트 ── *@
     @if (_recentProjects.Count > 0)
     {
-        <h2 style="font-family:'DM Sans','Noto Sans KR',sans-serif; font-weight:600; color:var(--text-dark); margin-bottom:16px;">지금 뜨고 있어요</h2>
+        <h2 class="home-section-title">지금 뜨고 있어요</h2>
         <div class="grid-3">
             @foreach (var proj in _recentProjects)
             {
-                <div class="card">
-                    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:8px;">
-                        <div class="card-title" style="margin-bottom:0;">@proj.Title</div>
+                var isOnHold     = proj.Status == ProjectStatus.일시중단;
+                var statusText   = isOnHold ? "일시중단" : "진행중";
+                var statusBg     = isOnHold ? "var(--ivory-mid)" : "var(--theme-pale)";
+                var statusColor  = isOnHold ? "var(--text-mid)"  : "var(--theme-active)";
+
+                <a href="projects/@proj.Id" class="card home-proj-card" style="text-decoration:none;display:block;">
+                    @* 상단: 제목 + D-day *@
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;">
+                        <div class="card-title" style="margin-bottom:0;font-size:1rem;">@proj.Title</div>
                         @if (proj.EndDate.HasValue)
                         {
                             var days = (proj.EndDate.Value.Date - DateTime.Today).Days;
-                            var (ddayText, ddayColor) = days switch
+                            var (ddayText, ddayColor, ddayBg) = days switch
                             {
-                                < 0  => ($"D+{-days}", "#aaa"),
-                                0    => ("D-Day", "#e05050"),
-                                <= 7 => ($"D-{days}", "#e05050"),
-                                _    => ($"D-{days}", "var(--theme-active)")
+                                < 0   => ($"D+{-days}", "var(--text-light)", "var(--ivory-mid)"),
+                                0     => ("D-Day",      "#c03030",            "#fff0f0"),
+                                <= 7  => ($"D-{days}",  "#c03030",            "#fff0f0"),
+                                _     => ($"D-{days}",  "var(--theme-active)","var(--theme-pale)")
                             };
-                            <span style="font-size:0.75rem; font-weight:700; color:@ddayColor;
-                                         background:var(--theme-pale); border-radius:20px;
-                                         padding:2px 8px; white-space:nowrap; flex-shrink:0;">@ddayText</span>
+                            <span style="font-size:0.72rem;font-weight:700;color:@ddayColor;
+                                         background:@ddayBg;border-radius:20px;
+                                         padding:2px 8px;white-space:nowrap;flex-shrink:0;">@ddayText</span>
                         }
                     </div>
+
+                    @* 도안명 *@
                     @if (!string.IsNullOrEmpty(proj.PatternName))
                     {
-                        <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:8px; margin-top:4px;">도안: @proj.PatternName</div>
+                        <div style="font-size:0.8rem;color:var(--text-mid);margin-bottom:10px;">@proj.PatternName</div>
                     }
-                    @if (proj.StartDate.HasValue)
+
+                    @* 진행률 바 (시작일~마감일 기반, 둘 다 없으면 숨김) *@
+                    @if (proj.StartDate.HasValue && proj.EndDate.HasValue)
                     {
-                        <div style="font-size:0.82rem; color:var(--text-light);">시작일: @proj.StartDate.Value.ToString("yyyy.MM.dd")</div>
+                        var total   = (proj.EndDate.Value - proj.StartDate.Value).TotalDays;
+                        var elapsed = (DateTime.Today    - proj.StartDate.Value).TotalDays;
+                        var pct     = total > 0 ? Math.Clamp(elapsed / total * 100, 0, 100) : 0;
+                        <div style="background:var(--ivory-mid);border-radius:4px;height:4px;margin-bottom:10px;overflow:hidden;">
+                            <div style="height:4px;border-radius:4px;width:@(pct.ToString("F0"))%;background:var(--theme-active);transition:width 0.3s;"></div>
+                        </div>
                     }
-                    <div class="mt-2">
-                        <a href="projects/@proj.Id" class="btn btn-secondary btn-sm">자세히 보기</a>
+
+                    @* 하단: 시작일 + 상태 칩 *@
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:0.78rem;color:var(--text-light);">
+                            @(proj.StartDate.HasValue ? proj.StartDate.Value.ToString("yyyy.MM.dd") + " 시작" : "")
+                        </span>
+                        <span style="font-size:0.72rem;font-weight:600;
+                                     color:@statusColor;background:@statusBg;
+                                     border-radius:20px;padding:2px 9px;">@statusText</span>
                     </div>
-                </div>
+                </a>
             }
         </div>
     }
     else
     {
-        <div class="card" style="text-align:center; padding:40px;">
-            <div style="font-size:2.5rem; margin-bottom:12px;">📆</div>
-            <p style="color:var(--text-mid); margin-bottom:16px;">아직 진행중인 프로젝트가 없어요.</p>
+        <div class="card" style="text-align:center;padding:40px;">
+            <div style="margin-bottom:16px;opacity:0.35;">
+                <img src="icons/Octopus.svg" style="width:48px;height:48px;" />
+            </div>
+            <p style="color:var(--text-mid);margin-bottom:16px;">아직 진행중인 프로젝트가 없어요.</p>
             <a href="projects" class="btn btn-primary">첫 문어발 만들기</a>
         </div>
     }
 }
+
+<style>
+    /* ── 로그인 배너 ── */
+    .home-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: var(--radius);
+        margin-bottom: 20px;
+        background: var(--theme-pale);
+        border: 1.5px solid var(--theme-mid);
+    }
+
+    /* ── 통계 카드 (아이콘 + 숫자 가로 배치) ── */
+    .home-stat-card {
+        background: var(--white);
+        border-radius: var(--radius);
+        border: 1px solid var(--border);
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 2px 8px var(--shadow);
+        transition: box-shadow 0.18s ease, transform 0.18s ease;
+    }
+    .home-stat-card:hover {
+        box-shadow: 0 6px 20px var(--shadow-md);
+        transform: translateY(-2px);
+    }
+    .home-stat-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .home-stat-num {
+        font-size: 1.5rem;
+        font-weight: 700;
+        line-height: 1;
+    }
+    .home-stat-label {
+        font-size: 0.78rem;
+        color: var(--text-mid);
+        margin-top: 3px;
+    }
+
+    /* ── 섹션 타이틀 ── */
+    .home-section-title {
+        font-family: 'DM Sans', 'Noto Sans KR', sans-serif;
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-mid);
+        margin: 24px 0 12px;
+        letter-spacing: 0.02em;
+    }
+
+    /* ── 프로젝트 카드 ── */
+    .home-proj-card:hover {
+        text-decoration: none !important;
+    }
+</style>
 
 @code {
     async Task SignIn() => await Auth.SignInWithGoogleAsync();
