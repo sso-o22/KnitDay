@@ -404,11 +404,11 @@
          @onclick:stopPropagation="true" @onmousedown:stopPropagation="true" @ontouchstart:stopPropagation="true">
         <div style="font-size:13px;font-weight:700;color:#333;margin-bottom:10px;text-align:center;">투명도</div>
         <div style="display:flex;align-items:center;gap:8px;">
-            <span style="font-size:10px;color:#999;white-space:nowrap;">5%</span>
+            <button class="dp-size-btn" @onclick="OpacityDown" @onclick:stopPropagation="true">−</button>
             <input type="range" min="5" max="100" step="5" value="@ActiveOpacity"
                    @oninput="OnOpacityChange"
                    style="flex:1;min-width:130px;cursor:pointer;accent-color:#555;" />
-            <span style="font-size:10px;color:#999;white-space:nowrap;">100%</span>
+            <button class="dp-size-btn" @onclick="OpacityUp" @onclick:stopPropagation="true">+</button>
         </div>
         <div style="font-size:11px;font-weight:600;color:#555;text-align:center;margin-top:6px;">@ActiveOpacity %</div>
     </div>
@@ -1317,8 +1317,22 @@
     async Task OnOpacityChange(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out var v)) _penOpacity = v;
-        _showOpacityPopup = true; // 슬라이더 조작 중 팝오버 유지
+        _showOpacityPopup = true;
         ApplyCurrentTool();
+    }
+    async Task OpacityDown()
+    {
+        _penOpacity = Math.Max(5, _penOpacity - 5);
+        _showOpacityPopup = true;
+        ApplyCurrentTool();
+        StateHasChanged();
+    }
+    async Task OpacityUp()
+    {
+        _penOpacity = Math.Min(100, _penOpacity + 5);
+        _showOpacityPopup = true;
+        ApplyCurrentTool();
+        StateHasChanged();
     }
 
     async Task OnGlobalMouseMove(MouseEventArgs e)
