@@ -6,6 +6,7 @@
 @using KnitLog.Services
 @inject StorageService Storage
 @inject AuthService Auth
+@inject IJSRuntime JS
 @implements IDisposable
 
 <div class="page-header">
@@ -97,6 +98,78 @@ else
                 <div class="home-stat-label">도구</div>
             </div>
         </a>
+    </div>
+
+
+    @* ── 할 일 체크리스트 ── *@
+    <h2 class="home-section-title">할 일</h2>
+    <div class="card" style="padding:14px 16px; margin-bottom:20px;">
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; cursor:pointer;"
+             @onclick="() => _checklistExpanded = !_checklistExpanded">
+            <div style="display:flex; align-items:center; gap:6px;">
+                <img src="icons/check-square.svg" class="icon-line" style="width:14px;height:14px;" />
+                <span style="font-size:0.82rem; font-weight:500; color:var(--text-dark);">할 일</span>
+                @if (_todoItems.Count > 0)
+                {
+                    var done = _todoItems.Count(t => t.Done);
+                    <span style="font-size:0.72rem; color:var(--text-light);">@done/@_todoItems.Count</span>
+                }
+            </div>
+            @if (_todoItems.Count > 0)
+            {
+                <span style="font-size:0.78rem; color:var(--text-light);">@(_checklistExpanded ? "▼" : "▶")</span>
+            }
+        </div>
+
+        @if (_checklistExpanded || _todoItems.Count == 0)
+        {
+            @foreach (var item in _todoItems)
+            {
+                <div style="display:flex; align-items:center; gap:6px; padding:6px 0; border-bottom:1px solid var(--border);">
+                    <input type="checkbox" checked="@item.Done"
+                           @onchange="async () => { item.Done = !item.Done; await SaveTodos(); }"
+                           style="width:14px; height:14px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
+                    @if (_editingTodoId == item.Id)
+                    {
+                        <input class="form-control" style="flex:1; font-size:0.78rem; padding:2px 6px;"
+                               @bind="_editingTodoText"
+                               @onkeydown='async e => { if (e.Key == "Enter") await SaveTodoLabel(item); if (e.Key == "Escape") _editingTodoId = null; }' />
+                        <button class="btn btn-primary btn-sm" style="padding:1px 5px;" @onclick="() => SaveTodoLabel(item)">✓</button>
+                        <button class="btn btn-ghost btn-sm" style="padding:1px 5px;" @onclick="() => _editingTodoId = null">✕</button>
+                    }
+                    else
+                    {
+                        <span style="flex:1; font-size:0.78rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "color:var(--text-dark);")">@item.Text</span>
+                        <button class="btn btn-ghost btn-sm" style="padding:1px 4px; font-size:0.7rem;"
+                                @onclick="() => { _editingTodoId = item.Id; _editingTodoText = item.Text; }">✏️</button>
+                        <button class="btn btn-danger btn-sm" style="padding:1px 4px; font-size:0.7rem;"
+                                @onclick="async () => { _todoItems.Remove(item); await SaveTodos(); }">✕</button>
+                    }
+                </div>
+            }
+            @if (_todoItems.Count > 0)
+            {
+                var done = _todoItems.Count(t => t.Done);
+                var total = _todoItems.Count;
+                <div style="height:4px; background:#e8e8e8; border-radius:2px; margin:8px 0 6px;">
+                    <div style="height:4px; background:#c8e6be; border-radius:2px; width:@(done * 100 / total)%;"></div>
+                </div>
+            }
+            @if (_addingTodo)
+            {
+                <div style="display:flex; gap:4px; margin-top:6px;">
+                    <input class="form-control" style="font-size:0.78rem; padding:4px 6px;"
+                           @bind="_newTodoText" placeholder="할 일 입력" />
+                    <button class="btn btn-primary btn-sm" style="padding:2px 6px;" @onclick="AddTodo">+</button>
+                    <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" @onclick="() => _addingTodo = false">✕</button>
+                </div>
+            }
+            else
+            {
+                <button class="btn btn-ghost btn-sm" style="margin-top:6px; font-size:0.78rem;"
+                        @onclick="() => { _addingTodo = true; _checklistExpanded = true; }">+ 항목 추가</button>
+            }
+        }
     </div>
 
     @* ── 진행중 프로젝트 ── *@
@@ -242,6 +315,49 @@ else
 @code {
     async Task SignIn() => await Auth.SignInWithGoogleAsync();
 
+
+    // ── 할 일 체크리스트 ──
+    class TodoItem
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Text { get; set; } = "";
+        public bool Done { get; set; } = false;
+    }
+    List<TodoItem> _todoItems = new();
+    bool _checklistExpanded = true;
+    bool _addingTodo = false;
+    string _newTodoText = "";
+    Guid? _editingTodoId = null;
+    string _editingTodoText = "";
+
+    async Task LoadTodos()
+    {
+        var json = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_todos");
+        if (!string.IsNullOrEmpty(json))
+            try { _todoItems = System.Text.Json.JsonSerializer.Deserialize<List<TodoItem>>(json) ?? new(); } catch { }
+    }
+    async Task SaveTodos()
+    {
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_todos",
+            System.Text.Json.JsonSerializer.Serialize(_todoItems));
+        StateHasChanged();
+    }
+    async Task AddTodo()
+    {
+        if (string.IsNullOrWhiteSpace(_newTodoText)) return;
+        _todoItems.Add(new TodoItem { Text = _newTodoText.Trim() });
+        _newTodoText = "";
+        _addingTodo = false;
+        await SaveTodos();
+    }
+    async Task SaveTodoLabel(TodoItem item)
+    {
+        if (!string.IsNullOrWhiteSpace(_editingTodoText))
+            item.Text = _editingTodoText.Trim();
+        _editingTodoId = null;
+        await SaveTodos();
+    }
+
     // 인증 상태 변경 콜백 — 로그인 완료 후 데이터 재로딩
     async void OnAuthChanged()
     {
@@ -263,6 +379,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         Auth.OnAuthChanged += OnAuthChanged;
+        await LoadTodos();
         // Firebase 초기화 완료 대기 (최대 6초)
         if (!Auth.IsInitialized)
         {
