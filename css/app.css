@@ -113,18 +113,23 @@ body {
 .sidebar-brand {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 28px 24px 24px;
+    justify-content: center;
+    padding: 24px 20px 20px;
     border-bottom: 1px solid var(--theme-mid);
 }
 
-.brand-icon { display:flex; align-items:center; }
-.brand-name {
-    font-family: 'DM Sans', sans-serif;
-    font-size: 1.05rem;
-    font-weight: 600;
-    color: var(--theme-active);
-    letter-spacing: 0.04em;
+.sidebar-logo {
+    width: 120px;
+    height: auto;
+    opacity: 0.75;
+    transition: opacity 0.2s ease;
+}
+.sidebar-logo:hover { opacity: 1; }
+
+/* 다크모드: invert로 밝게 */
+[data-dark="true"] .sidebar-logo {
+    filter: invert(1);
+    opacity: 0.8;
 }
 
 .nav-list {
@@ -515,7 +520,8 @@ body {
     .brand-name, .nav-label, .sidebar-footer, .theme-picker-label { display: none; }
     .theme-picker { padding: 12px 8px; }
     .theme-dots { justify-content: center; }
-    .sidebar-brand { justify-content: center; padding: 20px 0; }
+    .sidebar-brand { justify-content: center; padding: 16px 0; }
+    .sidebar-logo { width: 80px; }
     .nav-list li { margin: 2px 8px; }
     .nav-item { justify-content: center; padding: 12px 8px; }
     .nav-icon { width: auto; }
