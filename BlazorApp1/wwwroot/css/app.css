@@ -1130,22 +1130,41 @@ body {
     color: var(--text-light);
     font-size: 0.9rem;
 }
-/* ── 라인 스타일 SVG 아이콘 (currentColor 기반) ─────────────── */
+/* ── 라인 스타일 SVG 아이콘 ─────────────────────────────────── */
 .icon-line {
     display: block;
-    color: var(--text-mid);          /* 기본: 연한 회색 */
-    transition: color 0.15s ease;
+    opacity: 0.45;                      /* 기본: 연한 느낌 */
+    transition: opacity 0.15s ease;
 }
 
-/* 활성/호버 시 테마 강조색으로 */
+/* 활성/호버 시 진하게 */
 .nav-item:hover .icon-line,
 .nav-item.active .icon-line,
 .bottom-nav-item:hover .icon-line,
 .bottom-nav-item.active .icon-line {
-    color: var(--theme-active);
+    opacity: 1;
 }
 
-/* 다크 모드: 기본 좀 더 밝은 회색 */
+/* 다크모드: invert로 흰색 전환 + 연한 느낌 */
 [data-dark="true"] .icon-line {
-    color: var(--text-mid);
+    filter: invert(1);
+    opacity: 0.5;
+}
+
+[data-dark="true"] .nav-item:hover .icon-line,
+[data-dark="true"] .nav-item.active .icon-line,
+[data-dark="true"] .bottom-nav-item:hover .icon-line,
+[data-dark="true"] .bottom-nav-item.active .icon-line {
+    opacity: 1;
+}
+
+/* 홈 카드 아이콘 */
+.icon-line-card {
+    display: block;
+    opacity: 0.7;
+}
+
+[data-dark="true"] .icon-line-card {
+    filter: invert(1);
+    opacity: 0.8;
 }
