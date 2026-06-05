@@ -1174,3 +1174,12 @@ body {
     filter: invert(1);
     opacity: 0.8;
 }
+
+/* 페이지 제목 아이콘: 항상 진한색 */
+.page-title .icon-line {
+    opacity: 1;
+}
+
+[data-dark="true"] .page-title .icon-line {
+    opacity: 1;
+}
