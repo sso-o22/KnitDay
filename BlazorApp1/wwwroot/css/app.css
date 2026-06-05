@@ -1133,9 +1133,19 @@ body {
 /* ── 라인 스타일 SVG 아이콘 (currentColor 기반) ─────────────── */
 .icon-line {
     display: block;
-    color: #333333;  /* 라이트 모드: 진한 색 */
+    color: var(--text-mid);          /* 기본: 연한 회색 */
+    transition: color 0.15s ease;
 }
 
+/* 활성/호버 시 테마 강조색으로 */
+.nav-item:hover .icon-line,
+.nav-item.active .icon-line,
+.bottom-nav-item:hover .icon-line,
+.bottom-nav-item.active .icon-line {
+    color: var(--theme-active);
+}
+
+/* 다크 모드: 기본 좀 더 밝은 회색 */
 [data-dark="true"] .icon-line {
-    color: #f0f0f0;  /* 다크 모드: 흰색 */
+    color: var(--text-mid);
 }
