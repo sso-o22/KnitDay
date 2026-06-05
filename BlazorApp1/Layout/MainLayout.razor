@@ -28,11 +28,11 @@
         <!-- 사이드바 하단 통계 + 다크 토글 -->
         <div class="sidebar-stats">
             <div class="sidebar-stat-row">
-                <span><img src="icons/t-shirt.svg" class="icon-line" style="width:26px;height:26px;margin-right:4px;" /> 완성작</span>
+                <span><img src="icons/check-square.svg" class="icon-line" style="width:16px;height:16px;margin-right:4px;" /> 완성작</span>
                 <strong>@(_finished)개</strong>
             </div>
             <div class="sidebar-stat-row">
-                <span><img src="icons/Time.svg" style="width:26px;height:26px;margin-right:4px;" /> 오늘</span>
+                <span><img src="icons/clock.svg" class="icon-line" style="width:16px;height:16px;margin-right:4px;" /> 오늘</span>
                 <strong>@_todayTime</strong>
             </div>
             <div class="sidebar-dark-toggle" @onclick="ToggleDark" title="@(_isDark ? "라이트 모드" : "다크 모드")">
