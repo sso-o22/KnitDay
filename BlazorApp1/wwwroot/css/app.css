@@ -1130,3 +1130,12 @@ body {
     color: var(--text-light);
     font-size: 0.9rem;
 }
+/* ── 라인 스타일 SVG 아이콘 (currentColor 기반) ─────────────── */
+.icon-line {
+    display: block;
+    color: #333333;  /* 라이트 모드: 진한 색 */
+}
+
+[data-dark="true"] .icon-line {
+    color: #f0f0f0;  /* 다크 모드: 흰색 */
+}
