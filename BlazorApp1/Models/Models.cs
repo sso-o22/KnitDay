@@ -34,6 +34,7 @@ namespace KnitLog.Models
         public DateTime? PurchaseDate { get; set; }
         public decimal Quantity { get; set; } = 1;
         public string Memo { get; set; } = "";
+        public string PhotoBase64 { get; set; } = "";  // 사진 (base64)
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 
@@ -78,6 +79,7 @@ namespace KnitLog.Models
                 : 0;
 
         public string Memo { get; set; } = "";
+        public string PhotoBase64 { get; set; } = "";  // 사진 (base64)
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 

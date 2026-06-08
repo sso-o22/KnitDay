@@ -2,6 +2,7 @@
   "version": "1.0.0",
   "date": "2026-06-05",
   "updates": [
-    "KnitLog -> KnitDay 앱 이름 변경"
+    "KnitLog -> KnitDay 앱 이름 변경", 
+    "스와치 화면 분류 추가, 사진 등록 기능 추가"
   ]
 }
