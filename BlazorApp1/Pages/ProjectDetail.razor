@@ -34,20 +34,20 @@ else
         </div>
         <div style="display:flex; gap:6px; flex-wrap:nowrap; align-items:center;">
             <button class="btn btn-secondary btn-sm" @onclick="OpenEditModal"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
-            <button class="btn btn-secondary btn-sm" @onclick="GoToViewer">📄 도안</button>
+            <button class="btn btn-secondary btn-sm" @onclick="GoToViewer"><img src="icons/book-open-text.svg" class="icon-line" style="width:14px;height:14px;" /> 도안</button>
             @if (_project.Status == ProjectStatus.진행중)
             {
-                <button class="btn btn-ghost btn-sm" @onclick="PauseProject">⏸️ 중단</button>
-                <button class="btn btn-sage btn-sm" @onclick="CompleteProject">✅ 완료</button>
+                <button class="btn btn-ghost btn-sm" @onclick="PauseProject"><img src="icons/pause.svg" class="icon-line" style="width:14px;height:14px;" /> 중단</button>
+                <button class="btn btn-sage btn-sm" @onclick="CompleteProject"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /> 완료</button>
             }
             else if (_project.Status == ProjectStatus.일시중단)
             {
-                <button class="btn btn-ghost btn-sm" @onclick="ResumeProject">▶️ 재개</button>
-                <button class="btn btn-sage btn-sm" @onclick="CompleteProject">✅ 완료</button>
+                <button class="btn btn-ghost btn-sm" @onclick="ResumeProject"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /> 재개</button>
+                <button class="btn btn-sage btn-sm" @onclick="CompleteProject"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /> 완료</button>
             }
             else
             {
-                <button class="btn btn-sage btn-sm" @onclick="CompleteProject">✅ 완료</button>
+                <button class="btn btn-sage btn-sm" @onclick="CompleteProject"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /> 완료</button>
             }
         </div>
     </div>
@@ -156,7 +156,7 @@ else
             {
                 <div class="divider"></div>
                 <div style="display:flex; align-items:center; gap:8px;">
-                    <span class="badge" style="background:#fde8e8; color:#c0392b;">⏸️ 일시 중단 중</span>
+                    <span class="badge" style="background:#fde8e8; color:#c0392b;">일시 중단 중</span>
                     <span style="font-size:0.82rem; color:var(--text-light);">재개 버튼을 눌러 다시 시작하세요</span>
                 </div>
             }
@@ -165,7 +165,7 @@ else
             @* @if (_project.VideoLinks.Count > 0)
             {
                 <div class="divider"></div>
-                <div class="form-label">🎬 참고 영상</div>
+                <div class="form-label"><img src="icons/youtube-logo.svg" class="icon-line" style="width:16px;height:16px;" /> 참고 영상</div>
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     @foreach (var link in _project.VideoLinks)
                     {
@@ -186,7 +186,7 @@ else
                 <div class="card" draggable="true" data-cardid="counter" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => { if (_project.Counters.Count > 0) ToggleCard("counter"); }'>
-                        <div class="card-title" style="margin-bottom:0;">🔢 단수 카운터</div>
+                        <div class="card-title" style="margin-bottom:0;"><img src="icons/plus-minus.svg" class="icon-line" style="width:16px;height:16px;" /> 단수 카운터</div>
                         @if (_project.Counters.Count > 0)
                         {
                             <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("counter") ? "▶" : "▼")</span>
@@ -215,7 +215,7 @@ else
                                     {
                                         <span style="font-weight:600; font-size:0.92rem; flex:1;">@counter.Label</span>
                                         <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="이름 수정"
-                                                @onclick="() => { _editingCounterId = counter.Id; _editingCounterLabel = counter.Label; }">✏️</button>
+                                                @onclick="() => { _editingCounterId = counter.Id; _editingCounterLabel = counter.Label; }"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /></button>
                                         <button class="btn btn-danger btn-sm" style="padding:2px 8px;" disabled="@IsPaused" @onclick='() => Confirm($"\"{counter.Label}\" 카운터를 삭제할까요?", async () => await RemoveCounter(counter.Id))'>✕</button>
                                     }
                                 </div>
@@ -259,7 +259,7 @@ else
                                 @if (counter.LastUpdatedAt.HasValue)
                                 {
                                     <div style="text-align:center; font-size:0.75rem; color:var(--text-light); margin-bottom:8px;">
-                                        🕐 마지막 업데이트: @counter.LastUpdatedAt.Value.ToString("HH:mm:ss")
+                                        <img src="icons/clock.svg" class="icon-line" style="width:14px;height:14px;" /> 마지막 업데이트: @counter.LastUpdatedAt.Value.ToString("HH:mm:ss")
                                     </div>
                                 }
                                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:0.8rem; color:var(--text-mid);">
@@ -291,7 +291,7 @@ else
                         }
                         else
                         {
-                            <p style="font-size:0.8rem; color:var(--text-light); margin-top:8px;">⏸️ 일시중단 중에는 편집할 수 없어요</p>
+                            <p style="font-size:0.8rem; color:var(--text-light); margin-top:8px;">일시중단 중에는 편집할 수 없어요</p>
                         }
                     }
                 </div>
@@ -309,11 +309,11 @@ else
                         <div style="display:flex; align-items:center; gap:6px;">
                             @if (_checklistEditMode)
                             {
-                                <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitChecklistEditMode">완료</button>
+                                <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitChecklistEditMode" @onclick:stopPropagation="true">완료</button>
                             }
                             else
                             {
-                                <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterChecklistEditMode"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
+                                <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterChecklistEditMode" @onclick:stopPropagation="true"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
                             }
                             @if (_project.Checklist.Count > 0)
                             {
@@ -371,7 +371,7 @@ else
                         }
                         else if (IsPaused)
                         {
-                            <p style="font-size:0.8rem; color:var(--text-light); margin-top:8px;">⏸️ 일시중단 중에는 편집할 수 없어요</p>
+                            <p style="font-size:0.8rem; color:var(--text-light); margin-top:8px;">일시중단 중에는 편집할 수 없어요</p>
                         }
                     }
                 </div>
@@ -382,7 +382,7 @@ else
                 <div class="card" draggable="true" data-cardid="timer" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => ToggleCard("timer")'>
-                        <div class="card-title" style="margin-bottom:0;">⏱️ 뜨개 시간</div>
+                        <div class="card-title" style="margin-bottom:0;"><img src="icons/clock-user.svg" class="icon-line" style="width:16px;height:16px;" /> 뜨개 시간</div>
                         <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("timer") ? "▶" : "▼")</span>
                     </div>
                     @if (!IsCollapsed("timer"))
@@ -419,7 +419,7 @@ else
                                 {
                                     <!-- 시작 버튼 -->
                                     <button class="btn btn-primary" style="flex:1; padding:10px;" disabled="@IsPaused" @onclick="StartSession">
-                                        ▶️ 시작
+                                        <img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /> 시작
                                     </button>
                                 }
                                 else
@@ -440,7 +440,7 @@ else
                         }
                         @if (IsPaused)
                         {
-                            <p style="font-size:0.8rem; color:var(--text-light); margin-top:8px;">⏸️ 일시중단 중에는 시간 기록을 할 수 없어요</p>
+                            <p style="font-size:0.8rem; color:var(--text-light); margin-top:8px;">일시중단 중에는 시간 기록을 할 수 없어요</p>
                         }
                     }
                 </div>
@@ -451,7 +451,7 @@ else
                 <div class="card" draggable="true" data-cardid="accum" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => ToggleCard("accum")'>
-                        <div class="card-title" style="margin-bottom:0;">📊 누적 시간</div>
+                        <div class="card-title" style="margin-bottom:0;"><img src="icons/chart-bar.svg" class="icon-line" style="width:16px;height:16px;" /> 누적 시간</div>
                         <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("accum") ? "▶" : "▼")</span>
                     </div>
                     @if (!IsCollapsed("accum"))
@@ -511,7 +511,7 @@ else
     <div class="card" style="grid-column: span 2; overflow:hidden;">
         <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
              @onclick='() => ToggleCard("video")'>
-            <div class="card-title" style="margin-bottom:0;">🎬 참고 영상</div>
+            <div class="card-title" style="margin-bottom:0;"><img src="icons/youtube-logo.svg" class="icon-line" style="width:16px;height:16px;" /> 참고 영상</div>
             @if (_project.VideoLinks.Count > 0)
             {
                 <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("video") ? "▶" : "▼")</span>
@@ -563,7 +563,7 @@ else
     </div>
 
     <div class="card" style="grid-column: span 2;">
-        <div class="card-title">📷 과정 사진</div>
+        <div class="card-title"><img src="icons/image.svg" class="icon-line" style="width:16px;height:16px;" /> 과정 사진</div>
 
         @if (_project.Photos.Count > 0)
         {
@@ -598,7 +598,7 @@ else
 
         <!-- ── 연결된 실 ── -->
         <div class="card">
-            <div class="card-title" style="margin-bottom:12px;">🧵 연결된 실</div>
+            <div class="card-title" style="margin-bottom:12px;"><img src="icons/yarn.svg" class="icon-line" style="width:16px;height:16px;" /> 연결된 실</div>
             @if (_project.YarnUsages.Count == 0)
             {
                 <p style="color:var(--text-light); font-size:0.88rem;">연결된 실이 없어요. 수정 버튼에서 실을 추가할 수 있어요.</p>
@@ -634,7 +634,7 @@ else
         <!-- ── 연결된 스와치 ── -->
         <div class="card">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                <div class="card-title" style="margin-bottom:0;">🧪 연결된 스와치</div>
+                <div class="card-title" style="margin-bottom:0;"><img src="icons/swatches.svg" class="icon-line" style="width:16px;height:16px;" /> 연결된 스와치</div>
                 <a href="swatches" class="btn btn-ghost btn-sm">스와치 관리</a>
             </div>
 
@@ -775,7 +775,7 @@ else
 
             @* ── 사용 실 ── *@
             <div class="form-group">
-                <label class="form-label">🧵 사용 실</label>
+                <label class="form-label"><img src="icons/yarn.svg" class="icon-line" style="width:14px;height:14px;" /> 사용 실</label>
                 <select class="form-control" style="margin-bottom:8px;" @onchange="OnEditAddYarn">
                     <option value="">+ 실 추가</option>
                     @foreach (var y in _yarns)
