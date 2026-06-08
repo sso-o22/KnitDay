@@ -121,7 +121,7 @@ else
                 }
                 else
                 {
-                    <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterTodoEditMode">✏️ 수정</button>
+                    <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterTodoEditMode"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
                 }
             </div>
         </div>
@@ -132,25 +132,17 @@ else
                 <input type="checkbox" checked="@item.Done"
                        @onchange="async () => { item.Done = !item.Done; await SaveTodos(); }"
                        style="width:14px; height:14px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
-                @if (_todoEditMode && _editingTodoId == item.Id)
+                @if (_todoEditMode)
                 {
                     <input class="form-control" style="flex:1; font-size:0.78rem; padding:2px 6px;"
-                           @bind="_editingTodoText"
-                           @onkeydown='async e => { if (e.Key == "Enter") await SaveTodoLabel(item); if (e.Key == "Escape") CancelTodoEdit(); }' />
-                    <button class="btn btn-primary btn-sm" style="padding:1px 5px;" @onclick="() => SaveTodoLabel(item)">✓</button>
-                    <button class="btn btn-ghost btn-sm" style="padding:1px 5px;" @onclick="CancelTodoEdit">✕</button>
+                           value="@item.Text"
+                           @onchange="async e => { item.Text = e.Value?.ToString() ?? item.Text; await SaveTodos(); }" />
+                    <button class="btn btn-danger btn-sm" style="padding:1px 4px; font-size:0.7rem;"
+                            @onclick="async () => { _todoItems.Remove(item); await SaveTodos(); }">✕</button>
                 }
                 else
                 {
-                    <span style="flex:1; font-size:0.78rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "color:var(--text-dark);")"
-                          @ondblclick="() => { if (_todoEditMode) { _editingTodoId = item.Id; _editingTodoText = item.Text; } }">@item.Text</span>
-                    @if (_todoEditMode)
-                    {
-                        <button class="btn btn-ghost btn-sm" style="padding:1px 4px; font-size:0.7rem;"
-                                @onclick="() => { _editingTodoId = item.Id; _editingTodoText = item.Text; }">✏️</button>
-                        <button class="btn btn-danger btn-sm" style="padding:1px 4px; font-size:0.7rem;"
-                                @onclick="async () => { _todoItems.Remove(item); await SaveTodos(); }">✕</button>
-                    }
+                    <span style="flex:1; font-size:0.78rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "color:var(--text-dark);")">@item.Text</span>
                 }
             </div>
         }

@@ -33,7 +33,7 @@ else
             </div>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:nowrap; align-items:center;">
-            <button class="btn btn-secondary btn-sm" @onclick="OpenEditModal">✏️ 수정</button>
+            <button class="btn btn-secondary btn-sm" @onclick="OpenEditModal"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
             <button class="btn btn-secondary btn-sm" @onclick="GoToViewer">📄 도안</button>
             @if (_project.Status == ProjectStatus.진행중)
             {
@@ -313,7 +313,7 @@ else
                             }
                             else
                             {
-                                <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterChecklistEditMode">✏️ 수정</button>
+                                <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterChecklistEditMode"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
                             }
                             @if (_project.Checklist.Count > 0)
                             {
@@ -331,20 +331,17 @@ else
                                        @onchange="() => ToggleCheck(item)"
                                        disabled="@IsPaused"
                                        style="width:16px; height:16px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
-                                @if (_editingCheckId == item.Id)
+                                @if (_checklistEditMode)
                                 {
                                     <input class="form-control" style="flex:1; font-size:0.88rem; padding:4px 8px;"
-                                           @bind="_editingCheckText"
-                                           @onkeydown='async e => { if (e.Key == "Enter") await SaveCheckLabel(item); if (e.Key == "Escape") _editingCheckId = null; }' />
-                                    <button class="btn btn-primary btn-sm" @onclick="() => SaveCheckLabel(item)">✓</button>
-                                    <button class="btn btn-ghost btn-sm" @onclick="() => _editingCheckId = null">✕</button>
+                                           value="@item.Text"
+                                           @onchange="async e => { item.Text = e.Value?.ToString() ?? item.Text; await Save(); }" />
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;" disabled="@IsPaused"
+                                            @onclick='() => Confirm($"\"{item.Text}\" 항목을 삭제할까요?", async () => await RemoveCheckItem(item.Id))'>✕</button>
                                 }
                                 else
                                 {
                                     <span style="flex:1; font-size:0.88rem; @(item.Done ? "text-decoration:line-through; color:var(--text-light);" : "")">@item.Text</span>
-                                    <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="이름 수정"
-                                            @onclick="() => { _editingCheckId = item.Id; _editingCheckText = item.Text; }">✏️</button>
-                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;" disabled="@IsPaused" @onclick='() => Confirm($"\"{item.Text}\" 항목을 삭제할까요?", async () => await RemoveCheckItem(item.Id))'>✕</button>
                                 }
                             </div>
                         }
