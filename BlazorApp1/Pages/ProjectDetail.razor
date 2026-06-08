@@ -302,11 +302,24 @@ else
                 <div class="card" draggable="true" data-cardid="checklist" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => { if (_project.Checklist.Count > 0) ToggleCard("checklist"); }'>
-                        <div class="card-title" style="margin-bottom:0;">📋 도안 체크리스트</div>
-                        @if (_project.Checklist.Count > 0)
-                        {
-                            <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("checklist") ? "▶" : "▼")</span>
-                        }
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <img src="icons/push-pin.svg" class="icon-line" style="width:14px;height:14px;" />
+                            <div class="card-title" style="margin-bottom:0;">도안 체크리스트</div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            @if (_checklistEditMode)
+                            {
+                                <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitChecklistEditMode">완료</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterChecklistEditMode">✏️ 수정</button>
+                            }
+                            @if (_project.Checklist.Count > 0)
+                            {
+                                <span style="font-size:0.85rem; color:var(--text-light);" @onclick='() => ToggleCard("checklist")'>@(IsCollapsed("checklist") ? "▶" : "▼")</span>
+                            }
+                        </div>
                     </div>
                     @if (!IsCollapsed("checklist") || _project.Checklist.Count == 0)
                     {
@@ -344,22 +357,22 @@ else
                                 <div style="height:6px; background:#c8e6be; border-radius:3px; width:@(done * 100 / total)%;"></div>
                             </div>
                         }
-                        @if (!IsPaused)
+                        @if (_checklistEditMode && !IsPaused)
                         {
                             @if (_addingCheck)
                             {
                                 <div style="display:flex; gap:8px; margin-top:12px;">
                                     <input class="form-control" @bind="_newCheckText" placeholder="예: 1~10단 완료" />
                                     <button class="btn btn-primary btn-sm" @onclick="AddCheckItem">추가</button>
-                                    <button class="btn btn-ghost btn-sm" @onclick="() => _addingCheck = false">취소</button>
+                                    <button class="btn btn-ghost btn-sm" @onclick="CancelAddCheck">취소</button>
                                 </div>
                             }
                             else
                             {
-                                <button class="btn btn-ghost btn-sm mt-1" @onclick="() => _addingCheck = true">+ 항목 추가</button>
+                                <button class="btn btn-ghost btn-sm mt-1" @onclick="StartAddCheck">+ 항목 추가</button>
                             }
                         }
-                        else
+                        else if (IsPaused)
                         {
                             <p style="font-size:0.8rem; color:var(--text-light); margin-top:8px;">⏸️ 일시중단 중에는 편집할 수 없어요</p>
                         }
@@ -1003,6 +1016,7 @@ else
     // 체크리스트 항목 편집
     Guid? _editingCheckId;
     string _editingCheckText = "";
+    bool _checklistEditMode = false;
 
     // 일시중단 여부
     bool IsPaused => _project?.Status == ProjectStatus.일시중단;
@@ -1173,6 +1187,11 @@ else
         _editingCheckId = null;
         await Save();
     }
+
+    void EnterChecklistEditMode() { _checklistEditMode = true; _editingCheckId = null; }
+    void ExitChecklistEditMode()  { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; }
+    void StartAddCheck()  { _addingCheck = true; }
+    void CancelAddCheck() { _addingCheck = false; _newCheckText = ""; }
 
     // ── 체크리스트 ──────────────────────────────────────
     async Task ToggleCheck(ChecklistItem item)
