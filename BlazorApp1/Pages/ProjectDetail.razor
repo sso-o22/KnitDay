@@ -209,14 +209,14 @@ else
                                                @bind="_editingCounterLabel"
                                                @onkeydown='async e => { if (e.Key == "Enter") await SaveCounterLabel(counter); if (e.Key == "Escape") _editingCounterId = null; }' />
                                         <button class="btn btn-primary btn-sm" @onclick="() => SaveCounterLabel(counter)">✓</button>
-                                        <button class="btn btn-ghost btn-sm" @onclick="() => _editingCounterId = null">✕</button>
+                                        <button class="btn btn-ghost btn-sm" @onclick="() => _editingCounterId = null"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                     }
                                     else
                                     {
                                         <span style="font-weight:600; font-size:0.92rem; flex:1;">@counter.Label</span>
                                         <button class="btn btn-ghost btn-sm" style="padding:2px 6px;" title="이름 수정"
                                                 @onclick="() => { _editingCounterId = counter.Id; _editingCounterLabel = counter.Label; }"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /></button>
-                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" disabled="@IsPaused" @onclick='() => Confirm($"\"{counter.Label}\" 카운터를 삭제할까요?", async () => await RemoveCounter(counter.Id))'>✕</button>
+                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px;" disabled="@IsPaused" @onclick='() => Confirm($"\"{counter.Label}\" 카운터를 삭제할까요?", async () => await RemoveCounter(counter.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                     }
                                 </div>
                                 <!-- 원형 게이지 + 카운터 버튼 -->
@@ -258,8 +258,8 @@ else
                                 }
                                 @if (counter.LastUpdatedAt.HasValue)
                                 {
-                                    <div style="text-align:center; font-size:0.75rem; color:var(--text-light); margin-bottom:8px;">
-                                        <img src="icons/clock.svg" class="icon-line" style="width:14px;height:14px;" /> 마지막 업데이트: @counter.LastUpdatedAt.Value.ToString("HH:mm:ss")
+                                    <div style="display:flex; align-items:center; justify-content:center; gap:4px; font-size:0.75rem; color:var(--text-light); margin-bottom:8px;">
+                                        <img src="icons/clock.svg" class="icon-line" style="width:12px;height:12px; flex-shrink:0;" /> 마지막 업데이트: @counter.LastUpdatedAt.Value.ToString("HH:mm:ss")
                                     </div>
                                 }
                                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:0.8rem; color:var(--text-mid);">
@@ -337,7 +337,7 @@ else
                                            value="@item.Text"
                                            @onchange="async e => { item.Text = e.Value?.ToString() ?? item.Text; await Save(); }" />
                                     <button class="btn btn-danger btn-sm" style="padding:2px 6px;" disabled="@IsPaused"
-                                            @onclick='() => Confirm($"\"{item.Text}\" 항목을 삭제할까요?", async () => await RemoveCheckItem(item.Id))'>✕</button>
+                                            @onclick='() => Confirm($"\"{item.Text}\" 항목을 삭제할까요?", async () => await RemoveCheckItem(item.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                 }
                                 else
                                 {
@@ -491,7 +491,7 @@ else
                                     <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:10px; margin-bottom:8px; border:1px solid var(--border); font-size:0.85rem;">
                                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                                             <span style="color:var(--text-mid);">@(session.StartTime.ToString("M월 d일 HH:mm"))</span>
-                                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick='() => Confirm("이 뜨개 기록을 삭제할까요?", async () => await RemoveSession(session.Id))'>✕</button>
+                                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick='() => Confirm("이 뜨개 기록을 삭제할까요?", async () => await RemoveSession(session.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                         </div>
                                         <div style="font-weight:600; color:var(--sage-dark);">
                                             <span>@FormatDuration(session)</span>
@@ -540,7 +540,7 @@ else
                         
                         <div style="display:flex; align-items:center; gap:8px;">
                             <a href="@link" target="_blank" style="flex:1; font-size:0.8rem; color:var(--text-mid);">🔗 원문 링크 보기</a>
-                            <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveVideoLink(link))'>✕</button>
+                            <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveVideoLink(link))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                         </div>
                     </div>
                 }
@@ -583,7 +583,7 @@ else
                         }
                         <button class="btn btn-danger btn-sm"
                                 style="position:absolute; top:4px; right:4px; padding:2px 6px; font-size:0.7rem;"
-                                @onclick="() => RemovePhoto(photo.Id)">✕</button>
+                                @onclick="() => RemovePhoto(photo.Id)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                     </div>
                 }
             </div>
@@ -665,7 +665,7 @@ else
                             <div style="font-size:0.78rem; color:var(--text-mid); display:flex; gap:6px; flex-wrap:wrap;">
                                 @if (s.NeedleSizeMm > 0)
                                 {
-                                    <span>⚒️ @s.NeedleSizeMm mm</span>
+                                    <span><img src="icons/needle.svg" class="icon-line" style="width:13px;height:13px;" /> @s.NeedleSizeMm mm</span>
                                 }
                                 <span>@s.Stitch</span>
                             </div>
@@ -725,7 +725,7 @@ else
         <div class="modal" style="max-width:680px;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">프로젝트 수정</h2>
-                <button class="btn btn-ghost btn-sm" @onclick="CloseEditModal">✕</button>
+                <button class="btn btn-ghost btn-sm" @onclick="CloseEditModal"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
             </div>
 
             @* ── 도안명 / 출처 ── *@
@@ -801,7 +801,7 @@ else
                                value="@displayVal"
                                @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), out var n)) usage.BallsUsed = hasConeWeight ? n / yarn!.WeightGram : n; }" />
                         <span style="font-size:0.82rem; color:var(--text-mid);">@unitLabel</span>
-                        <button class="btn btn-danger btn-sm" @onclick="() => _project.YarnUsages.Remove(usage)">✕</button>
+                        <button class="btn btn-danger btn-sm" @onclick="() => _project.YarnUsages.Remove(usage)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                     </div>
                 }
             </div>
@@ -882,7 +882,7 @@ else
                                             }
                                         </div>
                                     </div>
-                                    <button class="btn btn-danger btn-sm" style="padding:2px 8px; flex-shrink:0;" @onclick="() => UnlinkSwatch(s)">✕</button>
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 8px; flex-shrink:0;" @onclick="() => UnlinkSwatch(s)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                 </div>
                             }
                         </div>
