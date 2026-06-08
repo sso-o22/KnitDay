@@ -300,26 +300,22 @@ else
             {
                 <!-- ── 도안 체크리스트 ── -->
                 <div class="card" draggable="true" data-cardid="checklist" style="overflow:hidden;">
-                    <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:16px;">
-                        <div style="display:flex; align-items:center; gap:6px; cursor:pointer; flex:1;"
-                             @onclick='() => { if (_project.Checklist.Count > 0) ToggleCard("checklist"); }'>
-                            <img src="icons/push-pin.svg" class="icon-line" style="width:14px;height:14px;" />
-                            <div class="card-title" style="margin-bottom:0;">도안 체크리스트</div>
-                            @if (_project.Checklist.Count > 0)
-                            {
-                                <span style="font-size:0.85rem; color:var(--text-light); margin-left:4px;">@(IsCollapsed("checklist") ? "▶" : "▼")</span>
-                            }
-                        </div>
-                        <div style="display:flex; align-items:center; gap:6px;">
-                            @if (_checklistEditMode)
-                            {
-                                <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitChecklistEditMode">완료</button>
-                            }
-                            else
-                            {
-                                <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterChecklistEditMode"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
-                            }
-                        </div>
+                    <div style="display:flex; align-items:center; gap:6px; padding-bottom:16px;">
+                        <img src="icons/push-pin.svg" class="icon-line" style="width:14px;height:14px; flex-shrink:0;" />
+                        <div class="card-title" style="margin-bottom:0; flex:1;">도안 체크리스트</div>
+                        @if (_checklistEditMode)
+                        {
+                            <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitChecklistEditMode">완료</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterChecklistEditMode"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
+                        }
+                        @if (_project.Checklist.Count > 0)
+                        {
+                            <span style="font-size:0.85rem; color:var(--text-light); cursor:pointer; padding:2px 4px;"
+                                  @onclick='() => ToggleCard("checklist")'>@(IsCollapsed("checklist") ? "▶" : "▼")</span>
+                        }
                     </div>
                     @if (!IsCollapsed("checklist") || _project.Checklist.Count == 0)
                     {
