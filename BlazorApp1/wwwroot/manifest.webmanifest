@@ -1,6 +1,6 @@
 {
-  "name": "KnitLog",
-  "short_name": "KnitLog",
+  "name": "KnitDay",
+  "short_name": "KnitDay",
   "id": "./",
   "start_url": "./",
   "display": "standalone",

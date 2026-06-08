@@ -1,4 +1,4 @@
-name: Deploy KnitLog to GitHub Pages
+name: Deploy KnitDay to GitHub Pages
 
 on:
   push:
