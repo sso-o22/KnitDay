@@ -10,7 +10,7 @@
         <h1 class="page-title"><img src="icons/stack.svg" class="icon-line" style="width:36px;height:36px;" />문어발</h1>
         <p class="page-subtitle">진행중 · 일시중단 프로젝트</p>
     </div>
-    <button class="btn btn-primary" @onclick="OpenAddModal"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;" /> 새 프로젝트</button>
+    <button class="btn btn-primary" @onclick="OpenAddModal" style="display:inline-flex; align-items:center; gap:6px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px; flex-shrink:0;" /> 새 프로젝트</button>
 </div>
 
 @if (_loading)
@@ -105,7 +105,7 @@ else
 
                     @if (!string.IsNullOrEmpty(proj.PatternName))
                     {
-                        <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:4px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:14px;height:14px;" /> @proj.PatternName</div>
+                        <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:4px; display:flex; align-items:center; gap:4px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:14px;height:14px; flex-shrink:0;" /> @proj.PatternName</div>
                     }
 
                     @if (!string.IsNullOrEmpty(proj.PatternMemo))
@@ -134,7 +134,7 @@ else
                         else
                         {
                             <button class="btn btn-sm btn-ghost"
-                                    @onclick="() => ToggleSuspend(proj)">▶ 재개</button>
+                                    @onclick="() => ToggleSuspend(proj)"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /> 재개</button>
                         }
                         <button class="btn btn-sm btn-sage" @onclick="() => CompleteProject(proj.Id)"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /> 완료</button>
                         <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;" /></button>
@@ -185,7 +185,7 @@ else
                         }
                         else
                         {
-                            <button class="btn btn-sm btn-ghost" @onclick="() => ToggleSuspend(proj)">▶</button>
+                            <button class="btn btn-sm btn-ghost" @onclick="() => ToggleSuspend(proj)"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /></button>
                         }
                         <button class="btn btn-sage btn-sm" @onclick="() => CompleteProject(proj.Id)"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /></button>
                         <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;" /></button>

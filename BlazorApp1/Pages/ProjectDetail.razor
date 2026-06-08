@@ -422,7 +422,7 @@ else
                                 {
                                     <!-- 종료 버튼 -->
                                     <button class="btn btn-danger" style="flex:1; padding:10px;" disabled="@IsPaused" @onclick="EndSession">
-                                        ⏹️ 종료
+                                        <img src="icons/stop.svg" class="icon-line" style="width:14px;height:14px;" /> 종료
                                     </button>
                                 }
                             </div>
@@ -661,7 +661,7 @@ else
                             <div style="font-size:0.78rem; color:var(--text-mid); display:flex; gap:6px; flex-wrap:wrap;">
                                 @if (s.NeedleSizeMm > 0)
                                 {
-                                    <span><img src="icons/needle.svg" class="icon-line" style="width:13px;height:13px;" /> @s.NeedleSizeMm mm</span>
+                                    <span style="display:inline-flex; align-items:center; gap:3px;"><img src="icons/needle.svg" class="icon-line" style="width:13px;height:13px; flex-shrink:0;" /> @s.NeedleSizeMm mm</span>
                                 }
                                 <span>@s.Stitch</span>
                             </div>
