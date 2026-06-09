@@ -15,7 +15,7 @@
 
     <!-- 계정 -->
     <div class="card">
-        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">@if (Auth.IsLoggedIn) { <img src="icons/user-check.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;" /> } else { <img src="icons/user.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;" /> }계정</div>
+        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">@if (Auth.IsLoggedIn) { <img src="icons/user-check.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" /> } else { <img src="icons/user.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" /> }계정</div>
         @if (Auth.IsLoggedIn)
         {
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
@@ -29,20 +29,20 @@
                     <div style="font-size:0.75rem;color:var(--text-light);margin-top:2px;display:flex;align-items:center;gap:4px;"><img src="icons/cloud-check.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />Firebase 동기화 중</div>
                 </div>
             </div>
-            <button class="btn btn-secondary" @onclick="SignOut" style="display:inline-flex;align-items:center;gap:6px;"><img src="icons/sign-out.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />로그아웃</button>
+            <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="SignOut"><img src="icons/sign-out.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />로그아웃</button>
         }
         else
         {
             <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:12px;">
                 구글 계정으로 로그인하면 여러 기기에서 데이터를 동기화할 수 있어요.
             </p>
-            <button class="btn btn-primary" @onclick="SignIn" style="display:inline-flex;align-items:center;gap:6px;"><img src="icons/key.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />구글 로그인</button>
+            <button class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="SignIn"><img src="icons/key.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />구글 로그인</button>
         }
     </div>
 
     <!-- 테마 -->
     <div class="card">
-        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;"><img src="icons/palette.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;" />테마 색상</div>
+        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;"><img src="icons/palette.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />테마 색상</div>
         @if (_isDark)
         {
             <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:12px;">다크 모드에서는 흑백 테마만 적용돼요</p>
@@ -72,11 +72,11 @@
                 <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
                     @if (_isDark)
                     {
-                        <img src="icons/moon.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;" /><span>다크 모드</span>
+                        <img src="icons/moon.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" /><span>다크 모드</span>
                     }
                     else
                     {
-                        <img src="icons/sun.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;" /><span>라이트 모드</span>
+                        <img src="icons/sun.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" /><span>라이트 모드</span>
                     }
                 </div>
                 <p style="font-size:0.85rem; color:var(--text-mid);">@(_isDark ? "배경/글자가 반전되고 흑백 테마로 표시돼요" : "테마 색상이 적용된 라이트 모드예요")</p>
@@ -89,7 +89,7 @@
 
     <!-- 데이터 -->
     <div class="card">
-        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;"><img src="icons/floppy-disk.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;" />데이터</div>
+        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;"><img src="icons/floppy-disk.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />데이터</div>
         <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:8px;">
             프로젝트, 실 창고, 도구, 스와치 데이터가 저장돼요.
         </p>
@@ -100,8 +100,8 @@
             새 기기에서 <b>데이터 불러오기</b>로 복원해주세요.
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-secondary" @onclick="ExportData" style="display:inline-flex;align-items:center;gap:6px;"><img src="icons/export.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 내보내기</button>
-            <button class="btn btn-secondary" @onclick="ImportDataClick" style="display:inline-flex;align-items:center;gap:6px;"><img src="icons/download-simple.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 불러오기</button>
+            <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="ExportData"><img src="icons/export.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 내보내기</button>
+            <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="ImportDataClick"><img src="icons/download-simple.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 불러오기</button>
         </div>
         <InputFile id="import-file-input" OnChange="ImportData" accept=".json" style="display:none;" />
         @if (_importMsg != "")
@@ -115,7 +115,7 @@
 
     <!-- 버전 정보 -->
     <div class="card">
-        <div class="card-title" style="margin-bottom:12px; display:flex; align-items:center; gap:6px;"><img src="icons/app-window.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;" />앱 정보</div>
+        <div class="card-title" style="margin-bottom:12px; display:flex; align-items:center; gap:6px;"><img src="icons/app-window.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />앱 정보</div>
         @if (_versionInfo != null)
         {
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
@@ -140,7 +140,7 @@
     <div class="card">
         <div style="display:flex; align-items:center; justify-content:space-between;">
             <div>
-                <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;"><img src="icons/bug.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;" />디버그 모드</div>
+                <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;"><img src="icons/bug.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />디버그 모드</div>
                 <p style="font-size:0.85rem; color:var(--text-mid);">화면 하단에 콘솔 로그 패널을 표시해요</p>
             </div>
             <button class="dark-toggle-btn @(_debugMode ? "on" : "")" @onclick="ToggleDebug">
@@ -157,7 +157,7 @@
          @onclick="() => { _showImportModal = false; _importDoc = null; }">
         <div style="background:var(--white);border-radius:20px;padding:24px 20px 20px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.18);"
              @onclick:stopPropagation="true">
-            <div style="margin-bottom:10px;"><img src="icons/download-simple.svg" class="icon-line" style="width:32px;height:32px;" /></div>
+            <div style="margin-bottom:10px;"><img src="icons/download-simple.svg" class="icon-line" style="width:32px;height:32px;flex-shrink:0;" /></div>
             <div style="font-size:1rem;font-weight:700;margin-bottom:10px;color:var(--text-dark);">어떻게 불러올까요?</div>
             <div style="font-size:0.83rem;color:var(--text-mid);margin-bottom:20px;line-height:1.65;">
                 <b>덮어쓰기</b>는 현재 데이터를 파일 내용으로 완전히 교체해요.<br/>
