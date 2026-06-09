@@ -458,7 +458,7 @@ body {
     color: var(--text-light);
 }
 
-.empty-state .empty-icon { font-size: 3rem; margin-bottom: 12px; }
+.empty-state .empty-icon { margin-bottom: 12px; display:flex; justify-content:center; }
 .empty-state p { font-size: 0.95rem; }
 
 /* ── 파스텔 섹션 (선택적 사용) ─────────────────────── */
