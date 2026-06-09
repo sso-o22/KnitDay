@@ -17,33 +17,38 @@
 @* ── 필터 ── *@
 @if (_swatches.Count > 0)
 {
-    <div style="display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; align-items:center;">
-        <select class="form-control" style="width:auto; min-width:120px; font-size:0.82rem;"
-                value="@_filterProject" @onchange="OnFilterProjectChanged">
-            <option value="">전체 프로젝트</option>
-            <option value="linked">프로젝트 연결됨</option>
-            <option value="unlinked">연결 없음</option>
-        </select>
-        <select class="form-control" style="width:auto; min-width:120px; font-size:0.82rem;"
-                value="@_filterStitch" @onchange="OnFilterStitchChanged">
-            <option value="">전체 뜨개방법</option>
-            <option value="메리야스">메리야스</option>
-            <option value="무늬">무늬</option>
-            <option value="가터">가터</option>
-            <option value="고무단">고무단</option>
-        </select>
-        <select class="form-control" style="width:auto; min-width:120px; font-size:0.82rem;"
-                value="@_filterNeedle" @onchange="OnFilterNeedleChanged">
-            <option value="">전체 바늘</option>
-            @foreach (var mm in NeedleOptions)
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+        @* 1행: 프로젝트 연결 유무 *@
+        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+            @foreach (var (label, val) in new[]{("전체",""),("연결됨","linked"),("연결 없음","unlinked")})
             {
-                <option value="@mm">@mm mm</option>
+                <button class="btn btn-sm @(_filterProject==val?"btn-primary":"btn-ghost")"
+                        @onclick="() => { _filterProject = val; }">@label</button>
             }
-        </select>
-        @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
-        {
-            <button class="btn btn-ghost btn-sm" @onclick="ResetFilters">✕ 초기화</button>
-        }
+        </div>
+        @* 2행: 뜨개 방법 *@
+        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+            @foreach (var (label, val) in new[]{("전체방법",""),("메리야스","메리야스"),("무늬","무늬"),("가터","가터"),("고무단","고무단")})
+            {
+                <button class="btn btn-sm @(_filterStitch==val?"btn-primary":"btn-ghost")"
+                        @onclick="() => { _filterStitch = val; }">@label</button>
+            }
+        </div>
+        @* 3행: 바늘 mm 콤보박스 + 초기화 *@
+        <div style="display:flex; gap:8px; align-items:center;">
+            <select class="form-control" style="width:auto; min-width:110px; font-size:0.82rem;"
+                    value="@_filterNeedle" @onchange="OnFilterNeedleChanged">
+                <option value="">전체 바늘</option>
+                @foreach (var mm in NeedleOptions)
+                {
+                    <option value="@mm">@mm mm</option>
+                }
+            </select>
+            @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
+            {
+                <button class="btn btn-ghost btn-sm" @onclick="ResetFilters">✕ 초기화</button>
+            }
+        </div>
     </div>
 }
 
