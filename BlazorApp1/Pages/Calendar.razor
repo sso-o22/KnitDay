@@ -717,7 +717,9 @@ else
             if (isStart || isEnd)
                 result.Add(new CalendarEvent(p.Id, p.Title,
                     isStart && isEnd ? "CO·FO" : isStart ? "CO" : "FO",
-                    s.PaleBg, s.AccentColor, s.TextColor));
+                    "transparent",
+                    isStart ? "#d6eefa" : "#fad5de",
+                    isStart ? "#1a6a8a" : "#a03060"));
             else if (isInRange)
                 result.Add(new CalendarEvent(p.Id, p.Title, "·", s.PaleBg, s.AccentColor, s.TextColor));
         }
