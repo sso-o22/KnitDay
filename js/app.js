@@ -216,10 +216,11 @@ window.showToast = function(message, type = 'success') {
     toast.textContent = message;
     toast.style.cssText = `
         position: fixed;
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
         left: 50%;
         transform: translateX(-50%) translateY(20px);
-        background: ${type === 'success' ? '#2a5a26' : '#c03030'};
+        max-width: calc(100vw - 40px);
+        background: ${type === 'success' ? '#666' : '#c03030'};
         color: #fff;
         padding: 8px 18px;
         border-radius: 20px;
@@ -236,12 +237,12 @@ window.showToast = function(message, type = 'success') {
 
     requestAnimationFrame(() => {
         toast.style.opacity = '1';
-        toast.style.transform = 'translateX(-50%) translateY(0)';
+        toast.style.transform = 'translateX(-50%) translateY(0px)';
     });
 
     setTimeout(() => {
         toast.style.opacity = '0';
-        toast.style.transform = 'translateX(-50%) translateY(10px)';
+        toast.style.transform = 'translateX(-50%) translateY(8px)';
         setTimeout(() => toast.remove(), 300);
     }, 1800);
 };
