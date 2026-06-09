@@ -134,7 +134,7 @@ else
                        style="width:14px; height:14px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
                 @if (_todoEditMode)
                 {
-                    <input class="form-control" style="flex:1; font-size:0.78rem; padding:2px 6px;"
+                    <input class="form-control" style="flex:1; font-size:0.78rem; padding:2px 6px; height:28px; min-height:unset; line-height:1.4;"
                            value="@item.Text"
                            @onchange="async e => { item.Text = e.Value?.ToString() ?? item.Text; await SaveTodos(); }" />
                     <button class="btn btn-danger btn-sm" style="padding:1px 4px; font-size:0.7rem;"
