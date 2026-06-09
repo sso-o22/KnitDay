@@ -79,11 +79,11 @@ else
                                 @foreach (var ev in chips)
                                 {
                                     <div @onclick="() => GoToProject(ev.Id)" title="@ev.Title"
-                                         style="font-size:0.65rem; border-radius:4px; padding:1px 5px; margin-bottom:2px;
-                                                white-space:normal; word-break:break-word; overflow-wrap:break-word;
-                                                cursor:pointer; display:block; width:100%; box-sizing:border-box;
+                                         style="font-size:0.65rem; border-radius:4px; padding:1px 4px; margin-bottom:2px;
+                                                white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+                                                cursor:pointer; display:flex; align-items:center; gap:2px; width:100%; box-sizing:border-box;
                                                 background:@ev.AccentColor; color:@ev.TextColor;">
-                                        @ev.Label @ev.Title
+                                        <span style="font-size:0.55rem; font-weight:700; opacity:0.85; flex-shrink:0;">@ev.Label</span><span style="overflow:hidden; text-overflow:ellipsis;">@ev.Title</span>
                                     </div>
                                 }
                                 @if (dots.Any())
@@ -716,7 +716,7 @@ else
 
             if (isStart || isEnd)
                 result.Add(new CalendarEvent(p.Id, p.Title,
-                    isStart && isEnd ? "▶◀" : isStart ? "▶" : "⚑",
+                    isStart && isEnd ? "CO·FO" : isStart ? "CO" : "FO",
                     s.PaleBg, s.AccentColor, s.TextColor));
             else if (isInRange)
                 result.Add(new CalendarEvent(p.Id, p.Title, "·", s.PaleBg, s.AccentColor, s.TextColor));
