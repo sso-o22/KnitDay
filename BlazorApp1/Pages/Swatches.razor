@@ -385,7 +385,7 @@ else
                     }
                     @if (csg == 0 && crg == 0)
                     {
-                        <span style="color:#c0392b;">⚠️ 코수/단수와 가로/세로 길이를 모두 입력해야 게이지를 계산할 수 있어요.</span>
+                        <span style="color:#c0392b;display:inline-flex;align-items:center;gap:4px;"><img src="icons/warning.svg" class="icon-line" style="width:14px;height:14px;" />코수/단수와 가로/세로 길이를 모두 입력해야 게이지를 계산할 수 있어요.</span>
                     }
                 </div>
             </div>
@@ -480,7 +480,7 @@ else
 {
     <div class="modal-backdrop" style="z-index:9999;">
         <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
-            <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
+            <div style="margin-bottom:12px;display:flex;justify-content:center;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;" /></div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
             <div style="display:flex; gap:10px; justify-content:center;">
