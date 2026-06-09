@@ -1,425 +1,475 @@
-@page "/projects"
+@* =====================================================================
+   Pages/Swatches.razor  —  스와치 목록 & 관리
+   ===================================================================== *@
+@page "/swatches"
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
-@inject NavigationManager Nav
-@inject IJSRuntime JS
 
 <div class="page-header">
     <div>
-        <h1 class="page-title"><img src="icons/stack.svg" class="icon-line" style="width:36px;height:36px;" />문어발</h1>
-        <p class="page-subtitle">진행중 · 일시중단 프로젝트</p>
+        <h1 class="page-title"><img src="icons/swatches.svg" class="icon-line" style="width:36px;height:36px;" />스와치</h1>
+        <p class="page-subtitle">실별 게이지와 수축률을 기록해요</p>
     </div>
-    <button class="btn btn-primary" @onclick="OpenAddModal" style="display:inline-flex; align-items:center; gap:6px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px; flex-shrink:0;" /> 새 프로젝트</button>
+    <button class="btn btn-primary" @onclick="OpenAddModal" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />스와치 추가</button>
 </div>
+
+@* ── 필터 ── *@
+@if (_swatches.Count > 0)
+{
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+        @* 1행: 프로젝트 연결 유무 *@
+        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+            @foreach (var (label, val) in new[]{("전체",""),("연결됨","linked"),("연결 없음","unlinked")})
+            {
+                <button class="btn btn-sm @(_filterProject==val?"btn-primary":"btn-ghost")"
+                        @onclick="() => { _filterProject = val; }">@label</button>
+            }
+        </div>
+        @* 2행: 뜨개 방법 *@
+        <div style="display:flex; flex-wrap:wrap; gap:6px; align-items:center;">
+            @foreach (var (label, val) in new[]{("전체방법",""),("메리야스","메리야스"),("무늬","무늬"),("가터","가터"),("고무단","고무단")})
+            {
+                <button class="btn btn-sm @(_filterStitch==val?"btn-primary":"btn-ghost")"
+                        @onclick="() => { _filterStitch = val; }">@label</button>
+            }
+        </div>
+        @* 3행: 바늘 mm 콤보박스 + 초기화 *@
+        <div style="display:flex; gap:8px; align-items:center;">
+            <select class="form-control" style="width:auto; min-width:110px; font-size:0.82rem;"
+                    value="@_filterNeedle" @onchange="OnFilterNeedleChanged">
+                <option value="">전체 바늘</option>
+                @foreach (var mm in NeedleOptions)
+                {
+                    <option value="@mm">@mm mm</option>
+                }
+            </select>
+            @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
+            {
+                <button class="btn btn-ghost btn-sm" @onclick="ResetFilters">✕ 초기화</button>
+            }
+        </div>
+    </div>
+}
 
 @if (_loading)
 {
     <div class="loading">불러오는 중...</div>
 }
-else if (_projects.Count == 0)
+else if (_swatches.Count == 0)
 {
     <div class="empty-state">
-        <div class="empty-icon"><img src="icons/calendar-dots.svg" class="icon-line" style="width:48px;height:48px;" /></div>
-        <p>진행중인 프로젝트가 없어요.<br />새 프로젝트를 추가해 보세요!</p>
+        <div class="empty-icon"><img src="icons/swatches.svg" class="icon-line" style="width:48px;height:48px;" /></div>
+        <p>아직 스와치가 없어요.<br/>첫 번째 스와치를 기록해보세요!</p>
     </div>
 }
 else
 {
-    <!-- 컨트롤 바: 필터 + 정렬 + 뷰 전환 -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:8px; flex-wrap:wrap;">
-        <!-- 왼쪽: 필터 + 정렬 -->
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <div class="grid-3">
+        @foreach (var s in FilteredSwatches)
+        {
+            var yarn = _yarns.Find(y => y.Id == s.YarnId);
+            var project = _projects.Find(p => p.Id == s.ProjectId);
+            <div class="card swatch-card">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                    <div>
+                        <div class="card-title" style="margin-bottom:4px;">
+                            @(string.IsNullOrEmpty(s.Name) ? "스와치" : s.Name)
+                        </div>
+                        @if (yarn != null)
+                        {
+                            <div style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text-mid);">
+                                <span class="color-dot" style="background:@yarn.ColorCode; width:12px; height:12px;"></span>
+                                @yarn.Brand @yarn.Name
+                            </div>
+                        }
+                        else if (!string.IsNullOrEmpty(s.YarnNameDirect))
+                        {
+                            <div style="font-size:0.82rem; color:var(--text-mid);">🧵 @s.YarnNameDirect</div>
+                        }
+                    </div>
+                    <div style="display:flex; gap:6px;">
+                        <button class="btn btn-ghost btn-sm" title="게이지 계산기" @onclick="() => OpenCalcModal(s)" style="display:inline-flex;align-items:center;"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
+                        <button class="btn btn-ghost btn-sm" style="display:inline-flex;align-items:center;" @onclick="() => OpenEditModal(s)"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
+                        <button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;" @onclick='() => Confirm("이 스와치를 삭제하면 복구할 수 없어요.", async () => await DeleteSwatch(s.Id))'><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
+                    </div>
+                </div>
 
-            <!-- 상태 필터 -->
-            <div style="display:flex; gap:4px;">
-                <button class="btn btn-sm @(_statusFilter == "all" ? "btn-sage" : "btn-ghost")"
-                        @onclick='async () => { _statusFilter = "all"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>전체</button>
-                <button class="btn btn-sm @(_statusFilter == "진행중" ? "btn-sage" : "btn-ghost")"
-                        @onclick='async () => { _statusFilter = "진행중"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>진행중</button>
-                <button class="btn btn-sm @(_statusFilter == "일시중단" ? "btn-sage" : "btn-ghost")"
-                        @onclick='async () => { _statusFilter = "일시중단"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>중단</button>
+                @* 바늘 & 뜨개법 *@
+                <div style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                    @if (s.NeedleSizeMm > 0)
+                    {
+                        <span class="badge" style="background:var(--sky-pale); color:#1a5276;"> @s.NeedleSizeMm mm</span>
+                    }
+                    <span class="badge" style="background:var(--lavender-pale); color:#4e3290;">@s.Stitch</span>
+                </div>
+
+                @* 게이지 표 *@
+                <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:12px; margin-bottom:12px; font-size:0.82rem;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:6px;">
+                        <div style="color:var(--text-light); font-size:0.75rem;"></div>
+                        <div style="color:var(--text-mid); font-weight:600;">세탁 전</div>
+                        <div style="color:var(--text-mid); font-weight:600;">세탁 후</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:4px;">
+                        <div style="color:var(--text-light); text-align:left;">코수</div>
+                        <div>@s.PreWashStitches</div>
+                        <div>@s.PostWashStitches</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:4px;">
+                        <div style="color:var(--text-light); text-align:left;">단수</div>
+                        <div>@s.PreWashRows</div>
+                        <div>@s.PostWashRows</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:4px;">
+                        <div style="color:var(--text-light); text-align:left;">가로</div>
+                        <div>@s.PreWashWidthCm cm</div>
+                        <div>@s.PostWashWidthCm cm</div>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center;">
+                        <div style="color:var(--text-light); text-align:left;">세로</div>
+                        <div>@s.PreWashHeightCm cm</div>
+                        <div>@s.PostWashHeightCm cm</div>
+                    </div>
+                </div>
+
+                @* 변화율 *@
+                @{
+                    var wRate = CalcRate(s.PreWashStitches, s.PostWashStitches, s.PreWashWidthCm, s.PostWashWidthCm);
+                    var hRate = CalcRate(s.PreWashRows, s.PostWashRows, s.PreWashHeightCm, s.PostWashHeightCm);
+                }
+                @if (wRate.HasValue || hRate.HasValue)
+                {
+                    <div style="display:flex; gap:8px; margin-bottom:10px;">
+                        @if (wRate.HasValue)
+                        {
+                            var wColor = wRate.Value < 0 ? "#c0392b" : "#267848";
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px; text-align:center;">
+                                <div style="font-size:0.75rem; color:var(--text-light);">가로 변화율</div>
+                                <div style="font-size:1.1rem; font-weight:700; color:@wColor;">
+                                    @(wRate.Value > 0 ? "+" : "")@wRate.Value%
+                                </div>
+                            </div>
+                        }
+                        @if (hRate.HasValue)
+                        {
+                            var hColor = hRate.Value < 0 ? "#c0392b" : "#267848";
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px; text-align:center;">
+                                <div style="font-size:0.75rem; color:var(--text-light);">세로 변화율</div>
+                                <div style="font-size:1.1rem; font-weight:700; color:@hColor;">
+                                    @(hRate.Value > 0 ? "+" : "")@hRate.Value%
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                @* 연결 프로젝트 *@
+                @if (project != null)
+                {
+                    <div style="font-size:0.8rem; color:var(--text-mid); border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
+                        <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@project.Title</span>
+                    </div>
+                }
+
+                @* 메모 *@
+                @if (!string.IsNullOrEmpty(s.Memo))
+                {
+                    <div style="font-size:0.8rem; color:var(--text-light); margin-top:6px; white-space:pre-wrap;">@s.Memo</div>
+                }
+
+                @* 사진 *@
+                @if (!string.IsNullOrEmpty(s.PhotoBase64))
+                {
+                    <div style="margin-top:10px;">
+                        <img src="@s.PhotoBase64" style="width:100%; border-radius:var(--radius-sm); object-fit:cover; max-height:180px;" />
+                    </div>
+                }
             </div>
-
-            <!-- 정렬 기준 -->
-            <span style="font-size:0.82rem; color:var(--text-mid);">정렬</span>
-            <select class="form-control" style="width:auto; padding:5px 10px; font-size:0.82rem;" @bind="_sortField"
-                        @bind:after="SaveSchedulePrefs">
-                <option value="created">등록일</option>
-                <option value="start">시작일</option>
-                <option value="updated">수정일</option>
-                <option value="title">이름순</option>
-            </select>
-
-            <!-- 오름/내림차순 -->
-            <button class="btn btn-sm btn-ghost" @onclick="ToggleSortDir" title="@(_sortAsc ? "오름차순" : "내림차순")">
-                @if (_sortAsc)
-                {
-                    <img src="icons/arrow-up.svg" class="icon-line" style="width:14px;height:14px;" /><span> 오름</span>
-                }
-                else
-                {
-                    <img src="icons/arrow-down.svg" class="icon-line" style="width:14px;height:14px;" /><span> 내림</span>
-                }
-            </button>
-        </div>
-
-        <!-- 오른쪽: 뷰 전환 -->
-        <div style="display:flex; gap:4px;">
-            <button class="btn btn-sm @(_isListView ? "btn-ghost" : "btn-sage")" @onclick='async () => { _isListView = false; await JS.InvokeVoidAsync("localStorage.setItem", "sched_listview", "false"); }' title="카드형"><img src="icons/squares-four.svg" class="icon-line" style="width:16px;height:16px;" /></button>
-            <button class="btn btn-sm @(_isListView ? "btn-sage" : "btn-ghost")" @onclick='async () => { _isListView = true; await JS.InvokeVoidAsync("localStorage.setItem", "sched_listview", "true"); }' title="리스트형"><img src="icons/list.svg" class="icon-line" style="width:16px;height:16px;" /></button>
-        </div>
+        }
     </div>
-
-    @if (!FilteredSortedProjects.Any())
-    {
-        <div class="empty-state" style="padding:40px 0;">
-            <p style="color:var(--text-mid);">해당 상태의 프로젝트가 없어요.</p>
-        </div>
-    }
-    else if (!_isListView)
-    {
-        <!-- 카드형 -->
-        <div class="grid-2">
-            @foreach (var proj in FilteredSortedProjects)
-            {
-                <div class="card" style="cursor:pointer;" @onclick="() => GoToDetail(proj.Id)">
-                    @if (proj.Photos.Count > 0)
-                    {
-                        <img src="@proj.Photos[0].Base64Data" class="photo-thumb"
-                             style="width:100%; height:160px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px;"
-                             alt="프로젝트 사진" />
-                    }
-
-                    <div class="flex-between mb-1">
-                        <div class="card-title" style="margin-bottom:0;">@proj.Title</div>
-                        @if (proj.Status == ProjectStatus.일시중단)
-                        {
-                            <span class="badge" style="background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0;">일시중단</span>
-                        }
-                        else
-                        {
-                            <span class="badge" style="background:#fffbe6; color:#b58a00; border:1px solid #f5d97a;">진행중</span>
-                        }
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(proj.PatternName))
-                    {
-                        <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:4px; display:flex; align-items:center; gap:4px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:14px;height:14px; flex-shrink:0;" /> @proj.PatternName</div>
-                    }
-
-                    @if (!string.IsNullOrEmpty(proj.PatternMemo))
-                    {
-                        <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:6px; white-space:pre-wrap; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">@proj.PatternMemo</p>
-                    }
-
-                    <div style="display:flex; gap:12px; font-size:0.8rem; color:var(--text-light); margin-bottom:14px;">
-                        @if (proj.StartDate.HasValue)
-                        {
-                            <span>시작 @proj.StartDate.Value.ToString("yy.MM.dd")</span>
-                        }
-                        @if (proj.EndDate.HasValue)
-                        {
-                            <span>→ @proj.EndDate.Value.ToString("yy.MM.dd") 목표</span>
-                        }
-                    </div>
-
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;" @onclick:stopPropagation="true">
-                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
-                        @if (proj.Status == ProjectStatus.진행중)
-                        {
-                            <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a;"
-                                    @onclick="() => ToggleSuspend(proj)"><img src="icons/pause.svg" class="icon-line" style="width:14px;height:14px;" /> 일시중단</button>
-                        }
-                        else
-                        {
-                            <button class="btn btn-sm btn-ghost"
-                                    @onclick="() => ToggleSuspend(proj)"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /> 재개</button>
-                        }
-                        <button class="btn btn-sm btn-sage" @onclick="() => CompleteProject(proj.Id)"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /> 완료</button>
-                        <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;" /></button>
-                    </div>
-                </div>
-            }
-        </div>
-    }
-    else
-    {
-        <!-- 리스트형 -->
-        <div style="display:flex; flex-direction:column; gap:8px;">
-            @foreach (var proj in FilteredSortedProjects)
-            {
-                <div class="card" style="cursor:pointer; display:flex; align-items:center; gap:14px; padding:12px 16px;"
-                     @onclick="() => GoToDetail(proj.Id)">
-                    @if (proj.Photos.Count > 0)
-                    {
-                        <img src="@proj.Photos[0].Base64Data"
-                             style="width:52px; height:52px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border); flex-shrink:0;"
-                             alt="사진" />
-                    }
-                    else
-                    {
-                        <div style="width:52px; height:52px; background:var(--ivory-dark); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; font-size:1.4rem; flex-shrink:0;">🧶</div>
-                    }
-
-                    <div style="flex:1; min-width:0;">
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
-                            <span style="font-weight:700; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@proj.Title</span>
-                            @if (proj.Status == ProjectStatus.일시중단)
-                            {
-                                <span class="badge" style="background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0; flex-shrink:0;">일시중단</span>
-                            }
-                        </div>
-                        <div style="font-size:0.78rem; color:var(--text-mid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                            @if (!string.IsNullOrEmpty(proj.PatternName)) { <span>@proj.PatternName</span> }
-                            @if (proj.StartDate.HasValue) { <span style="margin-left:8px;">· @proj.StartDate.Value.ToString("yy.MM.dd") 시작</span> }
-                        </div>
-                    </div>
-
-                    <div style="display:flex; gap:6px; flex-shrink:0;" @onclick:stopPropagation="true">
-                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /></button>
-                        @if (proj.Status == ProjectStatus.진행중)
-                        {
-                            <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a; padding:4px 8px;"
-                                    @onclick="() => ToggleSuspend(proj)"><img src="icons/pause.svg" class="icon-line" style="width:14px;height:14px;" /></button>
-                        }
-                        else
-                        {
-                            <button class="btn btn-sm btn-ghost" @onclick="() => ToggleSuspend(proj)"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /></button>
-                        }
-                        <button class="btn btn-sage btn-sm" @onclick="() => CompleteProject(proj.Id)"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /></button>
-                        <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;" /></button>
-                    </div>
-                </div>
-            }
-        </div>
-    }
 }
 
-<!-- 완성작 미리보기 팝업 -->
-<CompletedPopup Show="_showCompletedPopup" Project="_completedPreview"
-    Yarns="_yarns" Tools="_tools"
-    OnClose="CloseCompletedPopup" OnSaved="LoadData" />
-
-
+@* ── 추가/수정 모달 ── *@
+@{ var pw2 = _showModal ? CalcRate(_editing.PreWashStitches, _editing.PostWashStitches, _editing.PreWashWidthCm, _editing.PostWashWidthCm) : null; var ph2 = _showModal ? CalcRate(_editing.PreWashRows, _editing.PostWashRows, _editing.PreWashHeightCm, _editing.PostWashHeightCm) : null; }
 @if (_showModal)
 {
     <div class="modal-backdrop">
-        <div class="modal" style="max-width:680px;" @onclick:stopPropagation="true">
+        <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">@(_editingProject?.Id == Guid.Empty ? "새 프로젝트" : "프로젝트 수정")</h2>
-                <button class="btn btn-ghost btn-sm" @onclick="CloseModal"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                <h2 class="modal-title">@(_editing.Id == Guid.Empty ? "스와치 추가" : "스와치 수정")</h2>
+                <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
             </div>
 
-            @if (_editingProject != null)
-            {
-                @* ── 도안명 / 출처 ── *@
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">도안명 *</label>
-                        <input class="form-control" @bind="_editingProject.PatternName" placeholder="예: 마시멜로 후드 집업" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">도안 출처</label>
-                        <input class="form-control" @bind="_editingProject.PatternSource" placeholder="작가명, 책 이름, URL 등" />
-                    </div>
-                </div>
+            <div class="form-group">
+                <label class="form-label">스와치 이름 (선택)</label>
+                <input class="form-control" @bind="_editing.Name" placeholder="예: 러스크 메리야스" />
+            </div>
 
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div class="form-group">
-                    <label class="form-label">도안 메모</label>
-                    <textarea class="form-control" rows="2" @bind="_editingProject.PatternMemo" placeholder="사이즈, 수정 사항 등"></textarea>
-                </div>
-
-                @* ── 날짜 ── *@
-                <div style="display:flex; gap:16px;">
-                    <div class="form-group" style="flex:1; min-width:0;">
-                        <label class="form-label">시작일</label>
-                        <input type="date" class="form-control" style="width:100%; box-sizing:border-box;"
-                               value="@_editingProject.StartDate?.ToString("yyyy-MM-dd")"
-                               @onchange="e => _editingProject.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
-                    </div>
-                    <div class="form-group" style="flex:1; min-width:0;">
-                        <label class="form-label">@(_editingProject!.Status == ProjectStatus.완료 ? "완성일" : "목표 완성일")</label>
-                        <input type="date" class="form-control" style="width:100%; box-sizing:border-box;"
-                               value="@_editingProject.EndDate?.ToString("yyyy-MM-dd")"
-                               @onchange="e => _editingProject.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
-                    </div>
-                </div>
-
-                @* ── 사용 바늘 ── *@
-                <div class="form-group">
-                    <label class="form-label">사용 바늘</label>
-                    <div style="display:flex; gap:6px; margin-bottom:6px;">
-                        <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
-                                @onclick='() => _editingProject.NeedleType = (_editingProject.NeedleType == NeedleType.대바늘 ? (NeedleType?)null : NeedleType.대바늘)'>대바늘</button>
-                        <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.코바늘 ? "btn-sage" : "btn-ghost")"
-                                @onclick='() => _editingProject.NeedleType = (_editingProject.NeedleType == NeedleType.코바늘 ? (NeedleType?)null : NeedleType.코바늘)'>코바늘</button>
-                    </div>
-                    <input class="form-control" @bind="_editingProject.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
-                </div>
-
-                @* ── 사용 실 ── *@
-                <div class="form-group">
-                    <label class="form-label">사용 실</label>
-                    <select class="form-control" style="margin-bottom:8px;" @onchange="OnAddYarn">
-                        <option value="">+ 실 추가</option>
+                    <label class="form-label">사용 실 — 창고에서 선택</label>
+                    <select class="form-control" value="@_editing.YarnId" @onchange="OnYarnChanged">
+                        <option value="">선택 안 함</option>
                         @foreach (var y in _yarns)
                         {
                             <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
                         }
                     </select>
-                    @foreach (var usage in _editingProject.YarnUsages)
-                    {
-                        var yarn = _yarns.Find(y => y.Id == usage.YarnId);
-                        bool isCone = yarn?.YarnType == YarnType.콘사;
-                        bool hasConeWeight = isCone && yarn?.WeightGram > 0;
-                        string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
-                        decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
-                                    border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
-                            @if (yarn != null)
-                            {
-                                <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
-                                <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
-                            }
-                            <input class="form-control" type="number" min="1" style="width:80px;"
-                                   value="@displayVal.ToString("G29")"
-                                   @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) usage.BallsUsed = hasConeWeight ? n / yarn!.WeightGram : n; }" />
-                            <span style="font-size:0.82rem; color:var(--text-mid);">@unitLabel</span>
-                            <button class="btn btn-danger btn-sm" @onclick="() => _editingProject.YarnUsages.Remove(usage)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
-                        </div>
-                    }
                 </div>
-
-                @* ── 스와치 연결 ── *@
                 <div class="form-group">
-                    <label class="form-label">스와치</label>
-                    @if (!_allSwatches.Any())
-                    {
-                        <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
-                    }
-                    else
-                    {
-                        <select class="form-control" @onchange="OnScheduleSwatchSelect">
-                            <option value="">+ 스와치 연결</option>
-                            @foreach (var s in _allSwatches)
-                            {
-                                var sy = _yarns.Find(y => y.Id == s.YarnId);
-                                bool isLinked = s.ProjectId == _editingProject!.Id && _editingProject.Id != Guid.Empty;
-                                <option value="@s.Id" disabled="@isLinked">
-                                    @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
-                                    @(sy != null ? $" ({sy.Brand} {sy.Name})" : "")
-                                </option>
-                            }
-                        </select>
-                        @if (_allSwatches.Any(s => s.ProjectId == _editingProject!.Id && _editingProject.Id != Guid.Empty))
+                    <label class="form-label">또는 직접 입력</label>
+                    <input class="form-control" @bind="_editing.YarnNameDirect" placeholder="" />
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">연결 프로젝트/위시리스트</label>
+                    <select class="form-control" value="@_editing.ProjectId" @onchange="OnProjectChanged">
+                        <option value="">선택 안 함</option>
+                        @foreach (var p in _projects)
                         {
-                            <div style="margin-top:8px;">
-                                @foreach (var s in _allSwatches.Where(s => s.ProjectId == _editingProject!.Id && _editingProject.Id != Guid.Empty))
-                                {
-                                    var sy = _yarns.Find(y => y.Id == s.YarnId);
-                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:8px 12px;
-                                                border-radius:var(--radius-sm); background:var(--ivory-mid); border:1px solid var(--border);">
-                                        <div style="flex:1; min-width:0;">
-                                            <div style="font-size:0.88rem; font-weight:600; color:var(--text-dark);">
-                                                @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
-                                                @if (!string.IsNullOrEmpty(s.Stitch))
-                                                {
-                                                    <span style="font-weight:400; color:var(--text-mid); margin-left:6px;">(@s.Stitch)</span>
-                                                }
-                                                @if (s.NeedleSizeMm > 0)
-                                                {
-                                                    <span style="font-weight:400; color:var(--text-mid); margin-left:4px;">@(s.NeedleSizeMm)mm</span>
-                                                }
-                                            </div>
-                                            @if (sy != null)
-                                            {
-                                                <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px; margin-top:3px;">
-                                                    <span class="color-dot" style="background:@sy.ColorCode; width:8px; height:8px;"></span>
-                                                    @sy.Brand @sy.Name
-                                                </div>
-                                            }
-                                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:6px; font-size:0.8rem;">
-                                                <div>
-                                                    <div style="font-size:0.7rem; color:var(--text-light);">세탁 전</div>
-                                                    @if (s.PreWashStitches > 0 || s.PreWashRows > 0)
-                                                    {
-                                                        <div>@(s.PreWashStitches)코 × @(s.PreWashRows)단</div>
-                                                    }
-                                                    @if (s.PreWashWidthCm > 0 || s.PreWashHeightCm > 0)
-                                                    {
-                                                        <div style="color:var(--text-mid);">@(s.PreWashWidthCm)cm × @(s.PreWashHeightCm)cm</div>
-                                                    }
-                                                </div>
-                                                @if (s.PostWashStitches > 0 || s.PostWashWidthCm > 0)
-                                                {
-                                                    <div>
-                                                        <div style="font-size:0.7rem; color:var(--text-light);">세탁 후</div>
-                                                        @if (s.PostWashStitches > 0 || s.PostWashRows > 0)
-                                                        {
-                                                            <div>@(s.PostWashStitches)코 × @(s.PostWashRows)단</div>
-                                                        }
-                                                        @if (s.PostWashWidthCm > 0 || s.PostWashHeightCm > 0)
-                                                        {
-                                                            <div style="color:var(--text-mid);">@(s.PostWashWidthCm)cm × @(s.PostWashHeightCm)cm</div>
-                                                        }
-                                                    </div>
-                                                }
-                                            </div>
-                                        </div>
-                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px; flex-shrink:0;" @onclick="() => s.ProjectId = null"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
-                                    </div>
-                                }
-                            </div>
+                            <option value="@p.Id">[@p.Status] @p.Title</option>
                         }
+                    </select>
+                </div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <div class="form-group">
+                    <label class="form-label">바늘 굵기 (mm)</label>
+                    <input class="form-control" type="number" step="0.25" placeholder="예: 4.5"
+                                   value="@(_editing.NeedleSizeMm == 0 ? "" : _editing.NeedleSizeMm.ToString())"
+                                   @onchange="e => _editing.NeedleSizeMm = double.TryParse(e.Value?.ToString(), out var d) ? d : 0" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">뜨개 방법</label>
+                    <select class="form-control" value="@_stitchSelect" @onchange="OnStitchSelectChanged">
+                        <option value="메리야스">메리야스</option>
+                        <option value="무늬">무늬</option>
+                        <option value="가터">가터</option>
+                        <option value="고무단">고무단</option>
+                        <option value="직접입력">직접 입력</option>
+                    </select>
+                    @if (_stitchSelect == "직접입력")
+                    {
+                        <input class="form-control" style="margin-top:6px;" @bind="_editing.Stitch" placeholder="예: 2x2 고무단, 바스켓 무늬" />
                     }
                 </div>
+            </div>
 
-                @* ── 카테고리 + 캘린더 색상 ── *@
-                <div class="form-group" style="margin-top:28px;">
-                    <label class="form-label">카테고리</label>
-                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
-                        @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
-                        {
-                            <button type="button"
-                                    class="btn btn-sm @(_editingProject.Category == cat ? "btn-sage" : "btn-ghost")"
-                                    @onclick="() => _editingProject.Category = (_editingProject.Category == cat ? ProjectCategory.미분류 : cat)">
-                                @cat
-                            </button>
-                        }
+            @* 세탁 전 *@
+            <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:10px;">세탁 전</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">코수</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_editing.PreWashStitches" />
                     </div>
-                    <label class="form-label" style="margin-top:20px; display:block;">캘린더 색상</label>
-                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                        @foreach (var hex in _colorOptions)
-                        {
-                            bool selected = _editingProject.ColorCode == hex;
-                            string dotBorder    = selected ? "3px solid #333"       : "2px solid transparent";
-                            string dotShadow    = selected ? "0 0 0 2px #fff inset" : "none";
-                            string dotTransform = selected ? "scale(1.2)"           : "scale(1)";
-                            <div @onclick="() => _editingProject.ColorCode = hex"
-                                 style="width:28px; height:28px; border-radius:50%; background:@hex; cursor:pointer;
-                                        border:@dotBorder; box-shadow:@dotShadow; transform:@dotTransform;">
-                            </div>
-                        }
-                        <input type="color"
-                               value="@(string.IsNullOrEmpty(_editingProject.ColorCode) ? "#b8e0c8" : _editingProject.ColorCode)"
-                               @onchange="e => _editingProject.ColorCode = e.Value?.ToString() ?? string.Empty"
-                               style="width:28px; height:28px; border-radius:50%; border:2px solid var(--border);
-                                      padding:0; cursor:pointer; overflow:hidden;"
-                               title="직접 색상 선택" />
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">단수</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_editing.PreWashRows" />
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">가로 (cm)</label>
+                        <input class="form-control" type="number" step="0.1" @bind="_editing.PreWashWidthCm" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">세로 (cm)</label>
+                        <input class="form-control" type="number" step="0.1" @bind="_editing.PreWashHeightCm" />
+                    </div>
+                </div>
+            </div>
+
+            @* 세탁 후 *@
+            <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:10px;">세탁 후</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">코수</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_editing.PostWashStitches" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">단수</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_editing.PostWashRows" />
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">가로 (cm)</label>
+                        <input class="form-control" type="number" step="0.1" @bind="_editing.PostWashWidthCm" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">세로 (cm)</label>
+                        <input class="form-control" type="number" step="0.1" @bind="_editing.PostWashHeightCm" />
                     </div>
                 </div>
 
-                @* ── 메모 ── *@
-                <div class="form-group" style="margin-top:28px;">
-                    <label class="form-label">메모</label>
-                    <textarea class="form-control" rows="2" @bind="_editingProject.Memo" placeholder="기타 메모"></textarea>
-                </div>
-            }
+                @* 변화율 미리보기 *@
+                @if (pw2.HasValue || ph2.HasValue)
+                {
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        @if (pw2.HasValue)
+                        {
+                            string pwColor = pw2.Value < 0 ? "#c0392b" : "#267848";
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light);">가로 변화율</div>
+                                <div style="font-weight:700; color:@pwColor;">
+                                    @(pw2.Value > 0 ? "+" : "")@pw2.Value%
+                                </div>
+                            </div>
+                        }
+                        @if (ph2.HasValue)
+                        {
+                            string phColor = ph2.Value < 0 ? "#c0392b" : "#267848";
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:8px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light);">세로 변화율</div>
+                                <div style="font-weight:700; color:@phColor;">
+                                    @(ph2.Value > 0 ? "+" : "")@ph2.Value%
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">메모</label>
+                <textarea class="form-control" rows="3" @bind="_editing.Memo" placeholder="세탁 방법, 특이사항 등"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">사진</label>
+                @if (!string.IsNullOrEmpty(_editing.PhotoBase64))
+                {
+                    <div style="position:relative; margin-bottom:8px;">
+                        <img src="@_editing.PhotoBase64" style="width:100%; border-radius:var(--radius-sm); object-fit:cover; max-height:200px;" />
+                        <button class="btn btn-danger btn-sm" style="position:absolute; top:6px; right:6px;"
+                                @onclick="ClearPhoto">✕</button>
+                    </div>
+                }
+                <InputFile OnChange="OnPhotoSelected" accept="image/*" class="form-control" style="font-size:0.82rem;" />
+            </div>
 
             <div class="modal-footer">
-                <button class="btn btn-ghost" @onclick="CloseModal">취소</button>
-                <button class="btn btn-primary" @onclick="SaveProject">저장</button>
+                <button class="btn btn-secondary" @onclick="CloseModal">취소</button>
+                <button class="btn btn-primary" @onclick="SaveSwatch">저장</button>
+            </div>
+        </div>
+    </div>
+}
+
+@* ── 게이지 계산기 모달 ── *@
+@{ var csg = _showCalcModal && _calcSwatch != null ? CalcSwatchStitchGauge(_calcSwatch) : 0.0; var crg = _showCalcModal && _calcSwatch != null ? CalcSwatchRowGauge(_calcSwatch) : 0.0; }
+@if (_showCalcModal && _calcSwatch != null)
+{
+    <div class="modal-backdrop">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">게이지 계산기</h2>
+                <button class="btn btn-ghost btn-sm" @onclick="CloseCalcModal">✕</button>
+            </div>
+            <div style="background:var(--mint-pale); border-radius:var(--radius-sm); padding:12px; margin-bottom:16px; font-size:0.82rem;">
+                <div style="font-weight:600; color:#267848; margin-bottom:6px; display:flex; align-items:center; gap:5px;"><img src="icons/push-pin.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />@(string.IsNullOrEmpty(_calcSwatch.Name) ? "이 스와치" : _calcSwatch.Name)의 게이지</div>
+                <div style="display:flex; gap:16px;">
+                    @if (csg > 0)
+                    {
+                        <span>코: <strong>@csg.ToString("F1")</strong> / 10cm</span>
+                    }
+                    @if (crg > 0)
+                    {
+                        <span>단: <strong>@crg.ToString("F1")</strong> / 10cm</span>
+                    }
+                    @if (csg == 0 && crg == 0)
+                    {
+                        <span style="color:#c0392b;display:inline-flex;align-items:center;gap:4px;"><img src="icons/warning.svg" class="icon-line" style="width:14px;height:14px;" />코수/단수와 가로/세로 길이를 모두 입력해야 게이지를 계산할 수 있어요.</span>
+                    }
+                </div>
+            </div>
+
+            <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:14px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:8px;">① 콧수/단수 수정 계산기</div>
+                <p style="font-size:0.78rem; color:var(--text-mid); margin-bottom:12px;">원작 게이지 + 도안 콧수/단수 → 내 게이지에 맞는 수정 콧수/단수</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">원작 코 게이지 (10cm당)</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_c1OrigStitch" placeholder="예: 20" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">원작 단 게이지 (10cm당)</label>
+                        <input class="form-control" type="number" step="0.5" @bind="_c1OrigRow" placeholder="예: 28" />
+                    </div>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">도안 콧수</label>
+                        <input class="form-control" type="number" step="1" @bind="_c1PatStitch" placeholder="예: 120" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">도안 단수</label>
+                        <input class="form-control" type="number" step="1" @bind="_c1PatRow" placeholder="예: 80" />
+                    </div>
+                </div>
+                @if (Calc1Result != null)
+                {
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        @if (Calc1Result.Value.s.HasValue)
+                        {
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">수정 콧수</div>
+                                <div style="font-size:1.3rem; font-weight:700; color:#4e3290;">@Calc1Result.Value.s.Value 코</div>
+                            </div>
+                        }
+                        @if (Calc1Result.Value.r.HasValue)
+                        {
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">수정 단수</div>
+                                <div style="font-size:1.3rem; font-weight:700; color:#4e3290;">@Calc1Result.Value.r.Value 단</div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:8px;">② 길이 예측 계산기</div>
+                <p style="font-size:0.78rem; color:var(--text-mid); margin-bottom:12px;">도안 콧수/단수 → 내 게이지로 뜨면 나오는 실제 길이</p>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">도안 콧수</label>
+                        <input class="form-control" type="number" step="1" @bind="_c2Stitch" placeholder="예: 120" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">도안 단수</label>
+                        <input class="form-control" type="number" step="1" @bind="_c2Row" placeholder="예: 80" />
+                    </div>
+                </div>
+                @if (Calc2Result != null)
+                {
+                    <div style="display:flex; gap:8px; margin-top:12px;">
+                        @if (Calc2Result.Value.w.HasValue)
+                        {
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">예상 가로 길이</div>
+                                <div style="font-size:1.3rem; font-weight:700; color:#1a5276;">@Calc2Result.Value.w.Value cm</div>
+                            </div>
+                        }
+                        @if (Calc2Result.Value.h.HasValue)
+                        {
+                            <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                                <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">예상 세로 길이</div>
+                                <div style="font-size:1.3rem; font-weight:700; color:#1a5276;">@Calc2Result.Value.h.Value cm</div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-ghost" @onclick="CloseCalcModal">닫기</button>
             </div>
         </div>
     </div>
@@ -428,9 +478,9 @@ else
 <!-- 삭제 확인 모달 -->
 @if (_showConfirm)
 {
-    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
-        <div style="background:#fff;border-radius:16px;max-width:320px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
-            <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
+    <div class="modal-backdrop" style="z-index:9999;">
+        <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
+            <div style="margin-bottom:12px;display:flex;justify-content:center;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;" /></div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
             <div style="display:flex; gap:10px; justify-content:center;">
@@ -461,269 +511,200 @@ else
         _confirmAction = null;
     }
 
-    bool _loading = true;
-    bool _isListView = false;
-    bool _showCompletedPopup = false;
-    List<Guid>? _swatchSnapshot;
-    KnitProject? _completedPreview;
-
-    class PopMeasureItem
-    {
-        public string Label { get; set; } = "";
-        public string Before { get; set; } = "";
-        public string After  { get; set; } = "";
-        public bool IsCustom { get; set; } = false;
-    }
-    string _sortField = "created";
-    bool _sortAsc = false;          // false = 내림차순(기본), true = 오름차순
-    string _statusFilter = "all";   // "all" | "진행중" | "일시중단"
+    bool _loading     = true;
+    bool _showModal   = false;
+    bool _showCalcModal = false;
+    Swatch? _calcSwatch;
+    List<Swatch>      _swatches = new();
+    List<Yarn>        _yarns    = new();
     List<KnitProject> _projects = new();
+    Swatch _editing = new();
 
-    // 컬러피커 프리셋
-    static readonly string[] _colorOptions = new[]
+    // 필터
+    string _filterProject = "";
+    string _filterStitch  = "";
+    string _filterNeedle  = "";
+
+    // 뜨개방법 콤보
+    string _stitchSelect = "메리야스";
+
+    // 바늘 필터 옵션 (실제 데이터 기반)
+    IEnumerable<string> NeedleOptions => _swatches
+        .Where(s => s.NeedleSizeMm > 0)
+        .Select(s => s.NeedleSizeMm.ToString("G"))
+        .Distinct()
+        .OrderBy(x => double.Parse(x));
+
+    // 필터 적용
+    IEnumerable<Swatch> FilteredSwatches => _swatches.Where(s =>
     {
-        "#f2b8c6", "#f7e4a0", "#b8e0c8", "#c8b8e8", "#b8d8f0",
-        "#ffb74d", "#a5d6a7", "#ef9a9a", "#90caf9", "#ce93d8"
-    };
+        if (_filterProject == "linked" && s.ProjectId == null) return false;
+        if (_filterProject == "unlinked" && s.ProjectId != null) return false;
+        if (_filterStitch != "" && !s.Stitch.Contains(_filterStitch)) return false;
+        if (_filterNeedle != "" && s.NeedleSizeMm.ToString("G") != _filterNeedle) return false;
+        return true;
+    });
 
-    IEnumerable<KnitProject> FilteredSortedProjects
+    // 독립 계산기 모달 입력값
+    double _c1OrigStitch = 0;
+    double _c1OrigRow    = 0;
+    int    _c1PatStitch  = 0;
+    int    _c1PatRow     = 0;
+    int    _c2Stitch     = 0;
+    int    _c2Row        = 0;
+
+    // 변화율 계산
+    // - 코/단 기준: 같은 크기에서 코수 감소 = 편물 커짐(+) → 부호 반전
+    // - 길이 기준: 길이 증가 = 편물 커짐(+) → 그대로
+    double? CalcRate(double preStitch, double postStitch, double preCm, double postCm)
+    {
+        if (preStitch > 0 && postStitch > 0 && preStitch != postStitch)
+            return Math.Round(-(postStitch - preStitch) / preStitch * 100, 1);
+        if (preCm > 0 && postCm > 0 && preCm != postCm)
+            return Math.Round((postCm - preCm) / preCm * 100, 1);
+        return null;
+    }
+
+    double CalcSwatchStitchGauge(Swatch s)
+    {
+        if (s.PostWashStitches > 0 && s.PostWashWidthCm > 0) return s.PostWashStitches / s.PostWashWidthCm * 10;
+        if (s.PreWashStitches  > 0 && s.PreWashWidthCm  > 0) return s.PreWashStitches  / s.PreWashWidthCm  * 10;
+        return 0;
+    }
+
+    double CalcSwatchRowGauge(Swatch s)
+    {
+        if (s.PostWashRows > 0 && s.PostWashHeightCm > 0) return s.PostWashRows / s.PostWashHeightCm * 10;
+        if (s.PreWashRows  > 0 && s.PreWashHeightCm  > 0) return s.PreWashRows  / s.PreWashHeightCm  * 10;
+        return 0;
+    }
+
+    (int? s, int? r)? Calc1Result
     {
         get
         {
-            // 1) 상태 필터
-            var filtered = _statusFilter switch
-            {
-                "진행중"   => _projects.Where(p => p.Status == ProjectStatus.진행중),
-                "일시중단" => _projects.Where(p => p.Status == ProjectStatus.일시중단),
-                _          => _projects.AsEnumerable(),
-            };
-
-            // 2) 정렬 (오름/내림 모두 지원)
-            Func<KnitProject, object> keySelector = _sortField switch
-            {
-                "start"   => p => (object)(p.StartDate ?? DateTime.MaxValue),
-                "updated" => p => (object)p.CreatedAt,
-                "title"   => p => (object)p.Title,
-                _         => p => (object)p.CreatedAt,
-            };
-
-            return _sortAsc
-                ? filtered.OrderBy(keySelector)
-                : filtered.OrderByDescending(keySelector);
+            if (_calcSwatch == null) return null;
+            var sg = CalcSwatchStitchGauge(_calcSwatch);
+            var rg = CalcSwatchRowGauge(_calcSwatch);
+            int? s = null, r = null;
+            if (_c1OrigStitch > 0 && _c1PatStitch > 0 && sg > 0)
+                s = (int)Math.Round(_c1PatStitch * sg / _c1OrigStitch);
+            if (_c1OrigRow > 0 && _c1PatRow > 0 && rg > 0)
+                r = (int)Math.Round(_c1PatRow * rg / _c1OrigRow);
+            if (s.HasValue || r.HasValue) return (s, r);
+            return null;
         }
     }
 
-    async Task ToggleSortDir()
+    (double? w, double? h)? Calc2Result
     {
-        _sortAsc = !_sortAsc;
-        await SaveSchedulePrefs();
+        get
+        {
+            if (_calcSwatch == null) return null;
+            var sg = CalcSwatchStitchGauge(_calcSwatch);
+            var rg = CalcSwatchRowGauge(_calcSwatch);
+            double? w = null, h = null;
+            if (_c2Stitch > 0 && sg > 0) w = Math.Round(_c2Stitch / sg * 10, 1);
+            if (_c2Row    > 0 && rg > 0) h = Math.Round(_c2Row    / rg * 10, 1);
+            if (w.HasValue || h.HasValue) return (w, h);
+            return null;
+        }
     }
 
-    bool _showModal = false;
-    List<Yarn> _yarns = new();
-    List<KnitTool> _tools = new();
-    List<Swatch> _allSwatches = new();
-    KnitProject? _editingProject;
+    void OpenCalcModal(Swatch s)
+    {
+        _calcSwatch = s;
+        _c1OrigStitch = 0; _c1OrigRow = 0;
+        _c1PatStitch  = 0; _c1PatRow  = 0;
+        _c2Stitch     = 0; _c2Row     = 0;
+        _showCalcModal = true;
+    }
+
+    void CloseCalcModal() => _showCalcModal = false;
 
     protected override async Task OnInitializedAsync()
     {
-        // 마지막 상태 복원
-        var filter   = await JS.InvokeAsync<string?>("localStorage.getItem", "sched_filter");
-        var sort     = await JS.InvokeAsync<string?>("localStorage.getItem", "sched_sort");
-        var sortAsc  = await JS.InvokeAsync<string?>("localStorage.getItem", "sched_sortasc");
-        var listview = await JS.InvokeAsync<string?>("localStorage.getItem", "sched_listview");
-        if (!string.IsNullOrEmpty(filter))   _statusFilter = filter;
-        if (!string.IsNullOrEmpty(sort))     _sortField    = sort;
-        if (!string.IsNullOrEmpty(sortAsc))  _sortAsc      = sortAsc == "true";
-        if (!string.IsNullOrEmpty(listview)) _isListView   = listview == "true";
-        await LoadData();
-        _loading = false;
-        // ProjectDetail에서 완료 후 신호 확인
-        var completedId = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_completed_popup");
-        if (!string.IsNullOrEmpty(completedId) && Guid.TryParse(completedId, out var cpid))
-        {
-            await JS.InvokeVoidAsync("localStorage.removeItem", "knitlog_completed_popup");
-            var allProj = await Storage.GetProjectsAsync();
-            _completedPreview = allProj.FirstOrDefault(p => p.Id == cpid);
-            if (_completedPreview != null) { _showCompletedPopup = true; StateHasChanged(); }
-        }
+        _swatches = await Storage.GetSwatchesAsync();
+        _yarns    = await Storage.GetYarnsAsync();
+        _projects = await Storage.GetProjectsAsync();
+        _loading  = false;
     }
-
-    async Task SaveSchedulePrefs()
-    {
-        await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter",  _statusFilter);
-        await JS.InvokeVoidAsync("localStorage.setItem", "sched_sort",    _sortField);
-        await JS.InvokeVoidAsync("localStorage.setItem", "sched_sortasc", _sortAsc.ToString().ToLower());
-        await JS.InvokeVoidAsync("localStorage.setItem", "sched_listview",_isListView.ToString().ToLower());
-    }
-
-    async Task LoadData()
-    {
-        var all = await Storage.GetProjectsAsync();
-        _projects = all.Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단).ToList();
-        _yarns = await Storage.GetYarnsAsync();
-        _tools = await Storage.GetToolsAsync();
-        _allSwatches = await Storage.GetSwatchesAsync();
-    }
-
-    void GoToDetail(Guid id) => Nav.NavigateTo("projects/" + id + "?from=projects");
 
     void OpenAddModal()
     {
-        _editingProject = new KnitProject
+        _editing = new Swatch();
+        _stitchSelect = "메리야스";
+        _showModal = true;
+    }
+
+    void OnYarnChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        _editing.YarnId = !string.IsNullOrEmpty(val) ? Guid.Parse(val) : null;
+    }
+
+    void OnProjectChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        _editing.ProjectId = !string.IsNullOrEmpty(val) ? Guid.Parse(val) : null;
+    }
+
+    void OpenEditModal(Swatch s)
+    {
+        _editing = new Swatch
         {
-            Id = Guid.Empty,
-            Status = ProjectStatus.진행중,
-            StartDate = DateTime.Today
+            Id = s.Id, Name = s.Name, YarnId = s.YarnId, YarnNameDirect = s.YarnNameDirect,
+            ProjectId = s.ProjectId, NeedleSizeMm = s.NeedleSizeMm, Stitch = s.Stitch,
+            PreWashStitches = s.PreWashStitches, PreWashRows = s.PreWashRows,
+            PreWashWidthCm = s.PreWashWidthCm, PreWashHeightCm = s.PreWashHeightCm,
+            PostWashStitches = s.PostWashStitches, PostWashRows = s.PostWashRows,
+            PostWashWidthCm = s.PostWashWidthCm, PostWashHeightCm = s.PostWashHeightCm,
+            Memo = s.Memo, PhotoBase64 = s.PhotoBase64, CreatedAt = s.CreatedAt
         };
+        var presets = new[] { "메리야스", "무늬", "가터", "고무단" };
+        _stitchSelect = presets.Contains(s.Stitch) ? s.Stitch : "직접입력";
         _showModal = true;
     }
 
-    void OpenEditModal(KnitProject proj)
+    void CloseModal() => _showModal = false;
+
+    void OnFilterProjectChanged(ChangeEventArgs e) => _filterProject = e.Value?.ToString() ?? "";
+    void OnFilterStitchChanged(ChangeEventArgs e)  => _filterStitch  = e.Value?.ToString() ?? "";
+    void OnFilterNeedleChanged(ChangeEventArgs e)  => _filterNeedle  = e.Value?.ToString() ?? "";
+    void ResetFilters() { _filterProject = ""; _filterStitch = ""; _filterNeedle = ""; }
+    void ClearPhoto() => _editing.PhotoBase64 = "";
+
+    void OnStitchSelectChanged(ChangeEventArgs e)
     {
-        // 취소 시 복원을 위해 JSON 딥카피
-        var json = System.Text.Json.JsonSerializer.Serialize(proj);
-        _editingProject = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
-        // 스와치 연결 상태 스냅샷 (projectId 기준)
-        _swatchSnapshot = _allSwatches
-            .Where(s => s.ProjectId == proj.Id)
-            .Select(s => s.Id)
-            .ToList();
-        _showModal = true;
-    }
-
-    void CloseModal()
-    {
-        // 스와치 연결 상태 복원
-        if (_swatchSnapshot != null && _editingProject != null)
-        {
-            foreach (var s in _allSwatches.Where(s => s.ProjectId == _editingProject.Id).ToList())
-                s.ProjectId = null;
-            foreach (var id in _swatchSnapshot)
-            {
-                var s = _allSwatches.FirstOrDefault(x => x.Id == id);
-                if (s != null) s.ProjectId = _editingProject.Id;
-            }
-            _swatchSnapshot = null;
-        }
-        _showModal = false;
-        _editingProject = null;
-    }
-
-    void OnAddYarn(ChangeEventArgs e)
-    {
-        if (_editingProject == null) return;
-        var val = e.Value?.ToString();
-        if (string.IsNullOrEmpty(val)) return;
-        var yarnId = Guid.Parse(val);
-        if (!_editingProject.YarnUsages.Any(u => u.YarnId == yarnId))
-            _editingProject.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = 1 });
-    }
-
-    void OnScheduleSwatchSelect(ChangeEventArgs e)
-    {
-        var val = e.Value?.ToString();
-        if (string.IsNullOrEmpty(val) || _editingProject == null) return;
-        if (!Guid.TryParse(val, out var swatchId)) return;
-        var swatch = _allSwatches.FirstOrDefault(s => s.Id == swatchId);
-        if (swatch == null) return;
-        if (_editingProject.Id == Guid.Empty) return;
-        // 기존 연결 스와치 해제 (단일 연결)
-        foreach (var s in _allSwatches.Where(s => s.ProjectId == _editingProject.Id))
-            s.ProjectId = null;
-        swatch.ProjectId = _editingProject.Id;
-    }
-
-    void ToggleTool(Guid toolId)
-    {
-        if (_editingProject == null) return;
-        if (_editingProject.ToolIds.Contains(toolId))
-            _editingProject.ToolIds.Remove(toolId);
-        else
-            _editingProject.ToolIds.Add(toolId);
-    }
-
-    async Task SaveProject()
-    {
-        if (_editingProject == null || string.IsNullOrWhiteSpace(_editingProject.PatternName)) return;
-        if (string.IsNullOrWhiteSpace(_editingProject.Title))
-            _editingProject.Title = _editingProject.PatternName;
-        if (_editingProject.Id == Guid.Empty)
-            _editingProject.Id = Guid.NewGuid();
-        await Storage.SaveProjectAsync(_editingProject);
-        foreach (var s in _allSwatches)
-            await Storage.SaveSwatchAsync(s);
-        _swatchSnapshot = null;
-        await LoadData();
-        CloseModal();
-    }
-
-    async Task ToggleSuspend(KnitProject proj)
-    {
-        proj.Status = proj.Status == ProjectStatus.진행중
-            ? ProjectStatus.일시중단
-            : ProjectStatus.진행중;
-        await Storage.SaveProjectAsync(proj);
-        await LoadData();
-    }
-
-    async Task CompleteProject(Guid id)
-    {
-        // 완료 처리 전에 프로젝트 정보 저장
-        var proj = _projects.FirstOrDefault(p => p.Id == id);
-        await Storage.CompleteProjectAsync(id);
-        await LoadData();
-        // 완성작 팝업 표시
-        if (proj != null)
-        {
-            // 완료 처리 후 EndDate가 설정되므로 Storage에서 다시 읽기
-            var allProjects = await Storage.GetProjectsAsync();
-            _completedPreview = allProjects.FirstOrDefault(p => p.Id == id) ?? proj;
-            _showCompletedPopup = true;
-        }
-    }
-
-    void CloseCompletedPopup()
-    {
-        _showCompletedPopup = false;
-        _completedPreview = null;
-    }
-
-
-
-
-
-
-
-
-
-
-
-    async Task DeleteProject(Guid id)
-    {
-        await Storage.DeleteProjectAsync(id);
-        await LoadData();
+        _stitchSelect = e.Value?.ToString() ?? "메리야스";
+        if (_stitchSelect != "직접입력")
+            _editing.Stitch = _stitchSelect;
     }
 
     async Task OnPhotoSelected(InputFileChangeEventArgs e)
     {
-        if (_editingProject == null) return;
-        foreach (var file in e.GetMultipleFiles(10))
-        {
-            var buf = new byte[file.Size];
-            await file.OpenReadStream(10 * 1024 * 1024).ReadAsync(buf);
-            var base64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(buf)}";
-            _editingProject.Photos.Add(new ProjectPhoto
-            {
-                FileName = file.Name,
-                Base64Data = base64,
-                TakenAt = DateTime.Now
-            });
-        }
+        var file = e.File;
+        if (file == null) return;
+        var maxSize = 5 * 1024 * 1024; // 5MB
+        using var stream = file.OpenReadStream(maxSize);
+        using var ms = new System.IO.MemoryStream();
+        await stream.CopyToAsync(ms);
+        var bytes = ms.ToArray();
+        var base64 = Convert.ToBase64String(bytes);
+        _editing.PhotoBase64 = $"data:{file.ContentType};base64,{base64}";
     }
 
-    void RemovePhoto(Guid photoId)
+    async Task SaveSwatch()
     {
-        _editingProject?.Photos.RemoveAll(p => p.Id == photoId);
+        if (_editing.Id == Guid.Empty) _editing.Id = Guid.NewGuid();
+        await Storage.SaveSwatchAsync(_editing);
+        _swatches = await Storage.GetSwatchesAsync();
+        _showModal = false;
+    }
+
+    async Task DeleteSwatch(Guid id)
+    {
+        await Storage.DeleteSwatchAsync(id);
+        _swatches = await Storage.GetSwatchesAsync();
     }
 }

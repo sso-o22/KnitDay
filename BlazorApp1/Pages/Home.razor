@@ -180,8 +180,9 @@ else
             {
                 var isOnHold     = proj.Status == ProjectStatus.일시중단;
                 var statusText   = isOnHold ? "일시중단" : "진행중";
-                var statusBg     = isOnHold ? "var(--ivory-mid)" : "var(--theme-pale)";
-                var statusColor  = isOnHold ? "var(--text-mid)"  : "var(--theme-active)";
+                var statusBg     = isOnHold ? "#fef0f0" : "var(--theme-pale)";
+                var statusColor  = isOnHold ? "#c0392b" : "var(--theme-active)";
+                var statusBorder = isOnHold ? "1px solid #f5c0c0" : "none";
 
                 <a href="projects/@proj.Id?from=home" class="card home-proj-card" style="text-decoration:none;display:block;">
                     @* 상단: 제목 + D-day *@
@@ -190,8 +191,8 @@ else
                             <div class="card-title" style="margin-bottom:0;font-size:1rem;">@proj.Title</div>
                             @if (proj.Sessions.Any(s => s.IsActive))
                             {
-                                <span style="display:inline-flex;align-items:center;gap:3px;font-size:0.65rem;font-weight:700;color:#fff;background:#e05a5a;border-radius:20px;padding:2px 7px;flex-shrink:0;white-space:nowrap;">
-                                    <img src="icons/record.svg" style="width:10px;height:10px;" />뜨는 중
+                                <span style="display:inline-flex;align-items:center;gap:3px;font-size:0.65rem;font-weight:700;color:#c0392b;background:#fef0f0;border:1px solid #f5c0c0;border-radius:20px;padding:2px 7px;flex-shrink:0;white-space:nowrap;">
+                                    <img src="icons/record.svg" class="icon-line" style="width:10px;height:10px;filter:none;" />뜨는 중
                                 </span>
                             }
                         </div>
@@ -234,7 +235,7 @@ else
                             @(proj.StartDate.HasValue ? proj.StartDate.Value.ToString("yyyy.MM.dd") + " 시작" : "")
                         </span>
                         <span style="font-size:0.72rem;font-weight:600;
-                                     color:@statusColor;background:@statusBg;
+                                     color:@statusColor;background:@statusBg;border:@statusBorder;
                                      border-radius:20px;padding:2px 9px;">@statusText</span>
                     </div>
                 </a>

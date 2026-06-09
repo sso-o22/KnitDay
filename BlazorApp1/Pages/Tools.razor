@@ -63,11 +63,11 @@ else
                         <div style="display:flex; gap:4px; align-items:center;">
                             @if (tool.NeedleType != NeedleType.케이블)
                             {
-                                <span class="badge badge-done" style="font-size:0.7rem;">
+                                <span class="badge badge-cable" style="font-size:0.7rem;">
                                     @(tool.IsSet ? "세트" : "단품")
                                 </span>
                             }
-                            <span class="badge @(tool.NeedleType == NeedleType.대바늘 ? "badge-progress" : tool.NeedleType == NeedleType.코바늘 ? "badge-wish" : "badge-done")">
+                            <span class="badge @(tool.NeedleType == NeedleType.대바늘 ? "badge-progress" : tool.NeedleType == NeedleType.코바늘 ? "badge-wish" : "badge-cable")">
                                 @tool.NeedleType
                             </span>
                         </div>
@@ -330,7 +330,7 @@ else
 {
     <div class="modal-backdrop" style="z-index:9999;">
         <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
-            <div style="margin-bottom:12px;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;flex-shrink:0;" /></div>
+            <div style="margin-bottom:12px;display:flex;justify-content:center;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;" /></div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
             <div style="display:flex; gap:10px; justify-content:center;">
@@ -438,8 +438,16 @@ else
         if (_editingTool == null) return;
         if (_editingTool.NeedleType != NeedleType.케이블)
         {
-            if (!_editingTool.IsSet && _editingTool.SizeMm <= 0) return;
-            if (_editingTool.IsSet && _editingTool.SetSizes.Count == 0) return;
+            if (_editingTool.NeedleType == NeedleType.코바늘)
+            {
+                if (!_editingTool.IsSet && _editingTool.SizeMm <= 0 && string.IsNullOrWhiteSpace(_editingTool.HookSize)) return;
+                if (_editingTool.IsSet && _editingTool.SetSizes.Count == 0) return;
+            }
+            else
+            {
+                if (!_editingTool.IsSet && _editingTool.SizeMm <= 0) return;
+                if (_editingTool.IsSet && _editingTool.SetSizes.Count == 0) return;
+            }
         }
         if (_editingTool.Id == Guid.Empty) _editingTool.Id = Guid.NewGuid();
         await Storage.SaveToolAsync(_editingTool);
