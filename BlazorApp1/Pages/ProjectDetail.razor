@@ -323,7 +323,7 @@ else
                         <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">완료한 단계를 체크해요</p>
                         @foreach (var item in _project.Checklist)
                         {
-                            <div style="display:flex; align-items:center; gap:8px; padding:8px 0; border-bottom:1px solid var(--border);">
+                            <div style="display:flex; align-items:center; gap:8px; padding:8px 0;">
                                 <input type="checkbox" checked="@item.Done"
                                        @onchange="() => ToggleCheck(item)"
                                        disabled="@IsPaused"
@@ -351,19 +351,19 @@ else
                                 <div style="height:6px; background:#c8e6be; border-radius:3px; width:@(done * 100 / total)%;"></div>
                             </div>
                         }
-                        @if (_checklistEditMode && !IsPaused)
+                        @if (!IsPaused)
                         {
                             @if (_addingCheck)
                             {
                                 <div style="display:flex; gap:8px; margin-top:12px;">
                                     <input class="form-control" @bind="_newCheckText" placeholder="예: 1~10단 완료" />
-                                    <button class="btn btn-primary btn-sm" @onclick="AddCheckItem">추가</button>
-                                    <button class="btn btn-ghost btn-sm" @onclick="CancelAddCheck">취소</button>
+                                    <button class="btn btn-primary btn-sm" style="display:inline-flex;align-items:center;gap:4px;" @onclick="AddCheckItem"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;" />추가</button>
+                                    <button class="btn btn-ghost btn-sm" style="display:inline-flex;align-items:center;gap:4px;" @onclick="CancelAddCheck"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" />취소</button>
                                 </div>
                             }
                             else
                             {
-                                <button class="btn btn-ghost btn-sm mt-1" @onclick="StartAddCheck">+ 항목 추가</button>
+                                <button class="btn btn-ghost btn-sm mt-1" style="display:inline-flex;align-items:center;gap:4px;" @onclick="StartAddCheck"><img src="icons/plus.svg" class="icon-line" style="width:12px;height:12px;" />항목 추가</button>
                             }
                         }
                         else if (IsPaused)

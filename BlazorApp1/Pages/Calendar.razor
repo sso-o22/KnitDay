@@ -655,8 +655,8 @@ else
         var active = _allProjects.Where(p =>
             p.Status != ProjectStatus.위시리스트).ToList();
         _activeCount       = active.Count(p => p.Status == ProjectStatus.진행중);
-        _overdueCount      = active.Count(p => p.EndDate.HasValue && p.EndDate.Value.Date < _today);
-        _deadlineThisMonth = active.Count(p => p.EndDate.HasValue
+        _overdueCount      = active.Count(p => p.Status == ProjectStatus.진행중 && p.EndDate.HasValue && p.EndDate.Value.Date < _today);
+        _deadlineThisMonth = active.Count(p => p.Status != ProjectStatus.완료 && p.EndDate.HasValue
             && p.EndDate.Value.Year == _current.Year
             && p.EndDate.Value.Month == _current.Month);
     }
