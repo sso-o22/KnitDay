@@ -19,18 +19,18 @@ else
 {
     <!-- 요약 카드 -->
     <div class="stats-grid" style="margin-bottom:28px;">
-        <div class="card" style="text-align:center;">
-            <div style="margin-bottom:4px;"><img src="icons/t-shirt.svg" class="icon-line" style="width:32px;height:32px; flex-shrink:0;" /></div>
+        <div class="card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+            <div style="margin-bottom:6px;"><img src="icons/t-shirt.svg" class="icon-line" style="width:28px;height:28px;" /></div>
             <div style="font-size:2rem; font-weight:800; color:var(--theme-active);">@_totalFinished</div>
             <div style="font-size:0.82rem; color:var(--text-mid);">완성작</div>
         </div>
-        <div class="card" style="text-align:center;">
-            <div style="margin-bottom:4px;"><img src="icons/paw-print.svg" class="icon-line" style="width:32px;height:32px; flex-shrink:0;" /></div>
+        <div class="card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+            <div style="margin-bottom:6px;"><img src="icons/paw-print.svg" class="icon-line" style="width:28px;height:28px;" /></div>
             <div style="font-size:2rem; font-weight:800; color:var(--theme-active);">@_totalInProgress</div>
             <div style="font-size:0.82rem; color:var(--text-mid);">진행중</div>
         </div>
-        <div class="card" style="text-align:center;">
-            <div style="margin-bottom:4px;"><img src="icons/clock.svg" class="icon-line" style="width:32px;height:32px; flex-shrink:0;" /></div>
+        <div class="card" style="display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center;">
+            <div style="margin-bottom:6px;"><img src="icons/clock.svg" class="icon-line" style="width:28px;height:28px;" /></div>
             <div style="font-size:1.3rem; font-weight:800; color:var(--theme-active);">@_totalTimeStr</div>
             <div style="font-size:0.82rem; color:var(--text-mid);">총 뜨개 시간</div>
         </div>
@@ -62,7 +62,7 @@ else
                     var heightPct = maxVal > 0 ? (double)d.Seconds / maxVal * 100 : 0;
                     <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%;">
                         <div style="flex:1; display:flex; align-items:flex-end; width:100%;">
-                            <div style="width:100%; height:@(heightPct.ToString("F1"))%; background:var(--theme-active); opacity:0.7; border-radius:4px 4px 0 0; min-height:@(d.Seconds > 0 ? "3px" : "0"); transition:height 0.3s;"></div>
+                            <div style="width:100%; height:@(heightPct.ToString("F1"))%; background:var(--theme-light); border-radius:4px 4px 0 0; min-height:@(d.Seconds > 0 ? "3px" : "0"); transition:height 0.3s;"></div>
                         </div>
                         @if (d.Seconds > 0)
                         {

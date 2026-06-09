@@ -11,7 +11,7 @@
         <h1 class="page-title"><img src="icons/swatches.svg" class="icon-line" style="width:36px;height:36px;" />스와치</h1>
         <p class="page-subtitle">실별 게이지와 수축률을 기록해요</p>
     </div>
-    <button class="btn btn-primary" @onclick="OpenAddModal" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />스와치 추가</button>
+    <button class="btn btn-primary" @onclick="OpenAddModal">+ 스와치 추가</button>
 </div>
 
 @* ── 필터 ── *@
@@ -84,9 +84,9 @@ else
                         }
                     </div>
                     <div style="display:flex; gap:6px;">
-                        <button class="btn btn-ghost btn-sm" title="게이지 계산기" @onclick="() => OpenCalcModal(s)" style="display:inline-flex;align-items:center;"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
-                        <button class="btn btn-ghost btn-sm" @onclick="() => OpenEditModal(s)" style="display:inline-flex;align-items:center;"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
-                        <button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;" @onclick='() => Confirm("이 스와치를 삭제하면 복구할 수 없어요.", async () => await DeleteSwatch(s.Id))'><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
+                        <button class="btn btn-ghost btn-sm" title="게이지 계산기" @onclick="() => OpenCalcModal(s)">🧮</button>
+                        <button class="btn btn-ghost btn-sm" @onclick="() => OpenEditModal(s)">✏️</button>
+                        <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 스와치를 삭제하면 복구할 수 없어요.", async () => await DeleteSwatch(s.Id))'>✕</button>
                     </div>
                 </div>
 
@@ -163,7 +163,7 @@ else
                 @if (project != null)
                 {
                     <div style="font-size:0.8rem; color:var(--text-mid); border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
-                        <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@project.Title</span>
+                        🔗 @project.Title
                     </div>
                 }
 
@@ -201,7 +201,7 @@ else
                 <input class="form-control" @bind="_editing.Name" placeholder="예: 러스크 메리야스" />
             </div>
 
-            <div class="form-row">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div class="form-group">
                     <label class="form-label">사용 실 — 창고에서 선택</label>
                     <select class="form-control" value="@_editing.YarnId" @onchange="OnYarnChanged">
@@ -218,7 +218,7 @@ else
                 </div>
             </div>
 
-            <div class="form-row">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div class="form-group">
                     <label class="form-label">연결 프로젝트/위시리스트</label>
                     <select class="form-control" value="@_editing.ProjectId" @onchange="OnProjectChanged">
@@ -231,7 +231,7 @@ else
                 </div>
             </div>
 
-            <div class="form-row">
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                 <div class="form-group">
                     <label class="form-label">바늘 굵기 (mm)</label>
                     <input class="form-control" type="number" step="0.25" placeholder="예: 4.5"
@@ -257,7 +257,7 @@ else
             @* 세탁 전 *@
             <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
                 <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:10px;">세탁 전</div>
-                <div class="form-row">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">코수</label>
                         <input class="form-control" type="number" step="0.5" @bind="_editing.PreWashStitches" />
@@ -267,7 +267,7 @@ else
                         <input class="form-control" type="number" step="0.5" @bind="_editing.PreWashRows" />
                     </div>
                 </div>
-                <div class="form-row" style="margin-top:10px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">가로 (cm)</label>
                         <input class="form-control" type="number" step="0.1" @bind="_editing.PreWashWidthCm" />
@@ -282,7 +282,7 @@ else
             @* 세탁 후 *@
             <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
                 <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:10px;">세탁 후</div>
-                <div class="form-row">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">코수</label>
                         <input class="form-control" type="number" step="0.5" @bind="_editing.PostWashStitches" />
@@ -292,7 +292,7 @@ else
                         <input class="form-control" type="number" step="0.5" @bind="_editing.PostWashRows" />
                     </div>
                 </div>
-                <div class="form-row" style="margin-top:10px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label">가로 (cm)</label>
                         <input class="form-control" type="number" step="0.1" @bind="_editing.PostWashWidthCm" />
@@ -364,7 +364,7 @@ else
     <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title" style="display:flex;align-items:center;gap:6px;"><img src="icons/calculator.svg" class="icon-line" style="width:18px;height:18px;flex-shrink:0;" />게이지 계산기</h2>
+                <h2 class="modal-title">🧮 게이지 계산기</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseCalcModal">✕</button>
             </div>
             <div style="background:var(--mint-pale); border-radius:var(--radius-sm); padding:12px; margin-bottom:16px; font-size:0.82rem;">
@@ -388,7 +388,7 @@ else
             <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:14px;">
                 <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:8px;">① 콧수/단수 수정 계산기</div>
                 <p style="font-size:0.78rem; color:var(--text-mid); margin-bottom:12px;">원작 게이지 + 도안 콧수/단수 → 내 게이지에 맞는 수정 콧수/단수</p>
-                <div class="form-row">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label" style="font-size:0.78rem;">원작 코 게이지 (10cm당)</label>
                         <input class="form-control" type="number" step="0.5" @bind="_c1OrigStitch" placeholder="예: 20" />
@@ -398,7 +398,7 @@ else
                         <input class="form-control" type="number" step="0.5" @bind="_c1OrigRow" placeholder="예: 28" />
                     </div>
                 </div>
-                <div class="form-row" style="margin-top:10px;">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label" style="font-size:0.78rem;">도안 콧수</label>
                         <input class="form-control" type="number" step="1" @bind="_c1PatStitch" placeholder="예: 120" />
@@ -432,7 +432,7 @@ else
             <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
                 <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:8px;">② 길이 예측 계산기</div>
                 <p style="font-size:0.78rem; color:var(--text-mid); margin-bottom:12px;">도안 콧수/단수 → 내 게이지로 뜨면 나오는 실제 길이</p>
-                <div class="form-row">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
                     <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label" style="font-size:0.78rem;">도안 콧수</label>
                         <input class="form-control" type="number" step="1" @bind="_c2Stitch" placeholder="예: 120" />
