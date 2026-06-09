@@ -165,7 +165,7 @@ else
             @if (!string.IsNullOrEmpty(_selectedProject.PatternName))
             {
                 <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:4px; display:flex; align-items:center; gap:5px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />도안</div>
+                    <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />도안</div>
                     <div style="font-size:0.92rem;">@_selectedProject.PatternName</div>
                     @if (!string.IsNullOrEmpty(_selectedProject.PatternSource))
                     {
@@ -219,7 +219,7 @@ else
             @if (_selectedSwatches.Count > 0)
             {
                 <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:6px; display:flex; align-items:center; gap:5px;"><img src="icons/ruler.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />스와치</div>
+                    <div class="card-title" style="margin-bottom:6px; display:flex; align-items:center; gap:6px;"><img src="icons/ruler.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />스와치</div>
                     @foreach (var s in _selectedSwatches)
                     {
                         <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:6px; font-size:0.84rem;">
@@ -275,7 +275,7 @@ else
             <!-- 완성 치수 -->
             <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                    <div class="form-label" style="margin-bottom:0; display:flex; align-items:center; gap:5px;"><img src="icons/ruler.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />완성 치수</div>
+                    <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/ruler.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />완성 치수</div>
                     @if (!_editingMeasurements)
                     {
                         <button class="btn btn-ghost btn-sm" style="font-size:0.75rem; display:inline-flex;align-items:center;gap:5px;" @onclick="() => _editingMeasurements = true"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />입력</button>
