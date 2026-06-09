@@ -85,7 +85,7 @@ else
                         }
                         else if (!string.IsNullOrEmpty(s.YarnNameDirect))
                         {
-                            <div style="font-size:0.82rem; color:var(--text-mid);">🧵 @s.YarnNameDirect</div>
+                            <div style="font-size:0.82rem; color:var(--text-mid); display:flex;align-items:center;gap:4px;"><img src="icons/yarn.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@s.YarnNameDirect</div>
                         }
                     </div>
                     <div style="display:flex; gap:6px;">
@@ -479,7 +479,7 @@ else
 @if (_showConfirm)
 {
     <div class="modal-backdrop" style="z-index:9999;">
-        <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
+        <div style="background:#fff;border-radius:16px;max-width:320px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
             <div style="margin-bottom:12px;display:flex;justify-content:center;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;" /></div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>

@@ -89,8 +89,8 @@
                                 <div style="font-size:0.82rem; color:var(--text-light);">기록 없음</div>
                             </div>
                         }
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; margin-left:auto; color:var(--text-dark);"
-                                @onclick="() => _editingBasic = true">✏️ 수정</button>
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; margin-left:auto; color:var(--text-dark); display:inline-flex;align-items:center;gap:5px;"
+                                @onclick="() => _editingBasic = true"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />수정</button>
                     </div>
                 }
                 else
@@ -120,7 +120,7 @@
             @if (!string.IsNullOrEmpty(Project.PatternName))
             {
                 <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:4px;">📋 도안</div>
+                    <div class="form-label" style="margin-bottom:4px; display:flex;align-items:center;gap:5px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />도안</div>
                     <div style="font-size:0.92rem;">@Project.PatternName</div>
                     @if (!string.IsNullOrEmpty(Project.PatternSource))
                     {
@@ -187,7 +187,7 @@
                     <div class="form-label" style="margin-bottom:0;">완성 치수</div>
                     @if (!_editingMeasurements)
                     {
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem; color:var(--text-dark);" @onclick="() => { LoadMeasures(); _editingMeasurements = true; }">✏️ 입력</button>
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.75rem; color:var(--text-dark); display:inline-flex;align-items:center;gap:5px;" @onclick="() => { LoadMeasures(); _editingMeasurements = true; }"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />입력</button>
                     }
                 </div>
                 @if (!_editingMeasurements)
