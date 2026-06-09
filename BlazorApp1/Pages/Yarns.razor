@@ -11,7 +11,7 @@
         <h1 class="page-title"><img src="icons/yarn.svg" class="icon-line" style="width:36px;height:36px;" />실 창고</h1>
         <p class="page-subtitle">보유중인 실 목록</p>
     </div>
-    <button class="btn btn-primary" @onclick="OpenAddModal">+ 실 추가</button>
+    <button class="btn btn-primary" @onclick="OpenAddModal" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />실 추가</button>
 </div>
 
 @if (_loading)
@@ -29,8 +29,7 @@ else
 {
     <!-- 검색 -->
     <div class="form-group" style="max-width:320px; margin-bottom:12px;">
-        <input class="form-control" @bind-value="_searchText" @bind-value:event="oninput"
-               placeholder="🔍 실 이름, 브랜드, 색상으로 검색..." />
+        <div style="position:relative; display:flex; align-items:center;"><span style="position:absolute; left:12px; pointer-events:none;"><img src="icons/magnifying-glass.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" /></span><input class="form-control" @bind-value="_searchText" @bind-value:event="oninput" style="padding-left:36px;" placeholder="실 이름, 브랜드, 색상으로 검색..." /></div>
     </div>
 
     <!-- 필터 -->
@@ -129,7 +128,7 @@ else
                 @if (!string.IsNullOrEmpty(yarn.PurchasePlace))
                 {
                     <div style="font-size:0.78rem; color:var(--text-light); margin-bottom:10px;">
-                        🛒 @yarn.PurchasePlace
+                        <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/storefront.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@yarn.PurchasePlace</span>
                         @if (yarn.PurchaseDate.HasValue)
                         {
                             <span> · @yarn.PurchaseDate.Value.ToString("yyyy.MM.dd")</span>
@@ -138,8 +137,8 @@ else
                 }
 
                 <div class="flex gap-1">
-                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(yarn)">✏️ 수정</button>
-                    <button class="btn btn-danger btn-sm" @onclick='() => Confirm($"\"{yarn.Name}\" 실을 삭제하면 복구할 수 없어요.", async () => await DeleteYarn(yarn.Id))'>🗑️</button>
+                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(yarn)" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />수정</button>
+                    <button class="btn btn-danger btn-sm" @onclick='() => Confirm($"\"{yarn.Name}\" 실을 삭제하면 복구할 수 없어요.", async () => await DeleteYarn(yarn.Id))' style="display:inline-flex;align-items:center;gap:0;"><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
                 </div>
             </div>
         }
@@ -330,7 +329,7 @@ else
 {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
         <div style="background:#fff;border-radius:16px;max-width:320px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
-            <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
+            <div style="margin-bottom:12px;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;flex-shrink:0;" /></div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
             <div style="display:flex; gap:10px; justify-content:center;">

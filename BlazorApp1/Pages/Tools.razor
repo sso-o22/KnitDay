@@ -8,7 +8,7 @@
         <h1 class="page-title"><img src="icons/toolbox.svg" class="icon-line" style="width:36px;height:36px;" />도구</h1>
         <p class="page-subtitle">보유중인 대바늘 · 코바늘 · 케이블</p>
     </div>
-    <button class="btn btn-primary" @onclick="OpenAddModal">+ 도구 추가</button>
+    <button class="btn btn-primary" @onclick="OpenAddModal" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />도구 추가</button>
 </div>
 
 @if (_loading)
@@ -117,8 +117,8 @@ else
                     }
 
                     <div class="flex gap-1 mt-2">
-                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(tool)">✏️ 수정</button>
-                        <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 도구를 삭제하면 복구할 수 없어요.", async () => await DeleteTool(tool.Id))'>🗑️</button>
+                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(tool)" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />수정</button>
+                        <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 도구를 삭제하면 복구할 수 없어요.", async () => await DeleteTool(tool.Id))' style="display:inline-flex;align-items:center;gap:0;"><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
                     </div>
                 </div>
             }
@@ -330,7 +330,7 @@ else
 {
     <div class="modal-backdrop" style="z-index:9999;">
         <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
-            <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
+            <div style="margin-bottom:12px;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;flex-shrink:0;" /></div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
             <div style="display:flex; gap:10px; justify-content:center;">

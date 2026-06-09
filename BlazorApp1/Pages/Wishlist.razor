@@ -11,7 +11,7 @@
         <h1 class="page-title"><img src="icons/shooting-star.svg" class="icon-line" style="width:36px;height:36px;" />위시리스트</h1>
         <p class="page-subtitle">언젠가 꼭 뜨고 싶은 작품들</p>
     </div>
-    <button class="btn btn-primary" @onclick="OpenAddModal">+ 추가</button>
+    <button class="btn btn-primary" @onclick="OpenAddModal" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />추가</button>
 </div>
 
 @if (_loading)
@@ -38,7 +38,7 @@ else
 
                 @if (!string.IsNullOrEmpty(proj.PatternName))
                 {
-                    <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:6px;">📋 @proj.PatternName</div>
+                    <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:6px; display:flex; align-items:center; gap:4px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@proj.PatternName</div>
                 }
                 @if (!string.IsNullOrEmpty(proj.WishMemo))
                 {
@@ -46,13 +46,13 @@ else
                 }
                 @if (!string.IsNullOrEmpty(proj.PatternSource))
                 {
-                    <div style="font-size:0.78rem; color:var(--text-light); margin-bottom:10px;">🔗 @proj.PatternSource</div>
+                    <div style="font-size:0.78rem; color:var(--text-light); margin-bottom:10px; display:flex; align-items:center; gap:4px;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@proj.PatternSource</div>
                 }
 
                 <div class="flex gap-1" style="flex-wrap:wrap;">
                     <button class="btn btn-sm btn-primary" @onclick="() => StartProject(proj.Id)">시작하기</button>
-                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)">✏️</button>
-                    <button class="btn btn-danger btn-sm" @onclick='() => Confirm("위시리스트에서 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'>🗑️</button>
+                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)" style="display:inline-flex;align-items:center;gap:0;"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
+                    <button class="btn btn-danger btn-sm" @onclick='() => Confirm("위시리스트에서 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))' style="display:inline-flex;align-items:center;gap:0;"><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
                 </div>
             </div>
         }
@@ -104,7 +104,7 @@ else
 {
     <div class="modal-backdrop" style="z-index:9999;">
         <div class="modal" style="max-width:360px; text-align:center;" @onclick:stopPropagation="true">
-            <div style="font-size:2rem; margin-bottom:12px;">🗑️</div>
+            <div style="margin-bottom:12px;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;flex-shrink:0;" /></div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>
             <div style="display:flex; gap:10px; justify-content:center;">
