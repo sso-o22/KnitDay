@@ -1,7 +1,7 @@
 // ── Firebase 초기화 ───────────────────────────────────────────────
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import {
-    getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged,
+    getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged,
     indexedDBLocalPersistence, setPersistence
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
@@ -41,6 +41,16 @@ window.firebaseAuth = {
             const u = result.user;
             return { uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL };
         } catch (e) {
+            // iOS Safari 등 팝업 차단 시 redirect 방식으로 폴백
+            if (e.code === 'auth/popup-blocked' || e.code === 'auth/cancelled-popup-request') {
+                try {
+                    await signInWithRedirect(auth, provider);
+                    return null; // redirect 후 페이지 reload됨
+                } catch (re) {
+                    console.error('signInWithRedirect:', re.code, re.message);
+                    return null;
+                }
+            }
             console.error('signInWithGoogle:', e.code, e.message);
             return null;
         }
@@ -70,6 +80,19 @@ window.firebaseAuth = {
     async waitForAuthReady() {
         // persistence 설정이 완료된 뒤 세션 복원을 기다려야 함
         await _persistenceReady;
+        // redirect 로그인 결과 처리 (iOS Safari 팝업 차단 폴백)
+        try {
+            const redirectResult = await getRedirectResult(auth);
+            if (redirectResult && redirectResult.user) {
+                const u = redirectResult.user;
+                return { uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL };
+            }
+        } catch (e) {
+            // redirect 결과 없음 또는 오류 — 무시하고 계속
+            if (e.code !== 'auth/no-auth-event') {
+                console.warn('getRedirectResult:', e.code, e.message);
+            }
+        }
         return new Promise(resolve => {
             const timer = setTimeout(() => {
                 console.warn('waitForAuthReady timeout (12s) — 네트워크가 느리거나 Firebase 초기화가 지연됐습니다.');

@@ -185,8 +185,12 @@
     async Task ApplyTheme(string id) =>
         await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme','{id}')");
 
-    async Task ApplyDark(bool dark) =>
+    async Task ApplyDark(bool dark)
+    {
         await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark','{dark.ToString().ToLower()}')");
+        var color = dark ? "#1a1a1a" : "#ffffff";
+        await JS.InvokeVoidAsync("eval", $"(function(){{var m=document.querySelector('meta[name=\"theme-color\"]');if(m)m.setAttribute('content','{color}');}})()");
+    }
 
     [Microsoft.JSInterop.JSInvokable]
     public async Task OnAppResumed()
