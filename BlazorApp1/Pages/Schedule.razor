@@ -664,12 +664,15 @@ else
 
     async Task ToggleSuspend(KnitProject proj)
     {
+        _saving = true; StateHasChanged();
         proj.Status = proj.Status == ProjectStatus.진행중
             ? ProjectStatus.일시중단
             : ProjectStatus.진행중;
         await Storage.SaveProjectAsync(proj);
         await LoadData();
-    }
+
+        _saving = false;
+        }
 
     async Task CompleteProject(Guid id)
     {

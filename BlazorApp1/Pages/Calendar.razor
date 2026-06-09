@@ -304,7 +304,7 @@ else
                         </div>
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <button class="btn btn-primary btn-sm" @onclick="SaveCalBasicInfo">저장</button>
+                        <button class="btn btn-primary btn-sm" @onclick="SaveCalBasicInfo" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
                         <button class="btn btn-ghost btn-sm" @onclick="() => _calEditingBasicInfo = false">취소</button>
                     </div>
                 }
@@ -526,6 +526,7 @@ else
 }
 
 @code {
+    bool _saving = false;
     // ── 상태 ───────────────────────────────────────────────────────────
     bool _loading = true;
     string _view  = "month";
@@ -854,12 +855,16 @@ else
 
     async Task SaveCalBasicInfo()
     {
+        _saving = true; StateHasChanged();
         if (_finishedPopupProject == null) return;
         await Storage.SaveProjectAsync(_finishedPopupProject);
         _calEditingBasicInfo = false;
         _allProjects = await Storage.GetProjectsAsync();
         Rebuild();
-    }
+
+        _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
+        }
 
     async Task SaveCalMeasurements()
     {

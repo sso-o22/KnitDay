@@ -5,6 +5,7 @@
 @using KnitLog.Services
 @inject StorageService Storage
 @inject NavigationManager Nav
+@inject IJSRuntime JS
 
 @if (Show && Project != null)
 {
@@ -110,7 +111,7 @@
                         </div>
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <button class="btn btn-primary btn-sm" @onclick="SaveBasicInfo">저장</button>
+                        <button class="btn btn-primary btn-sm" @onclick="SaveBasicInfo" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
                         <button class="btn btn-ghost btn-sm" style="color:var(--text-dark);" @onclick="() => _editingBasic = false">취소</button>
                     </div>
                 }
@@ -247,7 +248,7 @@
                         <button class="btn btn-ghost btn-sm" style="color:var(--text-dark);" @onclick="() => _measures.Add(new MeasureItem { IsCustom = true })">+ 항목 추가</button>
                     </div>
                     <div style="display:flex; gap:8px;">
-                        <button class="btn btn-primary btn-sm" @onclick="SaveMeasurements">저장</button>
+                        <button class="btn btn-primary btn-sm" @onclick="SaveMeasurements" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
                         <button class="btn btn-ghost btn-sm" style="color:var(--text-dark);" @onclick="() => { LoadMeasures(); _editingMeasurements = false; }">취소</button>
                     </div>
                 }
@@ -276,6 +277,7 @@
 }
 
 @code {
+    bool _saving = false;
     [Parameter] public bool Show { get; set; }
     [Parameter] public KnitProject? Project { get; set; }
     [Parameter] public List<Yarn> Yarns { get; set; } = new();
@@ -332,21 +334,28 @@
 
     async Task SaveBasicInfo()
     {
+        _saving = true; StateHasChanged();
         if (Project == null) return;
         await Storage.SaveProjectAsync(Project);
         _editingBasic = false;
         await OnSaved.InvokeAsync();
-    }
+
+        _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
+        }
 
     async Task SaveMeasurements()
     {
         if (Project == null) return;
+        _saving = true; StateHasChanged();
         Project.MeasurementsMemo = string.Join("|",
             _measures
                 .Where(m => !string.IsNullOrEmpty(m.Label) && (!string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
                 .Select(m => $"{m.Label}:{m.Before}:{m.After}"));
         await Storage.SaveProjectAsync(Project);
         _editingMeasurements = false;
+        _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
         await OnSaved.InvokeAsync();
     }
 }

@@ -718,8 +718,8 @@ else
 <!-- 수정 모달 -->
 @if (_showEditModal && _project != null)
 {
-    <div class="modal-backdrop">
-        <div style="background:#fff;border-radius:16px;max-width:320px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18); max-width:680px;" @onclick:stopPropagation="true">
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,0.32);display:flex;align-items:center;justify-content:center;z-index:1000;padding:20px;box-sizing:border-box;overflow-y:auto;">
+        <div style="background:#fff;border-radius:16px;max-width:680px;width:100%;padding:24px 20px;box-shadow:0 8px 32px rgba(0,0,0,0.18);margin:auto;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">프로젝트 수정</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseEditModal"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>

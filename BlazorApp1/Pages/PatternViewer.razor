@@ -857,7 +857,7 @@
     async Task RefreshUIAsync(){try{while(_refreshTimer is not null&&await _refreshTimer.WaitForNextTickAsync()){UpdateTimerDisplay();await InvokeAsync(StateHasChanged);}}catch(OperationCanceledException){}}
     void UpdateTimerDisplay(){if(_project==null){_timerDisplay="00:00:00";return;}var a=_project.Sessions.FirstOrDefault(s=>s.IsActive);if(a==null){_timerDisplay="00:00:00";return;}var t=(int)(DateTime.Now-a.StartTime).TotalSeconds;_timerDisplay=$"{t/3600:D2}:{(t%3600)/60:D2}:{t%60:D2}";}
     async Task StartSession(){if(_project==null)return;var ex=_project.Sessions.FirstOrDefault(s=>s.IsActive);if(ex!=null)ex.EndTime=DateTime.Now;_project.Sessions.Add(new KnitSession{StartTime=DateTime.Now});await Storage.SaveProjectAsync(_project);StartRefreshTimer();StateHasChanged();}
-    async Task EndSession(){if(_project==null)return;var a=_project.Sessions.FirstOrDefault(s=>s.IsActive);if(a==null)return;a.EndTime=DateTime.Now;await Storage.SaveProjectAsync(_project);StopRefreshTimer();_timerDisplay="00:00:00";StateHasChanged();}
+    async Task EndSession(){if(_project==null)return;var a=_project.Sessions.FirstOrDefault(s=>s.IsActive);if(a==null)return;a.EndTime=DateTime.Now;_saving=true;StateHasChanged();await Storage.SaveProjectAsync(_project);_saving=false;StopRefreshTimer();_timerDisplay="00:00:00";StateHasChanged();}
 
     // ── 카운터 ──
     void PrevCounter(){if(_project==null||_project.Counters.Count==0)return;_activeCounterIndex=(_activeCounterIndex-1+_project.Counters.Count)%_project.Counters.Count;}

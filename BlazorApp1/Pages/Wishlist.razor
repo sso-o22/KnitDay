@@ -173,16 +173,15 @@ else
 
     async Task SaveProject()
     {
-        _saving = true; StateHasChanged();
         if (_editingProject == null) return;
+        _saving = true; StateHasChanged();
 
         // [수정 포인트] Title 대신 PatternName이 있는지 확인합니다.
         if (string.IsNullOrWhiteSpace(_editingProject.PatternName))
         {
             // 도안명이 비어있으면 저장되지 않도록 하거나, 기본값을 넣어줍니다.
-            return; 
             _saving = false;
-        await JS.InvokeVoidAsync("showToast", "저장됐어요");
+            return;
         }
 
         // 다른 로직에서 Title을 참조할 수 있으므로 PatternName과 동일하게 맞춰줍니다.
