@@ -607,10 +607,12 @@ else
     {
         if (_editingProject == null) return;
         _editingProject.Status = ProjectStatus.위시리스트;
-        _saving = true; StateHasChanged();
-        await Storage.SaveProjectAsync(_editingProject);
-        _saving = false;
+        // UI 즉시 반응
+        _projects.Remove(_editingProject);
         CloseModal();
+        StateHasChanged();
+        // 백그라운드 저장
+        await Storage.SaveProjectAsync(_editingProject);
         await LoadData();
     }
 

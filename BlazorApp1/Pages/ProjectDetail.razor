@@ -1420,11 +1420,11 @@ else
     {
         if (_project == null) return;
         _project.Status = ProjectStatus.위시리스트;
-        _saving = true; StateHasChanged();
-        await Storage.SaveProjectAsync(_project);
-        _saving = false;
+        // UI 즉시 이동
         CloseEditModal();
         Nav.NavigateTo("projects");
+        // 백그라운드 저장
+        await Storage.SaveProjectAsync(_project);
     }
 
     void CloseEditModal()
