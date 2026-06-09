@@ -197,7 +197,7 @@ else
     <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">@(_editing.Id == Guid.Empty ? "스와치 추가" : "스와치 추가")</h2>
+                <h2 class="modal-title">@(_editing.Id == Guid.Empty ? "스와치 추가" : "스와치 수정")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
             </div>
 
@@ -369,7 +369,7 @@ else
     <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title" style="display:flex;align-items:center;gap:6px;"><img src="icons/calculator.svg" class="icon-line" style="width:18px;height:18px;flex-shrink:0;" />게이지 계산기</h2>
+                <h2 class="modal-title">게이지 계산기</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseCalcModal">✕</button>
             </div>
             <div style="background:var(--mint-pale); border-radius:var(--radius-sm); padding:12px; margin-bottom:16px; font-size:0.82rem;">

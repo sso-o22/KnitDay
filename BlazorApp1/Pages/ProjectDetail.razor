@@ -1102,7 +1102,7 @@ else
         return url; // 유튜브가 아니면 그대로 반환
     }
 
-    void GoBack() => Nav.NavigateTo(From == "schedule" ? "schedule" : "projects");
+    void GoBack() => Nav.NavigateTo(From == "schedule" ? "schedule" : From == "home" ? "" : "projects");
     void GoToViewer() => Nav.NavigateTo("pattern-viewer/" + ProjectId);
 
     // ── 카드 드래그앤드롭 ──────────────────────────────────

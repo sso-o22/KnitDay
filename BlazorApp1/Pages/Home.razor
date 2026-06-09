@@ -134,7 +134,7 @@ else
                        style="width:14px; height:14px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
                 @if (_todoEditMode)
                 {
-                    <input style="flex:1; font-size:0.78rem; padding:3px 8px; height:30px; box-sizing:border-box; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--ivory); color:var(--text-dark); font-family:inherit; outline:none; min-width:0;"
+                    <input class="form-control" style="flex:1; font-size:0.78rem; padding:2px 6px;"
                            value="@item.Text"
                            @onchange="async e => { item.Text = e.Value?.ToString() ?? item.Text; await SaveTodos(); }" />
                     <button class="btn btn-danger btn-sm" style="padding:1px 4px; font-size:0.7rem;"
@@ -186,7 +186,7 @@ else
                 var statusBg     = isOnHold ? "var(--ivory-mid)" : "var(--theme-pale)";
                 var statusColor  = isOnHold ? "var(--text-mid)"  : "var(--theme-active)";
 
-                <a href="projects/@proj.Id" class="card home-proj-card" style="text-decoration:none;display:block;">
+                <a href="projects/@proj.Id?from=home" class="card home-proj-card" style="text-decoration:none;display:block;">
                     @* 상단: 제목 + D-day *@
                     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;">
                         <div class="card-title" style="margin-bottom:0;font-size:1rem;">@proj.Title</div>

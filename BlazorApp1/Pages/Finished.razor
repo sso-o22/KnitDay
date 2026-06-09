@@ -364,7 +364,7 @@ else
 
             <div class="modal-footer">
                 <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 완성작을 삭제하면 복구할 수 없어요.", async () => await DeleteProject(_selectedProject!.Id))'>삭제</button>
-                <button class="btn btn-secondary btn-sm" @onclick="() => RestoreToSchedule(_selectedProject.Id)">↩ 문어발로 복귀</button>
+                <button class="btn btn-secondary btn-sm" @onclick="() => RestoreToSchedule(_selectedProject.Id)" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/arrow-u-up-left.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />문어발로 복귀</button>
                 <button class="btn btn-ghost" @onclick="CloseDetail">닫기</button>
             </div>
         </div>
