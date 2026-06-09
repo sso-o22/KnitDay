@@ -902,7 +902,8 @@
         StateHasChanged();
     }
     async Task DecrementCounter(ProjectCounter c){c.Value=Math.Max(0,c.Value-c.Step);c.LastUpdatedAt=DateTime.Now;await SaveProject();StateHasChanged();}
-    async Task SaveProject(){if(_project is KnitProject p)await Storage.SaveProjectAsync(p);}
+    bool _saving = false;
+    async Task SaveProject(){if(_project is KnitProject p){_saving=true;StateHasChanged();await Storage.SaveProjectAsync(p);_saving=false;await JS.InvokeVoidAsync("showToast","저장됐어요");}}
 
     // 필기+줌+페이지 자동 저장 (디바운스)
     System.Threading.CancellationTokenSource? _saveCts;

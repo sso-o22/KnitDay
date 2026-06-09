@@ -306,7 +306,7 @@ else
                         <div class="card-title" style="margin-bottom:0; flex:1;">도안 체크리스트</div>
                         @if (_checklistEditMode)
                         {
-                            <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitChecklistEditMode">완료</button>
+                            <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitChecklistEditMode" disabled="@_saving">@(_saving ? "저장 중..." : "완료")</button>
                         }
                         else
                         {
@@ -928,7 +928,7 @@ else
 
             <div class="modal-footer">
                 <button class="btn btn-ghost" @onclick="CloseEditModal">취소</button>
-                <button class="btn btn-primary" @onclick="SaveEdit">저장</button>
+                <button class="btn btn-primary" @onclick="SaveEdit" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
             </div>
         </div>
     </div>
@@ -1483,6 +1483,7 @@ else
 
     async Task SaveEdit()
     {
+        _saving = true; StateHasChanged();
         await Save();
         // 스와치 연결 변경사항 저장
         foreach (var s in _allSwatches)
@@ -1492,7 +1493,9 @@ else
         _swatchSnapshotPD = null;
         _editSnapshot = null;
         CloseEditModal();
-    }
+        _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
+        }
 
     void ToggleSwatchLink(Swatch s)
     {
@@ -1520,9 +1523,15 @@ else
         s.ProjectId = null;
     }
 
+    bool _saving = false;
+
     async Task Save()
     {
-        if (_project != null)
-            await Storage.SaveProjectAsync(_project);
+        if (_project == null) return;
+        _saving = true;
+        StateHasChanged();
+        await Storage.SaveProjectAsync(_project);
+        _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
     }
 }

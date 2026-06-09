@@ -2,6 +2,7 @@
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
+@inject IJSRuntime JS
 
 <div class="page-header">
     <div>
@@ -319,7 +320,7 @@ else
 
             <div class="modal-footer">
                 <button class="btn btn-ghost" @onclick="CloseModal">취소</button>
-                <button class="btn btn-primary" @onclick="SaveTool">저장</button>
+                <button class="btn btn-primary" @onclick="SaveTool" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
             </div>
         </div>
     </div>
@@ -342,6 +343,7 @@ else
 }
 
 @code {
+    bool _saving = false;
     bool _showConfirm = false;
     string _confirmMsg = "";
     Func<Task>? _confirmAction;
@@ -435,6 +437,7 @@ else
 
     async Task SaveTool()
     {
+        _saving = true; StateHasChanged();
         if (_editingTool == null) return;
         if (_editingTool.NeedleType != NeedleType.케이블)
         {
@@ -442,7 +445,9 @@ else
             {
                 if (!_editingTool.IsSet && _editingTool.SizeMm <= 0 && string.IsNullOrWhiteSpace(_editingTool.HookSize)) return;
                 if (_editingTool.IsSet && _editingTool.SetSizes.Count == 0) return;
-            }
+                _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
+        }
             else
             {
                 if (!_editingTool.IsSet && _editingTool.SizeMm <= 0) return;

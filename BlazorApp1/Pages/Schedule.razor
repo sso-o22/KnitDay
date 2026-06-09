@@ -419,7 +419,7 @@ else
 
             <div class="modal-footer">
                 <button class="btn btn-ghost" @onclick="CloseModal">취소</button>
-                <button class="btn btn-primary" @onclick="SaveProject">저장</button>
+                <button class="btn btn-primary" @onclick="SaveProject" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
             </div>
         </div>
     </div>
@@ -442,6 +442,7 @@ else
 }
 
 @code {
+    bool _saving = false;
     bool _showConfirm = false;
     string _confirmMsg = "";
     Func<Task>? _confirmAction;
@@ -645,6 +646,7 @@ else
 
     async Task SaveProject()
     {
+        _saving = true; StateHasChanged();
         if (_editingProject == null || string.IsNullOrWhiteSpace(_editingProject.PatternName)) return;
         if (string.IsNullOrWhiteSpace(_editingProject.Title))
             _editingProject.Title = _editingProject.PatternName;
@@ -656,7 +658,9 @@ else
         _swatchSnapshot = null;
         await LoadData();
         CloseModal();
-    }
+        _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
+        }
 
     async Task ToggleSuspend(KnitProject proj)
     {

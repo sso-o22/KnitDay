@@ -332,6 +332,7 @@ else
         public bool Done { get; set; } = false;
     }
     List<TodoItem> _todoItems = new();
+    bool _saving = false;
     bool _checklistExpanded = true;
     bool _todoEditMode = false;
     bool _addingTodo = false;
@@ -347,10 +348,13 @@ else
     }
     async Task SaveTodos()
     {
+        _saving = true; StateHasChanged();
         await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_todos",
             System.Text.Json.JsonSerializer.Serialize(_todoItems));
         StateHasChanged();
-    }
+        _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
+        }
     async Task AddTodo()
     {
         if (string.IsNullOrWhiteSpace(_newTodoText)) return;
