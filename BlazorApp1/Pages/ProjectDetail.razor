@@ -166,7 +166,7 @@ else
             @* @if (_project.VideoLinks.Count > 0)
             {
                 <div class="divider"></div>
-                <div class="form-label" style="display:flex; align-items:center; gap:6px;"><img src="icons/youtube-logo.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 참고 영상</div>
+                <div class="form-label" style="display:flex; align-items:center; gap:6px;"><img src="icons/youtube-logo.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 참고 링크</div>
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     @foreach (var link in _project.VideoLinks)
                     {
@@ -508,7 +508,7 @@ else
     <div class="card" style="grid-column: span 2; overflow:hidden;">
         <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
              @onclick='() => ToggleCard("video")'>
-            <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/youtube-logo.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 참고 영상</div>
+            <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/youtube-logo.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 참고 링크</div>
             @if (_project.VideoLinks.Count > 0)
             {
                 <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("video") ? "▶" : "▼")</span>
@@ -545,14 +545,14 @@ else
         }
         else
         {
-            <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">참고 영상이 없어요. 도안 영상 링크를 추가해 보세요!</p>
+            <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">참고 링크가 없어요. 유튜브, 노션, 블로그 링크를 추가해 보세요!</p>
         }
 
         <div style="display:flex; gap:8px;">
             <input class="form-control" 
                 @bind="_newVideoLink" 
                 @bind:event="oninput"
-                placeholder="유튜브, 블로그 등 URL 입력"
+                placeholder="유튜브, 노션, 블로그 등 URL 입력"
                 @onkeydown="@(async e => { if (e.Key == "Enter") await AddVideoLinkAndSave(); })" />
             <button class="btn btn-sage" style="flex-shrink:0;" @onclick="AddVideoLinkAndSave">추가</button>
         </div>
