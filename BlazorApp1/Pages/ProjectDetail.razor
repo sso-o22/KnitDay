@@ -927,7 +927,7 @@ else
             </div>
 
             <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
-                        <button class="btn btn-ghost btn-sm" style="font-size:0.78rem; color:var(--text-light); display:inline-flex;align-items:center;gap:4px;" @onclick="MoveToWishlist"><img src="icons/arrow-u-up-left.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />위시리스트로 복귀</button>
+                        <button class="btn btn-ghost" style="color:var(--text-light); display:inline-flex;align-items:center;gap:4px;" @onclick="MoveToWishlist" disabled="@_saving"><img src="icons/arrow-u-up-left.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@(_saving ? "복귀 중..." : "위시리스트로 복귀")</button>
                 <div style="display:flex; gap:8px;">
                     <button class="btn btn-ghost" @onclick="CloseEditModal">취소</button>
                     <button class="btn btn-primary" @onclick="SaveEdit" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
