@@ -186,7 +186,7 @@ else
                 <div class="card" draggable="true" data-cardid="counter" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => { if (_project.Counters.Count > 0) ToggleCard("counter"); }'>
-                        <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/plus-minus.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 단수 카운터</div>
+                        <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/plus-minus.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 단수 카운터</div>
                         @if (_project.Counters.Count > 0)
                         {
                             <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("counter") ? "▶" : "▼")</span>
@@ -301,7 +301,7 @@ else
                 <!-- ── 도안 체크리스트 ── -->
                 <div class="card" draggable="true" data-cardid="checklist" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; gap:6px; padding-bottom:16px;">
-                        <img src="icons/push-pin.svg" class="icon-line" style="width:14px;height:14px; flex-shrink:0;" />
+                        <img src="icons/push-pin.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" />
                         <div class="card-title" style="margin-bottom:0; flex:1;">도안 체크리스트</div>
                         @if (_checklistEditMode)
                         {
@@ -378,7 +378,7 @@ else
                 <div class="card" draggable="true" data-cardid="timer" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => ToggleCard("timer")'>
-                        <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/clock-user.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 뜨개 시간</div>
+                        <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/clock-user.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 뜨개 시간</div>
                         <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("timer") ? "▶" : "▼")</span>
                     </div>
                     @if (!IsCollapsed("timer"))
@@ -447,7 +447,7 @@ else
                 <div class="card" draggable="true" data-cardid="accum" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
                          @onclick='() => ToggleCard("accum")'>
-                        <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/chart-bar.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 누적 시간</div>
+                        <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/chart-bar.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 누적 시간</div>
                         <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("accum") ? "▶" : "▼")</span>
                     </div>
                     @if (!IsCollapsed("accum"))
@@ -507,7 +507,7 @@ else
     <div class="card" style="grid-column: span 2; overflow:hidden;">
         <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
              @onclick='() => ToggleCard("video")'>
-            <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/youtube-logo.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 참고 영상</div>
+            <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/youtube-logo.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 참고 영상</div>
             @if (_project.VideoLinks.Count > 0)
             {
                 <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("video") ? "▶" : "▼")</span>
@@ -559,7 +559,7 @@ else
     </div>
 
     <div class="card" style="grid-column: span 2;">
-        <div class="card-title" style="display:flex; align-items:center; gap:6px;"><img src="icons/image.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 과정 사진</div>
+        <div class="card-title" style="display:flex; align-items:center; gap:6px;"><img src="icons/image.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 과정 사진</div>
 
         @if (_project.Photos.Count > 0)
         {
@@ -594,7 +594,7 @@ else
 
         <!-- ── 연결된 실 ── -->
         <div class="card">
-            <div class="card-title" style="margin-bottom:12px; display:flex; align-items:center; gap:6px;"><img src="icons/yarn.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 연결된 실</div>
+            <div class="card-title" style="margin-bottom:12px; display:flex; align-items:center; gap:6px;"><img src="icons/yarn.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 연결된 실</div>
             @if (_project.YarnUsages.Count == 0)
             {
                 <p style="color:var(--text-light); font-size:0.88rem;">연결된 실이 없어요. 수정 버튼에서 실을 추가할 수 있어요.</p>
@@ -630,7 +630,7 @@ else
         <!-- ── 연결된 스와치 ── -->
         <div class="card">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
-                <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/swatches.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 연결된 스와치</div>
+                <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/swatches.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 연결된 스와치</div>
                 <a href="swatches" class="btn btn-ghost btn-sm">스와치 관리</a>
             </div>
 

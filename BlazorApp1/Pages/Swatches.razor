@@ -11,7 +11,7 @@
         <h1 class="page-title"><img src="icons/swatches.svg" class="icon-line" style="width:36px;height:36px;" />스와치</h1>
         <p class="page-subtitle">실별 게이지와 수축률을 기록해요</p>
     </div>
-    <button class="btn btn-primary" @onclick="OpenAddModal">+ 스와치 추가</button>
+    <button class="btn btn-primary" @onclick="OpenAddModal" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />스와치 추가</button>
 </div>
 
 @* ── 필터 ── *@
@@ -84,9 +84,9 @@ else
                         }
                     </div>
                     <div style="display:flex; gap:6px;">
-                        <button class="btn btn-ghost btn-sm" title="게이지 계산기" @onclick="() => OpenCalcModal(s)">🧮</button>
-                        <button class="btn btn-ghost btn-sm" @onclick="() => OpenEditModal(s)">✏️</button>
-                        <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 스와치를 삭제하면 복구할 수 없어요.", async () => await DeleteSwatch(s.Id))'>✕</button>
+                        <button class="btn btn-ghost btn-sm" title="게이지 계산기" @onclick="() => OpenCalcModal(s)" style="display:inline-flex;align-items:center;"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
+                        <button class="btn btn-ghost btn-sm" style="display:inline-flex;align-items:center;" @onclick="() => OpenEditModal(s)"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
+                        <button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;" @onclick='() => Confirm("이 스와치를 삭제하면 복구할 수 없어요.", async () => await DeleteSwatch(s.Id))'><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
                     </div>
                 </div>
 
@@ -163,7 +163,7 @@ else
                 @if (project != null)
                 {
                     <div style="font-size:0.8rem; color:var(--text-mid); border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
-                        🔗 @project.Title
+                        <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@project.Title</span>
                     </div>
                 }
 
@@ -364,7 +364,7 @@ else
     <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">🧮 게이지 계산기</h2>
+                <h2 class="modal-title" style="display:flex;align-items:center;gap:6px;"><img src="icons/calculator.svg" class="icon-line" style="width:18px;height:18px;flex-shrink:0;" />게이지 계산기</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseCalcModal">✕</button>
             </div>
             <div style="background:var(--mint-pale); border-radius:var(--radius-sm); padding:12px; margin-bottom:16px; font-size:0.82rem;">
