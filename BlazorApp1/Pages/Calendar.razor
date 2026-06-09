@@ -338,7 +338,7 @@ else
             @if (calYarns.Any())
             {
                 <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:6px;">🧵 사용 실</div>
+                    <div class="form-label" style="margin-bottom:6px;">사용 실</div>
                     @foreach (var (usage, yarn) in calYarns)
                     {
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:0.88rem;">
@@ -360,7 +360,7 @@ else
             @if (calTools.Any() || !string.IsNullOrEmpty(_finishedPopupProject.NeedleNote))
             {
                 <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:6px;">⚒️ 사용 바늘</div>
+                    <div class="form-label" style="margin-bottom:6px;">사용 바늘</div>
                     <div style="display:flex; flex-wrap:wrap; gap:6px;">
                         @foreach (var tool in calTools)
                         {
@@ -512,7 +512,7 @@ else
             @if (!string.IsNullOrEmpty(_finishedPopupProject.Memo))
             {
                 <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:4px;">📝 메모</div>
+                    <div class="form-label" style="margin-bottom:4px;">메모</div>
                     <p style="white-space:pre-wrap; font-size:0.9rem; color:var(--text-mid);">@_finishedPopupProject.Memo</p>
                 </div>
             }

@@ -20,7 +20,7 @@
 else if (_projects.Count == 0)
 {
     <div class="empty-state">
-        <div class="empty-icon">🎉</div>
+        <div class="empty-icon"><img src="icons/confetti.svg" class="icon-line" style="width:48px;height:48px;" /></div>
         <p>아직 완성작이 없어요.<br/>뜨케줄에서 작품을 완성하면 여기로 이동해요!</p>
     </div>
 }
@@ -182,7 +182,7 @@ else
             @if (_selectedYarns.Count > 0)
             {
                 <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:6px;">🧵 사용 실</div>
+                    <div class="form-label" style="margin-bottom:6px;">사용 실</div>
                     @foreach (var (usage, yarn) in _selectedYarns)
                     {
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:4px; font-size:0.88rem;">
@@ -201,7 +201,7 @@ else
             @if (_selectedTools.Count > 0 || !string.IsNullOrEmpty(_selectedProject.NeedleNote))
             {
                 <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:6px;">⚒️ 사용 바늘</div>
+                    <div class="form-label" style="margin-bottom:6px;">사용 바늘</div>
                     <div style="display:flex; flex-wrap:wrap; gap:6px;">
                         @foreach (var tool in _selectedTools)
                         {
@@ -357,7 +357,7 @@ else
             @if (!string.IsNullOrEmpty(_selectedProject.Memo))
             {
                 <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:4px;">📝 메모</div>
+                    <div class="form-label" style="margin-bottom:4px;">메모</div>
                     <p style="white-space:pre-wrap; font-size:0.9rem; color:var(--text-mid);">@_selectedProject.Memo</p>
                 </div>
             }
