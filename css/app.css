@@ -698,7 +698,7 @@ body {
         box-shadow: none;
     }
 
-    /* 완성작 팝업은 모바일에서도 고정 크기 유지 */
+    /* 추가/수정 팝업은 모바일에서도 내용에 맞게 */
     .modal.modal-sheet {
         max-height: 90vh !important;
         min-height: unset !important;
@@ -706,7 +706,7 @@ body {
         border-radius: var(--radius) !important;
         box-shadow: var(--shadow-lg) !important;
         margin: auto !important;
-        padding: 0 !important;
+        overflow-y: auto !important;
     }
 
     /* 하단 탭바 활성화 */
