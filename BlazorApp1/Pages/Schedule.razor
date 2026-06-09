@@ -205,7 +205,7 @@ else
 @if (_showModal)
 {
     <div class="modal-backdrop">
-        <div class="modal modal-sheet" style="max-width:680px;" @onclick:stopPropagation="true">
+        <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingProject?.Id == Guid.Empty ? "새 프로젝트" : "프로젝트 수정")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
@@ -420,8 +420,7 @@ else
             <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
                 @if (_editingProject?.Id != Guid.Empty)
                 {
-                    <button class="btn btn-ghost btn-sm" style="font-size:0.78rem; color:var(--text-light);"
-                            @onclick="MoveToWishlist">위시리스트로 복귀</button>
+                            <button class="btn btn-ghost btn-sm" style="font-size:0.78rem; color:var(--text-light); display:inline-flex;align-items:center;gap:4px;" @onclick="MoveToWishlist"><img src="icons/arrow-u-up-left.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />위시리스트로 복귀</button>
                 }
                 else
                 {

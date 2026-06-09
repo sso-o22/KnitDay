@@ -64,7 +64,7 @@ else
 @if (_showModal && _editingProject != null)
 {
     <div class="modal-backdrop">
-        <div class="modal modal-sheet" style="max-width:680px;" @onclick:stopPropagation="true">
+        <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingProject.Id == Guid.Empty ? "위시 추가" : "위시 수정")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
