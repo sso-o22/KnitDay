@@ -566,7 +566,7 @@ else
         _allSwatches = await Storage.GetSwatchesAsync();
     }
 
-    void GoToDetail(Guid id) => Nav.NavigateTo("projects/" + id + "?from=schedule");
+    void GoToDetail(Guid id) => Nav.NavigateTo("projects/" + id + "?from=projects");
 
     void OpenAddModal()
     {
