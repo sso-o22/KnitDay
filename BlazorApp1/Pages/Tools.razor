@@ -437,7 +437,6 @@ else
 
     async Task SaveTool()
     {
-        _saving = true; StateHasChanged();
         if (_editingTool == null) return;
         if (_editingTool.NeedleType != NeedleType.케이블)
         {
@@ -445,18 +444,19 @@ else
             {
                 if (!_editingTool.IsSet && _editingTool.SizeMm <= 0 && string.IsNullOrWhiteSpace(_editingTool.HookSize)) return;
                 if (_editingTool.IsSet && _editingTool.SetSizes.Count == 0) return;
-                _saving = false;
-        await JS.InvokeVoidAsync("showToast", "저장됐어요");
-        }
+            }
             else
             {
                 if (!_editingTool.IsSet && _editingTool.SizeMm <= 0) return;
                 if (_editingTool.IsSet && _editingTool.SetSizes.Count == 0) return;
             }
         }
+        _saving = true; StateHasChanged();
         if (_editingTool.Id == Guid.Empty) _editingTool.Id = Guid.NewGuid();
         await Storage.SaveToolAsync(_editingTool);
         _tools = await Storage.GetToolsAsync();
+        _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
         CloseModal();
     }
 

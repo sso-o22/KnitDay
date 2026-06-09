@@ -64,7 +64,7 @@ else
 @if (_showModal && _editingProject != null)
 {
     <div class="modal-backdrop">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal" style="max-width:680px;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingProject.Id == Guid.Empty ? "위시 추가" : "위시 수정")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
@@ -190,12 +190,16 @@ else
         if (_editingProject.Id == Guid.Empty) _editingProject.Id = Guid.NewGuid();
         
         await Storage.SaveProjectAsync(_editingProject);
-        await LoadData();
+        _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
         CloseModal();
+        await LoadData();
     }
 
     async Task StartProject(Guid id)
     {
+        var proj = _projects.FirstOrDefault(p => p.Id == id);
+        if (proj != null) { proj.Status = KnitLog.Models.ProjectStatus.진행중; StateHasChanged(); }
         await Storage.StartProjectAsync(id);
         await LoadData();
     }
