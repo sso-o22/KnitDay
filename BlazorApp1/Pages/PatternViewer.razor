@@ -122,19 +122,19 @@
     <div class="top-bar">
         <!-- 왼쪽: 나가기 + 타이머 -->
         <div class="tb-left">
-            <button class="tb-btn" @onclick="GoBack">←</button>
+            <button class="tb-btn" @onclick="GoBack"><img src="icons/arrow-fat-left.svg" style="width:18px;height:18px;" /></button>
             @if (_project is not null)
             {
                 <div class="tb-div"></div>
-                <span style="font-size:11px;opacity:0.4;">⏱</span>
+                <span style="opacity:0.4;"><img src="icons/clock.svg" style="width:14px;height:14px;" /></span>
                 <span class="tb-txt" style="font-variant-numeric:tabular-nums;letter-spacing:0.3px;">@_timerDisplay</span>
                 @if (_activeSession == null)
                 {
-                    <button class="tb-icon-btn" @onclick="StartSession">▶</button>
+                    <button class="tb-icon-btn" @onclick="StartSession"><img src="icons/play.svg" style="width:16px;height:16px;" /></button>
                 }
                 else
                 {
-                    <button class="tb-icon-btn" @onclick="EndSession">⏸</button>
+                    <button class="tb-icon-btn" @onclick="EndSession"><img src="icons/pause.svg" style="width:16px;height:16px;" /></button>
                 }
             }
         </div>
@@ -152,15 +152,13 @@
             @if (_totalPages > 0)
             {
                 <div class="tb-zoom">
-                    <button class="tb-zoom-btn" @onclick="ZoomOut">−</button>
+                    <button class="tb-zoom-btn" @onclick="ZoomOut"><img src="icons/magnifying-glass-minus.svg" style="width:16px;height:16px;" /></button>
                     <span class="tb-txt" style="min-width:36px;text-align:center;">@((int)(_zoom*100))%</span>
-                    <button class="tb-zoom-btn" @onclick="ZoomIn">+</button>
+                    <button class="tb-zoom-btn" @onclick="ZoomIn"><img src="icons/magnifying-glass-plus.svg" style="width:16px;height:16px;" /></button>
                 </div>
                 <div class="tb-div"></div>
             }
-            <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick">
-                📄
-            </span>
+            <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick"><img src="icons/files.svg" style="width:20px;height:20px;" /></span>
             <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf,image/png,image/jpeg,image/webp" style="display:none;" />
         </div>
     </div>
@@ -168,7 +166,7 @@
     <!-- ── 필기 도구 플로팅 위젯 (좌측 상단, 툴바 아래) ── -->
     <div class="draw-wrap">
         <button class="draw-fab" id="draw-fab-btn" @onclick="ToggleDrawMode" title="필기 모드">
-            <img src="@(_drawMode ? "icons/draw-mode-on.svg" : "icons/draw-mode-off.svg")" style="width:22px;height:22px;" />
+            <img src="@(_drawMode ? "icons/pencil-simple.svg" : "icons/pencil-simple-slash.svg")" style="width:22px;height:22px;" />
         </button>
         <div class="draw-panel" id="draw-panel-div">
             <div class="draw-panel-inner">
@@ -202,10 +200,10 @@
                     @* 행 높이 감지 버튼 *@
                     <div class="dp-row" style="justify-content:center;gap:3px;">
                         <button class="dp-btn" title="자동 행 감지" @onclick="DetectRowHeight" style="width:28px;height:28px;">
-                            <img src="icons/search.svg" style="width:18px;height:18px;" />
+                            <img src="icons/list-magnifying-glass.svg" style="width:18px;height:18px;" />
                         </button>
                         <button class="dp-btn @(_tool=="rowheightdraw"?"dp-on":"")" title="직접 한 행 높이 지정" @onclick="StartRowHeightDraw" style="width:28px;height:28px;">
-                            <img src="icons/row-height.svg" style="width:18px;height:18px;" />
+                            <img src="icons/arrows-vertical.svg" style="width:18px;height:18px;" />
                         </button>
                     </div>
                     @* 두 선 지정 모드: 적용 버튼 *@
@@ -255,10 +253,10 @@
                     {
                         <div class="dp-row" style="justify-content:center;gap:4px;">
                             <button class="dp-btn" title="다음 행으로" @onclick="MoveRowMarkerUp" style="width:28px;height:28px;">
-                                <img src="icons/Plus.svg" style="width:20px;height:20px;" />
+                                <img src="icons/rows-plus-top.svg" style="width:20px;height:20px;" />
                             </button>
                             <button class="dp-btn" title="되돌리기" @onclick="UndoRowMarker" style="width:28px;height:28px;">
-                                <img src="icons/Undo.svg" style="width:18px;height:18px;" />
+                                <img src="icons/arrow-u-up-left.svg" style="width:18px;height:18px;" />
                             </button>
                         </div>
                     }
@@ -266,7 +264,7 @@
                     {
                         <div class="dp-row" style="justify-content:center;">
                             <button class="dp-btn" title="되돌리기" @onclick="UndoRowMarker" style="width:28px;height:28px;">
-                                <img src="icons/Undo.svg" style="width:18px;height:18px;" />
+                                <img src="icons/arrow-u-up-left.svg" style="width:18px;height:18px;" />
                             </button>
                         </div>
                     }
@@ -276,7 +274,7 @@
                         <div class="dp-sep"></div>
                         <div class="dp-row" style="justify-content:center;">
                             <button class="dp-btn" title="행 마커 전체 삭제" @onclick="ClearRowMarkers" style="width:28px;height:28px;">
-                                <img src="icons/Delete.svg" style="width:20px;height:20px;" />
+                                <img src="icons/trash.svg" style="width:20px;height:20px;" />
                             </button>
                         </div>
                     }
@@ -320,7 +318,7 @@
                     <!-- 되돌리기 -->
                     <div class="dp-row" style="justify-content:center;">
                         <button class="dp-btn" @onclick="UndoLastPath" title="되돌리기">
-                            <img src="icons/Undo.svg" style="width:18px;height:18px;" />
+                            <img src="icons/arrow-u-up-left.svg" style="width:18px;height:18px;" />
                         </button>
                     </div>
                 }
@@ -370,7 +368,7 @@
         }
         else
         {
-            <button class="cw-fab" @onclick="()=>_showCounterWidget=true">🧶</button>
+            <button class="cw-fab" @onclick="()=>_showCounterWidget=true"><img src="icons/yarn.svg" style="width:22px;height:22px;" /></button>
         }
     }
     <!-- ── (도형 기능 제거됨) ── -->
@@ -759,7 +757,7 @@
 {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
         <div style="background:var(--white);border-radius:20px;padding:28px 24px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
-            <div style="font-size:2rem;margin-bottom:12px;">📄</div>
+            <div style="margin-bottom:12px;"><img src="icons/files.svg" style="width:32px;height:32px;" /></div>
             <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">도안을 교체할까요?</div>
             <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:20px;">이미 불러온 도안이 있어요.<br/>새 파일로 교체하면 기존 필기가 사라져요.</div>
             <div style="display:flex;gap:10px;justify-content:center;">

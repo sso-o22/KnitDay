@@ -20,14 +20,14 @@ else if (_project == null)
     <div class="empty-state">
         <div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volleyball-icon lucide-volleyball"><path d="M11 7a16 16 20 0 1 10.98 4.362"/><path d="M12 12a13 13 0 0 1-8.66 5"/><path d="M16.83 13.634a16 16 0 0 1-9.267 7.328"/><path d="M20.66 17A13 13 0 0 0 12 12a13 13 0 0 1 0-10"/><path d="M8.17 15.366a16 16 0 0 1-1.713-11.69"/><circle cx="12" cy="12" r="10"/></svg></div>
         <p>프로젝트를 찾을 수 없어요.</p>
-        <button class="btn btn-primary mt-2" @onclick="GoBack">← 뒤로가기</button>
+        <button class="btn btn-primary mt-2" style="display:inline-flex;align-items:center;" @onclick="GoBack"><img src="icons/arrow-fat-left.svg" class="icon-line" style="width:18px;height:18px;" /></button>
     </div>
 }
 else
 {
     <div class="page-header">
         <div style="display:flex; align-items:center; gap:12px;">
-            <button class="btn btn-ghost btn-sm" @onclick="GoBack">← @(From == "schedule" ? "뜨케줄" : "문어발")</button>
+            <button class="btn btn-ghost btn-sm" style="display:inline-flex;align-items:center;" @onclick="GoBack"><img src="icons/arrow-fat-left.svg" class="icon-line" style="width:18px;height:18px;" /></button>
             <div>
                 <h1 class="page-title" style="margin-bottom:0;">@_project.Title</h1>
                 @* <p class="page-subtitle">@_project.PatternName</p> *@
@@ -760,7 +760,7 @@ else
 
             @* ── 사용 바늘 ── *@
             <div class="form-group">
-                <label class="form-label">⚒️ 사용 바늘</label>
+                <label class="form-label">사용 바늘</label>
                 <div style="display:flex; gap:6px; margin-bottom:6px;">
                     <button type="button" class="btn btn-sm @(_project.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
                             @onclick='() => _project.NeedleType = (_project.NeedleType == NeedleType.대바늘 ? (NeedleType?)null : NeedleType.대바늘)'>대바늘</button>
@@ -772,7 +772,7 @@ else
 
             @* ── 사용 실 ── *@
             <div class="form-group">
-                <label class="form-label"><img src="icons/yarn.svg" class="icon-line" style="width:14px;height:14px;" /> 사용 실</label>
+                <label class="form-label">사용 실</label>
                 <select class="form-control" style="margin-bottom:8px;" @onchange="OnEditAddYarn">
                     <option value="">+ 실 추가</option>
                     @foreach (var y in _yarns)
@@ -805,7 +805,7 @@ else
 
             @* ── 스와치 연결 ── *@
             <div class="form-group">
-                <label class="form-label">📐 스와치</label>
+                <label class="form-label">스와치</label>
                 @if (!_allSwatches.Any())
                 {
                     <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
@@ -922,7 +922,7 @@ else
 
             @* ── 메모 ── *@
             <div class="form-group" style="margin-top:28px;">
-                <label class="form-label">📝 메모</label>
+                <label class="form-label">메모</label>
                 <textarea class="form-control" rows="2" @bind="_project.Memo" placeholder="기타 메모"></textarea>
             </div>
 
