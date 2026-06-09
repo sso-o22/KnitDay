@@ -151,7 +151,7 @@ else
 @if (_showModal && _editingYarn != null)
 {
     <div class="modal-backdrop">
-        <div class="modal" style="max-width:680px;" @onclick:stopPropagation="true">
+        <div class="modal modal-sheet" style="max-width:680px;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingYarn.Id == Guid.Empty ? "실 추가" : "실 수정")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>

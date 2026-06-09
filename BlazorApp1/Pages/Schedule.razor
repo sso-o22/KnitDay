@@ -205,7 +205,7 @@ else
 @if (_showModal)
 {
     <div class="modal-backdrop">
-        <div class="modal" style="max-width:680px;" @onclick:stopPropagation="true">
+        <div class="modal modal-sheet" style="max-width:680px;" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingProject?.Id == Guid.Empty ? "새 프로젝트" : "프로젝트 수정")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
@@ -417,9 +417,20 @@ else
                 </div>
             }
 
-            <div class="modal-footer">
-                <button class="btn btn-ghost" @onclick="CloseModal">취소</button>
-                <button class="btn btn-primary" @onclick="SaveProject" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+                @if (_editingProject?.Id != Guid.Empty)
+                {
+                    <button class="btn btn-ghost btn-sm" style="font-size:0.78rem; color:var(--text-light);"
+                            @onclick="MoveToWishlist">위시리스트로 이동</button>
+                }
+                else
+                {
+                    <span></span>
+                }
+                <div style="display:flex; gap:8px;">
+                    <button class="btn btn-ghost" @onclick="CloseModal">취소</button>
+                    <button class="btn btn-primary" @onclick="SaveProject" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
+                </div>
             </div>
         </div>
     </div>
@@ -591,6 +602,17 @@ else
             .Select(s => s.Id)
             .ToList();
         _showModal = true;
+    }
+
+    async Task MoveToWishlist()
+    {
+        if (_editingProject == null) return;
+        _editingProject.Status = ProjectStatus.위시리스트;
+        _saving = true; StateHasChanged();
+        await Storage.SaveProjectAsync(_editingProject);
+        _saving = false;
+        CloseModal();
+        await LoadData();
     }
 
     void CloseModal()
