@@ -340,7 +340,7 @@
                          style="cursor:grab;"
                          @onmousedown="CwDragStart"
                          @ontouchstart="CwTouchStart">
-                        <span style="font-size:11px;font-weight:700;color:#444;">🧶 카운터</span>
+                        <span style="font-size:11px;font-weight:700;color:#444;">카운터</span>
                         <button class="cw-close" @onclick="()=>_showCounterWidget=false" @onmousedown:stopPropagation="true">✕</button>
                     </div>
                     @{var c = _project.Counters[_activeCounterIndex];}
@@ -363,12 +363,26 @@
                             @FormatLastUpdated(c.LastUpdatedAt.Value)
                         </div>
                     }
+                    @* 카운터 추가 *@
+                    @if (_cwAddMode)
+                    {
+                        <div style="display:flex;gap:4px;margin-top:6px;padding-top:6px;border-top:1px solid #eee;">
+                            <input style="flex:1;font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;min-width:0;"
+                                   @bind="_cwNewLabel" placeholder="이름" @onkeydown="CwAddKeyDown" />
+                            <button class="cw-nav-btn" style="display:inline-flex;align-items:center;" @onclick="CwAddCounter" @onmousedown:stopPropagation="true"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" /></button>
+                            <button class="cw-nav-btn" style="display:inline-flex;align-items:center;" @onclick="() => { _cwAddMode=false; _cwNewLabel=string.Empty; }" @onmousedown:stopPropagation="true"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" /></button>
+                        </div>
+                    }
+                    else
+                    {
+                        <button style="width:100%;margin-top:6px;font-size:10px;color:#aaa;background:none;border:1px dashed #ddd;border-radius:4px;padding:2px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:3px;" @onclick="() => _cwAddMode=true" @onmousedown:stopPropagation="true"><img src="icons/plus.svg" class="icon-line" style="width:10px;height:10px;flex-shrink:0;" />카운터 추가</button>
+                    }
                 </div>
             </div>
         }
         else
         {
-            <button class="cw-fab" @onclick="()=>_showCounterWidget=true"></button>
+            <button class="cw-fab" @onclick="()=>_showCounterWidget=true"><img src="icons/yarn.svg" style="width:22px;height:22px;" /></button>
         }
     }
     <!-- ── (도형 기능 제거됨) ── -->
@@ -851,6 +865,26 @@
 
     // 마지막 클릭 시간: 시분초 표시 (ProjectDetail과 동일)
     string FormatLastUpdated(DateTime dt) => dt.ToString("HH:mm:ss");
+    string _cwNewLabel = "";
+    bool _cwAddMode = false;
+
+    async Task CwAddCounter()
+    {
+        if (_project == null || string.IsNullOrWhiteSpace(_cwNewLabel)) return;
+        _project.Counters.Add(new ProjectCounter { Label = _cwNewLabel.Trim() });
+        _activeCounterIndex = _project.Counters.Count - 1;
+        _cwNewLabel = "";
+        _cwAddMode = false;
+        await SaveProject();
+        StateHasChanged();
+    }
+
+    async Task CwAddKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await CwAddCounter();
+        else if (e.Key == "Escape") { _cwAddMode = false; _cwNewLabel = ""; }
+    }
+
     async Task IncrementCounter(ProjectCounter c)
     {
         c.Value += c.Step;

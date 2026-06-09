@@ -28,6 +28,7 @@ window.patternViewer = (() => {
     let currentPageNum = 1, totalPages = 0;
     let _pageSizes = {};      // pageNum → {w, h} at zoom=1 CSS px
     let paths = [];
+let basePaths = []; // 저장된 필기 (박제)
     let isDrawing = false, currentPath = null;
     let _color = '#000000', _size = 4, _isEraser = false, _tool = 'select', _opacity = 1.0;
     let _pageHandlers = {}, _renderTasks = {}, _renderedPages = new Set();
@@ -697,7 +698,7 @@ window.patternViewer = (() => {
             for (let i = 1; i <= totalPages; i++) { const a = getAnnoCanvas(i); if (a) a.style.cursor = cursor; }
         },
 
-        undo() { paths.pop(); for (let i=1;i<=totalPages;i++) redrawPage(i); if (dotNetRef) dotNetRef.invokeMethodAsync('NotifyAnnotationChanged'); },
+        undo() { if (paths.length > basePaths.length) { paths.pop(); for (let i=1;i<=totalPages;i++) redrawPage(i); if (dotNetRef) dotNetRef.invokeMethodAsync('NotifyAnnotationChanged'); } },
 
         getRect(pageNum) {
             const el = document.getElementById('page-container-'+(pageNum||currentPageNum));
@@ -721,7 +722,7 @@ window.patternViewer = (() => {
             if (_intersectionObserver) { _intersectionObserver.disconnect(); _intersectionObserver=null; }
             abortAllPageHandlers();
             Object.values(_renderTasks).forEach(t => { try { if(t) t.cancel(); } catch(_){} });
-            _renderTasks={}; _renderedPages=new Set(); _pageSizes={}; pdfDoc=null; paths=[];
+            _renderTasks={}; _renderedPages=new Set(); _pageSizes={}; pdfDoc=null; paths=[]; basePaths=[];
             isDrawing=false; currentPath=null; _isPinching=false; _isZooming=false;
         },
 
@@ -747,6 +748,7 @@ window.patternViewer = (() => {
 
         setPaths(json) {
             try { paths = JSON.parse(json) || []; } catch(_) { paths = []; }
+            basePaths = [...paths]; // 로드된 필기 박제
             for (let i=1; i<=totalPages; i++) { if (_renderedPages.has(i)) redrawPage(i); }
         },
 
