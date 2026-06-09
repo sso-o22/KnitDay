@@ -2,6 +2,7 @@
    Pages/ProjectDetail.razor  —  뜨케줄 프로젝트 상세 페이지
    ===================================================================== *@
 @page "/projects/{ProjectId:guid}"
+@inject NavigationManager Nav
 @using KnitLog.Models
 @using KnitLog.Services
 @using Microsoft.JSInterop
@@ -26,7 +27,7 @@ else
 {
     <div class="page-header">
         <div style="display:flex; align-items:center; gap:12px;">
-            <button class="btn btn-ghost btn-sm" @onclick="GoBack">← 뒤로</button>
+            <button class="btn btn-ghost btn-sm" @onclick="GoBack">← @(From == "schedule" ? "뜨케줄" : "문어발")</button>
             <div>
                 <h1 class="page-title" style="margin-bottom:0;">@_project.Title</h1>
                 @* <p class="page-subtitle">@_project.PatternName</p> *@
@@ -988,6 +989,7 @@ else
     }
 
     [Parameter] public Guid ProjectId { get; set; }
+    [Parameter, SupplyParameterFromQuery(Name = "from")] public string? From { get; set; }
 
     bool _loading = true;
     bool _showEditModal = false;
@@ -1100,7 +1102,7 @@ else
         return url; // 유튜브가 아니면 그대로 반환
     }
 
-    void GoBack() => Nav.NavigateTo("projects");
+    void GoBack() => Nav.NavigateTo(From == "schedule" ? "schedule" : "projects");
     void GoToViewer() => Nav.NavigateTo("pattern-viewer/" + ProjectId);
 
     // ── 카드 드래그앤드롭 ──────────────────────────────────
