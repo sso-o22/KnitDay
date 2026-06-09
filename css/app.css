@@ -419,6 +419,7 @@ body {
 .badge-progress { background: var(--yellow-light); color: #8a6a08; }
 .badge-done     { background: var(--mint-light);   color: #267848; }
 .badge-wish     { background: var(--lavender-light); color: #4e3290; }
+.badge-cable    { background: #dff0fb; color: #1a6a8a; }
 
 /* ── 색상 원 ─────────────────────────────────────────── */
 .color-dot {
@@ -980,6 +981,7 @@ body {
 [data-dark="true"] .badge-progress { background: #2a2010; color: #c8a840; }
 [data-dark="true"] .badge-done     { background: #0f2010; color: #70c870; }
 [data-dark="true"] .badge-wish     { background: #1a1030; color: #a888e8; }
+[data-dark="true"] .badge-cable    { background: #0a2030; color: #60b8e0; }
 
 [data-dark="true"] select.form-control option {
     background: #1e1e1e;
