@@ -373,7 +373,7 @@ else
                 <button class="btn btn-ghost btn-sm" @onclick="CloseCalcModal">✕</button>
             </div>
             <div style="background:var(--mint-pale); border-radius:var(--radius-sm); padding:12px; margin-bottom:16px; font-size:0.82rem;">
-                <div style="font-weight:600; color:#267848; margin-bottom:6px;">📌 @(string.IsNullOrEmpty(_calcSwatch.Name) ? "이 스와치" : _calcSwatch.Name)의 게이지</div>
+                <div style="font-weight:600; color:#267848; margin-bottom:6px; display:flex; align-items:center; gap:5px;"><img src="icons/push-pin.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />@(string.IsNullOrEmpty(_calcSwatch.Name) ? "이 스와치" : _calcSwatch.Name)의 게이지</div>
                 <div style="display:flex; gap:16px;">
                     @if (csg > 0)
                     {
