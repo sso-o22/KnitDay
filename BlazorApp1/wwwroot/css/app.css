@@ -119,17 +119,16 @@ body {
 }
 
 .sidebar-logo {
-    width: 120px;
+    width: 140px;
     height: auto;
-    opacity: 0.75;
+    opacity: 1;
     transition: opacity 0.2s ease;
 }
 .sidebar-logo:hover { opacity: 1; }
 
 /* 다크모드: invert로 밝게 */
 [data-dark="true"] .sidebar-logo {
-    filter: invert(1);
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 .nav-list {
