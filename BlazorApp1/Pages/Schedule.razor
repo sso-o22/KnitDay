@@ -673,18 +673,21 @@ else
 
     async Task CompleteProject(Guid id)
     {
-        // 완료 처리 전에 프로젝트 정보 저장
         var proj = _projects.FirstOrDefault(p => p.Id == id);
+        if (proj == null) return;
+
+        // 1. 팝업 즉시 띄우기 (사용자에게 빠르게 반응)
+        proj.Status = KnitLog.Models.ProjectStatus.완료;
+        if (!proj.EndDate.HasValue) proj.EndDate = DateTime.Today;
+        _completedPreview = proj;
+        _showCompletedPopup = true;
+        StateHasChanged();
+
+        // 2. 백그라운드 저장
         await Storage.CompleteProjectAsync(id);
+
+        // 3. 목록 갱신
         await LoadData();
-        // 완성작 팝업 표시
-        if (proj != null)
-        {
-            // 완료 처리 후 EndDate가 설정되므로 Storage에서 다시 읽기
-            var allProjects = await Storage.GetProjectsAsync();
-            _completedPreview = allProjects.FirstOrDefault(p => p.Id == id) ?? proj;
-            _showCompletedPopup = true;
-        }
     }
 
     void CloseCompletedPopup()
