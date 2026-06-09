@@ -206,3 +206,42 @@ window.unregisterOnlineSync = () => {
         window._onlineSyncRef = null;
     }
 };
+// ── 토스트 알림 ──────────────────────────────────────────
+window.showToast = function(message, type = 'success') {
+    const existing = document.getElementById('kd-toast');
+    if (existing) existing.remove();
+
+    const toast = document.createElement('div');
+    toast.id = 'kd-toast';
+    toast.textContent = message;
+    toast.style.cssText = `
+        position: fixed;
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+        left: 50%;
+        transform: translateX(-50%) translateY(20px);
+        background: ${type === 'success' ? '#2a5a26' : '#c03030'};
+        color: #fff;
+        padding: 8px 18px;
+        border-radius: 20px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        z-index: 99999;
+        opacity: 0;
+        transition: opacity 0.2s ease, transform 0.2s ease;
+        white-space: nowrap;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        pointer-events: none;
+    `;
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+    });
+
+    setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+    }, 1800);
+};
