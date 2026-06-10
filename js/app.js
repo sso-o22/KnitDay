@@ -190,21 +190,45 @@ window.unregisterVisibilitySync = () => {
 
 // ── 온라인 복귀 시 Blazor에 알림 (오프라인 수정 push용) ────────────
 window.registerOnlineSync = (dotNetRef) => {
-    const handler = () => {
+    const onlineHandler = () => {
+        // 오프라인 배너 숨기기
+        const banner = document.getElementById('offline-banner');
+        if (banner) banner.remove();
+        showToast('온라인 연결됨 — 동기화 중...');
         dotNetRef.invokeMethodAsync('OnBackOnline').catch(() => {});
     };
-    window.addEventListener('online', handler);
-    // cleanup용으로 저장
-    window._onlineSyncHandler = handler;
+    const offlineHandler = () => {
+        if (document.getElementById('offline-banner')) return;
+        const banner = document.createElement('div');
+        banner.id = 'offline-banner';
+        banner.textContent = '오프라인 상태 — 로컬에 저장 중';
+        banner.style.cssText = `
+            position:fixed;top:0;left:0;right:0;
+            background:#555;color:#fff;text-align:center;
+            font-size:0.78rem;padding:5px 12px;
+            z-index:99998;pointer-events:none;
+        `;
+        document.body.appendChild(banner);
+    };
+    window.addEventListener('online', onlineHandler);
+    window.addEventListener('offline', offlineHandler);
+    window._onlineSyncHandler = onlineHandler;
+    window._offlineSyncHandler = offlineHandler;
     window._onlineSyncRef = dotNetRef;
+    // 초기 오프라인 상태면 즉시 배너 표시
+    if (!navigator.onLine) offlineHandler();
 };
 
 window.unregisterOnlineSync = () => {
     if (window._onlineSyncHandler) {
         window.removeEventListener('online', window._onlineSyncHandler);
         window._onlineSyncHandler = null;
-        window._onlineSyncRef = null;
     }
+    if (window._offlineSyncHandler) {
+        window.removeEventListener('offline', window._offlineSyncHandler);
+        window._offlineSyncHandler = null;
+    }
+    window._onlineSyncRef = null;
 };
 // ── 토스트 알림 ──────────────────────────────────────────
 window.showToast = function(message, type = 'success') {
@@ -246,3 +270,14 @@ window.showToast = function(message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, 1800);
 };
+// ── Debounce 유틸 (자동저장용) ───────────────────────────────────
+window._debounceTimers = {};
+window.debounce = (key, fn, delayMs) => {
+    if (window._debounceTimers[key]) clearTimeout(window._debounceTimers[key]);
+    window._debounceTimers[key] = setTimeout(() => {
+        delete window._debounceTimers[key];
+        fn();
+    }, delayMs ?? 1500);
+};
+
+window.isOnline = () => navigator.onLine;

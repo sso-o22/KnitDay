@@ -1,2 +1,7 @@
 /* /Layout/MainLayout.razor.rz.scp.css */
 /* 레이아웃 스타일은 모두 app.css에서 관리합니다 */
+
+@keyframes pulse-b-g99638wy9i {
+    0%, 100% { opacity: 0.7; transform: scale(1); }
+    50%       { opacity: 0.3; transform: scale(0.7); }
+}
