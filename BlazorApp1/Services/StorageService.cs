@@ -368,14 +368,26 @@ namespace KnitLog.Services
         }
 
         // ── 내보내기 ─────────────────────────────────────────────────
+        // export 시 사진 base64 제외 (용량 절감 — 사진은 기기 로컬에만 저장됨)
         public async Task<string> ExportAllAsync()
         {
+            var projects = await GetProjectsAsync();
+            foreach (var p in projects)
+                foreach (var photo in p.Photos)
+                    photo.Base64Data = "";
+
+            var yarns = await GetYarnsAsync();
+            foreach (var y in yarns) y.PhotoBase64 = "";
+
+            var swatches = await GetSwatchesAsync();
+            foreach (var s in swatches) s.PhotoBase64 = "";
+
             var data = new
             {
-                Projects   = await GetProjectsAsync(),
-                Yarns      = await GetYarnsAsync(),
+                Projects   = projects,
+                Yarns      = yarns,
                 Tools      = await GetToolsAsync(),
-                Swatches   = await GetSwatchesAsync(),
+                Swatches   = swatches,
                 ExportedAt = DateTime.Now
             };
             return JsonSerializer.Serialize(data, _jsonOpts);

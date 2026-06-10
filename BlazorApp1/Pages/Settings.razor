@@ -97,7 +97,8 @@
                     background:var(--theme-pale); color:var(--text-mid); line-height:1.6;">
             <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/warning.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /><b>도안 파일과 필기 내용은 로그인만으로 다른 기기에 연동되지 않아요.</b></span><br>
             다른 기기로 옮기려면 <b>데이터 내보내기</b>로 백업 파일을 만들고,<br>
-            새 기기에서 <b>데이터 불러오기</b>로 복원해주세요.
+            새 기기에서 <b>데이터 불러오기</b>로 복원해주세요.<br>
+            <span style="color:var(--text-light);">※ 백업 파일에는 사진이 포함되지 않아요. (용량 절감)</span>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="ExportData"><img src="icons/export.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 내보내기</button>
@@ -266,7 +267,7 @@
         _importError = false;
         try
         {
-            using var stream = e.File.OpenReadStream(50 * 1024 * 1024);
+            using var stream = e.File.OpenReadStream(200 * 1024 * 1024);
             using var ms = new System.IO.MemoryStream();
             await stream.CopyToAsync(ms);
             var json = System.Text.Encoding.UTF8.GetString(ms.ToArray()).Trim();
@@ -382,11 +383,25 @@
 
     async Task ExportData()
     {
-        // localStorage 데이터
+        // localStorage 데이터 (사진 base64 제외)
         await JS.InvokeVoidAsync("eval", @"
             const keys = ['knittracker_projects','knittracker_yarns','knittracker_tools','knittracker_swatches'];
             const data = {};
-            keys.forEach(k => { const v = localStorage.getItem(k); if(v) data[k] = JSON.parse(v); });
+            keys.forEach(k => {
+                const v = localStorage.getItem(k);
+                if (!v) return;
+                const arr = JSON.parse(v);
+                // 사진 base64 제거
+                if (k === 'knittracker_projects') {
+                    arr.forEach(p => {
+                        if (p.Photos) p.Photos.forEach(ph => { ph.Base64Data = ''; });
+                    });
+                }
+                if (k === 'knittracker_yarns' || k === 'knittracker_swatches') {
+                    arr.forEach(item => { item.PhotoBase64 = ''; });
+                }
+                data[k] = arr;
+            });
             const todos = localStorage.getItem('knitlog_todos');
             if (todos) data['knitlog_todos'] = JSON.parse(todos);
             data.exportedAt = new Date().toISOString();
