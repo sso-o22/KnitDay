@@ -32,6 +32,11 @@ jobs:
       - name: Publish
         run: dotnet publish BlazorApp1/BlazorApp1.csproj -c Release -o publish
 
+      - name: Use published service worker
+        run: |
+          cp publish/wwwroot/service-worker.published.js \
+             publish/wwwroot/service-worker.js
+
       - name: Add .nojekyll
         run: touch publish/wwwroot/.nojekyll
 
