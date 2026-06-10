@@ -151,9 +151,7 @@ else
         {
             var done = _todoItems.Count(t => t.Done);
             var total = _todoItems.Count;
-            <div style="height:4px; background:#e8e8e8; border-radius:2px; margin:8px 0 6px;">
-                <div style="height:4px; background:#c8e6be; border-radius:2px; width:@(done * 100 / total)%;"></div>
-            </div>
+            <div style="font-size:0.75rem; color:var(--text-light); margin:6px 0 4px;">@done / @total 완료</div>
         }
 
         @if (_addingTodo)
@@ -225,7 +223,7 @@ else
                         var elapsed = (DateTime.Today    - proj.StartDate.Value).TotalDays;
                         var pct     = total > 0 ? Math.Clamp(elapsed / total * 100, 0, 100) : 0;
                         <div style="background:var(--ivory-mid);border-radius:4px;height:4px;margin-bottom:10px;overflow:hidden;">
-                            <div style="height:4px;border-radius:4px;width:@(pct.ToString("F0"))%;background:var(--theme-active);transition:width 0.3s;"></div>
+                            <div style="height:4px;border-radius:4px;width:@(pct.ToString("F0"))%;background:var(--theme-light);transition:width 0.3s;"></div>
                         </div>
                     }
 

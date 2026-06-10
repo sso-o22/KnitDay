@@ -346,10 +346,7 @@ else
                         {
                             var done  = _project.Checklist.Count(c => c.Done);
                             var total = _project.Checklist.Count;
-                            <div style="margin:10px 0 4px; font-size:0.8rem; color:var(--text-mid);">@done / @total 완료</div>
-                            <div style="height:6px; background:#e8e8e8; border-radius:3px;">
-                                <div style="height:6px; background:#c8e6be; border-radius:3px; width:@(done * 100 / total)%;"></div>
-                            </div>
+                            <div style="margin:10px 0 4px; font-size:0.8rem; color:var(--text-light);">@done / @total 완료</div>
                         }
                         @if (!IsPaused)
                         {
