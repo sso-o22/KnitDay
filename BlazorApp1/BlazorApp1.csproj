@@ -5,6 +5,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>KnitLog</RootNamespace>
+    <ServiceWorkerAssetsManifest>service-worker-assets.js</ServiceWorkerAssetsManifest>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,8 @@
     <Content Update="wwwroot\404.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <ServiceWorker Include="wwwroot\service-worker.js"
+                   PublishedContent="wwwroot\service-worker.published.js" />
   </ItemGroup>
 
 </Project>
