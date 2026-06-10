@@ -8,8 +8,16 @@
 
 <div class="app-shell">
     <nav class="sidebar">
-        <div class="sidebar-brand">
+        <div class="sidebar-brand" style="position:relative;">
             <img src="images/logo.png" class="sidebar-logo" alt="KnitLog" />
+            @if (_syncStatus == "syncing")
+            {
+                <span style="position:absolute;bottom:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--theme-active);opacity:0.7;animation:pulse 1s infinite;"></span>
+            }
+            else if (_syncStatus == "done")
+            {
+                <span style="position:absolute;bottom:4px;right:4px;"><img src="icons/cloud-check.svg" class="icon-line" style="width:14px;height:14px;opacity:0.6;" /></span>
+            }
         </div>
 
         <ul class="nav-list">
@@ -72,13 +80,17 @@
     int _finished;
     string _todayTime = "0분";
     private PeriodicTimer? _sidebarTimer;
+    private PeriodicTimer? _pollTimer;
     bool _isSyncing = false;
+    string _syncStatus = "";
+    System.Threading.CancellationTokenSource? _syncDoneCts;
     DotNetObjectReference<MainLayout>? _visibilityRef;
 
     protected override async Task OnInitializedAsync()
     {
         await RefreshStats();
         StartSidebarTimer();
+        StartPollTimer();
         Auth.OnAuthChanged += OnAuthChanged;
     }
 
@@ -87,15 +99,8 @@
         InvokeAsync(async () =>
         {
             StateHasChanged();
-            // 로그인 직후 동기화
-            if (Auth.IsLoggedIn && !_isSyncing)
-            {
-                _isSyncing = true;
-                await Storage.SyncOnLoginAsync();
-                _isSyncing = false;
-                await RefreshStats();
-                StateHasChanged();
-            }
+            if (Auth.IsLoggedIn)
+                await SyncWithStatusAsync();
         });
     }
 
@@ -125,6 +130,57 @@
                 return (int)((end - s.StartTime).TotalSeconds);
             });
         _todayTime = FormatTime(todaySecs);
+    }
+
+    // ── 동기화 헬퍼 (상태 표시 포함) ──────────────────────────────
+    async Task SyncWithStatusAsync(bool push = false)
+    {
+        if (!Auth.IsLoggedIn || _isSyncing) return;
+        _isSyncing = true;
+        _syncStatus = "syncing";
+        _syncDoneCts?.Cancel();
+        StateHasChanged();
+        try
+        {
+            if (push)
+                await Storage.PushLocalToFirebaseAsync();
+            else
+                await Storage.SyncOnLoginAsync();
+            await RefreshStats();
+        }
+        catch { }
+        _isSyncing = false;
+        _syncStatus = "done";
+        StateHasChanged();
+        // 2초 후 상태 아이콘 사라짐
+        _syncDoneCts = new System.Threading.CancellationTokenSource();
+        var token = _syncDoneCts.Token;
+        _ = Task.Delay(2000, token).ContinueWith(t =>
+        {
+            if (!t.IsCanceled) InvokeAsync(() => { _syncStatus = ""; StateHasChanged(); });
+        });
+    }
+
+    // ── 2분 폴링 타이머 ────────────────────────────────────────────
+    void StartPollTimer()
+    {
+        _pollTimer = new PeriodicTimer(TimeSpan.FromMinutes(2));
+        _ = RunPollTimerAsync();
+    }
+
+    async Task RunPollTimerAsync()
+    {
+        try
+        {
+            while (_pollTimer is not null && await _pollTimer.WaitForNextTickAsync())
+            {
+                // 로그인 상태이고 앱이 포그라운드일 때만 sync
+                var isVisible = await JS.InvokeAsync<bool>("eval", "document.visibilityState === 'visible'");
+                if (isVisible)
+                    await SyncWithStatusAsync();
+            }
+        }
+        catch (OperationCanceledException) { }
     }
 
     void StartSidebarTimer()
@@ -195,33 +251,25 @@
     [Microsoft.JSInterop.JSInvokable]
     public async Task OnAppResumed()
     {
-        // 다른 기기에서 수정했을 수 있으므로 Firestore에서 최신 데이터 pull
-        if (Auth.IsLoggedIn && !_isSyncing)
-        {
-            _isSyncing = true;
-            await Storage.SyncOnLoginAsync();
-            _isSyncing = false;
-            await RefreshStats();
-            StateHasChanged();
-        }
+        // 포그라운드 복귀 시 즉시 pull
+        await SyncWithStatusAsync();
     }
 
     [Microsoft.JSInterop.JSInvokable]
     public async Task OnBackOnline()
     {
-        // 오프라인 중 수정한 내용을 Firebase에 push
-        if (Auth.IsLoggedIn && !_isSyncing)
-        {
-            _isSyncing = true;
-            await Storage.PushLocalToFirebaseAsync();
-            _isSyncing = false;
-        }
+        // 온라인 복귀 시 로컬 내용 push 후 최신 pull
+        await SyncWithStatusAsync(push: true);
     }
 
     public async ValueTask DisposeAsync()
     {
         _sidebarTimer?.Dispose();
         _sidebarTimer = null;
+        _pollTimer?.Dispose();
+        _pollTimer = null;
+        _syncDoneCts?.Cancel();
+        _syncDoneCts?.Dispose();
         Auth.OnAuthChanged -= OnAuthChanged;
         _visibilityRef?.Dispose();
         _visibilityRef = null;

@@ -1642,7 +1642,7 @@
     }
     async Task GoBack()
     {
-        // 뒤로가기 전 즉시 저장 (디바운스 기다리지 않고)
+        // 로컬 저장만 즉시 하고 페이지 이동 (Firebase는 백그라운드)
         await ForceSaveViewerStateAsync();
         Nav.NavigateTo("projects/" + ProjectId);
     }
@@ -1653,6 +1653,8 @@
         try
         {
             _saveCts?.Cancel();
+            _saving = true;
+            StateHasChanged();
             var pathsJson = await JS.InvokeAsync<string>("patternViewer.getPaths");
             _project.ViewerAnnotations = pathsJson;
 
@@ -1669,9 +1671,11 @@
             _project.ViewerRowMarkerColor  = _rowMarkerColor;
             _project.ViewerGridLineColor   = _gridLineColor;
             await SaveProject();
+            _saving = false;
         }
         catch (Exception ex)
         {
+            _saving = false;
             await JS.InvokeVoidAsync("console.error", "ForceSave error: " + ex.Message);
         }
     }

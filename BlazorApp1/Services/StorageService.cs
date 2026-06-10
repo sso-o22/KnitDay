@@ -241,26 +241,15 @@ namespace KnitLog.Services
             }
         }
 
-        // ── 통합 저장 (로컬 + Firebase) ──────────────────────────────
-        // Firebase는 5초 타임아웃 내에서 await — UI는 블로킹되지 않음(caller가 fire-and-forget 가능)
+        // ── 통합 저장 (로컬 즉시 + Firebase 백그라운드) ──────────────
+        // 로컬 저장은 즉시 완료 → UI 블로킹 없음
+        // Firebase는 fire-and-forget: 오프라인이면 PushLocalToFirebaseAsync 로 나중에 올림
         private async Task SaveAsync<T>(string key, string collectionName, string idField, List<T> list)
         {
+            // 1) 로컬 즉시 저장 (빠름)
             await SaveLocalAsync(key, list);
-            // Firebase도 await로 처리 (앱 종료 직전 저장 유실 방지)
-            // 단, 5초 타임아웃을 두어 네트워크 문제 시 UI가 멈추지 않도록 함
-            try
-            {
-                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-                await SaveFirebaseAsync(collectionName, list, idField).WaitAsync(cts.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                Console.Error.WriteLine($"Firebase save timeout ({collectionName}) — 로컬에는 저장됨");
-            }
-            catch (Exception ex)
-            {
-                Console.Error.WriteLine($"Firebase save error ({collectionName}): {ex.Message}");
-            }
+            // 2) Firebase 백그라운드 저장 (네트워크 문제 시 조용히 실패 → 오프라인 pending)
+            _ = SaveFirebaseAsync(collectionName, list, idField);
         }
 
         // ── 프로젝트 ─────────────────────────────────────────────────
