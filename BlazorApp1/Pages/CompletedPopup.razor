@@ -134,7 +134,14 @@
                                     {
                                         @if (yarn.YarnType == YarnType.콘사)
                                         {
-                                            <span style="color:var(--text-light); font-size:0.8rem;">@((usage.BallsUsed * yarn.WeightGram).ToString("G29")) g</span>
+                                            @if (yarn.WeightGram > 0)
+                                            {
+                                                <span style="color:var(--text-light); font-size:0.8rem;">@((usage.BallsUsed * yarn.WeightGram).ToString("G29")) g</span>
+                                            }
+                                            else
+                                            {
+                                                <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed.ToString("G29") 콘</span>
+                                            }
                                         }
                                         else
                                         {
@@ -299,11 +306,7 @@
                         {
                             <button class="btn btn-danger btn-sm" @onclick="OnDelete" disabled="@_saving">삭제</button>
                         }
-                        <button class="btn btn-secondary btn-sm" style="display:inline-flex;align-items:center;gap:5px;"
-                                @onclick="OpenEditing">
-                            <img src="icons/pencil.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />수정
-                        </button>
-                        <button class="btn btn-ghost btn-sm" @onclick="OnClose">닫기</button>
+                        <button class="btn btn-secondary btn-sm" @onclick="OpenEditing">수정</button>
                     }
                     else
                     {

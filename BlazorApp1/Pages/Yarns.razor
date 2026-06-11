@@ -99,14 +99,6 @@ else
                 {
                     <div style="font-size:0.8rem; color:var(--text-light);">@yarn.Material</div>
                 }
-                @if (!string.IsNullOrEmpty(yarn.LotNumber) || yarn.Ply > 0)
-                {
-                    <div style="font-size:0.78rem; color:var(--text-light);">
-                        @if (!string.IsNullOrEmpty(yarn.LotNumber)) { <span>Lot: @yarn.LotNumber</span> }
-                        @if (yarn.Ply > 0) { <span style="margin-left:6px;">@(yarn.Ply)합</span> }
-                    </div>
-                }
-
                 @{
                     // 콘사인 경우 콘당 단위, 그 외 볼당 단위
                     bool isCone = yarn.YarnType == YarnType.콘사;
@@ -116,10 +108,15 @@ else
                     decimal totalLength = yarn.LengthMeter * yarn.Quantity;
                 }
                 <div style="display:flex; gap:12px; font-size:0.78rem; color:var(--text-light); margin:6px 0 2px;">
+                    @if (yarn.Ply > 0) { <span>@(yarn.Ply)합</span> }
                     @if (yarn.WeightGram > 0) { <span>@yarn.WeightGram @weightUnit</span> }
                     @if (yarn.LengthMeter > 0) { <span>@yarn.LengthMeter @lengthUnit</span> }
                     @if (yarn.Price > 0) { <span>₩@yarn.Price.ToString("N0")</span> }
                 </div>
+                @if (!string.IsNullOrEmpty(yarn.LotNumber))
+                {
+                    <div style="font-size:0.78rem; color:var(--text-light);">Lot: @yarn.LotNumber</div>
+                }
                 @if (totalLength > 0)
                 {
                     <div style="font-size:0.8rem; color:var(--sage-dark); font-weight:600; margin-bottom:6px;">
@@ -330,7 +327,7 @@ else
 @if (_showConfirm)
 {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
-        <div style="background:#fff;border-radius:16px;max-width:320px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
+        <div style="background:var(--white);border-radius:16px;max-width:320px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
             <div style="margin-bottom:12px;display:flex;justify-content:center;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;" /></div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">@_confirmMsg</div>

@@ -228,6 +228,9 @@
             if (!string.IsNullOrEmpty(saved)) _currentTheme = saved;
             var dark = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_dark");
             _isDark = dark == "true";
+            // 페이지 진입 시 테마/다크 재적용 (PWA 캐시 로드 후 불일치 방지)
+            await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme','{_currentTheme}')");
+            await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark','{_isDark.ToString().ToLower()}')");
             var debug = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_debug");
             _debugMode = debug == "1";
             try
