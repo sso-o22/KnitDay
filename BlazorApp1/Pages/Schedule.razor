@@ -80,7 +80,7 @@ else
     else if (!_isListView)
     {
         <!-- 카드형 -->
-        <div class="grid-2">
+        <div class="grid-3">
             @foreach (var proj in FilteredSortedProjects)
             {
                 <div class="card" style="cursor:pointer;" @onclick="() => GoToDetail(proj.Id)">

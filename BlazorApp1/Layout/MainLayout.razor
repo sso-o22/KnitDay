@@ -59,6 +59,18 @@
     <main class="main-content">@Body</main>
 
     <nav class="bottom-nav">
+        @if (_syncStatus == "syncing")
+        {
+            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--theme-active);opacity:0.8;animation:pulse 1s infinite;"></span>
+        }
+        else if (_syncStatus == "done")
+        {
+            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;"><img src="icons/cloud-check.svg" class="icon-line" style="width:14px;height:14px;opacity:0.6;" /></span>
+        }
+        else if (_syncStatus == "error")
+        {
+            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;"><img src="icons/cloud-slash.svg" class="icon-line" style="width:14px;height:14px;opacity:0.7;color:#c03030;" /></span>
+        }
         <NavLink href="" Match="NavLinkMatch.All" class="bottom-nav-item">
             <span class="bottom-nav-icon"><img src="icons/house-line.svg" class="icon-line" style="width:24px;height:24px;" /></span><span class="bottom-nav-label">홈</span>
         </NavLink>
@@ -140,6 +152,7 @@
         _syncStatus = "syncing";
         _syncDoneCts?.Cancel();
         StateHasChanged();
+        bool syncOk = true;
         try
         {
             if (push)
@@ -148,9 +161,13 @@
                 await Storage.SyncOnLoginAsync();
             await RefreshStats();
         }
-        catch { }
+        catch { syncOk = false; }
         _isSyncing = false;
-        _syncStatus = "done";
+        _syncStatus = syncOk ? "done" : "error";
+        if (!syncOk)
+        {
+            await JS.InvokeVoidAsync("showToast", "동기화 실패", "error");
+        }
         StateHasChanged();
         // 2초 후 상태 아이콘 사라짐
         _syncDoneCts = new System.Threading.CancellationTokenSource();

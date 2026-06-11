@@ -24,6 +24,9 @@ namespace KnitLog.Services
             PropertyNameCaseInsensitive = true
         };
 
+        // 동기화 완료 이벤트 (Home 등 화면에서 재로딩 트리거)
+        public event Action? OnSyncCompleted;
+
         public StorageService(IJSRuntime js) { _js = js; }
 
         // AuthService는 순환 의존 방지를 위해 나중에 주입
@@ -100,6 +103,7 @@ namespace KnitLog.Services
             await MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools");
             await MergeCollectionAsync<Swatch>(KEY_SWATCHES, "swatches");
             await SyncTodosAsync();
+            OnSyncCompleted?.Invoke();
         }
 
         private async Task SyncTodosAsync()

@@ -153,7 +153,14 @@
                                 <span>@yarn.Brand @yarn.Name (@yarn.Color)</span>
                                 @if (usage.BallsUsed > 0)
                                 {
-                                    <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed.ToString("G29") 볼</span>
+                                    @if (yarn.YarnType == YarnType.콘사)
+                                    {
+                                        <span style="color:var(--text-light); font-size:0.8rem;">@((usage.BallsUsed * yarn.WeightGram).ToString("G29")) g</span>
+                                    }
+                                    else
+                                    {
+                                        <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed.ToString("G29") 볼</span>
+                                    }
                                 }
                             </div>
                         }
@@ -295,7 +302,7 @@
         public string After  { get; set; } = "";
         public bool IsCustom { get; set; } = false;
     }
-    static readonly string[] _defaultLabels = { "가슴둘레", "총장", "소매 길이", "소매 단면" };
+    static readonly string[] _defaultLabels = { "가슴 단면", "총장", "소매 길이", "소매 단면" };
     List<MeasureItem> _measures = new();
 
     protected override void OnParametersSet()

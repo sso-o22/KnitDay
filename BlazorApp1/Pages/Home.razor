@@ -370,15 +370,17 @@ else
     void StartAddTodo() { _addingTodo = true; }
     void CancelAddTodo() { _addingTodo = false; _newTodoText = ""; }
 
-    // 인증 상태 변경 콜백 — 로그인 완료 후 데이터 재로딩
-    async void OnAuthChanged()
+    // 인증 상태 변경 콜백 — 로딩 플래그 해제 (데이터 재로딩은 sync 완료 후)
+    void OnAuthChanged()
     {
         _authLoading = false;
-        // 로그인 상태이면 데이터를 다시 불러온다
-        if (Auth.IsLoggedIn)
-        {
-            await LoadDataAsync();
-        }
+        InvokeAsync(StateHasChanged);
+    }
+
+    // 동기화 완료 콜백 — sync 완료 후 데이터 재로딩
+    async void OnSyncCompleted()
+    {
+        await LoadDataAsync();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -391,6 +393,7 @@ else
     protected override async Task OnInitializedAsync()
     {
         Auth.OnAuthChanged += OnAuthChanged;
+        Storage.OnSyncCompleted += OnSyncCompleted;
         await LoadTodos();
         // Firebase 초기화 완료 대기 (최대 6초)
         if (!Auth.IsInitialized)
@@ -431,5 +434,6 @@ else
     public void Dispose()
     {
         Auth.OnAuthChanged -= OnAuthChanged;
+        Storage.OnSyncCompleted -= OnSyncCompleted;
     }
 }

@@ -1216,15 +1216,23 @@ else
         if (_project == null) return;
         foreach (var file in e.GetMultipleFiles(10))
         {
-            var buf = new byte[file.Size];
-            await file.OpenReadStream(10 * 1024 * 1024).ReadAsync(buf);
-            var base64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(buf)}";
-            _project.Photos.Add(new ProjectPhoto
+            try
             {
-                FileName   = file.Name,
-                Base64Data = base64,
-                TakenAt    = DateTime.Now
-            });
+                using var stream = file.OpenReadStream(20 * 1024 * 1024);
+                using var ms = new System.IO.MemoryStream();
+                await stream.CopyToAsync(ms);
+                var base64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+                _project.Photos.Add(new ProjectPhoto
+                {
+                    FileName   = file.Name,
+                    Base64Data = base64,
+                    TakenAt    = DateTime.Now
+                });
+            }
+            catch (Exception ex)
+            {
+                await JS.InvokeVoidAsync("showToast", $"사진 첨부 실패: {ex.Message}", "error");
+            }
         }
         await Save();
     }
