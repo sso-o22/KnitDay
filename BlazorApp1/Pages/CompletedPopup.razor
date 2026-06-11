@@ -328,6 +328,12 @@
                 else if (seg.Length == 2) dict[seg[0]] = (seg[1], "");
             }
         }
+        // 기존 데이터 마이그레이션: '가슴둘레' → '가슴 단면'
+        if (dict.ContainsKey("가슴둘레") && !dict.ContainsKey("가슴 단면"))
+        {
+            dict["가슴 단면"] = dict["가슴둘레"];
+            dict.Remove("가슴둘레");
+        }
         _measures = new();
         foreach (var label in _defaultLabels)
         {

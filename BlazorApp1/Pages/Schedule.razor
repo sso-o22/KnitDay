@@ -124,12 +124,12 @@ else
                         }
                     </div>
 
-                    <div style="display:flex; gap:8px; flex-wrap:wrap;" @onclick:stopPropagation="true">
+                    <div style="display:flex; gap:6px; flex-wrap:nowrap; align-items:center;" @onclick:stopPropagation="true">
                         <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
                         @if (proj.Status == ProjectStatus.진행중)
                         {
                             <button class="btn btn-sm btn-pause"
-                                    @onclick="() => ToggleSuspend(proj)"><img src="icons/pause.svg" class="icon-line" style="width:14px;height:14px;" /> 일시중단</button>
+                                    @onclick="() => ToggleSuspend(proj)"><img src="icons/pause.svg" class="icon-line" style="width:14px;height:14px;" /> 중단</button>
                         }
                         else
                         {
@@ -411,8 +411,8 @@ else
                 </div>
 
                 @* ── 원작 정보 ── *@
-                <div style="padding:10px 12px; background:var(--ivory-dark); border-radius:var(--radius-sm); margin-top:12px;">
-                    <div style="font-size:0.78rem; font-weight:600; color:var(--text-mid); margin-bottom:8px;">원작 정보</div>
+                <div class="form-label" style="margin-top:16px; margin-bottom:8px;">원작 정보</div>
+                <div style="padding:10px 12px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label" style="font-size:0.78rem;">권장 바늘</label>
