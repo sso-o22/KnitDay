@@ -29,6 +29,14 @@
                     <div style="font-size:0.75rem;color:var(--text-light);margin-top:2px;display:flex;align-items:center;gap:4px;"><img src="icons/cloud-check.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />Firebase 동기화 중</div>
                 </div>
             </div>
+            <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="ManualPush" disabled="@_manualSyncing"><img src="icons/cloud-arrow-up.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />@(_manualSyncing ? "업로드 중..." : "DB에 업로드")</button>
+                <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="ManualPull" disabled="@_manualSyncing"><img src="icons/cloud-arrow-down.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />@(_manualSyncing ? "다운로드 중..." : "DB에서 가져오기")</button>
+            </div>
+            @if (!string.IsNullOrEmpty(_manualSyncMsg))
+            {
+                <div style="font-size:0.78rem; color:@(_manualSyncError ? "#c03030" : "var(--theme-active)"); margin-bottom:8px;">@_manualSyncMsg</div>
+            }
             <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="SignOut"><img src="icons/sign-out.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />로그아웃</button>
         }
         else
@@ -374,6 +382,46 @@
             if (el.TryGetProperty(key, out var v))
                 return v.ValueKind == System.Text.Json.JsonValueKind.String ? v.GetString() : v.ToString();
         return null;
+    }
+
+    bool _manualSyncing = false;
+    string _manualSyncMsg = "";
+    bool _manualSyncError = false;
+
+    async Task ManualPush()
+    {
+        if (!Auth.IsLoggedIn || _manualSyncing) return;
+        _manualSyncing = true; _manualSyncMsg = ""; StateHasChanged();
+        try
+        {
+            await Storage.PushLocalToFirebaseAsync();
+            _manualSyncMsg = "✅ DB 업로드 완료";
+            _manualSyncError = false;
+        }
+        catch (Exception ex)
+        {
+            _manualSyncMsg = "❌ 업로드 실패: " + ex.Message;
+            _manualSyncError = true;
+        }
+        _manualSyncing = false; StateHasChanged();
+    }
+
+    async Task ManualPull()
+    {
+        if (!Auth.IsLoggedIn || _manualSyncing) return;
+        _manualSyncing = true; _manualSyncMsg = ""; StateHasChanged();
+        try
+        {
+            await Storage.SyncOnLoginAsync();
+            _manualSyncMsg = "✅ DB 동기화 완료";
+            _manualSyncError = false;
+        }
+        catch (Exception ex)
+        {
+            _manualSyncMsg = "❌ 동기화 실패: " + ex.Message;
+            _manualSyncError = true;
+        }
+        _manualSyncing = false; StateHasChanged();
     }
 
     async Task SignIn() => await Auth.SignInWithGoogleAsync();

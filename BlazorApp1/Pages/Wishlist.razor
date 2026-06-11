@@ -41,6 +41,15 @@ else
                 {
                     <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:6px; display:flex; align-items:center; gap:4px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@proj.PatternName</div>
                 }
+                @if (!string.IsNullOrEmpty(proj.OriginalNeedle) || !string.IsNullOrEmpty(proj.OriginalGauge) || !string.IsNullOrEmpty(proj.OriginalYarn) || !string.IsNullOrEmpty(proj.OriginalOther))
+                {
+                    <div style="font-size:0.78rem; color:var(--text-mid); margin-bottom:8px; display:flex; flex-direction:column; gap:2px;">
+                        @if (!string.IsNullOrEmpty(proj.OriginalNeedle)) { <span>바늘: @proj.OriginalNeedle</span> }
+                        @if (!string.IsNullOrEmpty(proj.OriginalGauge))  { <span>게이지: @proj.OriginalGauge</span> }
+                        @if (!string.IsNullOrEmpty(proj.OriginalYarn))   { <span>실: @proj.OriginalYarn</span> }
+                        @if (!string.IsNullOrEmpty(proj.OriginalOther))  { <span>부자재: @proj.OriginalOther</span> }
+                    </div>
+                }
                 @if (!string.IsNullOrEmpty(proj.WishMemo))
                 {
                     <p style="font-size:0.84rem; color:var(--text-mid); margin-bottom:12px; white-space:pre-wrap;">@proj.WishMemo</p>
@@ -86,9 +95,30 @@ else
                 </div>
             </div>
 
+            <div style="padding:10px 12px; background:var(--ivory-dark); border-radius:var(--radius-sm); margin-bottom:14px;">
+                <div style="font-size:0.78rem; font-weight:600; color:var(--text-mid); margin-bottom:8px;">원작 정보</div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" style="font-size:0.78rem;">권장 바늘</label>
+                        <input class="form-control" @bind="_editingProject.OriginalNeedle" placeholder="예: 4mm 대바늘" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="font-size:0.78rem;">권장 게이지</label>
+                        <input class="form-control" @bind="_editingProject.OriginalGauge" placeholder="예: 22코 × 30단 / 10cm" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.78rem;">권장 실</label>
+                    <input class="form-control" @bind="_editingProject.OriginalYarn" placeholder="예: 앵콜스 DK 400m, 5합 이상" />
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.78rem;">기타 부자재</label>
+                    <input class="form-control" @bind="_editingProject.OriginalOther" placeholder="예: 단추 7개, 20cm 지퍼" />
+                </div>
+            </div>
             <div class="form-group">
                 <label class="form-label">메모</label>
-                <textarea class="form-control" rows="4" @bind="_editingProject.WishMemo"
+                <textarea class="form-control" rows="3" @bind="_editingProject.WishMemo"
                           placeholder="뜨고 싶은 이유, 사용할 실 아이디어 등 자유롭게!"></textarea>
             </div>
 

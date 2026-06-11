@@ -146,6 +146,11 @@ namespace KnitLog.Models
         public List<KnitSession> Sessions { get; set; } = new();
         public string Memo { get; set; } = "";
         public string WishMemo { get; set; } = "";
+        // 원작 정보 (위시리스트용)
+        public string OriginalNeedle  { get; set; } = "";   // 권장 바늘 (예: 4mm 대바늘)
+        public string OriginalGauge   { get; set; } = "";   // 권장 게이지 (예: 22코 × 30단)
+        public string OriginalYarn    { get; set; } = "";   // 권장 실 정보 (예: 앵콜스 DK 400m)
+        public string OriginalOther   { get; set; } = "";   // 기타 부자재 (단추, 지퍼 등)
         public string ColorCode { get; set; } = "";   // 캘린더 표시 색상 (hex, 예: #f2b8c6)
 
         // 완성 치수 (세탁 전/후)

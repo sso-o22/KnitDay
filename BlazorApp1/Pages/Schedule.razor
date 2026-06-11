@@ -128,12 +128,12 @@ else
                         <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
                         @if (proj.Status == ProjectStatus.진행중)
                         {
-                            <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a;"
+                            <button class="btn btn-sm btn-pause"
                                     @onclick="() => ToggleSuspend(proj)"><img src="icons/pause.svg" class="icon-line" style="width:14px;height:14px;" /> 일시중단</button>
                         }
                         else
                         {
-                            <button class="btn btn-sm btn-ghost"
+                            <button class="btn btn-sm btn-pause"
                                     @onclick="() => ToggleSuspend(proj)"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /> 재개</button>
                         }
                         <button class="btn btn-sm btn-sage" @onclick="() => CompleteProject(proj.Id)"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /> 완료</button>
@@ -180,12 +180,12 @@ else
                         <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /></button>
                         @if (proj.Status == ProjectStatus.진행중)
                         {
-                            <button class="btn btn-sm" style="background:#f5e6c0; color:#8a6010; border:1px solid #e8c97a; padding:4px 8px;"
+                            <button class="btn btn-sm btn-pause"
                                     @onclick="() => ToggleSuspend(proj)"><img src="icons/pause.svg" class="icon-line" style="width:14px;height:14px;" /></button>
                         }
                         else
                         {
-                            <button class="btn btn-sm btn-ghost" @onclick="() => ToggleSuspend(proj)"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /></button>
+                            <button class="btn btn-sm btn-pause" @onclick="() => ToggleSuspend(proj)"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /></button>
                         }
                         <button class="btn btn-sage btn-sm" @onclick="() => CompleteProject(proj.Id)"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /></button>
                         <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;" /></button>
@@ -410,8 +410,31 @@ else
                     </div>
                 </div>
 
+                @* ── 원작 정보 ── *@
+                <div style="padding:10px 12px; background:var(--ivory-dark); border-radius:var(--radius-sm); margin-top:12px;">
+                    <div style="font-size:0.78rem; font-weight:600; color:var(--text-mid); margin-bottom:8px;">원작 정보</div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" style="font-size:0.78rem;">권장 바늘</label>
+                            <input class="form-control" @bind="_editingProject.OriginalNeedle" placeholder="예: 4mm 대바늘" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" style="font-size:0.78rem;">권장 게이지</label>
+                            <input class="form-control" @bind="_editingProject.OriginalGauge" placeholder="예: 22코 × 30단 / 10cm" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="font-size:0.78rem;">권장 실</label>
+                        <input class="form-control" @bind="_editingProject.OriginalYarn" placeholder="예: 앵콜스 DK 400m, 5합 이상" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">기타 부자재</label>
+                        <input class="form-control" @bind="_editingProject.OriginalOther" placeholder="예: 단추 7개, 20cm 지퍼" />
+                    </div>
+                </div>
+
                 @* ── 메모 ── *@
-                <div class="form-group" style="margin-top:28px;">
+                <div class="form-group" style="margin-top:12px;">
                     <label class="form-label">메모</label>
                     <textarea class="form-control" rows="2" @bind="_editingProject.Memo" placeholder="기타 메모"></textarea>
                 </div>
