@@ -35,7 +35,17 @@
             </div>
             @if (!string.IsNullOrEmpty(_manualSyncMsg))
             {
-                <div style="font-size:0.78rem; color:@(_manualSyncError ? "#c03030" : "var(--theme-active)"); margin-bottom:8px;">@_manualSyncMsg</div>
+                <div style="font-size:0.78rem; color:@(_manualSyncError ? "#c03030" : "var(--theme-active)"); margin-bottom:8px; display:flex; align-items:center; gap:5px;">
+                    @if (_manualSyncError)
+                    {
+                        <img src="icons/warning-circle.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />
+                    }
+                    else
+                    {
+                        <img src="icons/check-circle.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />
+                    }
+                    @_manualSyncMsg
+                </div>
             }
             <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="SignOut"><img src="icons/sign-out.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />로그아웃</button>
         }
@@ -115,9 +125,17 @@
         <InputFile id="import-file-input" OnChange="ImportData" accept=".json" style="display:none;" />
         @if (_importMsg != "")
         {
-            <div style="margin-top:10px; padding:10px 14px; border-radius:8px; font-size:0.88rem;"
+            <div style="margin-top:10px; padding:10px 14px; border-radius:8px; font-size:0.88rem; display:flex; align-items:flex-start; gap:8px;"
                  class="@(_importError ? "import-msg-error" : "import-msg-ok")">
-                @_importMsg
+                @if (_importError)
+                {
+                    <img src="icons/warning-circle.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;margin-top:1px;" />
+                }
+                else
+                {
+                    <img src="icons/check-circle.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;margin-top:1px;" />
+                }
+                <span>@_importMsg</span>
             </div>
         }
     </div>
@@ -284,7 +302,7 @@
             var json = System.Text.Encoding.UTF8.GetString(ms.ToArray()).Trim();
             if (string.IsNullOrEmpty(json))
             {
-                _importMsg = "❌ 파일이 비어있어요.";
+                _importMsg = "파일이 비어있어요.";
                 _importError = true;
                 StateHasChanged();
                 return;
@@ -296,7 +314,7 @@
         }
         catch (Exception ex)
         {
-            _importMsg = "❌ 오류: " + ex.Message;
+            _importMsg = "오류: " + ex.Message;
             _importError = true;
             StateHasChanged();
         }
@@ -367,12 +385,12 @@
                 catch { }
             }
 
-            _importMsg = $"✅ {(merge ? "합치기" : "덮어쓰기")} 완료! ({count}가지 데이터) 앱을 다시 시작하면 반영돼요.";
+            _importMsg = $"{(merge ? "합치기" : "덮어쓰기")} 완료! ({count}가지 데이터) 앱을 다시 시작하면 반영돼요.";
             try { await Storage.PushLocalToFirebaseAsync(); } catch { }
         }
         catch (Exception ex)
         {
-            _importMsg = "❌ 오류: " + ex.Message;
+            _importMsg = "오류: " + ex.Message;
             _importError = true;
         }
         _importDoc = null;
@@ -398,12 +416,12 @@
         try
         {
             await Storage.PushLocalToFirebaseAsync();
-            _manualSyncMsg = "✅ DB 업로드 완료";
+            _manualSyncMsg = "DB 업로드 완료";
             _manualSyncError = false;
         }
         catch (Exception ex)
         {
-            _manualSyncMsg = "❌ 업로드 실패: " + ex.Message;
+            _manualSyncMsg = "업로드 실패: " + ex.Message;
             _manualSyncError = true;
         }
         _manualSyncing = false; StateHasChanged();
@@ -416,12 +434,12 @@
         try
         {
             await Storage.SyncOnLoginAsync();
-            _manualSyncMsg = "✅ DB 동기화 완료";
+            _manualSyncMsg = "DB 동기화 완료";
             _manualSyncError = false;
         }
         catch (Exception ex)
         {
-            _manualSyncMsg = "❌ 동기화 실패: " + ex.Message;
+            _manualSyncMsg = "동기화 실패: " + ex.Message;
             _manualSyncError = true;
         }
         _manualSyncing = false; StateHasChanged();

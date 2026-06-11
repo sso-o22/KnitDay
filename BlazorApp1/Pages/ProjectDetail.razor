@@ -559,7 +559,7 @@ else
     <div class="card" style="grid-column: span 2;">
         <div class="card-title" style="display:flex; align-items:center; gap:6px;"><img src="icons/image.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 과정 사진</div>
 
-        @if (_project.Photos.Count > 0)
+        @if (_project.Photos.Count > 0 && _project.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
         {
             <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
                 @foreach (var photo in _project.Photos)
@@ -795,9 +795,20 @@ else
                 <label class="form-label">사용 실</label>
                 <select class="form-control" style="margin-bottom:8px;" @onchange="OnEditAddYarn">
                     <option value="">+ 실 추가</option>
-                    @foreach (var y in _yarns)
+                    @{ var activeYarns = _yarns.Where(y => y.Quantity > 0).ToList(); }
+                    @{ var emptyYarns  = _yarns.Where(y => y.Quantity <= 0).ToList(); }
+                    @foreach (var y in activeYarns)
                     {
                         <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
+                    }
+                    @if (emptyYarns.Any())
+                    {
+                        <optgroup label="── 소진 ──">
+                            @foreach (var y in emptyYarns)
+                            {
+                                <option value="@y.Id">@y.Brand @y.Name (@y.Color) [소진]</option>
+                            }
+                        </optgroup>
                     }
                 </select>
                 @foreach (var usage in _project.YarnUsages)
@@ -834,7 +845,7 @@ else
                 {
                     <select class="form-control" @onchange="OnSwatchSelectChange">
                         <option value="">+ 스와치 연결</option>
-                        @foreach (var s in _allSwatches)
+                        @foreach (var s in _allSwatches.Where(s => s.ProjectId == null || s.ProjectId == Guid.Empty || s.ProjectId == _project!.Id))
                         {
                             var sy = _yarns.Find(y => y.Id == s.YarnId);
                             var isLinked = s.ProjectId == _project!.Id;

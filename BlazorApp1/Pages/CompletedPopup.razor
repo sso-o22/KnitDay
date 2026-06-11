@@ -36,7 +36,7 @@
                 <!-- 보기 모드 -->
 
                 <!-- 사진 갤러리 -->
-                @if (Project.Photos.Count > 0)
+                @if (Project.Photos.Count > 0 && Project.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
                 {
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
                         @foreach (var photo in Project.Photos)
@@ -261,7 +261,7 @@
 
                 <!-- 사진 추가 -->
                 <div class="form-label" style="margin-bottom:6px;">사진</div>
-                @if (Project.Photos.Count > 0)
+                @if (Project.Photos.Count > 0 && Project.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
                 {
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
                         @foreach (var photo in Project.Photos)
@@ -304,7 +304,7 @@
                     {
                         @if (OnDelete.HasDelegate)
                         {
-                            <button class="btn btn-danger btn-sm" @onclick="OnDelete" disabled="@_saving">삭제</button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => _showDeleteConfirm = true" disabled="@_saving">삭제</button>
                         }
                         <button class="btn btn-secondary btn-sm" @onclick="OpenEditing">수정</button>
                     }
@@ -320,9 +320,27 @@
     </div>
 }
 
+@if (_showDeleteConfirm)
+{
+    <div style="position:fixed;inset:0;z-index:1200;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;"
+         @onclick="() => _showDeleteConfirm = false">
+        <div style="background:var(--white);border-radius:16px;max-width:320px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);"
+             @onclick:stopPropagation="true">
+            <div style="margin-bottom:12px;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;" /></div>
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">정말 삭제할까요?</div>
+            <div style="font-size:0.88rem;color:var(--text-mid);margin-bottom:20px;">삭제하면 복구할 수 없어요.</div>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button class="btn btn-ghost" @onclick="() => _showDeleteConfirm = false">취소</button>
+                <button class="btn btn-danger" @onclick="ConfirmDelete">삭제</button>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     bool _saving = false;
     bool _editing = false;
+    bool _showDeleteConfirm = false;
 
     [Parameter] public bool Show { get; set; }
     [Parameter] public KnitProject? Project { get; set; }
@@ -392,6 +410,12 @@
         }
         foreach (var kv in dict)
             _measures.Add(new MeasureItem { Label = kv.Key, Before = kv.Value.Item1, After = kv.Value.Item2, IsCustom = true });
+    }
+
+    async Task ConfirmDelete()
+    {
+        _showDeleteConfirm = false;
+        await OnDelete.InvokeAsync();
     }
 
     async Task SaveAll()

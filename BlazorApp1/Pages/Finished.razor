@@ -31,7 +31,7 @@ else
         @foreach (var proj in _projects)
         {
             <div class="card" style="cursor:pointer;" @onclick="() => OpenDetail(proj)">
-                @if (proj.Photos.Count > 0)
+                @if (proj.Photos.Count > 0 && proj.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
                 {
                     <img src="@proj.Photos[0].Base64Data"
                          style="width:100%; height:180px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px;"

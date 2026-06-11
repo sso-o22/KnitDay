@@ -224,7 +224,7 @@ else
             </div>
 
             <!-- 사진 갤러리 -->
-            @if (_finishedPopupProject.Photos.Count > 0)
+            @if (_finishedPopupProject.Photos.Count > 0 && _finishedPopupProject.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
             {
                 <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
                     @foreach (var photo in _finishedPopupProject.Photos)
