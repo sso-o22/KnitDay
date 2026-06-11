@@ -260,11 +260,11 @@ body {
 
 /* 일시중단/재개 버튼 — 라이트: 연한 배경, 다크: btn-secondary 패턴 */
 .btn-pause {
-    background: #f5e6c0;
-    color: #8a6010;
-    border: 1px solid #e8c97a;
+    background: var(--ivory);
+    color: var(--text-mid);
+    border: 1px solid var(--border);
 }
-.btn-pause:hover { background: #eed8a8; }
+.btn-pause:hover { background: var(--ivory-mid); }
 
 .btn-mint {
     background: var(--theme-light);
@@ -1149,11 +1149,11 @@ body {
 }
 
 [data-dark="true"] .btn-danger {
-    background: #2a1212;
+    background: var(--ivory-mid);
     color: #e87878;
-    border-color: #5a2020;
+    border-color: #7a3030;
 }
-[data-dark="true"] .btn-danger:hover { background: #3a1818; }
+[data-dark="true"] .btn-danger:hover { background: var(--ivory-dark); }
 [data-dark="true"] .btn-danger .icon-line { opacity: 0.9; }
 
 /* ── 로딩 ────────────────────────────────────────────── */
