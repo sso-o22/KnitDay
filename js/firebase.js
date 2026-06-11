@@ -17,9 +17,9 @@ const firebaseConfig = {
     appId:             "1:448627074243:web:32924c7262d7efc6e5ae76"
 };
 
-const app  = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db   = getFirestore(app);
+const app     = initializeApp(firebaseConfig);
+const auth    = getAuth(app);
+const db      = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
 // ── 영구 세션 유지 (IndexedDB) ────────────────────────────────────

@@ -301,3 +301,43 @@ window.compressImage = function(base64DataUrl, maxWidthOrHeight = 800, quality =
         img.src = base64DataUrl;
     });
 };
+
+// ── Cloudinary 업로드 ─────────────────────────────────────────────
+const _CLOUD_NAME   = 'drgo1bi5z';
+const _UPLOAD_PRESET = 'knitday_upload';
+
+// base64DataUrl 또는 Blob → Cloudinary 업로드 → URL 반환
+// resourceType: 'image' | 'raw' (PDF는 'raw')
+window.uploadToCloudinary = async function(base64DataUrl, publicId, resourceType = 'image') {
+    try {
+        const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/${resourceType}/upload`;
+
+        // base64 → Blob 변환
+        let blob;
+        if (base64DataUrl.startsWith('data:')) {
+            const res = await fetch(base64DataUrl);
+            blob = await res.blob();
+        } else {
+            // 순수 base64 (PDF bytes)
+            const binary = atob(base64DataUrl);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            blob = new Blob([bytes], { type: resourceType === 'raw' ? 'application/pdf' : 'image/jpeg' });
+        }
+
+        const fd = new FormData();
+        fd.append('file', blob);
+        fd.append('upload_preset', _UPLOAD_PRESET);
+        fd.append('public_id', publicId);
+
+        const resp = await fetch(url, { method: 'POST', body: fd });
+        if (!resp.ok) { console.error('Cloudinary upload failed', resp.status); return null; }
+        const data = await resp.json();
+        if (!data.secure_url) return null;
+        // bytes 및 resource_type 반환 (용량 추적용)
+        return JSON.stringify({ url: data.secure_url, bytes: data.bytes ?? 0, resourceType });
+    } catch(e) {
+        console.error('uploadToCloudinary:', e);
+        return null;
+    }
+};

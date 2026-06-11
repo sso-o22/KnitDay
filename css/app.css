@@ -288,6 +288,10 @@ body {
 
 .btn-sm { padding: 6px 12px; font-size: 0.8rem; white-space: nowrap; }
 
+/* 사진 슬롯 */
+.photo-slot-thumb { width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm); border:2px solid var(--border); }
+.photo-slot-active { border-color: var(--theme-active); }
+
 /* ── 카드 ────────────────────────────────────────────── */
 .card {
     background: var(--white);
