@@ -26,6 +26,8 @@ namespace KnitLog.Services
 
         // 동기화 완료 이벤트 (Home 등 화면에서 재로딩 트리거)
         public event Action? OnSyncCompleted;
+        public event Action? OnSyncStarted;
+        public bool IsSyncing { get; private set; }
 
         public StorageService(IJSRuntime js) { _js = js; }
 
@@ -94,15 +96,97 @@ namespace KnitLog.Services
         // 로그인 시 로컬 + Cloud 데이터를 Id 기준으로 merge
         // - 같은 Id: UpdatedAt이 더 최신인 것 우선
         // - 한쪽에만 있으면: 그냥 포함
+        // ── Cloudinary 업로드 ────────────────────────────────
+        public async Task<string?> UploadPhotoAsync(string projectId, string photoId, string base64DataUrl)
+        {
+            try
+            {
+                var publicId = $"{Uid ?? "anon"}/projects/{projectId}/{photoId}";
+                var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64DataUrl, publicId, "image");
+                return await ParseCloudinaryResult(json, "photo");
+            }
+            catch { return null; }
+        }
+
+        public async Task<string?> UploadPdfAsync(string projectId, string base64Data)
+        {
+            try
+            {
+                var publicId = $"{Uid ?? "anon"}/pdfs/{projectId}";
+                var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64Data, publicId, "raw");
+                return await ParseCloudinaryResult(json, "pdf");
+            }
+            catch { return null; }
+        }
+
+        private async Task<string?> ParseCloudinaryResult(string? json, string type)
+        {
+            if (string.IsNullOrEmpty(json)) return null;
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                var url   = doc.RootElement.GetProperty("url").GetString();
+                var bytes = doc.RootElement.TryGetProperty("bytes", out var b) ? b.GetInt64() : 0;
+                if (!string.IsNullOrEmpty(url) && bytes > 0 && !string.IsNullOrEmpty(Uid))
+                    await AddCloudUsageAsync(type, bytes);
+                return url;
+            }
+            catch { return null; }
+        }
+
+        // ── 용량 사용량 Firestore 누적 ────────────────────────
+        private async Task AddCloudUsageAsync(string type, long bytes)
+        {
+            if (string.IsNullOrEmpty(Uid)) return;
+            try
+            {
+                var path = $"users/{Uid}/meta/usage";
+                var existJson = await _js.InvokeAsync<string?>("firebaseStore.getDocument", path);
+                long photoBytes = 0, pdfBytes = 0;
+                if (!string.IsNullOrEmpty(existJson))
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(existJson);
+                    if (doc.RootElement.TryGetProperty("photoBytes", out var pb)) photoBytes = pb.GetInt64();
+                    if (doc.RootElement.TryGetProperty("pdfBytes",   out var db)) pdfBytes   = db.GetInt64();
+                }
+                if (type == "photo") photoBytes += bytes;
+                else                 pdfBytes   += bytes;
+                var payload = System.Text.Json.JsonSerializer.Serialize(new { photoBytes, pdfBytes, updatedAt = DateTime.UtcNow });
+                await _js.InvokeAsync<bool>("firebaseStore.setDocument", path, payload);
+            }
+            catch { }
+        }
+
+        public async Task<(long photoBytes, long pdfBytes)> GetCloudUsageAsync()
+        {
+            if (string.IsNullOrEmpty(Uid)) return (0, 0);
+            try
+            {
+                var json = await _js.InvokeAsync<string?>("firebaseStore.getDocument", $"users/{Uid}/meta/usage");
+                if (string.IsNullOrEmpty(json)) return (0, 0);
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                long p = doc.RootElement.TryGetProperty("photoBytes", out var pb) ? pb.GetInt64() : 0;
+                long d = doc.RootElement.TryGetProperty("pdfBytes",   out var db) ? db.GetInt64() : 0;
+                return (p, d);
+            }
+            catch { return (0, 0); }
+        }
+
+        // Cloudinary 무료: 클라이언트 삭제 불가 → 무시
+        public Task DeletePhotoAsync(string projectId, string photoId) => Task.CompletedTask;
+
         public async Task SyncOnLoginAsync()
         {
             if (!IsLoggedIn) return;
+            IsSyncing = true;
+            OnSyncStarted?.Invoke();
 
             await MergeCollectionAsync<KnitProject>(KEY_PROJECTS, "projects");
             await MergeCollectionAsync<Yarn>(KEY_YARNS, "yarns");
             await MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools");
             await MergeCollectionAsync<Swatch>(KEY_SWATCHES, "swatches");
             await SyncTodosAsync();
+            IsSyncing = false;
             OnSyncCompleted?.Invoke();
         }
 

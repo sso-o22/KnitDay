@@ -2,6 +2,7 @@
 @using KnitLog.Models
 @using KnitLog.Services
 @inject StorageService Storage
+@inject HttpClient Http
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 @implements IAsyncDisposable
@@ -1015,7 +1016,35 @@
         try
         {
             var savedFileName = await JS.InvokeAsync<string?>("patternViewer.loadPdfFromProject", ProjectId.ToString());
-            if (string.IsNullOrEmpty(savedFileName)) return;
+            if (string.IsNullOrEmpty(savedFileName))
+            {
+                // IndexedDB에 없으면 Cloudinary URL에서 다운로드해서 복원
+                if (!string.IsNullOrEmpty(_project.PatternCloudUrl))
+                {
+                    try
+                    {
+                        var pdfBytes = await Http.GetByteArrayAsync(_project.PatternCloudUrl);
+                        using var streamRef = new DotNetStreamReference(new System.IO.MemoryStream(pdfBytes), leaveOpen: false);
+                        var pages2 = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", streamRef);
+                        if (pages2 > 0)
+                        {
+                            // IndexedDB에도 저장
+                            await JS.InvokeAsync<bool>("patternViewer.savePdfToProject", ProjectId.ToString(), _project.PatternFileName);
+                            _totalPages = pages2;
+                            _pdfLoaded = true;
+                            _currentPage = _project.ViewerLastPage > 0 ? _project.ViewerLastPage : 1;
+                            StateHasChanged();
+                            await Task.Delay(100);
+                            await JS.InvokeVoidAsync("patternViewer.renderPdf");
+                            await Task.Delay(500);
+                            if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
+                                await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
+                        }
+                    }
+                    catch { }
+                }
+                return;
+            }
 
             var pages = await JS.InvokeAsync<int>("patternViewer.renderSavedPdf", ProjectId.ToString());
             if (pages <= 0) return;
@@ -1208,6 +1237,17 @@
                 {
                     _project.HasSavedPattern = true;
                     _project.PatternFileName = e.File.Name;
+
+                    // Cloudinary에도 업로드 (기기 간 동기화)
+                    try
+                    {
+                        var base64Pdf = Convert.ToBase64String(bytes);
+                        var cloudUrl = await Storage.UploadPdfAsync(ProjectId.ToString(), base64Pdf);
+                        if (!string.IsNullOrEmpty(cloudUrl))
+                            _project.PatternCloudUrl = cloudUrl;
+                    }
+                    catch { }
+
                     await SaveProject();
                 }
             }

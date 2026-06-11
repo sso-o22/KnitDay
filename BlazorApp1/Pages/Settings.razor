@@ -111,6 +111,58 @@
         <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:8px;">
             프로젝트, 실 창고, 도구, 스와치 데이터가 저장돼요.
         </p>
+
+        @* ── 클라우드 저장공간 게이지 ── *@
+        @if (Auth.IsLoggedIn)
+        {
+            @{
+                const long limitBytes = 25L * 1024 * 1024 * 1024; // 25GB
+                long totalBytes = _photoBytes + _pdfBytes;
+                double totalPct  = Math.Min(100.0, totalBytes  / (double)limitBytes * 100);
+                double photoPct  = Math.Min(100.0, _photoBytes / (double)limitBytes * 100);
+                double pdfPct    = Math.Min(100.0, _pdfBytes   / (double)limitBytes * 100);
+                string FmtSize(long b) => b >= 1024*1024*1024 ? $"{b/1024.0/1024/1024:F1} GB"
+                                        : b >= 1024*1024      ? $"{b/1024.0/1024:F1} MB"
+                                        : b >= 1024           ? $"{b/1024.0:F0} KB"
+                                        : $"{b} B";
+            }
+            <div style="margin-bottom:16px; padding:14px 16px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:0.82rem; font-weight:600; color:var(--text-dark);">클라우드 저장공간</span>
+                    @if (!_usageLoaded)
+                    {
+                        <span style="font-size:0.75rem; color:var(--text-light);">불러오는 중...</span>
+                    }
+                    else
+                    {
+                        <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(totalBytes) / 25 GB</span>
+                    }
+                </div>
+
+                @* 전체 게이지바 *@
+                <div style="height:10px; background:var(--border); border-radius:99px; overflow:hidden; margin-bottom:10px; position:relative;">
+                    @* PDF 부분 (뒤) *@
+                    <div style="position:absolute; left:0; top:0; height:100%; width:@((photoPct+pdfPct).ToString("F2"))%; background:var(--text-light); border-radius:99px; opacity:0.5;"></div>
+                    @* 사진 부분 (앞) *@
+                    <div style="position:absolute; left:0; top:0; height:100%; width:@(photoPct.ToString("F2"))%; background:var(--theme-active); border-radius:99px; transition:width 0.4s;"></div>
+                </div>
+
+                @* 범례 *@
+                <div style="display:flex; gap:14px; flex-wrap:wrap;">
+                    <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-mid);">
+                        <span style="width:10px; height:10px; border-radius:3px; background:var(--theme-active); flex-shrink:0;"></span>
+                        사진 @FmtSize(_photoBytes)
+                    </div>
+                    <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-mid);">
+                        <span style="width:10px; height:10px; border-radius:3px; background:var(--text-light); opacity:0.5; flex-shrink:0;"></span>
+                        도안 PDF @FmtSize(_pdfBytes)
+                    </div>
+                    <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-light); margin-left:auto;">
+                        잔여 @FmtSize(limitBytes - totalBytes)
+                    </div>
+                </div>
+            </div>
+        }
         <div style="font-size:0.82rem; padding:10px 12px; border-radius:8px; margin-bottom:16px;
                     background:var(--theme-pale); color:var(--text-mid); line-height:1.6;">
             <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/warning.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /><b>도안 파일과 필기 내용은 로그인만으로 다른 기기에 연동되지 않아요.</b></span><br>
@@ -232,6 +284,9 @@
 
     string _currentTheme = "mono";
     bool _isDark = false;
+    long _photoBytes = 0;
+    long _pdfBytes = 0;
+    bool _usageLoaded = false;
     bool _debugMode = false;
     string _importMsg = "";
     bool _importError = false;
@@ -249,6 +304,14 @@
             // 페이지 진입 시 테마/다크 재적용 (PWA 캐시 로드 후 불일치 방지)
             await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme','{_currentTheme}')");
             await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark','{_isDark.ToString().ToLower()}')");
+            // 클라우드 용량 로드
+            if (Auth.IsLoggedIn)
+            {
+                var (photo, pdf) = await Storage.GetCloudUsageAsync();
+                _photoBytes = photo; _pdfBytes = pdf;
+            }
+            _usageLoaded = true;
+            StateHasChanged();
             var debug = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_debug");
             _debugMode = debug == "1";
             try

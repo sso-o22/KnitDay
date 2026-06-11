@@ -564,13 +564,13 @@ else
             @for (int i = 0; i < 5; i++)
             {
                 var idx = i;
-                var validPhotos = _project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)).ToList();
-                @if (idx < validPhotos.Count)
+                @if (idx < ValidPhotos.Count)
                 {
-                    var photo = validPhotos[idx];
+                    var photo = ValidPhotos[idx];
                     <div style="position:relative; aspect-ratio:1; cursor:pointer;" @onclick="() => OpenPhoto(photo)">
-                        <img src="@photo.Base64Data"
-                             style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm); border:2px solid @(idx == 0 ? "var(--theme-active)" : "var(--border)");"
+                        <img src="@(!string.IsNullOrEmpty(photo.StorageUrl) ? photo.StorageUrl : photo.Base64Data)"
+                             style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm);"
+                             class="@(idx == 0 ? "photo-slot-thumb photo-slot-active" : "photo-slot-thumb")"
                              alt="과정 사진" />
                         @* 대표사진 배지 *@
                         @if (idx == 0)
@@ -725,7 +725,7 @@ else
                            cursor:pointer; display:flex; align-items:center; justify-content:center;">
                 ×
             </button>
-            <img src="@_selectedPhoto.Base64Data"
+            <img src="@(!string.IsNullOrEmpty(_selectedPhoto.StorageUrl) ? _selectedPhoto.StorageUrl : _selectedPhoto.Base64Data)"
                  style="max-width:90vw; max-height:80vh; object-fit:contain; border-radius:var(--radius); display:block;" />
             @if (!string.IsNullOrEmpty(_selectedPhoto.Caption))
             {
@@ -1100,6 +1100,9 @@ else
     List<Swatch> _allSwatches = new();
     List<Yarn> _yarns = new();
     IEnumerable<Yarn> YarnActive => _yarns.Where(y => y.Quantity > 0);
+    List<ProjectPhoto> ValidPhotos => _project?.Photos
+        .Where(p => !string.IsNullOrEmpty(p.Base64Data) || !string.IsNullOrEmpty(p.StorageUrl))
+        .ToList() ?? new();
     IEnumerable<Yarn> YarnEmpty  => _yarns.Where(y => y.Quantity <= 0);
     List<KnitTool> _allTools = new();
 
@@ -1291,23 +1294,36 @@ else
                 using var stream = file.OpenReadStream(20 * 1024 * 1024);
                 using var ms = new System.IO.MemoryStream();
                 await stream.CopyToAsync(ms);
-                // HEIF/HEIC 포함 모든 이미지 → JPEG 압축 (최대 1200px, 용량 절감)
+                // HEIF/HEIC → JPEG 압축
                 var rawBase64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
-                string base64;
-                try
+                string compressed;
+                try { compressed = await JS.InvokeAsync<string>("compressImage", rawBase64, 800, 0.75); }
+                catch { compressed = rawBase64; }
+
+                var photo = new ProjectPhoto { FileName = file.Name, TakenAt = DateTime.Now };
+
+                // 로그인 상태면 Firebase Storage에 업로드
+                if (Storage.IsLoggedIn)
                 {
-                    base64 = await JS.InvokeAsync<string>("compressImage", rawBase64, 800, 0.75);
+                    var url = await Storage.UploadPhotoAsync(_project.Id.ToString(), photo.Id.ToString(), compressed);
+                    if (!string.IsNullOrEmpty(url))
+                    {
+                        photo.StorageUrl = url;
+                        // StorageUrl이 있으면 Base64는 저장 안 함 (localStorage 절약)
+                    }
+                    else
+                    {
+                        // 업로드 실패 시 로컬 fallback
+                        photo.Base64Data = compressed;
+                    }
                 }
-                catch
+                else
                 {
-                    base64 = rawBase64; // 압축 실패 시 원본 사용
+                    // 비로그인: 로컬에만 저장
+                    photo.Base64Data = compressed;
                 }
-                _project.Photos.Add(new ProjectPhoto
-                {
-                    FileName   = file.Name,
-                    Base64Data = base64,
-                    TakenAt    = DateTime.Now
-                });
+
+                _project.Photos.Add(photo);
             }
             catch (Exception ex)
             {
@@ -1333,7 +1349,14 @@ else
 
     async Task RemovePhoto(Guid id)
     {
-        _project?.Photos.RemoveAll(p => p.Id == id);
+        if (_project == null) return;
+        var photo = _project.Photos.FirstOrDefault(p => p.Id == id);
+        if (photo != null && !string.IsNullOrEmpty(photo.StorageUrl))
+        {
+            // Storage에서도 삭제 (백그라운드)
+            _ = Storage.DeletePhotoAsync(_project.Id.ToString(), id.ToString());
+        }
+        _project.Photos.RemoveAll(p => p.Id == id);
         await Save();
     }
 

@@ -36,19 +36,19 @@
                 <!-- 보기 모드 -->
 
                 <!-- 사진 갤러리 (5칸 슬롯, 읽기 전용) -->
-                @{var vpView = Project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)).ToList();}
-                @if (vpView.Any())
+                @if (PopupValidPhotos.Any())
                 {
                     <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:16px;">
                         @for (int vi = 0; vi < 5; vi++)
                         {
                             var vIdx = vi;
-                            @if (vIdx < vpView.Count)
+                            @if (vIdx < PopupValidPhotos.Count)
                             {
-                                var vp = vpView[vIdx];
+                                var vp = PopupValidPhotos[vIdx];
                                 <div style="position:relative; aspect-ratio:1;">
-                                    <img src="@vp.Base64Data"
-                                         style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm); border:2px solid @(vIdx==0?"var(--theme-active)":"var(--border)");"
+                                    <img src="@(!string.IsNullOrEmpty(vp.StorageUrl) ? vp.StorageUrl : vp.Base64Data)"
+                                         style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm);"
+                                         class="@(vIdx==0 ? "photo-slot-thumb photo-slot-active" : "photo-slot-thumb")"
                                          alt="사진" />
                                     @if (vIdx == 0)
                                     {
@@ -277,17 +277,17 @@
 
                 <!-- 사진 추가 (5칸 슬롯) -->
                 <div class="form-label" style="margin-bottom:6px;">사진</div>
-                @{var vpEdit = Project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)).ToList();}
                 <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:6px;">
                     @for (int ei = 0; ei < 5; ei++)
                     {
                         var eIdx = ei;
-                        @if (eIdx < vpEdit.Count)
+                        @if (eIdx < PopupValidPhotos.Count)
                         {
-                            var ep = vpEdit[eIdx];
+                            var ep = PopupValidPhotos[eIdx];
                             <div style="position:relative; aspect-ratio:1;">
-                                <img src="@ep.Base64Data"
-                                     style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm); border:2px solid @(eIdx==0?"var(--theme-active)":"var(--border)");"
+                                <img src="@(!string.IsNullOrEmpty(ep.StorageUrl) ? ep.StorageUrl : ep.Base64Data)"
+                                     style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm);"
+                                     class="@(eIdx==0 ? "photo-slot-thumb photo-slot-active" : "photo-slot-thumb")"
                                      alt="사진" />
                                 @if (eIdx == 0)
                                 {
@@ -383,6 +383,9 @@
     bool _saving = false;
     bool _editing = false;
     bool _showDeleteConfirm = false;
+    List<ProjectPhoto> PopupValidPhotos => Project?.Photos
+        .Where(p => !string.IsNullOrEmpty(p.Base64Data) || !string.IsNullOrEmpty(p.StorageUrl))
+        .ToList() ?? new();
 
     [Parameter] public bool Show { get; set; }
     [Parameter] public KnitProject? Project { get; set; }
@@ -518,12 +521,20 @@
                 string base64;
                 try { base64 = await JS.InvokeAsync<string>("compressImage", rawBase64, 800, 0.75); }
                 catch { base64 = rawBase64; }
-                Project.Photos.Add(new ProjectPhoto
+                var photo = new ProjectPhoto { FileName = file.Name, TakenAt = DateTime.Now };
+                if (Storage.IsLoggedIn && Project != null)
                 {
-                    FileName   = file.Name,
-                    Base64Data = base64,
-                    TakenAt    = DateTime.Now
-                });
+                    var url = await Storage.UploadPhotoAsync(Project.Id.ToString(), photo.Id.ToString(), base64);
+                    if (!string.IsNullOrEmpty(url))
+                        photo.StorageUrl = url;
+                    else
+                        photo.Base64Data = base64;
+                }
+                else
+                {
+                    photo.Base64Data = base64;
+                }
+                Project!.Photos.Add(photo);
             }
             catch (Exception ex)
             {

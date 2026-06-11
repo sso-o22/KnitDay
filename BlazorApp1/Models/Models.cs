@@ -114,7 +114,8 @@ namespace KnitLog.Models
     {
         public Guid Id { get; set; } = Guid.NewGuid();
         public string FileName { get; set; } = "";
-        public string Base64Data { get; set; } = "";
+        public string Base64Data { get; set; } = "";  // 레거시 — 로컬 저장
+        public string StorageUrl { get; set; } = "";  // Firebase Storage URL
         public string Caption { get; set; } = "";
         public DateTime TakenAt { get; set; } = DateTime.Now;
     }
@@ -160,6 +161,7 @@ namespace KnitLog.Models
         // ── 도안 뷰어 저장 데이터 ──────────────────────────────
         public bool HasSavedPattern { get; set; } = false;       // 저장된 PDF 있는지
         public string PatternFileName { get; set; } = "";        // 원본 파일명
+        public string PatternCloudUrl { get; set; } = "";      // Cloudinary PDF URL
         public string ViewerAnnotations { get; set; } = "";      // 필기 paths JSON
         public string ViewerRulers { get; set; } = "";           // 도형 rulers JSON
         public string ViewerRowMarkers { get; set; } = "";       // 행 마커 JSON
