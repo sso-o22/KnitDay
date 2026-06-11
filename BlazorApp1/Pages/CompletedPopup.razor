@@ -524,7 +524,12 @@
                 var photo = new ProjectPhoto { FileName = file.Name, TakenAt = DateTime.Now };
                 if (Storage.IsLoggedIn && Project != null)
                 {
-                    var url = await Storage.UploadPhotoAsync(Project.Id.ToString(), photo.Id.ToString(), base64);
+                    var (url, err) = await Storage.UploadPhotoAsync(Project.Id.ToString(), photo.Id.ToString(), base64);
+                    if (err == "quota")
+                    {
+                        await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 사진을 삭제하고 다시 시도해 주세요.", "error");
+                        return;
+                    }
                     if (!string.IsNullOrEmpty(url))
                         photo.StorageUrl = url;
                     else

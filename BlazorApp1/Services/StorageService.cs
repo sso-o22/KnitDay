@@ -97,26 +97,59 @@ namespace KnitLog.Services
         // - 같은 Id: UpdatedAt이 더 최신인 것 우선
         // - 한쪽에만 있으면: 그냥 포함
         // ── Cloudinary 업로드 ────────────────────────────────
-        public async Task<string?> UploadPhotoAsync(string projectId, string photoId, string base64DataUrl)
+        public const long PerUserLimitBytes = 500L * 1024 * 1024; // 500MB
+
+        public async Task<(string? url, string? error)> UploadPhotoAsync(string projectId, string photoId, string base64DataUrl)
         {
             try
             {
+                var (used, _) = await GetCloudUsageAsync();
+                if (used >= PerUserLimitBytes)
+                    return (null, "quota");
                 var publicId = $"{Uid ?? "anon"}/projects/{projectId}/{photoId}";
                 var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64DataUrl, publicId, "image");
-                return await ParseCloudinaryResult(json, "photo");
+                var url = await ParseCloudinaryResult(json, "photo");
+                return (url, null);
             }
-            catch { return null; }
+            catch { return (null, "error"); }
         }
 
-        public async Task<string?> UploadPdfAsync(string projectId, string base64Data)
+        public async Task<(string? url, string? error)> UploadPdfAsync(string projectId, string base64Data)
         {
             try
             {
+                var (photoUsed, pdfUsed) = await GetCloudUsageAsync();
+                if (photoUsed + pdfUsed >= PerUserLimitBytes)
+                    return (null, "quota");
                 var publicId = $"{Uid ?? "anon"}/pdfs/{projectId}";
                 var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64Data, publicId, "raw");
-                return await ParseCloudinaryResult(json, "pdf");
+                var url = await ParseCloudinaryResult(json, "pdf");
+                return (url, null);
             }
-            catch { return null; }
+            catch { return (null, "error"); }
+        }
+
+        // 용량 차감 (앱에서 사진/PDF 삭제 시 호출)
+        public async Task SubtractCloudUsageAsync(string type, long bytes)
+        {
+            if (string.IsNullOrEmpty(Uid) || bytes <= 0) return;
+            try
+            {
+                var path = $"users/{Uid}/meta/usage";
+                var existJson = await _js.InvokeAsync<string?>("firebaseStore.getDocument", path);
+                long photoBytes = 0, pdfBytes = 0;
+                if (!string.IsNullOrEmpty(existJson))
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(existJson);
+                    if (doc.RootElement.TryGetProperty("photoBytes", out var pb)) photoBytes = pb.GetInt64();
+                    if (doc.RootElement.TryGetProperty("pdfBytes",   out var db)) pdfBytes   = db.GetInt64();
+                }
+                if (type == "photo") photoBytes = Math.Max(0, photoBytes - bytes);
+                else                 pdfBytes   = Math.Max(0, pdfBytes   - bytes);
+                var payload = System.Text.Json.JsonSerializer.Serialize(new { photoBytes, pdfBytes, updatedAt = DateTime.UtcNow });
+                await _js.InvokeAsync<bool>("firebaseStore.setDocument", path, payload);
+            }
+            catch { }
         }
 
         private async Task<string?> ParseCloudinaryResult(string? json, string type)

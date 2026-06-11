@@ -1302,20 +1302,19 @@ else
 
                 var photo = new ProjectPhoto { FileName = file.Name, TakenAt = DateTime.Now };
 
-                // 로그인 상태면 Firebase Storage에 업로드
+                // 로그인 상태면 Cloudinary에 업로드
                 if (Storage.IsLoggedIn)
                 {
-                    var url = await Storage.UploadPhotoAsync(_project.Id.ToString(), photo.Id.ToString(), compressed);
+                    var (url, err) = await Storage.UploadPhotoAsync(_project.Id.ToString(), photo.Id.ToString(), compressed);
+                    if (err == "quota")
+                    {
+                        await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 사진을 삭제하고 다시 시도해 주세요.", "error");
+                        return;
+                    }
                     if (!string.IsNullOrEmpty(url))
-                    {
                         photo.StorageUrl = url;
-                        // StorageUrl이 있으면 Base64는 저장 안 함 (localStorage 절약)
-                    }
                     else
-                    {
-                        // 업로드 실패 시 로컬 fallback
-                        photo.Base64Data = compressed;
-                    }
+                        photo.Base64Data = compressed; // 업로드 실패 시 로컬 fallback
                 }
                 else
                 {

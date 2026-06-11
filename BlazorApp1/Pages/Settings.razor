@@ -124,13 +124,13 @@
                     }
                     else
                     {
-                        <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(_photoBytes + _pdfBytes) / 25 GB</span>
+                        <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(_photoBytes + _pdfBytes) / @FmtSize(UsageLimitBytes)</span>
                     }
                 </div>
                 @* 전체 게이지바 *@
                 <div style="height:10px; background:var(--border); border-radius:99px; overflow:hidden; margin-bottom:10px; position:relative;">
                     <div style="position:absolute;left:0;top:0;height:100%;width:@(UsagePdfPct.ToString("F2"))%;background:var(--text-light);border-radius:99px;opacity:0.5;"></div>
-                    <div style="position:absolute;left:0;top:0;height:100%;width:@(UsagePhotoPct.ToString("F2"))%;background:var(--theme-active);border-radius:99px;transition:width 0.4s;"></div>
+                    <div style="position:absolute;left:0;top:0;height:100%;width:@(UsagePhotoPct.ToString("F2"))%;background:@((_photoBytes+_pdfBytes)>=UsageLimitBytes?"#c03030":"var(--theme-active)");border-radius:99px;transition:width 0.4s;"></div>
                 </div>
                 @* 범례 *@
                 <div style="display:flex; gap:14px; flex-wrap:wrap;">
@@ -143,7 +143,14 @@
                         도안 PDF @FmtSize(_pdfBytes)
                     </div>
                     <div style="font-size:0.75rem; color:var(--text-light); margin-left:auto;">
-                        잔여 @FmtSize(UsageLimitBytes - _photoBytes - _pdfBytes)
+                        @if (_photoBytes + _pdfBytes >= UsageLimitBytes)
+                        {
+                            <span style="color:#c03030; font-weight:600;">한도 초과</span>
+                        }
+                        else
+                        {
+                            <span>잔여 @FmtSize(UsageLimitBytes - _photoBytes - _pdfBytes)</span>
+                        }
                     </div>
                 </div>
             </div>
@@ -272,7 +279,7 @@
     long _photoBytes = 0;
     long _pdfBytes = 0;
     bool _usageLoaded = false;
-    const long UsageLimitBytes = 25L * 1024 * 1024 * 1024;
+    static long UsageLimitBytes => StorageService.PerUserLimitBytes;
     double UsagePhotoPct => Math.Min(100.0, _photoBytes / (double)UsageLimitBytes * 100);
     double UsagePdfPct   => Math.Min(100.0, (_photoBytes + _pdfBytes) / (double)UsageLimitBytes * 100);
     static string FmtSize(long b) => b >= 1024*1024*1024 ? $"{b/1024.0/1024/1024:F1} GB"
@@ -489,6 +496,9 @@
         try
         {
             await Storage.SyncOnLoginAsync();
+            // 용량 정보도 갱신
+            var (photo, pdf) = await Storage.GetCloudUsageAsync();
+            _photoBytes = photo; _pdfBytes = pdf;
             _manualSyncMsg = "DB 동기화 완료";
             _manualSyncError = false;
         }
