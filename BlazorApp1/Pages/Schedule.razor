@@ -199,7 +199,8 @@ else
 <!-- 완성작 미리보기 팝업 -->
 <CompletedPopup Show="_showCompletedPopup" Project="_completedPreview"
     Yarns="_yarns" Tools="_tools"
-    OnClose="CloseCompletedPopup" OnSaved="LoadData" />
+    OnClose="CloseCompletedPopup" OnSaved="LoadData"
+    OnDelete="DeleteCompletedFromPopup" OnMoveBack="MoveBackFromPopup" />
 
 
 @if (_showModal)
@@ -743,6 +744,25 @@ else
     {
         _showCompletedPopup = false;
         _completedPreview = null;
+    }
+
+    async Task DeleteCompletedFromPopup()
+    {
+        if (_completedPreview == null) return;
+        var id = _completedPreview.Id;
+        CloseCompletedPopup();
+        await DeleteProject(id);
+    }
+
+    async Task MoveBackFromPopup()
+    {
+        if (_completedPreview == null) return;
+        _completedPreview.Status = ProjectStatus.진행중;
+        _completedPreview.EndDate = null;
+        await Storage.SaveProjectAsync(_completedPreview);
+        CloseCompletedPopup();
+        await LoadData();
+        await JS.InvokeVoidAsync("showToast", "문어발로 복귀했어요");
     }
 
 

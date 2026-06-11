@@ -629,6 +629,9 @@ else
         _swatches = await Storage.GetSwatchesAsync();
         _yarns    = await Storage.GetYarnsAsync();
         _projects = await Storage.GetProjectsAsync();
+        _filterProject = await JS.InvokeAsync<string?>("localStorage.getItem", "sw_fp") ?? "";
+        _filterStitch  = await JS.InvokeAsync<string?>("localStorage.getItem", "sw_fs") ?? "";
+        _filterNeedle  = await JS.InvokeAsync<string?>("localStorage.getItem", "sw_fn") ?? "";
         _loading  = false;
     }
 
@@ -673,7 +676,7 @@ else
     void OnFilterProjectChanged(ChangeEventArgs e) => _filterProject = e.Value?.ToString() ?? "";
     void OnFilterStitchChanged(ChangeEventArgs e)  => _filterStitch  = e.Value?.ToString() ?? "";
     void OnFilterNeedleChanged(ChangeEventArgs e)  => _filterNeedle  = e.Value?.ToString() ?? "";
-    void ResetFilters() { _filterProject = ""; _filterStitch = ""; _filterNeedle = ""; }
+    async Task ResetFilters() { _filterProject = ""; _filterStitch = ""; _filterNeedle = ""; await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fp"); await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fs"); await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fn"); }
     void ClearPhoto() => _editing.PhotoBase64 = "";
 
     void OnStitchSelectChanged(ChangeEventArgs e)

@@ -715,6 +715,7 @@
     [data-dark="true"] .tb-zoom-btn { color: #ddd; }
     [data-dark="true"] .tb-icon-btn { background: rgba(255,255,255,0.08); color: #ddd; }
     [data-dark="true"] .tb-icon-btn:hover { background: rgba(255,255,255,0.15); }
+    [data-dark="true"] .tb-icon-btn img { filter: invert(1); opacity: 0.85; }
 
     [data-dark="true"] .draw-fab {
         background: rgba(40,40,40,0.92); border-color: rgba(255,255,255,0.15); color: #eee;
@@ -731,6 +732,7 @@
     [data-dark="true"] .dp-label { color: #888 !important; }
     [data-dark="true"] .dp-size-btn { background: rgba(255,255,255,0.1); color: #eee !important; }
     [data-dark="true"] .dp-btn { color: #ddd; }
+    [data-dark="true"] .dp-btn img { filter: invert(1); opacity: 0.85; }
     [data-dark="true"] .dp-panel-inner span { color: #ddd; }
     [data-dark="true"] .dp-btn:hover { background: rgba(255,255,255,0.1); }
     [data-dark="true"] .dp-on { background: rgba(255,255,255,0.15); }
@@ -752,6 +754,9 @@
     [data-dark="true"] .cw-close { color: #666; }
     [data-dark="true"] .cw-close:hover { color: #eee; }
     [data-dark="true"] .cw-nav-btn { background: rgba(255,255,255,0.08); color: #ddd; }
+    [data-dark="true"] .cw-inner input { background: rgba(255,255,255,0.1); color: #f0f0f0; border-color: rgba(255,255,255,0.2); }
+    [data-dark="true"] .cw-inner input::placeholder { color: #888; }
+    [data-dark="true"] .cw-nav-btn img { filter: invert(1); opacity: 0.85; }
     [data-dark="true"] .cw-nav-btn:hover { background: rgba(255,255,255,0.15); }
     [data-dark="true"] .cw-btn.plus  { background: rgba(255,255,255,0.12); color: #eee; }
     [data-dark="true"] .cw-btn.plus:hover  { background: rgba(255,255,255,0.2); }
@@ -974,7 +979,7 @@
         {
             var vw = await JS.InvokeAsync<double>("eval", "window.innerWidth");
             var vh = await JS.InvokeAsync<double>("eval", "window.innerHeight");
-            _cwX = Math.Max(16, vw - 196);
+            _cwX = Math.Max(16, vw - 240);
             _cwY = Math.Max(80, vh - 230);
             _dotNetRef=DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("patternViewer.init",_dotNetRef);

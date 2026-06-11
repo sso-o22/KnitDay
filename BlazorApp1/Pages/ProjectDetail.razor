@@ -1237,7 +1237,18 @@ else
     async Task OnPhotoSelected(InputFileChangeEventArgs e)
     {
         if (_project == null) return;
-        foreach (var file in e.GetMultipleFiles(10))
+        const int maxPhotos = 5;
+        var files = e.GetMultipleFiles(10).ToList();
+        int remaining = maxPhotos - _project.Photos.Count;
+        if (remaining <= 0)
+        {
+            await JS.InvokeVoidAsync("showToast", $"사진은 최대 {maxPhotos}장까지 추가할 수 있어요.", "error");
+            return;
+        }
+        files = files.Take(remaining).ToList();
+        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...", "info");
+        StateHasChanged();
+        foreach (var file in files)
         {
             try
             {
@@ -1255,9 +1266,23 @@ else
             catch (Exception ex)
             {
                 await JS.InvokeVoidAsync("showToast", $"사진 첨부 실패: {ex.Message}", "error");
+                return;
             }
         }
-        await Save();
+        try
+        {
+            _saving = true; StateHasChanged();
+            await Storage.SaveProjectAsync(_project);
+            _saving = false;
+            await JS.InvokeVoidAsync("showToast", "사진 저장됐어요");
+        }
+        catch (Exception ex)
+        {
+            _saving = false;
+            _project.Photos.RemoveAll(p => files.Any(f => f.Name == p.FileName));
+            await JS.InvokeVoidAsync("showToast", $"저장 실패 (용량 초과일 수 있어요): {ex.Message}", "error");
+            StateHasChanged();
+        }
     }
 
     async Task RemovePhoto(Guid id)

@@ -39,7 +39,7 @@ else
         @foreach (var (label, val) in new[]{("전체","all"),("사용 중","linked"),("미사용","unlinked"),("부족","low"),("소진","empty")})
         {
             <button class="btn btn-sm @(_filter==val?"btn-primary":"btn-ghost")"
-                    @onclick='()=>{ _filter=val; }'>@label</button>
+                    @onclick='async ()=>{ _filter=val; await JS.InvokeVoidAsync("localStorage.setItem", "yarn_filter", val); }'>@label</button>
         }
     </div>
 
@@ -416,6 +416,7 @@ else
         _yarns = await Storage.GetYarnsAsync();
         _projects = await Storage.GetProjectsAsync();
         _CalcUsed();
+        _filter = await JS.InvokeAsync<string?>("localStorage.getItem", "yarn_filter") ?? "all";
         _loading = false;
     }
 

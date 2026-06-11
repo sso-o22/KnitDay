@@ -244,7 +244,7 @@ window.showToast = function(message, type = 'success') {
         left: 50%;
         transform: translateX(-50%) translateY(20px);
         max-width: calc(100vw - 40px);
-        background: ${type === 'success' ? '#666' : '#c03030'};
+        background: ${type === 'error' ? '#c03030' : type === 'info' ? '#2a6496' : '#666'};
         color: #fff;
         padding: 8px 18px;
         border-radius: 20px;
