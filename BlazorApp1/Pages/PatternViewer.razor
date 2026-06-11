@@ -126,7 +126,7 @@
             @if (_project is not null)
             {
                 <div class="tb-div"></div>
-                <span style="opacity:0.4;"><img src="icons/clock.svg" style="width:14px;height:14px;" /></span>
+                <span style="opacity:0.4;"><img src="icons/clock.svg" class="icon-invert-dark" style="width:14px;height:14px;" /></span>
                 <span class="tb-txt" style="font-variant-numeric:tabular-nums;letter-spacing:0.3px;">@_timerDisplay</span>
                 @if (_activeSession == null)
                 {
@@ -649,12 +649,13 @@
         bottom: calc(env(safe-area-inset-bottom, 0px) + 80px) !important;
         left: auto !important;
         top: auto !important;
+        max-width: calc(100vw - 32px);
     }
     .cw-inner {
         background: rgba(255,255,255,0.95);
         backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
         border: 1px solid rgba(0,0,0,0.1);
-        border-radius: 16px; padding: 10px 12px; min-width: 160px;
+        border-radius: 16px; padding: 10px 12px; min-width: 160px; max-width: 220px; width: max-content;
         box-shadow: 0 8px 32px rgba(0,0,0,0.15);
         color: #222;
     }
@@ -708,14 +709,18 @@
         background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); color: #eee;
     }
     [data-dark="true"] .tb-btn:hover { background: rgba(255,255,255,0.15); }
+    [data-dark="true"] .tb-btn img { filter: invert(1); opacity: 0.9; }
     [data-dark="true"] .tb-label { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.1); color: #ddd; }
+    [data-dark="true"] .tb-label img { filter: invert(1); opacity: 0.85; }
     [data-dark="true"] .tb-txt { color: #eee; }
     [data-dark="true"] .tb-div { background: rgba(255,255,255,0.12); }
     [data-dark="true"] .tb-zoom { background: rgba(255,255,255,0.07); }
     [data-dark="true"] .tb-zoom-btn { color: #ddd; }
+    [data-dark="true"] .tb-zoom-btn img { filter: invert(1); opacity: 0.85; }
     [data-dark="true"] .tb-icon-btn { background: rgba(255,255,255,0.08); color: #ddd; }
     [data-dark="true"] .tb-icon-btn:hover { background: rgba(255,255,255,0.15); }
     [data-dark="true"] .tb-icon-btn img { filter: invert(1); opacity: 0.85; }
+    [data-dark="true"] .icon-invert-dark { filter: invert(1); opacity: 0.85; }
 
     [data-dark="true"] .draw-fab {
         background: rgba(40,40,40,0.92); border-color: rgba(255,255,255,0.15); color: #eee;
@@ -768,6 +773,7 @@
     [data-dark="true"] .cw-close { color: #888 !important; }
     [data-dark="true"] .cw-nav-btn { color: #eee !important; }
     [data-dark="true"] .cw-fab { background: rgba(32,32,32,0.92); border-color: rgba(255,255,255,0.12); }
+    [data-dark="true"] .cw-fab img { filter: invert(1); opacity: 0.85; }
     [data-dark="true"] .dp-btn img,
     [data-dark="true"] .draw-fab img { filter: invert(1); }
 </style>
@@ -979,8 +985,8 @@
         {
             var vw = await JS.InvokeAsync<double>("eval", "window.innerWidth");
             var vh = await JS.InvokeAsync<double>("eval", "window.innerHeight");
-            _cwX = Math.Max(16, vw - 240);
-            _cwY = Math.Max(80, vh - 230);
+            _cwX = Math.Max(16, vw - 280);
+            _cwY = Math.Max(80, vh - 250);
             _dotNetRef=DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("patternViewer.init",_dotNetRef);
             await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, false, "select", _penOpacity);

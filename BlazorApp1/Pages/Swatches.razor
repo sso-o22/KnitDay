@@ -24,7 +24,7 @@
             @foreach (var (label, val) in new[]{("전체",""),("연결됨","linked"),("연결 없음","unlinked")})
             {
                 <button class="btn btn-sm @(_filterProject==val?"btn-primary":"btn-ghost")"
-                        @onclick="() => { _filterProject = val; }">@label</button>
+                        @onclick="() => SetFilterProject(val)">@label</button>
             }
         </div>
         @* 2행: 뜨개 방법 *@
@@ -32,7 +32,7 @@
             @foreach (var (label, val) in new[]{("전체방법",""),("메리야스","메리야스"),("무늬","무늬"),("가터","가터"),("고무단","고무단")})
             {
                 <button class="btn btn-sm @(_filterStitch==val?"btn-primary":"btn-ghost")"
-                        @onclick="() => { _filterStitch = val; }">@label</button>
+                        @onclick="() => SetFilterStitch(val)">@label</button>
             }
         </div>
         @* 3행: 바늘 mm 콤보박스 + 초기화 *@
@@ -675,7 +675,19 @@ else
 
     void OnFilterProjectChanged(ChangeEventArgs e) => _filterProject = e.Value?.ToString() ?? "";
     void OnFilterStitchChanged(ChangeEventArgs e)  => _filterStitch  = e.Value?.ToString() ?? "";
-    void OnFilterNeedleChanged(ChangeEventArgs e)  => _filterNeedle  = e.Value?.ToString() ?? "";
+    async Task OnFilterNeedleChanged(ChangeEventArgs e) { _filterNeedle = e.Value?.ToString() ?? ""; await JS.InvokeVoidAsync("localStorage.setItem", "sw_fn", _filterNeedle); }
+    async Task SetFilterProject(string val)
+    {
+        _filterProject = val;
+        await JS.InvokeVoidAsync("localStorage.setItem", "sw_fp", val);
+    }
+
+    async Task SetFilterStitch(string val)
+    {
+        _filterStitch = val;
+        await JS.InvokeVoidAsync("localStorage.setItem", "sw_fs", val);
+    }
+
     async Task ResetFilters() { _filterProject = ""; _filterStitch = ""; _filterNeedle = ""; await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fp"); await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fs"); await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fn"); }
     void ClearPhoto() => _editing.PhotoBase64 = "";
 
