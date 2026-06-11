@@ -327,7 +327,7 @@
     </div>
 
     <!-- ── 카운터 플로팅 위젯 (드래그 가능) ── -->
-    @if (_project is not null && _project.Counters.Any())
+    @if (_project is not null)
     {
         @if (_showCounterWidget)
         {
@@ -343,25 +343,31 @@
                         <span style="font-size:11px;font-weight:700;color:#444;">카운터</span>
                         <button class="cw-close" @onclick="()=>_showCounterWidget=false" @onmousedown:stopPropagation="true">✕</button>
                     </div>
-                    @{var c = _project.Counters[_activeCounterIndex];}
-                    <div class="cw-nav">
-                        <button class="cw-nav-btn" @onclick="PrevCounter" disabled="@(_project.Counters.Count<=1)">‹</button>
-                        <div style="text-align:center;flex:1;">
-                            <div style="font-size:12px;color:#333;font-weight:600;">@c.Label</div>
-                            <div style="font-size:10px;color:#aaa;">@(_activeCounterIndex+1)/@_project.Counters.Count</div>
-                        </div>
-                        <button class="cw-nav-btn" @onclick="NextCounter" disabled="@(_project.Counters.Count<=1)">›</button>
-                    </div>
-                    <div class="cw-controls">
-                        <button class="cw-btn minus" @onclick="()=>DecrementCounter(c)">−</button>
-                        <span class="cw-val">@c.Value</span>
-                        <button class="cw-btn plus"  @onclick="()=>IncrementCounter(c)">+</button>
-                    </div>
-                    @if (c.LastUpdatedAt.HasValue)
+                    @if (_project.Counters.Any())
                     {
-                        <div style="font-size:10px;color:#bbb;text-align:center;margin-top:4px;">
-                            @FormatLastUpdated(c.LastUpdatedAt.Value)
+                        <div class="cw-nav">
+                            <button class="cw-nav-btn" @onclick="PrevCounter" disabled="@(_project.Counters.Count<=1)">‹</button>
+                            <div style="text-align:center;flex:1;">
+                                <div style="font-size:12px;color:#333;font-weight:600;">@ActiveCounter.Label</div>
+                                <div style="font-size:10px;color:#aaa;">@(_activeCounterIndex+1)/@_project.Counters.Count</div>
+                            </div>
+                            <button class="cw-nav-btn" @onclick="NextCounter" disabled="@(_project.Counters.Count<=1)">›</button>
                         </div>
+                        <div class="cw-controls">
+                            <button class="cw-btn minus" @onclick="()=>DecrementCounter(ActiveCounter)">−</button>
+                            <span class="cw-val">@ActiveCounter.Value</span>
+                            <button class="cw-btn plus"  @onclick="()=>IncrementCounter(ActiveCounter)">+</button>
+                        </div>
+                        @if (ActiveCounter.LastUpdatedAt.HasValue)
+                        {
+                            <div style="font-size:10px;color:#bbb;text-align:center;margin-top:4px;">
+                                @FormatLastUpdated(ActiveCounter.LastUpdatedAt.Value)
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div style="font-size:11px;color:#aaa;text-align:center;padding:8px 0;">카운터가 없어요</div>
                     }
                     @* 카운터 추가 *@
                     @if (_cwAddMode)
@@ -838,6 +844,7 @@
     bool _suppressRender = false;
     protected override bool ShouldRender() { if (_suppressRender) { _suppressRender = false; return false; } return true; }
     int _activeCounterIndex=0;
+    ProjectCounter ActiveCounter => _project!.Counters[Math.Min(_activeCounterIndex, _project.Counters.Count - 1)];
     DotNetObjectReference<PatternViewer>? _dotNetRef;
 
     // ── 카운터 위젯 드래그 ──

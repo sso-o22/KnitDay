@@ -739,6 +739,29 @@ else
                 <textarea class="form-control" rows="2" @bind="_project.PatternMemo" placeholder="사이즈, 수정 사항 등"></textarea>
             </div>
 
+            @* ── 도안 정보 ── *@
+            <div class="form-label" style="margin-top:16px; margin-bottom:8px;">도안 정보</div>
+            <div style="padding:10px 12px; background:var(--ivory-dark); border-radius:var(--radius-sm); margin-bottom:16px;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" style="font-size:0.78rem;">원작 바늘</label>
+                        <input class="form-control" @bind="_project.OriginalNeedle" placeholder="예: 4mm 대바늘" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="font-size:0.78rem;">원작 게이지</label>
+                        <input class="form-control" @bind="_project.OriginalGauge" placeholder="예: 22코 × 30단 / 10cm" />
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size:0.78rem;">원작 실</label>
+                    <input class="form-control" @bind="_project.OriginalYarn" placeholder="예: 앵콜스 DK 400m, 5합 이상" />
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.78rem;">기타 부자재</label>
+                    <input class="form-control" @bind="_project.OriginalOther" placeholder="예: 단추 7개, 20cm 지퍼" />
+                </div>
+            </div>
+
             @* ── 날짜 ── *@
             <div style="display:flex; gap:16px;">
                 <div class="form-group" style="flex:1; min-width:0;">
@@ -915,29 +938,6 @@ else
                            style="width:28px; height:28px; border-radius:50%; border:2px solid var(--border); padding:0; cursor:pointer; overflow:hidden;"
                            title="직접 색상 선택" />
                 </div>
-            </div>
-
-            @* ── 원작 정보 ── *@
-            <div class="form-label" style="margin-top:16px; margin-bottom:8px;">원작 정보</div>
-            <div style="padding:10px 12px; background:var(--ivory-dark); border-radius:var(--radius-sm); margin-bottom:8px;">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" style="font-size:0.78rem;">권장 바늘</label>
-                            <input class="form-control" @bind="_project.OriginalNeedle" placeholder="예: 4mm 대바늘" />
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label" style="font-size:0.78rem;">권장 게이지</label>
-                            <input class="form-control" @bind="_project.OriginalGauge" placeholder="예: 22코 × 30단 / 10cm" />
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" style="font-size:0.78rem;">권장 실</label>
-                        <input class="form-control" @bind="_project.OriginalYarn" placeholder="예: 앵콜스 DK 400m, 5합 이상" />
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label" style="font-size:0.78rem;">기타 부자재</label>
-                        <input class="form-control" @bind="_project.OriginalOther" placeholder="예: 단추 7개, 20cm 지퍼" />
-                    </div>
             </div>
 
             @* ── 메모 ── *@

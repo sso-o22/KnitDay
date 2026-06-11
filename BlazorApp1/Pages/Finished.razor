@@ -65,7 +65,7 @@ else
 <CompletedPopup Show="_showDetail" Project="_selectedProject"
     Yarns="_allYarns" Tools="_allTools"
     OnClose="CloseDetail" OnSaved="OnPopupSaved"
-    OnDelete="DeleteFromPopup" />
+    OnDelete="DeleteFromPopup" OnMoveBack="MoveBackFromPopup" />
 
 
 @code {
@@ -110,6 +110,17 @@ else
         // 선택된 프로젝트 갱신
         if (_selectedProject != null)
             _selectedProject = _projects.FirstOrDefault(p => p.Id == _selectedProject.Id) ?? _selectedProject;
+    }
+
+    async Task MoveBackFromPopup()
+    {
+        if (_selectedProject == null) return;
+        _selectedProject.Status = ProjectStatus.진행중;
+        _selectedProject.EndDate = null;
+        await Storage.SaveProjectAsync(_selectedProject);
+        CloseDetail();
+        await LoadData();
+        await JS.InvokeVoidAsync("showToast", "문어발로 복귀했어요");
     }
 
     async Task DeleteFromPopup()
