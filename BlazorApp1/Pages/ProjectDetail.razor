@@ -559,35 +559,58 @@ else
     <div class="card" style="grid-column: span 2;">
         <div class="card-title" style="display:flex; align-items:center; gap:6px;"><img src="icons/image.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 과정 사진</div>
 
-        @if (_project.Photos.Count > 0 && _project.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
-        {
-            <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-                @foreach (var photo in _project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)))
+        @* 5칸 슬롯 그리드 *@
+        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:8px;">
+            @for (int i = 0; i < 5; i++)
+            {
+                var idx = i;
+                var validPhotos = _project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)).ToList();
+                @if (idx < validPhotos.Count)
                 {
-                    <div style="position:relative;">
+                    var photo = validPhotos[idx];
+                    <div style="position:relative; aspect-ratio:1; cursor:pointer;" @onclick="() => OpenPhoto(photo)">
                         <img src="@photo.Base64Data"
-                            style="width:140px; height:140px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer;"
-                            @onclick="() => OpenPhoto(photo)"
-                            alt="과정 사진" />
-                        @if (!string.IsNullOrEmpty(photo.Caption))
+                             style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm); border:2px solid @(idx == 0 ? "var(--theme-active)" : "var(--border)");"
+                             alt="과정 사진" />
+                        @* 대표사진 배지 *@
+                        @if (idx == 0)
                         {
-                            <div style="font-size:0.75rem; color:var(--text-mid); text-align:center; margin-top:4px; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                                @photo.Caption
-                            </div>
+                            <span style="position:absolute;top:3px;left:3px;background:var(--theme-active);border-radius:4px;padding:1px 5px;font-size:0.6rem;color:#fff;font-weight:700;line-height:1.4;">대표</span>
                         }
+                        @* 대표로 설정 버튼 (1번 이상) *@
+                        @if (idx > 0)
+                        {
+                            <button style="position:absolute;top:3px;left:3px;background:rgba(0,0,0,0.45);border:none;border-radius:4px;padding:2px 5px;cursor:pointer;display:flex;align-items:center;"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => SetThumbnail(photo.Id)">
+                                <img src="icons/shooting-star.svg" class="icon-line" style="width:11px;height:11px;filter:invert(1);opacity:0.9;" />
+                            </button>
+                        }
+                        @* 삭제 버튼 *@
                         <button class="btn btn-danger btn-sm"
-                                style="position:absolute; top:4px; right:4px; padding:2px 6px; font-size:0.7rem;"
-                                @onclick="() => RemovePhoto(photo.Id)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                                style="position:absolute;top:3px;right:3px;padding:2px 5px;"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => RemovePhoto(photo.Id)">
+                            <img src="icons/x.svg" class="icon-line" style="width:10px;height:10px;" />
+                        </button>
                     </div>
                 }
-            </div>
-        }
-        else
-        {
-            <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">아직 사진이 없어요. 과정을 기록해 보세요!</p>
-        }
+                else
+                {
+                    @* 빈 슬롯 *@
+                    <div style="aspect-ratio:1; border:1.5px dashed var(--border); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-light); background:var(--ivory-dark);"
+                         @onclick="TriggerPhotoInput">
+                        <img src="icons/plus.svg" class="icon-line" style="width:20px;height:20px;opacity:0.4;" />
+                    </div>
+                }
+            }
+        </div>
+        <p style="font-size:0.72rem; color:var(--text-light); margin-bottom:8px;">슬롯을 눌러 추가 · 별 눌러 대표사진 설정 · 최대 5장 · 자동 압축</p>
 
-        <InputFile OnChange="OnPhotoSelected" accept="image/jpeg,image/png,image/heic,image/heif,image/webp" multiple class="form-control" style="padding:6px;" />
+        @* hidden InputFile — JS로 트리거 *@
+        <InputFile id="photo-file-input" OnChange="OnPhotoSelected"
+                   accept="image/jpeg,image/png,image/heic,image/heif,image/webp"
+                   multiple style="display:none;" />
     </div>
 
         <!-- ── 연결된 실 ── -->
@@ -1315,6 +1338,23 @@ else
     }
 
     void OpenPhoto(ProjectPhoto photo) { _selectedPhoto = photo; _showPhoto = true; }
+
+    // 빈 슬롯 클릭 → hidden input 트리거
+    async Task TriggerPhotoInput()
+    {
+        await JS.InvokeVoidAsync("eval", "document.getElementById('photo-file-input').click()");
+    }
+
+    // 대표사진 설정 — 해당 사진을 Photos 리스트 맨 앞으로
+    async Task SetThumbnail(Guid photoId)
+    {
+        if (_project == null) return;
+        var photo = _project.Photos.FirstOrDefault(p => p.Id == photoId);
+        if (photo == null) return;
+        _project.Photos.Remove(photo);
+        _project.Photos.Insert(0, photo);
+        await Save();
+    }
 
     // ── 뜨개 시간 기록 ──────────────────────────────────
     async Task StartSession()

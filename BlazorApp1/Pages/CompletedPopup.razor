@@ -35,15 +35,31 @@
             {
                 <!-- 보기 모드 -->
 
-                <!-- 사진 갤러리 -->
-                @if (Project.Photos.Count > 0 && Project.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
+                <!-- 사진 갤러리 (5칸 슬롯, 읽기 전용) -->
+                @{var vpView = Project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)).ToList();}
+                @if (vpView.Any())
                 {
-                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
-                        @foreach (var photo in Project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)))
+                    <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:16px;">
+                        @for (int vi = 0; vi < 5; vi++)
                         {
-                            <img src="@photo.Base64Data"
-                                 style="width:100px; height:100px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border);"
-                                 alt="과정 사진" />
+                            var vIdx = vi;
+                            @if (vIdx < vpView.Count)
+                            {
+                                var vp = vpView[vIdx];
+                                <div style="position:relative; aspect-ratio:1;">
+                                    <img src="@vp.Base64Data"
+                                         style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm); border:2px solid @(vIdx==0?"var(--theme-active)":"var(--border)");"
+                                         alt="사진" />
+                                    @if (vIdx == 0)
+                                    {
+                                        <span style="position:absolute;top:2px;left:2px;background:var(--theme-active);border-radius:3px;padding:1px 4px;font-size:0.55rem;color:#fff;font-weight:700;line-height:1.4;">대표</span>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div style="aspect-ratio:1; border:1.5px dashed var(--border); border-radius:var(--radius-sm); background:var(--ivory-dark);"></div>
+                            }
                         }
                     </div>
                 }
@@ -259,25 +275,51 @@
                 </div>
                 <button class="btn btn-ghost btn-sm" style="color:var(--text-dark); margin-bottom:16px;" @onclick="() => _measures.Add(new MeasureItem { IsCustom = true })">+ 항목 추가</button>
 
-                <!-- 사진 추가 -->
+                <!-- 사진 추가 (5칸 슬롯) -->
                 <div class="form-label" style="margin-bottom:6px;">사진</div>
-                @if (Project.Photos.Count > 0 && Project.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
-                {
-                    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-                        @foreach (var photo in Project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)))
+                @{var vpEdit = Project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)).ToList();}
+                <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:6px;">
+                    @for (int ei = 0; ei < 5; ei++)
+                    {
+                        var eIdx = ei;
+                        @if (eIdx < vpEdit.Count)
                         {
-                            <div style="position:relative;">
-                                <img src="@photo.Base64Data"
-                                     style="width:80px; height:80px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border);" />
+                            var ep = vpEdit[eIdx];
+                            <div style="position:relative; aspect-ratio:1;">
+                                <img src="@ep.Base64Data"
+                                     style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm); border:2px solid @(eIdx==0?"var(--theme-active)":"var(--border)");"
+                                     alt="사진" />
+                                @if (eIdx == 0)
+                                {
+                                    <span style="position:absolute;top:2px;left:2px;background:var(--theme-active);border-radius:3px;padding:1px 4px;font-size:0.55rem;color:#fff;font-weight:700;line-height:1.4;">대표</span>
+                                }
+                                @if (eIdx > 0)
+                                {
+                                    <button style="position:absolute;top:2px;left:2px;background:rgba(0,0,0,0.45);border:none;border-radius:3px;padding:2px 4px;cursor:pointer;display:flex;align-items:center;"
+                                            @onclick="() => SetPopupThumbnail(ep.Id)">
+                                        <img src="icons/shooting-star.svg" class="icon-line" style="width:10px;height:10px;filter:invert(1);opacity:0.9;" />
+                                    </button>
+                                }
                                 <button class="btn btn-danger btn-sm"
-                                        style="position:absolute; top:2px; right:2px; padding:1px 5px;"
-                                        @onclick="() => Project.Photos.Remove(photo)"><img src="icons/x.svg" class="icon-line" style="width:10px;height:10px;" /></button>
+                                        style="position:absolute;top:2px;right:2px;padding:1px 4px;"
+                                        @onclick="() => Project.Photos.Remove(ep)">
+                                    <img src="icons/x.svg" class="icon-line" style="width:9px;height:9px;" />
+                                </button>
                             </div>
                         }
-                    </div>
-                }
-                <InputFile OnChange="OnPhotoSelected" accept="image/jpeg,image/png,image/heic,image/heif,image/webp" multiple class="form-control" style="padding:6px; margin-bottom:4px;" />
-                <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:16px;">최대 20MB, 여러 장 선택 가능</p>
+                        else
+                        {
+                            <div style="aspect-ratio:1; border:1.5px dashed var(--border); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--ivory-dark);"
+                                 @onclick="TriggerPopupPhotoInput">
+                                <img src="icons/plus.svg" class="icon-line" style="width:18px;height:18px;opacity:0.4;" />
+                            </div>
+                        }
+                    }
+                </div>
+                <p style="font-size:0.72rem; color:var(--text-light); margin-bottom:12px;">슬롯 눌러 추가 · 별 눌러 대표사진 · 최대 5장 · 자동 압축</p>
+                <InputFile id="popup-photo-input" OnChange="OnPhotoSelected"
+                           accept="image/jpeg,image/png,image/heic,image/heif,image/webp"
+                           multiple style="display:none;" />
             }
 
             </div><!-- /스크롤 영역 -->
@@ -326,7 +368,7 @@
          @onclick="() => _showDeleteConfirm = false">
         <div style="background:var(--white);border-radius:16px;max-width:320px;width:100%;padding:24px 20px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);"
              @onclick:stopPropagation="true">
-            <div style="margin-bottom:12px;display:flex;justify-content:center;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;filter:none;opacity:0.6;" /></div>
+            <div style="margin-bottom:12px;display:flex;justify-content:center;"><img src="icons/trash.svg" class="icon-line" style="width:32px;height:32px;opacity:0.65;" /></div>
             <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">정말 삭제할까요?</div>
             <div style="font-size:0.88rem;color:var(--text-mid);margin-bottom:20px;">삭제하면 복구할 수 없어요.</div>
             <div style="display:flex;gap:10px;justify-content:center;">
@@ -435,6 +477,20 @@
         LoadMeasures();
         await JS.InvokeVoidAsync("showToast", "저장됐어요");
         await OnSaved.InvokeAsync();
+    }
+
+    async Task TriggerPopupPhotoInput()
+    {
+        await JS.InvokeVoidAsync("eval", "document.getElementById('popup-photo-input').click()");
+    }
+
+    void SetPopupThumbnail(Guid photoId)
+    {
+        var photo = Project?.Photos.FirstOrDefault(p => p.Id == photoId);
+        if (photo == null) return;
+        Project!.Photos.Remove(photo);
+        Project.Photos.Insert(0, photo);
+        StateHasChanged();
     }
 
     async Task OnPhotoSelected(InputFileChangeEventArgs e)
