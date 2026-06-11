@@ -39,7 +39,7 @@
                 @if (Project.Photos.Count > 0 && Project.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
                 {
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;">
-                        @foreach (var photo in Project.Photos)
+                        @foreach (var photo in Project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)))
                         {
                             <img src="@photo.Base64Data"
                                  style="width:100px; height:100px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border);"
@@ -264,7 +264,7 @@
                 @if (Project.Photos.Count > 0 && Project.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
                 {
                     <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
-                        @foreach (var photo in Project.Photos)
+                        @foreach (var photo in Project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)))
                         {
                             <div style="position:relative;">
                                 <img src="@photo.Base64Data"
@@ -276,7 +276,7 @@
                         }
                     </div>
                 }
-                <InputFile OnChange="OnPhotoSelected" accept="image/*" multiple class="form-control" style="padding:6px; margin-bottom:4px;" />
+                <InputFile OnChange="OnPhotoSelected" accept="image/jpeg,image/png,image/heic,image/heif,image/webp" multiple class="form-control" style="padding:6px; margin-bottom:4px;" />
                 <p style="font-size:0.75rem; color:var(--text-light); margin-bottom:16px;">최대 20MB, 여러 장 선택 가능</p>
             }
 
@@ -458,7 +458,10 @@
                 using var stream = file.OpenReadStream(20 * 1024 * 1024);
                 using var ms = new System.IO.MemoryStream();
                 await stream.CopyToAsync(ms);
-                var base64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+                var rawBase64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+                string base64;
+                try { base64 = await JS.InvokeAsync<string>("compressImage", rawBase64, 800, 0.75); }
+                catch { base64 = rawBase64; }
                 Project.Photos.Add(new ProjectPhoto
                 {
                     FileName   = file.Name,

@@ -562,7 +562,7 @@ else
         @if (_project.Photos.Count > 0 && _project.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
         {
             <div style="display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
-                @foreach (var photo in _project.Photos)
+                @foreach (var photo in _project.Photos.Where(p => !string.IsNullOrEmpty(p.Base64Data)))
                 {
                     <div style="position:relative;">
                         <img src="@photo.Base64Data"
@@ -587,7 +587,7 @@ else
             <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">아직 사진이 없어요. 과정을 기록해 보세요!</p>
         }
 
-        <InputFile OnChange="OnPhotoSelected" accept="image/*" multiple class="form-control" style="padding:6px;" />
+        <InputFile OnChange="OnPhotoSelected" accept="image/jpeg,image/png,image/heic,image/heif,image/webp" multiple class="form-control" style="padding:6px;" />
     </div>
 
         <!-- ── 연결된 실 ── -->
@@ -1096,6 +1096,8 @@ else
         _loading = true;
         var all = await Storage.GetProjectsAsync();
         _project = all.FirstOrDefault(p => p.Id == ProjectId);
+        // 데이터 불러오기 후 빈 사진 항목 정리
+        _project?.Photos.RemoveAll(p => string.IsNullOrEmpty(p.Base64Data));
         _yarns = await Storage.GetYarnsAsync();
         _allTools = await Storage.GetToolsAsync();
         _allSwatches = await Storage.GetSwatchesAsync();
@@ -1266,7 +1268,17 @@ else
                 using var stream = file.OpenReadStream(20 * 1024 * 1024);
                 using var ms = new System.IO.MemoryStream();
                 await stream.CopyToAsync(ms);
-                var base64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+                // HEIF/HEIC 포함 모든 이미지 → JPEG 압축 (최대 1200px, 용량 절감)
+                var rawBase64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+                string base64;
+                try
+                {
+                    base64 = await JS.InvokeAsync<string>("compressImage", rawBase64, 800, 0.75);
+                }
+                catch
+                {
+                    base64 = rawBase64; // 압축 실패 시 원본 사용
+                }
                 _project.Photos.Add(new ProjectPhoto
                 {
                     FileName   = file.Name,
