@@ -32,6 +32,9 @@ jobs:
       - name: Publish
         run: dotnet publish BlazorApp1/BlazorApp1.csproj -c Release -o publish
 
+      - name: Find service worker files
+        run: find publish -name "service-worker*" 2>/dev/null || echo "nothing found"
+
       - name: Use published service worker
         run: |
           cp publish/wwwroot/service-worker.published.js \
