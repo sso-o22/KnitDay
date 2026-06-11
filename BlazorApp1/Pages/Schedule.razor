@@ -287,16 +287,14 @@ else
                     <label class="form-label">사용 실</label>
                     <select class="form-control" style="margin-bottom:8px;" @onchange="OnAddYarn">
                         <option value="">+ 실 추가</option>
-                        @{ var activeYarns = _yarns.Where(y => y.Quantity > 0).ToList(); }
-                        @{ var emptyYarns  = _yarns.Where(y => y.Quantity <= 0).ToList(); }
-                        @foreach (var y in activeYarns)
+                        @foreach (var y in YarnActive)
                         {
                             <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
                         }
-                        @if (emptyYarns.Any())
+                        @if (YarnEmpty.Any())
                         {
                             <optgroup label="── 소진 ──">
-                                @foreach (var y in emptyYarns)
+                                @foreach (var y in YarnEmpty)
                                 {
                                     <option value="@y.Id">@y.Brand @y.Name (@y.Color) [소진]</option>
                                 }
@@ -567,6 +565,8 @@ else
 
     bool _showModal = false;
     List<Yarn> _yarns = new();
+    IEnumerable<Yarn> YarnActive => _yarns.Where(y => y.Quantity > 0);
+    IEnumerable<Yarn> YarnEmpty  => _yarns.Where(y => y.Quantity <= 0);
     List<KnitTool> _tools = new();
     List<Swatch> _allSwatches = new();
     KnitProject? _editingProject;

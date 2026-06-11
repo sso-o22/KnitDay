@@ -420,7 +420,8 @@ else
     void _CalcUsed()
     {
         _usedQty = new();
-        foreach (var p in _projects)
+        // 완료된 프로젝트는 제외 — 진행중/일시중단만 사용중으로 집계
+        foreach (var p in _projects.Where(p => p.Status != ProjectStatus.완료))
             foreach (var u in p.YarnUsages)
                 _usedQty[u.YarnId] = (_usedQty.TryGetValue(u.YarnId, out var v) ? v : 0) + u.BallsUsed;
     }
