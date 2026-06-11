@@ -35,7 +35,7 @@ namespace KnitLog.Services
         public void SetAuthService(AuthService auth) { _auth = auth; }
 
         private string? Uid => _auth?.CurrentUser?.Uid;
-        private bool IsLoggedIn => !string.IsNullOrEmpty(Uid);
+        public  bool IsLoggedIn => !string.IsNullOrEmpty(Uid);
 
         // ── 로컬 스토리지 ────────────────────────────────────────────
         private async Task SaveLocalAsync<T>(string key, List<T> list)

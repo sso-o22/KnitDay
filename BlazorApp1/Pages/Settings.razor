@@ -115,17 +115,6 @@
         @* ── 클라우드 저장공간 게이지 ── *@
         @if (Auth.IsLoggedIn)
         {
-            @{
-                const long limitBytes = 25L * 1024 * 1024 * 1024; // 25GB
-                long totalBytes = _photoBytes + _pdfBytes;
-                double totalPct  = Math.Min(100.0, totalBytes  / (double)limitBytes * 100);
-                double photoPct  = Math.Min(100.0, _photoBytes / (double)limitBytes * 100);
-                double pdfPct    = Math.Min(100.0, _pdfBytes   / (double)limitBytes * 100);
-                string FmtSize(long b) => b >= 1024*1024*1024 ? $"{b/1024.0/1024/1024:F1} GB"
-                                        : b >= 1024*1024      ? $"{b/1024.0/1024:F1} MB"
-                                        : b >= 1024           ? $"{b/1024.0:F0} KB"
-                                        : $"{b} B";
-            }
             <div style="margin-bottom:16px; padding:14px 16px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <span style="font-size:0.82rem; font-weight:600; color:var(--text-dark);">클라우드 저장공간</span>
@@ -135,30 +124,26 @@
                     }
                     else
                     {
-                        <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(totalBytes) / 25 GB</span>
+                        <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(_photoBytes + _pdfBytes) / 25 GB</span>
                     }
                 </div>
-
                 @* 전체 게이지바 *@
                 <div style="height:10px; background:var(--border); border-radius:99px; overflow:hidden; margin-bottom:10px; position:relative;">
-                    @* PDF 부분 (뒤) *@
-                    <div style="position:absolute; left:0; top:0; height:100%; width:@((photoPct+pdfPct).ToString("F2"))%; background:var(--text-light); border-radius:99px; opacity:0.5;"></div>
-                    @* 사진 부분 (앞) *@
-                    <div style="position:absolute; left:0; top:0; height:100%; width:@(photoPct.ToString("F2"))%; background:var(--theme-active); border-radius:99px; transition:width 0.4s;"></div>
+                    <div style="position:absolute;left:0;top:0;height:100%;width:@(UsagePdfPct.ToString("F2"))%;background:var(--text-light);border-radius:99px;opacity:0.5;"></div>
+                    <div style="position:absolute;left:0;top:0;height:100%;width:@(UsagePhotoPct.ToString("F2"))%;background:var(--theme-active);border-radius:99px;transition:width 0.4s;"></div>
                 </div>
-
                 @* 범례 *@
                 <div style="display:flex; gap:14px; flex-wrap:wrap;">
                     <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-mid);">
-                        <span style="width:10px; height:10px; border-radius:3px; background:var(--theme-active); flex-shrink:0;"></span>
+                        <span style="width:10px;height:10px;border-radius:3px;background:var(--theme-active);flex-shrink:0;"></span>
                         사진 @FmtSize(_photoBytes)
                     </div>
                     <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-mid);">
-                        <span style="width:10px; height:10px; border-radius:3px; background:var(--text-light); opacity:0.5; flex-shrink:0;"></span>
+                        <span style="width:10px;height:10px;border-radius:3px;background:var(--text-light);opacity:0.5;flex-shrink:0;"></span>
                         도안 PDF @FmtSize(_pdfBytes)
                     </div>
-                    <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-light); margin-left:auto;">
-                        잔여 @FmtSize(limitBytes - totalBytes)
+                    <div style="font-size:0.75rem; color:var(--text-light); margin-left:auto;">
+                        잔여 @FmtSize(UsageLimitBytes - _photoBytes - _pdfBytes)
                     </div>
                 </div>
             </div>
@@ -287,6 +272,13 @@
     long _photoBytes = 0;
     long _pdfBytes = 0;
     bool _usageLoaded = false;
+    const long UsageLimitBytes = 25L * 1024 * 1024 * 1024;
+    double UsagePhotoPct => Math.Min(100.0, _photoBytes / (double)UsageLimitBytes * 100);
+    double UsagePdfPct   => Math.Min(100.0, (_photoBytes + _pdfBytes) / (double)UsageLimitBytes * 100);
+    static string FmtSize(long b) => b >= 1024*1024*1024 ? $"{b/1024.0/1024/1024:F1} GB"
+                                   : b >= 1024*1024      ? $"{b/1024.0/1024:F1} MB"
+                                   : b >= 1024           ? $"{b/1024.0:F0} KB"
+                                   : $"{b} B";
     bool _debugMode = false;
     string _importMsg = "";
     bool _importError = false;
