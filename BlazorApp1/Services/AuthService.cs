@@ -35,6 +35,17 @@ namespace KnitLog.Services
         public async Task InitAsync()
         {
             if (IsInitialized) return;
+            // firebase.js(module)가 로드될 때까지 대기 (최대 5초)
+            for (int i = 0; i < 50; i++)
+            {
+                try
+                {
+                    var exists = await _js.InvokeAsync<bool>("eval", "typeof firebaseAuth !== 'undefined'");
+                    if (exists) break;
+                }
+                catch { }
+                await Task.Delay(100);
+            }
             // Firebase 세션 복원 완료까지 대기 후 현재 로그인 상태 로드
             try
             {
@@ -50,8 +61,12 @@ namespace KnitLog.Services
             IsInitialized = true;
             OnAuthChanged?.Invoke();
             // 이후 상태 변경 감지 (로그인/로그아웃)
-            _ref = DotNetObjectReference.Create(this);
-            await _js.InvokeVoidAsync("firebaseAuth.onAuthStateChanged", _ref);
+            try
+            {
+                _ref = DotNetObjectReference.Create(this);
+                await _js.InvokeVoidAsync("firebaseAuth.onAuthStateChanged", _ref);
+            }
+            catch { }
         }
 
         [JSInvokable]
