@@ -258,6 +258,14 @@ body {
 }
 .btn-sage:hover { background: var(--theme-light); color: var(--theme-active); }
 
+/* 일시중단/재개 버튼 — 라이트: 연한 배경, 다크: btn-secondary 패턴 */
+.btn-pause {
+    background: #f5e6c0;
+    color: #8a6010;
+    border: 1px solid #e8c97a;
+}
+.btn-pause:hover { background: #eed8a8; }
+
 .btn-mint {
     background: var(--theme-light);
     color: var(--black);
@@ -530,10 +538,11 @@ body {
     /* 아이패드: select 높이 통일 */
     select.form-control {
         height: auto;
-        min-height: unset;
+        min-height: 44px;
         padding: 10px 14px;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
         box-sizing: border-box;
+        line-height: 1.4;
     }
     /* 아이패드: 날짜 input — 그리드 셀 너비에 맞게 강제 */
     input[type="date"] {
@@ -652,6 +661,13 @@ body {
         max-width: 100%;
         min-width: 0;
         box-sizing: border-box;
+    }
+
+    /* 체크리스트 inline input/button은 크기 억제 */
+    input[type='checkbox'] {
+        font-size: unset !important;
+        width: 14px !important;
+        height: 14px !important;
     }
 
 
@@ -1093,6 +1109,16 @@ body {
 [data-dark="true"] [style*="background:var(--theme-light)"][style*="border-radius:4px 4px"] {
     background: #888888 !important;
 }
+[data-dark="true"] .btn-pause {
+    background: var(--ivory-mid);
+    color: var(--text-mid);
+    border-color: var(--border);
+}
+[data-dark="true"] .btn-pause:hover {
+    background: var(--ivory-dark);
+    color: var(--text-dark);
+}
+
 [data-dark="true"] .btn-primary,
 [data-dark="true"] .btn-sage {
     color: var(--theme-active);
@@ -1123,10 +1149,12 @@ body {
 }
 
 [data-dark="true"] .btn-danger {
+    background: #2a1212;
     color: #e87878;
     border-color: #5a2020;
 }
-[data-dark="true"] .btn-danger:hover { background: #2a1010; }
+[data-dark="true"] .btn-danger:hover { background: #3a1818; }
+[data-dark="true"] .btn-danger .icon-line { opacity: 0.9; }
 
 /* ── 로딩 ────────────────────────────────────────────── */
 .loading {
