@@ -34,12 +34,20 @@ else
                placeholder="실 이름, 브랜드, 색상으로 검색..." />
     </div>
 
-    <!-- 필터 -->
-    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:20px;">
+    <!-- 필터 + 정렬 -->
+    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;">
         @foreach (var (label, val) in new[]{("전체","all"),("사용 중","linked"),("미사용","unlinked"),("부족","low"),("소진","empty")})
         {
             <button class="btn btn-sm @(_filter==val?"btn-primary":"btn-ghost")"
                     @onclick='async ()=>{ _filter=val; await JS.InvokeVoidAsync("localStorage.setItem", "yarn_filter", val); }'>@label</button>
+        }
+    </div>
+    <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center;">
+        <span style="font-size:0.78rem; color:var(--text-light);">정렬</span>
+        @foreach (var (label, val) in new[]{("등록일↓","created_desc"),("이름순","name_asc"),("브랜드순","brand_asc")})
+        {
+            <button class="btn btn-sm @(_yarnSort==val?"btn-sage":"btn-ghost")"
+                    @onclick="async () => await SetYarnSort(val)">@label</button>
         }
     </div>
 
@@ -364,6 +372,7 @@ else
     bool _showModal = false;
     string _searchText = "";
     string _filter = "all";
+    string _yarnSort = "created_desc";
     List<Yarn> _yarns = new();
     Yarn? _editingYarn;
 
@@ -400,7 +409,12 @@ else
                 _          => list
             };
 
-            return list;
+            return _yarnSort switch
+            {
+                "name_asc"  => list.OrderBy(y => y.Name),
+                "brand_asc" => list.OrderBy(y => y.Brand).ThenBy(y => y.Name),
+                _           => list.OrderByDescending(y => y.CreatedAt),
+            };
         }
     }
 
@@ -413,8 +427,15 @@ else
         _yarns = await Storage.GetYarnsAsync();
         _projects = await Storage.GetProjectsAsync();
         _CalcUsed();
-        _filter = await JS.InvokeAsync<string?>("localStorage.getItem", "yarn_filter") ?? "all";
+        _filter    = await JS.InvokeAsync<string?>("localStorage.getItem", "yarn_filter") ?? "all";
+        _yarnSort  = await JS.InvokeAsync<string?>("localStorage.getItem", "yarn_sort")   ?? "created_desc";
         _loading = false;
+    }
+
+    async Task SetYarnSort(string val)
+    {
+        _yarnSort = val;
+        await JS.InvokeVoidAsync("localStorage.setItem", "yarn_sort", val);
     }
 
     void _CalcUsed()

@@ -84,9 +84,9 @@ else
             @foreach (var proj in FilteredSortedProjects)
             {
                 <div class="card" style="cursor:pointer;" @onclick="() => GoToDetail(proj.Id)">
-                    @if (proj.Photos.Count > 0 && !string.IsNullOrEmpty(proj.Photos[0].Base64Data))
+                    @if (proj.Photos.Count > 0 && (!string.IsNullOrEmpty(proj.Photos[0].Base64Data) || !string.IsNullOrEmpty(proj.Photos[0].StorageUrl)))
                     {
-                        <img src="@proj.Photos[0].Base64Data" class="photo-thumb"
+                        <img src="@(!string.IsNullOrEmpty(proj.Photos[0].StorageUrl) ? proj.Photos[0].StorageUrl : proj.Photos[0].Base64Data)" class="photo-thumb"
                              style="width:100%; height:160px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px;"
                              alt="프로젝트 사진" />
                     }
@@ -137,7 +137,6 @@ else
                                     @onclick="() => ToggleSuspend(proj)"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /> 재개</button>
                         }
                         <button class="btn btn-sm btn-sage" @onclick="() => CompleteProject(proj.Id)"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /> 완료</button>
-                        <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;" /></button>
                     </div>
                 </div>
             }
@@ -151,9 +150,9 @@ else
             {
                 <div class="card" style="cursor:pointer; display:flex; align-items:center; gap:14px; padding:12px 16px;"
                      @onclick="() => GoToDetail(proj.Id)">
-                    @if (proj.Photos.Count > 0 && !string.IsNullOrEmpty(proj.Photos[0].Base64Data))
+                    @if (proj.Photos.Count > 0 && (!string.IsNullOrEmpty(proj.Photos[0].Base64Data) || !string.IsNullOrEmpty(proj.Photos[0].StorageUrl)))
                     {
-                        <img src="@proj.Photos[0].Base64Data"
+                        <img src="@(!string.IsNullOrEmpty(proj.Photos[0].StorageUrl) ? proj.Photos[0].StorageUrl : proj.Photos[0].Base64Data)"
                              style="width:52px; height:52px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border); flex-shrink:0;"
                              alt="사진" />
                     }
@@ -188,7 +187,7 @@ else
                             <button class="btn btn-sm btn-pause" @onclick="() => ToggleSuspend(proj)"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /></button>
                         }
                         <button class="btn btn-sage btn-sm" @onclick="() => CompleteProject(proj.Id)"><img src="icons/check-fat.svg" class="icon-line" style="width:14px;height:14px;" /></button>
-                        <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;" /></button>
+                        
                     </div>
                 </div>
             }
@@ -459,7 +458,15 @@ else
                 {
                     <span></span>
                 }
-                <div style="display:flex; gap:8px;">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    @if (_editingProject?.Id != Guid.Empty)
+                    {
+                        <button class="btn btn-danger btn-sm" style="display:inline-flex;align-items:center;gap:4px;"
+                                @onclick='() => { CloseModal(); Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => await DeleteProject(_editingProject!.Id)); }'
+                                disabled="@_saving">
+                            <img src="icons/trash.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />삭제
+                        </button>
+                    }
                     <button class="btn btn-ghost" @onclick="CloseModal">취소</button>
                     <button class="btn btn-primary" @onclick="SaveProject" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
                 </div>

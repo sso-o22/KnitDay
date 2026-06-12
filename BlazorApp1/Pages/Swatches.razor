@@ -50,6 +50,14 @@
                 <button class="btn btn-ghost btn-sm" @onclick="ResetFilters">✕ 초기화</button>
             }
         </div>
+        <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
+            <span style="font-size:0.78rem; color:var(--text-light);">정렬</span>
+            @foreach (var (label, val) in new[]{("등록일↓","created_desc"),("이름순","name_asc"),("바늘↑","needle_asc")})
+            {
+                <button class="btn btn-sm @(_swatchSort==val?"btn-sage":"btn-ghost")"
+                        @onclick="async () => await SetSwatchSort(val)">@label</button>
+            }
+        </div>
     </div>
 }
 
@@ -67,7 +75,7 @@ else if (_swatches.Count == 0)
 else
 {
     <div class="grid-3">
-        @foreach (var s in FilteredSwatches)
+        @foreach (var s in SortedSwatches)
         {
             var yarn = _yarns.Find(y => y.Id == s.YarnId);
             var project = _projects.Find(p => p.Id == s.ProjectId);
@@ -524,6 +532,7 @@ else
 
     // 필터
     string _filterProject = "";
+    string _swatchSort = "created_desc";
     string _filterStitch  = "";
     string _filterNeedle  = "";
 
@@ -541,6 +550,13 @@ else
     IEnumerable<Swatch> FilteredSwatches => _swatches.Where(s =>
     {
         if (_filterProject == "linked" && s.ProjectId == null) return false;
+
+    IEnumerable<Swatch> SortedSwatches => _swatchSort switch
+    {
+        "name_asc"   => FilteredSwatches.OrderBy(s => s.Name),
+        "needle_asc" => FilteredSwatches.OrderBy(s => s.NeedleSizeMm),
+        _            => FilteredSwatches.OrderByDescending(s => s.CreatedAt),
+    };
         if (_filterProject == "unlinked" && s.ProjectId != null) return false;
         if (_filterStitch != "" && !s.Stitch.Contains(_filterStitch)) return false;
         if (_filterNeedle != "" && s.NeedleSizeMm.ToString("G") != _filterNeedle) return false;
@@ -632,6 +648,7 @@ else
         _filterProject = await JS.InvokeAsync<string?>("localStorage.getItem", "sw_fp") ?? "";
         _filterStitch  = await JS.InvokeAsync<string?>("localStorage.getItem", "sw_fs") ?? "";
         _filterNeedle  = await JS.InvokeAsync<string?>("localStorage.getItem", "sw_fn") ?? "";
+        _swatchSort    = await JS.InvokeAsync<string?>("localStorage.getItem", "sw_sort") ?? "created_desc";
         _loading  = false;
     }
 
@@ -686,6 +703,12 @@ else
     {
         _filterStitch = val;
         await JS.InvokeVoidAsync("localStorage.setItem", "sw_fs", val);
+    }
+
+    async Task SetSwatchSort(string val)
+    {
+        _swatchSort = val;
+        await JS.InvokeVoidAsync("localStorage.setItem", "sw_sort", val);
     }
 
     async Task ResetFilters() { _filterProject = ""; _filterStitch = ""; _filterNeedle = ""; await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fp"); await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fs"); await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fn"); }

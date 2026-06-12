@@ -27,13 +27,21 @@ else if (_projects.Count == 0)
 }
 else
 {
+    <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
+        <span style="font-size:0.78rem; color:var(--text-light);">정렬</span>
+        @foreach (var (label, val) in new[]{("완성일↓","end_desc"),("완성일↑","end_asc"),("이름순","name_asc")})
+        {
+            <button class="btn btn-sm @(_finSort==val?"btn-sage":"btn-ghost")"
+                    @onclick="async () => await SetFinSort(val)">@label</button>
+        }
+    </div>
     <div class="grid-3">
-        @foreach (var proj in _projects)
+        @foreach (var proj in SortedProjects)
         {
             <div class="card" style="cursor:pointer;" @onclick="() => OpenDetail(proj)">
-                @if (proj.Photos.Count > 0 && proj.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data)))
+                @if (proj.Photos.Count > 0 && proj.Photos.Any(p => !string.IsNullOrEmpty(p.Base64Data) || !string.IsNullOrEmpty(p.StorageUrl)))
                 {
-                    <img src="@proj.Photos[0].Base64Data"
+                    <img src="@(!string.IsNullOrEmpty(proj.Photos[0].StorageUrl) ? proj.Photos[0].StorageUrl : proj.Photos[0].Base64Data)"
                          style="width:100%; height:180px; object-fit:cover; border-radius:var(--radius-sm); margin-bottom:12px;"
                          alt="완성 사진" />
                 }
@@ -72,6 +80,13 @@ else
     bool _loading = true;
     bool _showDetail = false;
     List<KnitProject> _projects = new();
+    string _finSort = "end_desc";
+    IEnumerable<KnitProject> SortedProjects => _finSort switch
+    {
+        "end_asc"  => _projects.OrderBy(p => p.EndDate),
+        "name_asc" => _projects.OrderBy(p => p.Title),
+        _          => _projects.OrderByDescending(p => p.EndDate),
+    };
     KnitProject? _selectedProject;
     List<Yarn> _allYarns = new();
     List<KnitTool> _allTools = new();
@@ -79,7 +94,14 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
+        _finSort  = await JS.InvokeAsync<string?>("localStorage.getItem", "fin_sort") ?? "end_desc";
         _loading = false;
+    }
+
+    async Task SetFinSort(string val)
+    {
+        _finSort = val;
+        await JS.InvokeVoidAsync("localStorage.setItem", "fin_sort", val);
     }
 
     async Task LoadData()

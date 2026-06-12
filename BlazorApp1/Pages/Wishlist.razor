@@ -28,8 +28,16 @@ else if (_projects.Count == 0)
 }
 else
 {
+    <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
+        <span style="font-size:0.78rem; color:var(--text-light);">정렬</span>
+        @foreach (var (label, val) in new[]{("등록일↓","created_desc"),("이름순","name_asc")})
+        {
+            <button class="btn btn-sm @(_wishSort==val?"btn-sage":"btn-ghost")"
+                    @onclick="async () => await SetWishSort(val)">@label</button>
+        }
+    </div>
     <div class="grid-3">
-        @foreach (var proj in _projects)
+        @foreach (var proj in SortedWishes)
         {
             <div class="card">
                 <div class="flex-between mb-1">
@@ -168,6 +176,12 @@ else
     }
 
     bool _loading = true;
+    string _wishSort = "created_desc";
+    IEnumerable<KnitProject> SortedWishes => _wishSort switch
+    {
+        "name_asc" => _projects.OrderBy(p => p.Title),
+        _          => _projects.OrderByDescending(p => p.CreatedAt),
+    };
     bool _showModal = false;
     List<KnitProject> _projects = new();
     KnitProject? _editingProject;
@@ -175,7 +189,14 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
+        _wishSort = await JS.InvokeAsync<string?>("localStorage.getItem", "wish_sort") ?? "created_desc";
         _loading = false;
+    }
+
+    async Task SetWishSort(string val)
+    {
+        _wishSort = val;
+        await JS.InvokeVoidAsync("localStorage.setItem", "wish_sort", val);
     }
 
     async Task LoadData()
