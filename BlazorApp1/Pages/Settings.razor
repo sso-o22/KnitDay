@@ -335,6 +335,8 @@
         _isDark = !_isDark;
         await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_dark", _isDark.ToString().ToLower());
         await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark', '{_isDark.ToString().ToLower()}')");
+        // 사이드바 아이콘도 동기화
+        MainLayout.OnDarkChanged?.Invoke(_isDark);
     }
 
     async Task ToggleDebug()
@@ -516,10 +518,18 @@
         MainLayout.OnDarkChanged += OnDarkChangedHandler;
     }
 
-    void OnDarkChangedHandler(bool isDark)
+    async void OnDarkChangedHandler(bool isDark)
     {
         _isDark = isDark;
-        InvokeAsync(StateHasChanged);
+        // 다크 전환 시 테마 버튼 비활성화 즉시 반영
+        if (isDark) _currentTheme = "mono";
+        else
+        {
+            // 라이트로 돌아올 때 저장된 테마 복원
+            var saved = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_theme");
+            if (!string.IsNullOrEmpty(saved)) _currentTheme = saved;
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     public void Dispose()
