@@ -336,8 +336,7 @@
         _isDark = !_isDark;
         await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_dark", _isDark.ToString().ToLower());
         await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark', '{_isDark.ToString().ToLower()}')");
-        // 사이드바 아이콘도 동기화
-        MainLayout.OnDarkChanged?.Invoke(_isDark);
+        MainLayout.InvokeDarkChanged(_isDark);
     }
 
     async Task ToggleDebug()

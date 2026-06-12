@@ -93,6 +93,7 @@
     // 다크모드/테마 변경 이벤트 (Settings 등 다른 페이지에서 구독)
     public static event Action<bool>? OnDarkChanged;
     public static event Action<string>? OnThemeChanged;
+    public static void InvokeDarkChanged(bool isDark) => OnDarkChanged?.Invoke(isDark);
     int _finished;
     string _todayTime = "0분";
     private PeriodicTimer? _sidebarTimer;
