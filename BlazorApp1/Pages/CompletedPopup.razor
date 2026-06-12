@@ -309,17 +309,18 @@
                         }
                         else
                         {
-                            <div style="aspect-ratio:1; border:1.5px dashed var(--border); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--ivory-dark);"
-                                 @onclick="TriggerPopupPhotoInput">
+                            <label style="aspect-ratio:1; border:1.5px dashed var(--border); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--ivory-dark); position:relative; overflow:hidden;">
                                 <img src="icons/plus.svg" class="icon-line" style="width:18px;height:18px;opacity:0.4;" />
-                            </div>
+                                <InputFile OnChange="OnPhotoSelected"
+                                           accept="image/jpeg,image/png,image/heic,image/heif,image/webp"
+                                           multiple
+                                           style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
+                            </label>
                         }
                     }
                 </div>
                 <p style="font-size:0.72rem; color:var(--text-light); margin-bottom:12px;">슬롯 눌러 추가 · 별 눌러 대표사진 · 최대 5장 · 자동 압축</p>
-                <InputFile id="popup-photo-input" OnChange="OnPhotoSelected"
-                           accept="image/jpeg,image/png,image/heic,image/heif,image/webp"
-                           multiple style="display:none;" />
+
             }
 
             </div><!-- /스크롤 영역 -->
