@@ -550,6 +550,11 @@ else
     IEnumerable<Swatch> FilteredSwatches => _swatches.Where(s =>
     {
         if (_filterProject == "linked" && s.ProjectId == null) return false;
+        if (_filterProject == "unlinked" && s.ProjectId != null) return false;
+        if (_filterStitch != "" && !s.Stitch.Contains(_filterStitch)) return false;
+        if (_filterNeedle != "" && s.NeedleSizeMm.ToString("G") != _filterNeedle) return false;
+        return true;
+    });
 
     IEnumerable<Swatch> SortedSwatches => _swatchSort switch
     {
@@ -557,11 +562,6 @@ else
         "needle_asc" => FilteredSwatches.OrderBy(s => s.NeedleSizeMm),
         _            => FilteredSwatches.OrderByDescending(s => s.CreatedAt),
     };
-        if (_filterProject == "unlinked" && s.ProjectId != null) return false;
-        if (_filterStitch != "" && !s.Stitch.Contains(_filterStitch)) return false;
-        if (_filterNeedle != "" && s.NeedleSizeMm.ToString("G") != _filterNeedle) return false;
-        return true;
-    });
 
     // 독립 계산기 모달 입력값
     double _c1OrigStitch = 0;
