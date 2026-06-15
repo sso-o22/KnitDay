@@ -686,18 +686,22 @@ else
                                 }
                                 <span>@s.Stitch</span>
                             </div>
-                            @if (s.PreWashWidthCm > 0 || s.PreWashHeightCm > 0)
+                            @{
+                                double? wRate = (s.PreWashWidthCm > 0 && s.PostWashWidthCm > 0 && s.PreWashWidthCm != s.PostWashWidthCm)
+                                    ? Math.Round((s.PostWashWidthCm - s.PreWashWidthCm) / s.PreWashWidthCm * 100, 1) : (double?)null;
+                                double? hRate = (s.PreWashHeightCm > 0 && s.PostWashHeightCm > 0 && s.PreWashHeightCm != s.PostWashHeightCm)
+                                    ? Math.Round((s.PostWashHeightCm - s.PreWashHeightCm) / s.PreWashHeightCm * 100, 1) : (double?)null;
+                            }
+                            @if (wRate.HasValue || hRate.HasValue)
                             {
                                 <div style="margin-top:8px; display:flex; gap:6px;">
-                                    @if (s.PreWashWidthCm > 0)
+                                    @if (wRate.HasValue)
                                     {
-                                        var w = s.WidthShrinkagePercent;
-                                        <span style="font-size:0.78rem; color:@(w < 0 ? "#c0392b" : "#267848"); font-weight:600;">가로 @(w > 0 ? "+" : "")@w%</span>
+                                        <span style="font-size:0.78rem; color:@(wRate.Value < 0 ? "#c0392b" : "#267848"); font-weight:600;">가로 @(wRate.Value > 0 ? "+" : "")@wRate.Value%</span>
                                     }
-                                    @if (s.PreWashHeightCm > 0)
+                                    @if (hRate.HasValue)
                                     {
-                                        var h = s.HeightShrinkagePercent;
-                                        <span style="font-size:0.78rem; color:@(h < 0 ? "#c0392b" : "#267848"); font-weight:600;">세로 @(h > 0 ? "+" : "")@h%</span>
+                                        <span style="font-size:0.78rem; color:@(hRate.Value < 0 ? "#c0392b" : "#267848"); font-weight:600;">세로 @(hRate.Value > 0 ? "+" : "")@hRate.Value%</span>
                                     }
                                 </div>
                             }
