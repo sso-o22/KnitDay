@@ -152,6 +152,27 @@
     <script src="js/patternViewer.js"></script>
     <script src="js/app.js"></script>
     
+    <script>
+        // Wake Lock: 타이머 활성 시 화면/앱 절전 방지
+        let _wakeLock = null;
+        window.acquireWakeLock = async function() {
+            try {
+                if ('wakeLock' in navigator) {
+                    _wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch(e) { /* 미지원 환경 무시 */ }
+        };
+        window.releaseWakeLock = function() {
+            if (_wakeLock) { _wakeLock.release(); _wakeLock = null; }
+        };
+        // 화면 다시 켜질 때 재획득
+        document.addEventListener('visibilitychange', async () => {
+            if (_wakeLock !== null && document.visibilityState === 'visible') {
+                try { _wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
+            }
+        });
+    </script>
+
     <script type="module" src="js/firebase.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
 </body>
