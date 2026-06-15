@@ -31,7 +31,7 @@
         @* 2행: 뜨개 방법 *@
         <div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:2px;">
             <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-            @foreach (var (label, val) in new[]{("전체",""),("메리야스","메리야스"),("무늬","무늬"),("가터","가터"),("고무단","고무단")})
+            @foreach (var (label, val) in new[]{("전체",""),("메리야스","메리야스"),("무늬","무늬")})
             {
                 <button class="btn btn-sm @(_filterStitch==val?"btn-primary":"btn-ghost")" style="flex-shrink:0;"
                         @onclick="() => SetFilterStitch(val)">@label</button>
@@ -256,8 +256,6 @@ else
                     <select class="form-control" value="@_stitchSelect" @onchange="OnStitchSelectChanged">
                         <option value="메리야스">메리야스</option>
                         <option value="무늬">무늬</option>
-                        <option value="가터">가터</option>
-                        <option value="고무단">고무단</option>
                         <option value="직접입력">직접 입력</option>
                     </select>
                     @if (_stitchSelect == "직접입력")
@@ -653,7 +651,7 @@ else
 
     void OpenAddModal()
     {
-        _editing = new Swatch();
+        _editing = new Swatch { Id = Guid.Empty };
         _stitchSelect = "메리야스";
         _showModal = true;
     }
@@ -682,7 +680,7 @@ else
             PostWashWidthCm = s.PostWashWidthCm, PostWashHeightCm = s.PostWashHeightCm,
             Memo = s.Memo, PhotoBase64 = s.PhotoBase64, CreatedAt = s.CreatedAt
         };
-        var presets = new[] { "메리야스", "무늬", "가터", "고무단" };
+        var presets = new[] { "메리야스", "무늬" };
         _stitchSelect = presets.Contains(s.Stitch) ? s.Stitch : "직접입력";
         _showModal = true;
     }
