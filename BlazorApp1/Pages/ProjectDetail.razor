@@ -1123,7 +1123,7 @@ else
         var all = await Storage.GetProjectsAsync();
         _project = all.FirstOrDefault(p => p.Id == ProjectId);
         // 데이터 불러오기 후 빈 사진 항목 정리
-        _project?.Photos.RemoveAll(p => string.IsNullOrEmpty(p.Base64Data));
+        _project?.Photos.RemoveAll(p => string.IsNullOrEmpty(p.Base64Data) && string.IsNullOrEmpty(p.StorageUrl));
         _yarns = await Storage.GetYarnsAsync();
         _allTools = await Storage.GetToolsAsync();
         _allSwatches = await Storage.GetSwatchesAsync();

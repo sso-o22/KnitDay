@@ -103,6 +103,11 @@ else
                         }
                     </div>
 
+                    @if (!string.IsNullOrEmpty(proj.PatternSource))
+                    {
+                        <div style="font-size:0.8rem; color:var(--text-mid); margin-bottom:4px; display:flex; align-items:center; gap:4px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:13px;height:13px; flex-shrink:0;" /> @proj.PatternSource</div>
+                    }
+
                     @if (!string.IsNullOrEmpty(proj.PatternName))
                     {
                         <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:4px; display:flex; align-items:center; gap:4px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:14px;height:14px; flex-shrink:0;" /> @proj.PatternName</div>
@@ -553,7 +558,7 @@ else
             Func<KnitProject, object> keySelector = _sortField switch
             {
                 "start"   => p => (object)(p.StartDate ?? DateTime.MaxValue),
-                "updated" => p => (object)p.CreatedAt,
+                "updated" => p => (object)p.UpdatedAt,
                 "title"   => p => (object)p.Title,
                 _         => p => (object)p.CreatedAt,
             };
