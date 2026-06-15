@@ -91,28 +91,35 @@
                             var borderH   = Math.Max(2, markerH * 0.12);
                             var markerId  = $"rowmarker-{marker.Id:N}";
                             var isDraggable = _markerMode == "single" && marker.IsCurrent;
-                            <div id="@markerId"
-                                 style="position:absolute;left:0;top:@(markerY)px;
-                                        width:@(markerW)px;height:@(markerH)px;
-                                        background:rgba(@rgb,@alpha);
-                                        @(marker.IsCurrent
-                                            ? $"box-shadow:0 -{borderH}px 0 0 rgba({darkRgb},0.8),0 {borderH}px 0 0 rgba({darkRgb},0.8);"
-                                            : "")
-                                        pointer-events:@(isDraggable ? "all" : "none");z-index:15;
-                                        cursor:@(isDraggable ? "ns-resize" : "default");
-                                        transition:top 0.08s ease,height 0.08s ease;"
-                                 @onmousedown="@(isDraggable ? (Action<MouseEventArgs>)(e => StartMarkerDrag(e, marker, pageNum)) : null)"
-                                 @ontouchstart="@(isDraggable ? (Action<TouchEventArgs>)(e => StartMarkerDragTouch(e, marker, pageNum)) : null)">
-                                @if (isDraggable)
-                                {
-                                    @* 드래그 그립 표시 (중앙) *@
+                            @if (isDraggable)
+                            {
+                                <div id="@markerId"
+                                     style="position:absolute;left:0;top:@(markerY)px;
+                                            width:@(markerW)px;height:@(markerH)px;
+                                            background:rgba(@rgb,@alpha);
+                                            box-shadow:0 -@(borderH)px 0 0 rgba(@darkRgb,0.8),0 @(borderH)px 0 0 rgba(@darkRgb,0.8);
+                                            pointer-events:all;z-index:15;cursor:ns-resize;
+                                            transition:top 0.08s ease,height 0.08s ease;"
+                                     @onmousedown="e => StartMarkerDrag(e, marker, pageNum)"
+                                     @ontouchstart="e => StartMarkerDragTouch(e, marker, pageNum)">
                                     <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
                                                 display:flex;flex-direction:column;gap:2px;pointer-events:none;">
                                         <div style="width:24px;height:2px;border-radius:1px;background:rgba(@darkRgb,0.6);"></div>
                                         <div style="width:24px;height:2px;border-radius:1px;background:rgba(@darkRgb,0.6);"></div>
                                     </div>
-                                }
-                            </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <div id="@markerId"
+                                     style="position:absolute;left:0;top:@(markerY)px;
+                                            width:@(markerW)px;height:@(markerH)px;
+                                            background:rgba(@rgb,@alpha);
+                                            @(marker.IsCurrent ? $"box-shadow:0 -{borderH}px 0 0 rgba({darkRgb},0.8),0 {borderH}px 0 0 rgba({darkRgb},0.8);" : "")
+                                            pointer-events:none;z-index:15;
+                                            transition:top 0.08s ease,height 0.08s ease;">
+                                </div>
+                            }
                         }
                     </div>
                 }
@@ -422,7 +429,7 @@
         }
         else
         {
-            <button class="cw-fab" @onclick="()=>_showCounterWidget=true"><img src="icons/yarn.svg" style="width:22px;height:22px;" /></button>
+            <button class="cw-fab" @onclick="()=>_showCounterWidget=true"><img src="icons/plus-minus.svg" class="icon-line" style="width:22px;height:22px;" /></button>
         }
     }
     <!-- ── (도형 기능 제거됨) ── -->
@@ -561,7 +568,7 @@
     .tb-btn {
         background: rgba(0,0,0,0.07); border: 1px solid rgba(0,0,0,0.12);
         color: #222; width: 32px; height: 28px; border-radius: 6px; cursor: pointer; flex-shrink: 0;
-        font-size: 14px;
+        font-size: 14px; display:flex; align-items:center; justify-content:center;
     }
     .tb-btn:hover { background: rgba(0,0,0,0.13); }
     .tb-label {
