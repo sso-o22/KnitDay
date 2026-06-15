@@ -257,9 +257,13 @@
                             @($"{_detectedRowH * _zoom:F0}px")
                         </div>
                     }
-                    @* 다중행 모드: 행 이동 버튼 *@
+                    @* 다중행/자동 모드: 행 이동 + 버튼 *@
                     @if (_markerMode == "multi" && _tool == "rowmarker")
                     {
+                        @if (_detectedRowH > 0 && _detectedLineCount > 0)
+                        {
+                            <div class="dp-val" style="font-size:8px;text-align:center;color:#2a7a2a;margin-top:2px;">@($"{_detectedLineCount}줄 감지")</div>
+                        }
                         @if (_rowMarkers.Any(m => m.IsCurrent))
                         {
                             <div class="dp-sep"></div>
@@ -1547,11 +1551,28 @@
     // ✓ 적용: 두 선 높이 확정 후 pendingMode로 적용
     async Task ConfirmHeightAndApply()
     {
-        await ConfirmRowHeightLines(); // 높이 계산 + 미리보기 선 생성
+        await ConfirmRowHeightLines(); // 높이 계산 + 미리보기 선 생성 + _tool = "rowmarker"
         _markerMode = _pendingMode;
+
         if (_markerMode == "single")
-            KeepOnlySingleMarker();
-        _tool = "rowmarker";
+        {
+            // 단일행: 마커 1개 즉시 생성 (두 선의 상단 위치에)
+            _rowMarkers.Clear();
+            var startY = Math.Min(_rowLineAY, _rowLineBY) / _zoom;
+            _rowMarkers.Add(new RowMarker
+            {
+                Page = _rowDrawPage,
+                Y = startY,
+                RowHeight = _detectedRowH,
+                PageWidth = _pageWidth,
+                Color = _rowMarkerColor,
+                IsCurrent = true
+            });
+            _showPreviewLines = false; // 단일행은 가로선 불필요
+            _ = SaveRowMarkersAsync();
+        }
+        // 다중행: ConfirmRowHeightLines에서 미리보기 선 이미 생성됨 → 클릭 대기
+
         StateHasChanged();
     }
 
@@ -1624,19 +1645,7 @@
 
         if (_markerMode == "single")
         {
-            // 단독 모드: 마커 1개만 유지, 위치 이동
-            _rowMarkers.Clear();
-            _rowMarkers.Add(new RowMarker
-            {
-                Page = pageNum,
-                Y = markerY,
-                RowHeight = _detectedRowH,
-                PageWidth = _pageWidth,
-                Color = _rowMarkerColor,
-                IsCurrent = true
-            });
-            _ = SaveRowMarkersAsync();
-            StateHasChanged();
+            // 단일행 모드: 클릭으로 이동하지 않음 (드래그로만 이동)
             return;
         }
 
@@ -1674,13 +1683,14 @@
 
         if (result.RowHeight > 0)
         {
-            // JS는 현재 zoom 기준 CSS px 반환 → zoom=1 기준으로 나눠서 저장
             _detectedRowH = result.RowHeight / _zoom;
             _pageWidth = await JS.InvokeAsync<double>("patternViewer.getPageWidth", _currentPage);
-            // lineYs도 동일하게 zoom=1 기준으로 변환해서 저장
-            // 렌더링 시 * _zoom 곱하므로 일관성 유지
             _previewLineYs = result.LineYs?.Select(y => y / _zoom).ToList() ?? new();
             _showPreviewLines = true;
+            // 자동 감지 → 다중행 모드로 설정
+            _markerMode = "multi";
+            _pendingMode = "multi";
+            _tool = "rowmarker";
         }
         StateHasChanged();
     }
