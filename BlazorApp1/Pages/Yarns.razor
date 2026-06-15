@@ -29,10 +29,10 @@ else if (_yarns.Count == 0)
 else
 {
     <!-- 검색 -->
-    <div style="display:flex; align-items:center; gap:8px; max-width:320px; margin-bottom:12px; position:relative;">
-        <img src="icons/magnifying-glass.svg" class="icon-line" style="width:15px;height:15px;position:absolute;left:10px;opacity:0.4;pointer-events:none;" />
+    <div style="display:flex; align-items:center; gap:8px; max-width:320px; margin-bottom:12px;">
+        <img src="icons/magnifying-glass.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;opacity:0.45;" />
         <input class="form-control" @bind-value="_searchText" @bind-value:event="oninput"
-               placeholder="실 이름, 브랜드, 색상으로 검색..." style="padding-left:32px;" />
+               placeholder="실 이름, 브랜드, 색상으로 검색..." style="flex:1;" />
     </div>
 
     <!-- 필터 + 정렬 -->

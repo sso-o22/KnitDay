@@ -37,7 +37,7 @@
                         @onclick="() => SetFilterStitch(val)">@label</button>
             }
             <div style="width:1px;height:16px;background:var(--border);flex-shrink:0;"></div>
-            <select style="font-size:0.78rem; padding:4px 4px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--white); color:var(--text-dark); width:72px; flex-shrink:0;"
+            <select class="form-control" style="width:80px; font-size:0.8rem; flex-shrink:0; padding:6px 6px;"
                     value="@_filterNeedle" @onchange="OnFilterNeedleChanged">
                 <option value="">바늘 전체</option>
                 @foreach (var mm in NeedleOptions)
