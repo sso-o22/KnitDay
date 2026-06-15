@@ -43,7 +43,7 @@ else
             </div>
 
             <!-- 정렬 기준 -->
-            <img src="icons/arrows-vertical.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
             <select class="form-control" style="width:auto; padding:5px 10px; font-size:0.82rem;" @bind="_sortField"
                         @bind:after="SaveSchedulePrefs">
                 <option value="created">등록일</option>
@@ -53,15 +53,8 @@ else
             </select>
 
             <!-- 오름/내림차순 -->
-            <button class="btn btn-sm btn-ghost" @onclick="ToggleSortDir" title="@(_sortAsc ? "오름차순" : "내림차순")">
-                @if (_sortAsc)
-                {
-                    <img src="icons/arrow-up.svg" class="icon-line" style="width:14px;height:14px;" /><span> 오름</span>
-                }
-                else
-                {
-                    <img src="icons/arrow-down.svg" class="icon-line" style="width:14px;height:14px;" /><span> 내림</span>
-                }
+            <button class="btn btn-sm btn-ghost" @onclick="ToggleSortDir" title="@(_sortAsc ? "오름차순" : "내림차순")" style="display:inline-flex;align-items:center;gap:3px;">
+                <img src="@(_sortAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:14px;height:14px;" />
             </button>
         </div>
 

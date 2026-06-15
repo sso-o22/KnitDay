@@ -39,6 +39,7 @@
         </div>
         @* 3행: 바늘 + 정렬 + 초기화 한 줄 *@
         <div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:2px;">
+            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
             <select style="font-size:0.78rem; padding:4px 4px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--white); color:var(--text-dark); width:72px; flex-shrink:0;"
                     value="@_filterNeedle" @onchange="OnFilterNeedleChanged">
                 <option value="">바늘 전체</option>
@@ -47,10 +48,16 @@
                     <option value="@mm">@mm mm</option>
                 }
             </select>
-            @foreach (var (label, val) in new[]{("등록일↓","created_desc"),("이름순","name_asc"),("바늘↑","needle_asc")})
+            @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("바늘","needle")})
             {
-                <button class="btn btn-sm @(_swatchSort==val?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
-                        @onclick="async () => await SetSwatchSort(val)">@label</button>
+                var ascVal  = baseVal + "_asc";
+                var descVal = baseVal + "_desc";
+                var isActive = _swatchSort == ascVal || _swatchSort == descVal;
+                var isAsc   = _swatchSort == ascVal;
+                <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
+                        @onclick="async () => await SetSwatchSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
+                    @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
+                </button>
             }
             @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
             {
@@ -555,9 +562,12 @@ else
 
     IEnumerable<Swatch> SortedSwatches => _swatchSort switch
     {
-        "name_asc"   => FilteredSwatches.OrderBy(s => s.Name),
-        "needle_asc" => FilteredSwatches.OrderBy(s => s.NeedleSizeMm),
-        _            => FilteredSwatches.OrderByDescending(s => s.CreatedAt),
+        "name_asc"    => FilteredSwatches.OrderBy(s => s.Name),
+        "name_desc"   => FilteredSwatches.OrderByDescending(s => s.Name),
+        "needle_asc"  => FilteredSwatches.OrderBy(s => s.NeedleSizeMm),
+        "needle_desc" => FilteredSwatches.OrderByDescending(s => s.NeedleSizeMm),
+        "created_asc" => FilteredSwatches.OrderBy(s => s.CreatedAt),
+        _             => FilteredSwatches.OrderByDescending(s => s.CreatedAt),
     };
 
     // 독립 계산기 모달 입력값

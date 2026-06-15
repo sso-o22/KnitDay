@@ -28,11 +28,17 @@ else if (_projects.Count == 0)
 else
 {
     <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center;">
-        <img src="icons/arrows-vertical.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-        @foreach (var (label, val) in new[]{("완성일↓","end_desc"),("완성일↑","end_asc"),("이름순","name_asc")})
+        <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+        @foreach (var (label, baseVal) in new[]{("완성일","end"),("이름순","name")})
         {
-            <button class="btn btn-sm @(_finSort==val?"btn-sage":"btn-ghost")"
-                    @onclick="async () => await SetFinSort(val)">@label</button>
+            var ascVal  = baseVal + "_asc";
+            var descVal = baseVal + "_desc";
+            var isActive = _finSort == ascVal || _finSort == descVal;
+            var isAsc   = _finSort == ascVal;
+            <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")"
+                    @onclick="async () => await SetFinSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
+                @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
+            </button>
         }
     </div>
     <div class="grid-3">
@@ -83,9 +89,10 @@ else
     string _finSort = "end_desc";
     IEnumerable<KnitProject> SortedProjects => _finSort switch
     {
-        "end_asc"  => _projects.OrderBy(p => p.EndDate),
-        "name_asc" => _projects.OrderBy(p => p.Title),
-        _          => _projects.OrderByDescending(p => p.EndDate),
+        "end_asc"   => _projects.OrderBy(p => p.EndDate),
+        "name_asc"  => _projects.OrderBy(p => p.Title),
+        "name_desc" => _projects.OrderByDescending(p => p.Title),
+        _           => _projects.OrderByDescending(p => p.EndDate),
     };
     KnitProject? _selectedProject;
     List<Yarn> _allYarns = new();

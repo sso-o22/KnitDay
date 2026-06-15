@@ -29,11 +29,17 @@ else if (_projects.Count == 0)
 else
 {
     <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center;">
-        <img src="icons/arrows-vertical.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-        @foreach (var (label, val) in new[]{("등록일↓","created_desc"),("이름순","name_asc")})
+        <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+        @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name")})
         {
-            <button class="btn btn-sm @(_wishSort==val?"btn-sage":"btn-ghost")"
-                    @onclick="async () => await SetWishSort(val)">@label</button>
+            var ascVal  = baseVal + "_asc";
+            var descVal = baseVal + "_desc";
+            var isActive = _wishSort == ascVal || _wishSort == descVal;
+            var isAsc   = _wishSort == ascVal;
+            <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")"
+                    @onclick="async () => await SetWishSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
+                @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
+            </button>
         }
     </div>
     <div class="grid-3">
@@ -179,8 +185,10 @@ else
     string _wishSort = "created_desc";
     IEnumerable<KnitProject> SortedWishes => _wishSort switch
     {
-        "name_asc" => _projects.OrderBy(p => p.Title),
-        _          => _projects.OrderByDescending(p => p.CreatedAt),
+        "name_asc"      => _projects.OrderBy(p => p.Title),
+        "name_desc"     => _projects.OrderByDescending(p => p.Title),
+        "created_asc"   => _projects.OrderBy(p => p.CreatedAt),
+        _               => _projects.OrderByDescending(p => p.CreatedAt),
     };
     bool _showModal = false;
     List<KnitProject> _projects = new();
