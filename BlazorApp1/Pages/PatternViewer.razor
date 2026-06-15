@@ -90,6 +90,7 @@
                             var darkRgb   = DarkenRgb(marker.Color);
                             var borderH   = Math.Max(2, markerH * 0.12);
                             var markerId  = $"rowmarker-{marker.Id:N}";
+                            var isDraggable = _markerMode == "single" && marker.IsCurrent;
                             <div id="@markerId"
                                  style="position:absolute;left:0;top:@(markerY)px;
                                         width:@(markerW)px;height:@(markerH)px;
@@ -97,17 +98,20 @@
                                         @(marker.IsCurrent
                                             ? $"box-shadow:0 -{borderH}px 0 0 rgba({darkRgb},0.8),0 {borderH}px 0 0 rgba({darkRgb},0.8);"
                                             : "")
-                                        pointer-events:none;z-index:15;
-                                        transition:top 0.08s ease,height 0.08s ease;">
-                                @* 드래그 핸들: 상단 엣지 *@
-                                <div style="position:absolute;left:0;top:-6px;width:100%;height:14px;
-                                            cursor:ns-resize;pointer-events:all;z-index:16;touch-action:none;"
-                                     @onmousedown="e => StartMarkerDrag(e, marker, pageNum)"
-                                     @ontouchstart="e => StartMarkerDragTouch(e, marker, pageNum)">
+                                        pointer-events:@(isDraggable ? "all" : "none");z-index:15;
+                                        cursor:@(isDraggable ? "ns-resize" : "default");
+                                        transition:top 0.08s ease,height 0.08s ease;"
+                                 @onmousedown="@(isDraggable ? (Action<MouseEventArgs>)(e => StartMarkerDrag(e, marker, pageNum)) : null)"
+                                 @ontouchstart="@(isDraggable ? (Action<TouchEventArgs>)(e => StartMarkerDragTouch(e, marker, pageNum)) : null)">
+                                @if (isDraggable)
+                                {
+                                    @* 드래그 그립 표시 (중앙) *@
                                     <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
-                                                width:32px;height:4px;border-radius:2px;
-                                                background:rgba(@darkRgb,0.7);pointer-events:none;"></div>
-                                </div>
+                                                display:flex;flex-direction:column;gap:2px;pointer-events:none;">
+                                        <div style="width:24px;height:2px;border-radius:1px;background:rgba(@darkRgb,0.6);"></div>
+                                        <div style="width:24px;height:2px;border-radius:1px;background:rgba(@darkRgb,0.6);"></div>
+                                    </div>
+                                }
                             </div>
                         }
                     </div>
@@ -201,6 +205,16 @@
                 @if (_tool == "rowmarker" || _tool == "rowheightdraw")
                 {
                     <div class="dp-sep"></div>
+                    @* 단독/여러행 모드 전환 *@
+                    <div class="dp-row" style="justify-content:center;gap:3px;">
+                        <button class="dp-btn @(_markerMode=="multi"?"dp-on":"")" title="여러행 모드 (누적)" @onclick='()=>_markerMode="multi"' style="width:28px;height:28px;">
+                            <img src="icons/stack.svg" style="width:18px;height:18px;" />
+                        </button>
+                        <button class="dp-btn @(_markerMode=="single"?"dp-on":"")" title="단독행 모드 (드래그)" @onclick='()=>{ _markerMode="single"; KeepOnlySingleMarker(); }' style="width:28px;height:28px;">
+                            <img src="icons/row-height.svg" style="width:18px;height:18px;" />
+                        </button>
+                    </div>
+                    <div class="dp-sep"></div>
                     @* 색상: 행마커 / 감지선 *@
                     <div class="dp-row" style="justify-content:center;gap:4px;">
                         <input type="color" value="@_rowMarkerColor" @oninput="OnRowMarkerColorChange" title="행 마커 색상"
@@ -260,25 +274,33 @@
                                style="width:36px;font-size:10px;text-align:center;padding:2px;border:1px solid #ccc;border-radius:4px;" />
                     </div>
                     <div class="dp-sep"></div>
-                    @* + 버튼 (위로 이동) *@
-                    @if (_rowMarkers.Any(m => m.IsCurrent))
+                    @* + 버튼 (위로 이동) — 여러행 모드만 *@
+                    @if (_markerMode == "multi")
                     {
-                        <div class="dp-row" style="justify-content:center;gap:4px;">
-                            <button class="dp-btn" title="다음 행으로" @onclick="MoveRowMarkerUp" style="width:28px;height:28px;">
-                                <img src="icons/rows-plus-top.svg" style="width:20px;height:20px;" />
-                            </button>
-                            <button class="dp-btn" title="되돌리기" @onclick="UndoRowMarker" style="width:28px;height:28px;">
-                                <img src="icons/arrow-u-up-left.svg" style="width:18px;height:18px;" />
-                            </button>
-                        </div>
+                        @if (_rowMarkers.Any(m => m.IsCurrent))
+                        {
+                            <div class="dp-row" style="justify-content:center;gap:4px;">
+                                <button class="dp-btn" title="다음 행으로" @onclick="MoveRowMarkerUp" style="width:28px;height:28px;">
+                                    <img src="icons/rows-plus-top.svg" style="width:20px;height:20px;" />
+                                </button>
+                                <button class="dp-btn" title="되돌리기" @onclick="UndoRowMarker" style="width:28px;height:28px;">
+                                    <img src="icons/arrow-u-up-left.svg" style="width:18px;height:18px;" />
+                                </button>
+                            </div>
+                        }
+                        else if (_rowMarkers.Any())
+                        {
+                            <div class="dp-row" style="justify-content:center;">
+                                <button class="dp-btn" title="되돌리기" @onclick="UndoRowMarker" style="width:28px;height:28px;">
+                                    <img src="icons/arrow-u-up-left.svg" style="width:18px;height:18px;" />
+                                </button>
+                            </div>
+                        }
                     }
-                    else if (_rowMarkers.Any())
+                    else
                     {
-                        <div class="dp-row" style="justify-content:center;">
-                            <button class="dp-btn" title="되돌리기" @onclick="UndoRowMarker" style="width:28px;height:28px;">
-                                <img src="icons/arrow-u-up-left.svg" style="width:18px;height:18px;" />
-                            </button>
-                        </div>
+                        @* 단독 모드: 드래그 안내 *@
+                        <div class="dp-val" style="font-size:8px;text-align:center;color:var(--text-light);margin-top:2px;line-height:1.4;">막대를<br/>드래그</div>
                     }
                     @* 전체 삭제 *@
                     @if (_rowMarkers.Any())
@@ -1482,6 +1504,7 @@
     List<double> _previewLineYs = new();   // 감지 미리보기 선 (확인 전)
     bool _showPreviewLines = false;
     int _detectPage = 0;
+    string _markerMode = "multi"; // "multi" = 여러행(누적), "single" = 단독행(드래그)
 
     // ── 수동 행 높이: 두 선 드래그 ───────────────────────────────────
     int    _rowDrawPage  = 0;
@@ -1566,6 +1589,21 @@
         StateHasChanged();
     }
 
+    // 단독 모드 전환 시 마커를 현재 행 1개만 남김
+    void KeepOnlySingleMarker()
+    {
+        var current = _rowMarkers.LastOrDefault(m => m.IsCurrent)
+                      ?? _rowMarkers.LastOrDefault();
+        _rowMarkers.Clear();
+        if (current != null)
+        {
+            current.IsCurrent = true;
+            _rowMarkers.Add(current);
+        }
+        _ = SaveRowMarkersAsync();
+        StateHasChanged();
+    }
+
     async Task OnAnnoCanvasClick(MouseEventArgs e, int pageNum)
     {
         if (!_drawMode) return;
@@ -1588,9 +1626,26 @@
         }
         else
         {
-            // lineYs 없으면 행 높이로 계산
             var rowIndex = (int)(clickY / _detectedRowH);
             markerY = rowIndex * _detectedRowH;
+        }
+
+        if (_markerMode == "single")
+        {
+            // 단독 모드: 마커 1개만 유지, 위치 이동
+            _rowMarkers.Clear();
+            _rowMarkers.Add(new RowMarker
+            {
+                Page = pageNum,
+                Y = markerY,
+                RowHeight = _detectedRowH,
+                PageWidth = _pageWidth,
+                Color = _rowMarkerColor,
+                IsCurrent = true
+            });
+            _ = SaveRowMarkersAsync();
+            StateHasChanged();
+            return;
         }
 
         // 같은 페이지·같은 행이면 무시
