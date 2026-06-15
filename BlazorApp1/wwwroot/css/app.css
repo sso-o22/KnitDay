@@ -539,9 +539,11 @@ body {
     .nav-icon { width: auto; }
     .main-content { padding: 24px 20px; }
 
-    /* 아이패드: select 높이 통일 */
-    select.form-control {
-        height: auto;
+    /* 아이패드: 모든 form-control 높이 통일 */
+    select.form-control,
+    input.form-control,
+    input[type="date"].form-control {
+        height: 44px;
         min-height: 44px;
         padding: 10px 14px;
         font-size: 0.95rem;
@@ -554,9 +556,6 @@ body {
         width: 100%;
         max-width: 100%;
         min-width: 0;
-        min-height: unset;
-        height: auto;
-        font-size: 0.9rem;
         box-sizing: border-box;
     }
     /* 날짜 input을 감싸는 form-group도 overflow 방지 */
