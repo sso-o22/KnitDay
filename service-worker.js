@@ -1,4 +1,4 @@
-/* Manifest version: NEXOk7+2 */
+/* Manifest version: emBreG6n */
 // Caution! Be sure you understand the caveats before publishing an application with
 // offline support. See https://aka.ms/blazor-offline-considerations
 
