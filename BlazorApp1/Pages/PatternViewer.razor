@@ -1680,26 +1680,7 @@
         _previewLineYs.Clear();
         StateHasChanged();
 
-        // Gemini API 키가 있으면 AI 감지 시도
-        var geminiKey = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_gemini_key");
-        DetectResult? result = null;
-
-        if (!string.IsNullOrEmpty(geminiKey))
-        {
-            try
-            {
-                result = await DetectRowHeightWithGemini(geminiKey);
-            }
-            catch
-            {
-                result = null;
-            }
-        }
-
-        // Gemini 실패 또는 키 없으면 기존 픽셀 알고리즘 폴백
-        if (result == null || result.RowHeight <= 0)
-            result = await JS.InvokeAsync<DetectResult>("patternViewer.detectRowHeight", _currentPage);
-
+        var result = await JS.InvokeAsync<DetectResult>("patternViewer.detectRowHeight", _currentPage);
         _detectedLineCount = result.LineCount;
         _detectPage = _currentPage;
 
@@ -1715,69 +1696,6 @@
         }
         StateHasChanged();
     }
-
-    async Task<DetectResult?> DetectRowHeightWithGemini(string apiKey)
-    {
-        // 현재 페이지 캔버스를 base64 이미지로 추출
-        var base64 = await JS.InvokeAsync<string?>("patternViewer.getCanvasBase64", _currentPage);
-        if (string.IsNullOrEmpty(base64)) return null;
-
-        var pageHeightCss = await JS.InvokeAsync<double>("patternViewer.getPageHeight", _currentPage);
-        var pageWidthCss  = await JS.InvokeAsync<double>("patternViewer.getPageWidth",  _currentPage);
-
-        var prompt = $@"이 이미지는 뜨개질 도안입니다. 도안의 행(row) 경계선을 분석해서 각 행의 시작 Y좌표를 픽셀 단위로 반환해주세요.
-
-이미지 크기: 너비 {pageWidthCss:F0}px, 높이 {pageHeightCss:F0}px
-
-규칙:
-- 행 경계선은 이미지를 가로로 가로지르는 수평선입니다
-- Y좌표는 이미지 상단(0)부터 하단({pageHeightCss:F0})까지입니다
-- 행 높이(rowHeight)는 인접한 두 경계선 사이의 평균 거리입니다
-
-반드시 아래 JSON 형식만 반환하세요 (다른 텍스트 없이):
-{{""rowHeight"": 숫자, ""lineCount"": 숫자, ""lineYs"": [Y좌표 숫자 배열]}}";
-
-        using var http = new System.Net.Http.HttpClient();
-        var requestBody = new
-        {
-            contents = new[]
-            {
-                new
-                {
-                    parts = new object[]
-                    {
-                        new { inline_data = new { mime_type = "image/png", data = base64 } },
-                        new { text = prompt }
-                    }
-                }
-            },
-            generationConfig = new { temperature = 0, maxOutputTokens = 1024 }
-        };
-
-        var json = System.Text.Json.JsonSerializer.Serialize(requestBody);
-        var content = new System.Net.Http.StringContent(json, System.Text.Encoding.UTF8, "application/json");
-        var url = $"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={apiKey}";
-        var response = await http.PostAsync(url, content);
-        var responseStr = await response.Content.ReadAsStringAsync();
-
-        // 응답 파싱
-        using var doc = System.Text.Json.JsonDocument.Parse(responseStr);
-        var text = doc.RootElement
-            .GetProperty("candidates")[0]
-            .GetProperty("content")
-            .GetProperty("parts")[0]
-            .GetProperty("text")
-            .GetString() ?? "";
-
-        // JSON 추출 (```json ... ``` 감싸진 경우 대응)
-        var jsonStart = text.IndexOf('{');
-        var jsonEnd   = text.LastIndexOf('}');
-        if (jsonStart < 0 || jsonEnd < 0) return null;
-        var jsonStr = text[jsonStart..(jsonEnd + 1)];
-
-        return System.Text.Json.JsonSerializer.Deserialize<DetectResult>(jsonStr);
-    }
-
 
     void ConfirmDetect()
     {

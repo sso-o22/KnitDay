@@ -1097,22 +1097,6 @@ let basePaths = []; // 저장된 필기 (박제)
             }, { passive: false });
         },
 
-        // 캔버스를 base64 PNG로 추출 (Gemini AI 전달용)
-        getCanvasBase64(pageNum) {
-            const canvas = document.getElementById('pdf-canvas-' + pageNum);
-            if (!canvas) return null;
-            // 너무 크면 리사이즈해서 전송 (Gemini 이미지 크기 제한 대응)
-            const MAX = 1024;
-            if (canvas.width <= MAX && canvas.height <= MAX)
-                return canvas.toDataURL('image/png').split(',')[1];
-            const scale = Math.min(MAX / canvas.width, MAX / canvas.height);
-            const tmp = document.createElement('canvas');
-            tmp.width  = Math.round(canvas.width  * scale);
-            tmp.height = Math.round(canvas.height * scale);
-            tmp.getContext('2d').drawImage(canvas, 0, 0, tmp.width, tmp.height);
-            return tmp.toDataURL('image/png').split(',')[1];
-        },
-
         // 이미지 크기 반환
         getImageSize(imgId) {
             const img = document.getElementById(imgId);
