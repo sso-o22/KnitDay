@@ -1041,6 +1041,62 @@ let basePaths = []; // 저장된 필기 (박제)
             window.addEventListener('touchend', onUp);
         },
 
+        // 단일행 마커 드래그: JS가 직접 top 업데이트, 종료시만 Blazor 호출
+        attachMarkerDrag(markerId, pageNum, zoom, dotNetRef) {
+            const el = document.getElementById(markerId);
+            if (!el) return;
+            // 이미 부착된 경우 중복 방지
+            if (el._markerDragAttached) return;
+            el._markerDragAttached = true;
+
+            const canvas   = document.getElementById('anno-canvas-' + pageNum);
+            const scrollEl = document.getElementById('scroll-container');
+
+            function getCanvasY(clientY) {
+                if (!canvas) return clientY;
+                const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+                const off = getOffsetPos(canvas);
+                const scrollContainerTop = scrollEl ? scrollEl.getBoundingClientRect().top : 0;
+                return clientY - (off.y - scrollTop + scrollContainerTop);
+            }
+
+            function onMouseMove(ev) {
+                ev.preventDefault();
+                const y = getCanvasY(ev.clientY);
+                el.style.top = y + 'px';
+            }
+            function onMouseUp(ev) {
+                window.removeEventListener('mousemove', onMouseMove);
+                window.removeEventListener('mouseup', onMouseUp);
+                const y = getCanvasY(ev.clientY);
+                el.style.top = y + 'px';
+                dotNetRef.invokeMethodAsync('EndMarkerDrag', y, zoom);
+            }
+            function onTouchMove(ev) {
+                ev.preventDefault();
+                const y = getCanvasY(ev.touches[0].clientY);
+                el.style.top = y + 'px';
+            }
+            function onTouchEnd(ev) {
+                window.removeEventListener('touchmove', onTouchMove);
+                window.removeEventListener('touchend', onTouchEnd);
+                const changedTouch = ev.changedTouches[0];
+                const y = getCanvasY(changedTouch.clientY);
+                dotNetRef.invokeMethodAsync('EndMarkerDrag', y, zoom);
+            }
+
+            el.addEventListener('mousedown', function(ev) {
+                ev.preventDefault();
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('mouseup', onMouseUp);
+            });
+            el.addEventListener('touchstart', function(ev) {
+                ev.preventDefault();
+                window.addEventListener('touchmove', onTouchMove, { passive: false });
+                window.addEventListener('touchend', onTouchEnd);
+            }, { passive: false });
+        },
+
         // 이미지 크기 반환
         getImageSize(imgId) {
             const img = document.getElementById(imgId);
