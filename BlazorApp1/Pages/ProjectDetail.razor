@@ -687,21 +687,21 @@ else
                                 <span>@s.Stitch</span>
                             </div>
                             @{
-                                double? wRate = (s.PreWashWidthCm > 0 && s.PostWashWidthCm > 0 && s.PreWashWidthCm != s.PostWashWidthCm)
-                                    ? Math.Round((s.PostWashWidthCm - s.PreWashWidthCm) / s.PreWashWidthCm * 100, 1) : (double?)null;
-                                double? hRate = (s.PreWashHeightCm > 0 && s.PostWashHeightCm > 0 && s.PreWashHeightCm != s.PostWashHeightCm)
-                                    ? Math.Round((s.PostWashHeightCm - s.PreWashHeightCm) / s.PreWashHeightCm * 100, 1) : (double?)null;
+                                var wRate = CalcSwatchRate(s.PreWashStitches, s.PostWashStitches, s.PreWashWidthCm, s.PostWashWidthCm);
+                                var hRate = CalcSwatchRate(s.PreWashRows, s.PostWashRows, s.PreWashHeightCm, s.PostWashHeightCm);
                             }
                             @if (wRate.HasValue || hRate.HasValue)
                             {
-                                <div style="margin-top:8px; display:flex; gap:6px;">
+                                <div style="display:flex; gap:6px; margin-top:6px;">
                                     @if (wRate.HasValue)
                                     {
-                                        <span style="font-size:0.78rem; color:@(wRate.Value < 0 ? "#c0392b" : "#267848"); font-weight:600;">가로 @(wRate.Value > 0 ? "+" : "")@wRate.Value%</span>
+                                        var wColor = wRate.Value < 0 ? "#c0392b" : "#267848";
+                                        <span style="font-size:0.78rem; font-weight:600; color:@wColor;">가로 @(wRate.Value > 0 ? "+" : "")@wRate.Value%</span>
                                     }
                                     @if (hRate.HasValue)
                                     {
-                                        <span style="font-size:0.78rem; color:@(hRate.Value < 0 ? "#c0392b" : "#267848"); font-weight:600;">세로 @(hRate.Value > 0 ? "+" : "")@hRate.Value%</span>
+                                        var hColor = hRate.Value < 0 ? "#c0392b" : "#267848";
+                                        <span style="font-size:0.78rem; font-weight:600; color:@hColor;">세로 @(hRate.Value > 0 ? "+" : "")@hRate.Value%</span>
                                     }
                                 </div>
                             }
@@ -1027,6 +1027,16 @@ else
 }
 
 @code {
+    // Swatches.razor의 CalcRate와 동일한 로직
+    double? CalcSwatchRate(double preStitch, double postStitch, double preCm, double postCm)
+    {
+        if (preStitch > 0 && postStitch > 0 && preStitch != postStitch)
+            return Math.Round(-(postStitch - preStitch) / preStitch * 100, 1);
+        if (preCm > 0 && postCm > 0 && preCm != postCm)
+            return Math.Round((postCm - preCm) / preCm * 100, 1);
+        return null;
+    }
+
     bool _showConfirm = false;
     string _confirmMsg = "";
     Func<Task>? _confirmAction;

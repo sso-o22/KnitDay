@@ -987,6 +987,60 @@ let basePaths = []; // 저장된 필기 (박제)
             }, 50);
         },
 
+        // 행 마커 드래그 (mouse)
+        initMarkerDrag(pageNum, startCssY, dotNetRef, moveCallback) {
+            const canvas   = document.getElementById('anno-canvas-' + pageNum);
+            const scrollEl = document.getElementById('scroll-container');
+            if (!canvas) return;
+
+            function getCanvasY(clientY) {
+                const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+                const off = getOffsetPos(canvas);
+                const scrollContainerTop = scrollEl ? scrollEl.getBoundingClientRect().top : 0;
+                return clientY - (off.y - scrollTop + scrollContainerTop);
+            }
+
+            function onMove(ev) {
+                ev.preventDefault();
+                const y = getCanvasY(ev.clientY);
+                dotNetRef.invokeMethodAsync(moveCallback, y);
+            }
+            function onUp() {
+                window.removeEventListener('mousemove', onMove);
+                window.removeEventListener('mouseup', onUp);
+                dotNetRef.invokeMethodAsync('EndMarkerDrag');
+            }
+            window.addEventListener('mousemove', onMove);
+            window.addEventListener('mouseup', onUp);
+        },
+
+        // 행 마커 드래그 (touch)
+        initMarkerDragTouch(pageNum, startCssY, dotNetRef, moveCallback) {
+            const canvas   = document.getElementById('anno-canvas-' + pageNum);
+            const scrollEl = document.getElementById('scroll-container');
+            if (!canvas) return;
+
+            function getCanvasY(clientY) {
+                const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
+                const off = getOffsetPos(canvas);
+                const scrollContainerTop = scrollEl ? scrollEl.getBoundingClientRect().top : 0;
+                return clientY - (off.y - scrollTop + scrollContainerTop);
+            }
+
+            function onMove(ev) {
+                ev.preventDefault();
+                const y = getCanvasY(ev.touches[0].clientY);
+                dotNetRef.invokeMethodAsync(moveCallback, y);
+            }
+            function onUp() {
+                window.removeEventListener('touchmove', onMove);
+                window.removeEventListener('touchend', onUp);
+                dotNetRef.invokeMethodAsync('EndMarkerDrag');
+            }
+            window.addEventListener('touchmove', onMove, { passive: false });
+            window.addEventListener('touchend', onUp);
+        },
+
         // 이미지 크기 반환
         getImageSize(imgId) {
             const img = document.getElementById(imgId);

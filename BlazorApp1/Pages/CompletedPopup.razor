@@ -11,7 +11,7 @@
 {
     <div style="position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,0.32);
                 display:flex; align-items:center; justify-content:center; padding:20px;"
-         @onclick="OnClose">
+         @onclick:stopPropagation="true">
         <div style="background:var(--white); border-radius:var(--radius); box-shadow:0 20px 60px rgba(0,0,0,0.14);
                     width:100%; max-width:520px; max-height:90vh;
                     display:flex; flex-direction:column; overflow:hidden;"
@@ -25,7 +25,7 @@
                                width:32px; height:32px; border-radius:8px;
                                border:1px solid var(--border); background:none;
                                cursor:pointer; color:var(--text-dark); line-height:1;"
-                        @onclick="OnClose"><img src="icons/x.svg" class="icon-line" style="width:14px;height:14px;" /></button>
+                        @onclick="ClosePopup"><img src="icons/x.svg" class="icon-line" style="width:14px;height:14px;" /></button>
             </div>
 
             <!-- 스크롤 영역 -->
@@ -407,13 +407,24 @@
     static readonly string[] _defaultLabels = { "가슴 단면", "총장", "소매 길이", "소매 단면" };
     List<MeasureItem> _measures = new();
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
         if (Show && Project != null)
         {
             _editing = false;
             LoadMeasures();
+            await JS.InvokeVoidAsync("eval", "document.body.style.overflow='hidden'");
         }
+        else
+        {
+            await JS.InvokeVoidAsync("eval", "document.body.style.overflow=''");
+        }
+    }
+
+    async Task ClosePopup()
+    {
+        await JS.InvokeVoidAsync("eval", "document.body.style.overflow=''");
+        await OnClose.InvokeAsync();
     }
 
     void OpenEditing()
