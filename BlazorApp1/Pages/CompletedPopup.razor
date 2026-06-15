@@ -284,9 +284,9 @@
                         @if (eIdx < PopupValidPhotos.Count)
                         {
                             var ep = PopupValidPhotos[eIdx];
-                            <div style="position:relative; aspect-ratio:1;">
+                            <div style="position:relative; aspect-ratio:1; overflow:hidden; border-radius:var(--radius-sm);">
                                 <img src="@(!string.IsNullOrEmpty(ep.StorageUrl) ? ep.StorageUrl : ep.Base64Data)"
-                                     style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm);"
+                                     style="width:100%; height:100%; object-fit:cover;"
                                      class="@(eIdx==0 ? "photo-slot-thumb photo-slot-active" : "photo-slot-thumb")"
                                      alt="사진" />
                                 @if (eIdx == 0)

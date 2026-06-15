@@ -686,19 +686,18 @@ else
                                 }
                                 <span>@s.Stitch</span>
                             </div>
-                            @if (s.PreWashWidthCm > 0)
+                            @if (s.PreWashWidthCm > 0 || s.PreWashHeightCm > 0)
                             {
-                                var w = s.WidthShrinkagePercent;
-                                var h = s.HeightShrinkagePercent;
                                 <div style="margin-top:8px; display:flex; gap:6px;">
-                                    <span style="font-size:0.78rem; color:@(w < 0 ? "#c0392b" : "#267848"); font-weight:600;">
-                                        가로 @(w > 0 ? "+" : "")@w%
-                                    </span>
+                                    @if (s.PreWashWidthCm > 0)
+                                    {
+                                        var w = s.WidthShrinkagePercent;
+                                        <span style="font-size:0.78rem; color:@(w < 0 ? "#c0392b" : "#267848"); font-weight:600;">가로 @(w > 0 ? "+" : "")@w%</span>
+                                    }
                                     @if (s.PreWashHeightCm > 0)
                                     {
-                                        <span style="font-size:0.78rem; color:@(h < 0 ? "#c0392b" : "#267848"); font-weight:600;">
-                                            세로 @(h > 0 ? "+" : "")@h%
-                                        </span>
+                                        var h = s.HeightShrinkagePercent;
+                                        <span style="font-size:0.78rem; color:@(h < 0 ? "#c0392b" : "#267848"); font-weight:600;">세로 @(h > 0 ? "+" : "")@h%</span>
                                     }
                                 </div>
                             }
@@ -978,9 +977,14 @@ else
                 <textarea class="form-control" rows="2" @bind="_project.Memo" placeholder="기타 메모"></textarea>
             </div>
 
-            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+            <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
                         <button class="btn btn-ghost" style="color:var(--text-light); display:inline-flex;align-items:center;gap:4px;" @onclick="MoveToWishlist" disabled="@_saving"><img src="icons/arrow-u-up-left.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@(_saving ? "복귀 중..." : "위시리스트로 복귀")</button>
-                <div style="display:flex; gap:8px;">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="btn btn-danger" style="display:inline-flex;align-items:center;gap:4px;"
+                            @onclick='() => Confirm("이 프로젝트를 삭제하면 복구할 수 없어요.", async () => { await Storage.DeleteProjectAsync(_project!.Id); GoBack(); })'
+                            disabled="@_saving">
+                        <img src="icons/trash.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />삭제
+                    </button>
                     <button class="btn btn-ghost" @onclick="CloseEditModal">취소</button>
                     <button class="btn btn-primary" @onclick="SaveEdit" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
                 </div>
