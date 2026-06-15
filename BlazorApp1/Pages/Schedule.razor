@@ -27,41 +27,37 @@ else if (_projects.Count == 0)
 else
 {
     <!-- 컨트롤 바: 필터 + 정렬 + 뷰 전환 -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; gap:8px; flex-wrap:wrap;">
-        <!-- 왼쪽: 필터 + 정렬 -->
-        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-
-            <!-- 상태 필터 -->
-            <div style="display:flex; gap:4px; align-items:center;">
-                <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-                <button class="btn btn-sm @(_statusFilter == "all" ? "btn-sage" : "btn-ghost")"
-                        @onclick='async () => { _statusFilter = "all"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>전체</button>
-                <button class="btn btn-sm @(_statusFilter == "진행중" ? "btn-sage" : "btn-ghost")"
-                        @onclick='async () => { _statusFilter = "진행중"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>진행중</button>
-                <button class="btn btn-sm @(_statusFilter == "일시중단" ? "btn-sage" : "btn-ghost")"
-                        @onclick='async () => { _statusFilter = "일시중단"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>중단</button>
-            </div>
-
-            <!-- 정렬 기준 -->
-            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-            <select class="form-control" style="width:auto; padding:5px 10px; font-size:0.82rem;" @bind="_sortField"
-                        @bind:after="SaveSchedulePrefs">
-                <option value="created">등록일</option>
-                <option value="start">시작일</option>
-                <option value="updated">수정일</option>
-                <option value="title">이름순</option>
-            </select>
-
-            <!-- 오름/내림차순 -->
-            <button class="btn btn-sm btn-ghost" @onclick="ToggleSortDir" title="@(_sortAsc ? "오름차순" : "내림차순")" style="display:inline-flex;align-items:center;gap:3px;">
-                <img src="@(_sortAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:14px;height:14px;" />
+    <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
+        <!-- 1행: 상태 필터 + 보기형식 -->
+        <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding-bottom:2px;">
+            <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+            <button class="btn btn-sm @(_statusFilter == "all" ? "btn-sage" : "btn-ghost")" style="flex-shrink:0;"
+                    @onclick='async () => { _statusFilter = "all"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>전체</button>
+            <button class="btn btn-sm @(_statusFilter == "진행중" ? "btn-sage" : "btn-ghost")" style="flex-shrink:0;"
+                    @onclick='async () => { _statusFilter = "진행중"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>진행중</button>
+            <button class="btn btn-sm @(_statusFilter == "일시중단" ? "btn-sage" : "btn-ghost")" style="flex-shrink:0;"
+                    @onclick='async () => { _statusFilter = "일시중단"; await JS.InvokeVoidAsync("localStorage.setItem", "sched_filter", _statusFilter); }'>중단</button>
+            <div style="flex:1;"></div>
+            <button class="btn btn-sm @(_isListView ? "btn-ghost" : "btn-sage")" style="flex-shrink:0;"
+                    @onclick='async () => { _isListView = false; await JS.InvokeVoidAsync("localStorage.setItem", "sched_listview", "false"); }' title="카드형">
+                <img src="icons/squares-four.svg" class="icon-line" style="width:16px;height:16px;" />
+            </button>
+            <button class="btn btn-sm @(_isListView ? "btn-sage" : "btn-ghost")" style="flex-shrink:0;"
+                    @onclick='async () => { _isListView = true; await JS.InvokeVoidAsync("localStorage.setItem", "sched_listview", "true"); }' title="리스트형">
+                <img src="icons/list.svg" class="icon-line" style="width:16px;height:16px;" />
             </button>
         </div>
-
-        <!-- 오른쪽: 뷰 전환 -->
-        <div style="display:flex; gap:4px;">
-            <button class="btn btn-sm @(_isListView ? "btn-ghost" : "btn-sage")" @onclick='async () => { _isListView = false; await JS.InvokeVoidAsync("localStorage.setItem", "sched_listview", "false"); }' title="카드형"><img src="icons/squares-four.svg" class="icon-line" style="width:16px;height:16px;" /></button>
-            <button class="btn btn-sm @(_isListView ? "btn-sage" : "btn-ghost")" @onclick='async () => { _isListView = true; await JS.InvokeVoidAsync("localStorage.setItem", "sched_listview", "true"); }' title="리스트형"><img src="icons/list.svg" class="icon-line" style="width:16px;height:16px;" /></button>
+        <!-- 2행: 정렬 버튼 -->
+        <div style="display:flex; align-items:center; gap:6px; overflow-x:auto; padding-bottom:2px;">
+            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+            @foreach (var (label, field) in new[]{("등록일","created"),("시작일","start"),("수정일","updated"),("이름순","title")})
+            {
+                var isActive = _sortField == field;
+                <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
+                        @onclick="async () => { if (isActive) { _sortAsc = !_sortAsc; } else { _sortField = field; _sortAsc = false; } await SaveSchedulePrefs(); }">
+                    @label @if (isActive) { <img src="@(_sortAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
+                </button>
+            }
         </div>
     </div>
 

@@ -28,7 +28,7 @@
                         @onclick="() => SetFilterProject(val)">@label</button>
             }
         </div>
-        @* 2행: 뜨개 방법 *@
+        @* 2행: 뜨개 방법 + 바늘 필터 *@
         <div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:2px;">
             <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
             @foreach (var (label, val) in new[]{("전체",""),("메리야스","메리야스"),("무늬","무늬")})
@@ -36,10 +36,7 @@
                 <button class="btn btn-sm @(_filterStitch==val?"btn-primary":"btn-ghost")" style="flex-shrink:0;"
                         @onclick="() => SetFilterStitch(val)">@label</button>
             }
-        </div>
-        @* 3행: 바늘 + 정렬 + 초기화 한 줄 *@
-        <div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:2px;">
-            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+            <div style="width:1px;height:16px;background:var(--border);flex-shrink:0;"></div>
             <select style="font-size:0.78rem; padding:4px 4px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--white); color:var(--text-dark); width:72px; flex-shrink:0;"
                     value="@_filterNeedle" @onchange="OnFilterNeedleChanged">
                 <option value="">바늘 전체</option>
@@ -48,6 +45,14 @@
                     <option value="@mm">@mm mm</option>
                 }
             </select>
+            @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
+            {
+                <button class="btn btn-ghost btn-sm" style="flex-shrink:0;" @onclick="ResetFilters">✕</button>
+            }
+        </div>
+        @* 3행: 정렬 *@
+        <div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:2px;">
+            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
             @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("바늘","needle")})
             {
                 var ascVal  = baseVal + "_asc";
@@ -58,10 +63,6 @@
                         @onclick="async () => await SetSwatchSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
                     @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
                 </button>
-            }
-            @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
-            {
-                <button class="btn btn-ghost btn-sm" style="flex-shrink:0;" @onclick="ResetFilters">✕</button>
             }
         </div>
     </div>
