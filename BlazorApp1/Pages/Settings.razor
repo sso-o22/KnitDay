@@ -186,6 +186,27 @@
         }
     </div>
 
+    <!-- Gemini API 키 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+            <img src="icons/list-magnifying-glass.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />도안 행 자동 감지
+        </div>
+        <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:12px;">
+            Gemini AI로 도안의 행을 자동 감지해요. <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--theme-active);">Google AI Studio</a>에서 무료 API 키를 발급받아 입력하세요.
+        </p>
+        <div style="display:flex; gap:8px; align-items:center;">
+            <input type="password" class="form-control" placeholder="Gemini API 키 입력"
+                   value="@_geminiKey"
+                   @oninput="e => _geminiKey = e.Value?.ToString() ?? string.Empty"
+                   style="flex:1; font-size:0.85rem;" />
+            <button class="btn btn-primary" @onclick="SaveGeminiKey" style="flex-shrink:0;">저장</button>
+        </div>
+        @if (!string.IsNullOrEmpty(_geminiKeySaved))
+        {
+            <p style="font-size:0.78rem; color:#267848; margin-top:6px;">@_geminiKeySaved</p>
+        }
+    </div>
+
     <!-- 버전 정보 -->
     <div class="card">
         <div class="card-title" style="margin-bottom:12px; display:flex; align-items:center; gap:6px;"><img src="icons/app-window.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />앱 정보</div>
@@ -277,6 +298,8 @@
     };
 
     string _currentTheme = "mono";
+    string _geminiKey = "";
+    string _geminiKeySaved = "";
     bool _isDark = false;
     long _photoBytes = 0;
     long _pdfBytes = 0;
@@ -302,6 +325,8 @@
             if (!string.IsNullOrEmpty(saved)) _currentTheme = saved;
             var dark = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_dark");
             _isDark = dark == "true";
+            var gemini = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_gemini_key");
+            if (!string.IsNullOrEmpty(gemini)) _geminiKey = gemini;
             // 페이지 진입 시 테마/다크 재적용 (PWA 캐시 로드 후 불일치 방지)
             await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme','{_currentTheme}')");
             await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark','{_isDark.ToString().ToLower()}')");
@@ -322,6 +347,16 @@
             catch { }
             StateHasChanged();
         }
+    }
+
+    async Task SaveGeminiKey()
+    {
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_gemini_key", _geminiKey);
+        _geminiKeySaved = string.IsNullOrEmpty(_geminiKey) ? "키가 삭제됐어요." : "저장됐어요!";
+        StateHasChanged();
+        await Task.Delay(2000);
+        _geminiKeySaved = "";
+        StateHasChanged();
     }
 
     async Task SetTheme(string themeId)
