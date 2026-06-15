@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "PV5s/uC4",
+  "version": "Csf8O0vB",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-CF9pVx0ultjrbBER5ujCNdYZQHMvpI1YoSvQZdh01Io=",
+      "hash": "sha256-nVMzngrW/QDg9oWG4RbUITLN5ZcKrS3MbyOyIKGrkdw=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -98,7 +98,7 @@ self.assetsManifest = {
       "url": "_framework/System.ComponentModel.wasm"
     },
     {
-      "hash": "sha256-eon+9HY8vZ83TWF5+DC1VX3dEZE5SvpHipTYoo92H54=",
+      "hash": "sha256-DaqHQEufeW8feUBwpjxBEkYgDDOA7HPlxVpKsEQgBtM=",
       "url": "_framework/System.Console.wasm"
     },
     {
@@ -118,7 +118,7 @@ self.assetsManifest = {
       "url": "_framework/System.Net.Http.Json.wasm"
     },
     {
-      "hash": "sha256-pJzMMTasqkl5g1nrir2FqVO5dLnTCGEuqJVIOrUPyZs=",
+      "hash": "sha256-klMkpWAq16SVmdKXlWrmZif7D6QZHEb8YtenFJ2Ki2g=",
       "url": "_framework/System.Net.Http.wasm"
     },
     {
@@ -130,7 +130,7 @@ self.assetsManifest = {
       "url": "_framework/System.ObjectModel.wasm"
     },
     {
-      "hash": "sha256-Wg7qHlWJnGZgZs9PSF989WLsSpXMp0DRfYU4/UHqmCo=",
+      "hash": "sha256-KCnR1imGuwTsEDui/FiOzdJ44bRn+hmseNkB5laJxos=",
       "url": "_framework/System.Private.CoreLib.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-P6ex8okE5j+TAw+/D4Qzlt9QW9FvOhT7axUngcIbyhE=",
+      "hash": "sha256-rQDsJDrIUsul67VuUGN5i7O5/u0JBEwtkQexWRWlQhA=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -890,7 +890,7 @@ self.assetsManifest = {
       "url": "js/firebase.js"
     },
     {
-      "hash": "sha256-yCaOpSpqMSIlGtHpQkAhU4VnkmQdzRrw5yKsx7sC43U=",
+      "hash": "sha256-9IadBumxWluox0NAaRBY7fJo23BnCTPBcdA69xTrF/0=",
       "url": "js/patternViewer.js"
     },
     {
@@ -2522,7 +2522,7 @@ self.assetsManifest = {
       "url": "sample-data/weather.json"
     },
     {
-      "hash": "sha256-Olc0uvAcRViMaQIKG4zNfhcv8a2JGblgnGo5YMVbfF4=",
+      "hash": "sha256-+kCySX37AUQZZrrQU2tzYIl4cH5s27RGgOeIZqhrioU=",
       "url": "version.json"
     }
   ]
