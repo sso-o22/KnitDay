@@ -141,7 +141,7 @@ else
                 {
                     <input class="form-control" style="flex:1; font-size:0.78rem; padding:2px 6px;"
                            value="@item.Text"
-                           @onchange="async e => { item.Text = e.Value?.ToString() ?? item.Text; await SaveTodos(); }" />
+                           @onchange="e => { item.Text = e.Value?.ToString() ?? item.Text; }" />
                     <button class="btn btn-danger btn-sm" style="padding:1px 4px; display:inline-flex;align-items:center;"
                             @onclick="async () => { _todoItems.Remove(item); await SaveTodos(); }"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                 }
@@ -371,7 +371,7 @@ else
     }
 
     void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; _ = InitTodoDragAsync(); }
-    void ExitTodoEditMode()  { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; _ = JS.InvokeVoidAsync("cleanupChecklistDrag"); _ = SaveTodos(); }
+    async Task ExitTodoEditMode() { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; await JS.InvokeVoidAsync("cleanupChecklistDrag"); await SaveTodos(); }
     void CancelTodoEdit() { _editingTodoId = null; _editingTodoText = ""; }
     void StartAddTodo() { _addingTodo = true; }
     void CancelAddTodo() { _addingTodo = false; _newTodoText = ""; }
@@ -386,7 +386,7 @@ else
     }
 
     [JSInvokable]
-    public async Task ReorderChecklist(string[] ids)
+    public void ReorderChecklist(string[] ids)
     {
         var ordered = ids
             .Select(id => Guid.TryParse(id, out var g) ? _todoItems.FirstOrDefault(t => t.Id == g) : null)
@@ -394,7 +394,7 @@ else
             .Select(t => t!)
             .ToList();
         _todoItems = ordered;
-        await SaveTodos();
+        // 저장은 완료 버튼(ExitTodoEditMode)에서만
         StateHasChanged();
     }
 

@@ -337,7 +337,7 @@ else
                                 {
                                     <input class="form-control" style="flex:1; font-size:0.88rem; padding:4px 8px;"
                                            value="@item.Text"
-                                           @onchange="async e => { item.Text = e.Value?.ToString() ?? item.Text; await Save(); }" />
+                                           @onchange="e => { item.Text = e.Value?.ToString() ?? item.Text; }" />
                                     <button class="btn btn-danger btn-sm" style="padding:2px 6px;" disabled="@IsPaused"
                                             @onclick='() => Confirm($"\"{item.Text}\" 항목을 삭제할까요?", async () => await RemoveCheckItem(item.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                 }
@@ -1265,7 +1265,7 @@ else
     }
 
     void EnterChecklistEditMode() { _checklistEditMode = true; _editingCheckId = null; _ = InitChecklistDragAsync(); }
-    void ExitChecklistEditMode()  { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; _ = JS.InvokeVoidAsync("cleanupChecklistDrag"); _ = Save(); }
+    async Task ExitChecklistEditMode() { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; await JS.InvokeVoidAsync("cleanupChecklistDrag"); await Save(); }
     void StartAddCheck()  { _addingCheck = true; }
     void CancelAddCheck() { _addingCheck = false; _newCheckText = ""; }
 
@@ -1277,7 +1277,7 @@ else
     }
 
     [JSInvokable]
-    public async Task ReorderChecklist(string[] ids)
+    public void ReorderChecklist(string[] ids)
     {
         if (_project == null) return;
         var ordered = ids
@@ -1286,7 +1286,7 @@ else
             .Select(c => c!)
             .ToList();
         _project.Checklist = ordered;
-        await Save();
+        // 저장은 완료 버튼(ExitChecklistEditMode)에서만
         StateHasChanged();
     }
 
