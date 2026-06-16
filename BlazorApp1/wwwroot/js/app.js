@@ -524,49 +524,66 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let src = null, clone = null, ph = null;
-    let startY = 0, srcLeft = 0, srcWidth = 0, phHeight = 0;
-    let srcInlineStyle = '';   // 원본 인라인 스타일 보존용
+    let srcId = null;      // 드래그 중인 행의 data-checkid
+    let clone = null;      // body fixed 복사본
+    let ph = null;         // placeholder
+    let startY = 0;
+    let longPressTimer = null;
+    let dragging = false;
 
     function cy(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
 
-    function onStart(e) {
+    function startDrag(e, row) {
+        dragging = true;
+        const rect = row.getBoundingClientRect();
+        startY  = cy(e);
+        srcId   = row.dataset.checkid;
+
+        // placeholder
+        ph = document.createElement('div');
+        ph.style.cssText = `height:${rect.height}px;background:var(--theme-pale);border-radius:6px;`;
+        row.before(ph);
+        row.remove();
+
+        // 단순한 clone (텍스트만)
+        clone = document.createElement('div');
+        clone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.2);border-radius:8px;background:var(--white);padding:8px 12px;font-size:0.85rem;color:var(--text-dark);pointer-events:none;box-sizing:border-box;opacity:0.95;display:flex;align-items:center;gap:8px;`;
+        clone.innerHTML = `<span style="color:var(--text-light);font-size:1rem;">⠿</span><span>${row.querySelector('input[type="text"],input.form-control')?.value || row.querySelector('span')?.textContent || ''}</span>`;
+        document.body.appendChild(clone);
+
+        document.addEventListener('mousemove',  onMove);
+        document.addEventListener('mouseup',    onEnd);
+        document.addEventListener('touchmove',  onMove,  { passive: false });
+        document.addEventListener('touchend',   onEnd,   { passive: false });
+    }
+
+    function onMouseDown(e) {
         const handle = e.target.closest('.drag-handle');
         if (!handle) return;
         const row = handle.closest('[data-checkid]');
         if (!row) return;
         e.preventDefault();
+        startDrag(e, row);
+    }
 
-        const rect = row.getBoundingClientRect();
-        startY   = cy(e);
-        srcLeft  = rect.left;
-        srcWidth = rect.width;
-        phHeight = rect.height;
+    function onTouchStart(e) {
+        const handle = e.target.closest('.drag-handle');
+        if (!handle) return;
+        const row = handle.closest('[data-checkid]');
+        if (!row) return;
 
-        // 원본 인라인 스타일 저장
-        srcInlineStyle = row.getAttribute('style') || '';
-
-        // placeholder 삽입
-        ph = document.createElement('div');
-        ph.style.cssText = `height:${phHeight}px;background:var(--theme-pale);border-radius:6px;`;
-        row.before(ph);
-
-        // 원본 DOM 제거
-        src = row;
-        row.remove();
-
-        // clone: body fixed
-        clone = src.cloneNode(true);
-        clone.style.cssText = `position:fixed;left:${srcLeft}px;top:${rect.top}px;width:${srcWidth}px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.18);border-radius:8px;background:var(--white);opacity:0.96;pointer-events:none;box-sizing:border-box;`;
-        document.body.appendChild(clone);
+        // long-press 150ms
+        longPressTimer = setTimeout(() => {
+            e.preventDefault();
+            startDrag(e, row);
+        }, 150);
     }
 
     function onMove(e) {
-        if (!src || !clone || !ph) return;
+        if (!dragging || !clone || !ph) return;
         e.preventDefault();
         const y  = cy(e);
         const dy = y - startY;
-
         clone.style.transform = `translateY(${dy}px)`;
 
         const rows = [...container.querySelectorAll('[data-checkid]')];
@@ -579,42 +596,58 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
     }
 
     function onEnd(e) {
-        if (!src || !clone || !ph) return;
-        if (e.cancelable) e.preventDefault();
+        clearTimeout(longPressTimer);
+        if (!dragging) return;
+        dragging = false;
 
-        clone.remove(); clone = null;
+        document.removeEventListener('mousemove',  onMove);
+        document.removeEventListener('mouseup',    onEnd);
+        document.removeEventListener('touchmove',  onMove);
+        document.removeEventListener('touchend',   onEnd);
 
-        // 원본 인라인 스타일 복원 후 placeholder 교체
-        src.setAttribute('style', srcInlineStyle);
-        ph.replaceWith(src);
+        if (clone) { clone.remove(); clone = null; }
+
+        // ph가 있는 위치 = srcId가 들어갈 자리
+        // ph 앞에 있는 [data-checkid] 행들 + srcId + ph 뒤 행들 순으로 ids 구성
+        let ids = [];
+        if (ph && ph.parentNode) {
+            const allRows = [...ph.parentNode.children];
+            for (const el of allRows) {
+                if (el === ph) ids.push(srcId);
+                else if (el.dataset && el.dataset.checkid) ids.push(el.dataset.checkid);
+            }
+            ph.remove();
+        } else {
+            // fallback: 현재 순서 끝에 추가
+            ids = [...container.querySelectorAll('[data-checkid]')].map(r => r.dataset.checkid);
+            if (srcId) ids.push(srcId);
+        }
         ph = null;
 
-        const ids = [...container.querySelectorAll('[data-checkid]')].map(r => r.dataset.checkid);
-        dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
-        src = null;
+        if (srcId) dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
+        srcId = null;
     }
 
-    container.addEventListener('mousedown',  onStart);
-    document.addEventListener('mousemove',   onMove);
-    document.addEventListener('mouseup',     onEnd);
-    container.addEventListener('touchstart', onStart, { passive: false });
-    document.addEventListener('touchmove',   onMove,  { passive: false });
-    document.addEventListener('touchend',    onEnd,   { passive: false });
+    function onTouchCancel() {
+        clearTimeout(longPressTimer);
+    }
+
+    container.addEventListener('mousedown',   onMouseDown);
+    container.addEventListener('touchstart',  onTouchStart, { passive: true });
+    container.addEventListener('touchcancel', onTouchCancel);
 
     window._checklistDragCleanup = () => {
-        container.removeEventListener('mousedown',  onStart);
-        document.removeEventListener('mousemove',   onMove);
-        document.removeEventListener('mouseup',     onEnd);
-        container.removeEventListener('touchstart', onStart);
-        document.removeEventListener('touchmove',   onMove);
-        document.removeEventListener('touchend',    onEnd);
+        clearTimeout(longPressTimer);
+        container.removeEventListener('mousedown',   onMouseDown);
+        container.removeEventListener('touchstart',  onTouchStart);
+        container.removeEventListener('touchcancel', onTouchCancel);
+        document.removeEventListener('mousemove',    onMove);
+        document.removeEventListener('mouseup',      onEnd);
+        document.removeEventListener('touchmove',    onMove);
+        document.removeEventListener('touchend',     onEnd);
         if (clone) { clone.remove(); clone = null; }
-        if (src) {
-            src.setAttribute('style', srcInlineStyle);
-            if (ph) ph.replaceWith(src); else container.appendChild(src);
-        }
-        if (ph) ph.remove();
-        src = null; ph = null;
+        if (ph) { ph.remove(); ph = null; }
+        dragging = false; srcId = null;
         window._checklistDragCleanup = null;
     };
 };
