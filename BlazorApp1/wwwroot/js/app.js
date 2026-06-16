@@ -667,22 +667,26 @@ window.cleanupChecklistDrag = () => {
 };
 
 // ── 모달 열기/닫기 스크롤 잠금 ──────────────────────────────
-// 열 때: 현재 스크롤 저장 → body fixed로 잠금 → 모달 top으로
-// 닫을 때: body 해제 → 저장된 스크롤 위치 복원
 let _savedScrollY = 0;
 
 window.lockBodyScroll = () => {
-    _savedScrollY = window.scrollY;
-    document.body.style.overflow   = 'hidden';
-    document.body.style.position   = 'fixed';
-    document.body.style.top        = `-${_savedScrollY}px`;
-    document.body.style.width      = '100%';
+    _savedScrollY = window.scrollY || document.documentElement.scrollTop;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    // 모달이 렌더된 후 최상단으로 (한 프레임 뒤)
+    requestAnimationFrame(() => {
+        const modal = document.querySelector('.modal');
+        if (modal) modal.scrollTop = 0;
+    });
 };
 
 window.unlockBodyScroll = () => {
-    document.body.style.overflow   = '';
-    document.body.style.position   = '';
-    document.body.style.top        = '';
-    document.body.style.width      = '';
+    document.body.style.overflow = '';
+    document.documentElement.style.overflow = '';
     window.scrollTo(0, _savedScrollY);
+};
+
+window.scrollModalToTop = (selector) => {
+    const el = selector ? document.querySelector(selector) : null;
+    if (el) el.scrollTop = 0;
 };
