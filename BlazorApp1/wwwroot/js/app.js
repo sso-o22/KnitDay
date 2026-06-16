@@ -525,15 +525,9 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let dragging = null, placeholder = null, startY = 0, offsetY = 0;
+    let dragging = null, clone = null, placeholder = null, offsetY = 0;
 
     function getRow(el) { return el?.closest('[data-checkid]'); }
-
-    function createPlaceholder(h) {
-        const el = document.createElement('div');
-        el.style.cssText = `height:${h}px;background:var(--theme-pale);border-radius:6px;margin:2px 0;transition:none;`;
-        return el;
-    }
 
     function onStart(e) {
         const handle = e.target.closest('.drag-handle');
@@ -542,25 +536,33 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
         const row = getRow(handle);
         if (!row) return;
 
-        dragging = row;
         const rect = row.getBoundingClientRect();
-        startY = (e.touches ? e.touches[0].clientY : e.clientY);
-        offsetY = startY - rect.top;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        offsetY = clientY - rect.top;
 
-        placeholder = createPlaceholder(rect.height);
-        row.parentNode.insertBefore(placeholder, row.nextSibling);
+        // placeholder: 원래 자리 유지
+        placeholder = document.createElement('div');
+        placeholder.style.cssText = `height:${rect.height}px;background:var(--theme-pale);border-radius:6px;box-sizing:border-box;`;
+        row.parentNode.insertBefore(placeholder, row);
 
-        row.style.cssText += `position:fixed;z-index:999;width:${rect.width}px;left:${rect.left}px;top:${rect.top}px;box-shadow:0 4px 16px rgba(0,0,0,0.15);background:var(--white);border-radius:8px;opacity:0.95;pointer-events:none;`;
+        // clone: 화면 위에 떠다니는 복사본
+        clone = row.cloneNode(true);
+        clone.style.cssText = `position:fixed;z-index:999;width:${rect.width}px;left:${rect.left}px;top:${rect.top}px;box-shadow:0 4px 20px rgba(0,0,0,0.18);border-radius:8px;opacity:0.95;pointer-events:none;background:var(--white);box-sizing:border-box;`;
+        document.body.appendChild(clone);
+
+        // 원본은 DOM에서 제거 (순서 계산 오염 방지)
+        dragging = row;
+        row.remove();
     }
 
     function onMove(e) {
-        if (!dragging) return;
+        if (!clone || !placeholder) return;
         e.preventDefault();
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        dragging.style.top = (clientY - offsetY) + 'px';
+        clone.style.top = (clientY - offsetY) + 'px';
 
-        // placeholder 위치 결정
-        const rows = [...container.querySelectorAll('[data-checkid]')].filter(r => r !== dragging);
+        // placeholder 위치: container 내 남은 행들 기준
+        const rows = [...container.querySelectorAll('[data-checkid]')];
         let inserted = false;
         for (const row of rows) {
             const rect = row.getBoundingClientRect();
@@ -574,23 +576,22 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
     }
 
     function onEnd() {
-        if (!dragging) return;
-        // dragging 원래 스타일 복원
-        dragging.style.cssText = dragging.style.cssText
-            .replace(/position:[^;]+;/g,'').replace(/z-index:[^;]+;/g,'')
-            .replace(/width:[^;]+;/g,'').replace(/left:[^;]+;/g,'')
-            .replace(/top:[^;]+;/g,'').replace(/box-shadow:[^;]+;/g,'')
-            .replace(/background:[^;]+;/g,'').replace(/border-radius:[^;]+;/g,'')
-            .replace(/opacity:[^;]+;/g,'').replace(/pointer-events:[^;]+;/g,'');
+        if (!dragging || !clone || !placeholder) return;
 
+        // clone 제거
+        clone.remove();
+        clone = null;
+
+        // 원본을 placeholder 자리에 삽입
         container.insertBefore(dragging, placeholder);
         placeholder.remove();
+        placeholder = null;
 
-        // 새 순서의 id 목록을 Blazor로 전달
+        // 새 순서 id 목록 → Blazor
         const ids = [...container.querySelectorAll('[data-checkid]')].map(r => r.dataset.checkid);
         dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
 
-        dragging = null; placeholder = null;
+        dragging = null;
     }
 
     container.addEventListener('mousedown',  onStart);
@@ -607,6 +608,9 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
         document.removeEventListener('touchmove',   onMove);
         document.removeEventListener('mouseup',     onEnd);
         document.removeEventListener('touchend',    onEnd);
+        if (clone) { clone.remove(); clone = null; }
+        if (dragging && placeholder) { container.insertBefore(dragging, placeholder); placeholder.remove(); }
+        dragging = null; placeholder = null;
         window._checklistDragCleanup = null;
     };
 };
