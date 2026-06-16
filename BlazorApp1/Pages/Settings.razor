@@ -275,7 +275,9 @@
         }
     </div>
 
-    <!-- 프리미엄 코드 -->
+    <!-- 프리미엄 코드 (로그인 상태에서는 불필요) -->
+    @if (!Auth.IsLoggedIn)
+    {
     <div class="card">
         <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             <img src="icons/key.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />
@@ -300,6 +302,7 @@
             }
         }
     </div>
+    }
 
 </div>
 
