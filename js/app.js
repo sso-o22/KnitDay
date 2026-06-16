@@ -716,6 +716,10 @@ window.unlockBodyScroll = () => {
 };
 
 window.scrollModalToTop = () => {
+    // 모바일: modal-backdrop이 스크롤 컨테이너
+    const backdrop = document.querySelector('.modal-backdrop');
+    if (backdrop) backdrop.scrollTop = 0;
+    // PC: modal이 스크롤 컨테이너
     const modal = document.querySelector('.modal');
     if (modal) modal.scrollTop = 0;
 };
