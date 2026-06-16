@@ -126,9 +126,14 @@ else
             </div>
         </div>
 
+        <div id="todo-drag-container">
         @foreach (var item in _todoItems)
         {
-            <div style="display:flex; align-items:center; gap:6px; padding:6px 0;">
+            <div data-checkid="@item.Id" style="display:flex; align-items:center; gap:6px; padding:6px 0; touch-action:@(_todoEditMode ? "none" : "auto");">
+                @if (_todoEditMode)
+                {
+                    <span class="drag-handle" style="cursor:grab; color:var(--text-light); flex-shrink:0; font-size:1rem; line-height:1; padding:0 2px;">⠿</span>
+                }
                 <input type="checkbox" checked="@item.Done"
                        @onchange="async () => { item.Done = !item.Done; await SaveTodos(); }"
                        style="width:14px; height:14px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
@@ -146,6 +151,7 @@ else
                 }
             </div>
         }
+        </div>
 
 
 
@@ -364,11 +370,33 @@ else
         await SaveTodos();
     }
 
-    void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; }
-    void ExitTodoEditMode() { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; }
+    void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; _ = InitTodoDragAsync(); }
+    void ExitTodoEditMode()  { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; _ = JS.InvokeVoidAsync("cleanupChecklistDrag"); _ = SaveTodos(); }
     void CancelTodoEdit() { _editingTodoId = null; _editingTodoText = ""; }
     void StartAddTodo() { _addingTodo = true; }
     void CancelAddTodo() { _addingTodo = false; _newTodoText = ""; }
+
+    DotNetObjectReference<Home>? _todoDragRef;
+
+    async Task InitTodoDragAsync()
+    {
+        await Task.Delay(50);
+        _todoDragRef ??= DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("initChecklistDrag", _todoDragRef, "todo-drag-container");
+    }
+
+    [JSInvokable]
+    public async Task ReorderChecklist(string[] ids)
+    {
+        var ordered = ids
+            .Select(id => Guid.TryParse(id, out var g) ? _todoItems.FirstOrDefault(t => t.Id == g) : null)
+            .Where(t => t != null)
+            .Select(t => t!)
+            .ToList();
+        _todoItems = ordered;
+        await SaveTodos();
+        StateHasChanged();
+    }
 
     // 인증 상태 변경 콜백 — 로딩 플래그 해제 (데이터 재로딩은 sync 완료 후)
     void OnAuthChanged()
@@ -435,5 +463,6 @@ else
     {
         Auth.OnAuthChanged -= OnAuthChanged;
         Storage.OnSyncCompleted -= OnSyncCompleted;
+        _todoDragRef?.Dispose();
     }
 }

@@ -173,7 +173,7 @@
         }
         else
         {
-            @* 기기 저장공간 게이지 (navigator.storage.estimate) *@
+            @* 기기 저장공간 게이지 — 사진/도안/기타 분류 *@
             <div style="margin-bottom:16px; padding:14px 16px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <span style="font-size:0.82rem; font-weight:600; color:var(--text-dark);">기기 저장공간</span>
@@ -192,12 +192,31 @@
                 </div>
                 @if (_deviceUsageLoaded && _deviceQuotaBytes > 0)
                 {
-                    <div style="height:10px; background:var(--border); border-radius:99px; overflow:hidden; margin-bottom:10px;">
-                        <div style="height:100%; width:@(DeviceUsagePct.ToString("F2"))%; background:@(DeviceUsagePct>=90?"#c03030":"var(--theme-active)"); border-radius:99px; transition:width 0.4s;"></div>
+                    @* 전체 게이지바 — 사진(앞)/도안(중)/기타(뒤) 3단 적층 *@
+                    var photoPct  = Math.Min(100.0, _idbPhotoBytes  / (double)_deviceQuotaBytes * 100);
+                    var pdfPct    = Math.Min(100.0, (_idbPhotoBytes + _idbPdfBytes)   / (double)_deviceQuotaBytes * 100);
+                    var otherPct  = Math.Min(100.0, (_idbPhotoBytes + _idbPdfBytes + _idbOtherBytes) / (double)_deviceQuotaBytes * 100);
+                    <div style="height:10px; background:var(--border); border-radius:99px; overflow:hidden; margin-bottom:10px; position:relative;">
+                        <div style="position:absolute;left:0;top:0;height:100%;width:@(otherPct.ToString("F2"))%;background:var(--text-light);border-radius:99px;opacity:0.4;"></div>
+                        <div style="position:absolute;left:0;top:0;height:100%;width:@(pdfPct.ToString("F2"))%;background:var(--text-mid);border-radius:99px;opacity:0.6;"></div>
+                        <div style="position:absolute;left:0;top:0;height:100%;width:@(photoPct.ToString("F2"))%;background:@(DeviceUsagePct>=90?"#c03030":"var(--theme-active)");border-radius:99px;transition:width 0.4s;"></div>
                     </div>
-                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-light); margin-bottom:10px;">
-                        <span>앱 사용 @FmtSize(_deviceUsedBytes)</span>
-                        <span>잔여 @FmtSize(Math.Max(0, _deviceQuotaBytes - _deviceUsedBytes))</span>
+                    <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px;">
+                        <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-mid);">
+                            <span style="width:10px;height:10px;border-radius:3px;background:var(--theme-active);flex-shrink:0;"></span>
+                            사진 @FmtSize(_idbPhotoBytes)
+                        </div>
+                        <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-mid);">
+                            <span style="width:10px;height:10px;border-radius:3px;background:var(--text-mid);opacity:0.6;flex-shrink:0;"></span>
+                            도안 @FmtSize(_idbPdfBytes)
+                        </div>
+                        <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-mid);">
+                            <span style="width:10px;height:10px;border-radius:3px;background:var(--text-light);opacity:0.4;flex-shrink:0;"></span>
+                            기타 @FmtSize(_idbOtherBytes)
+                        </div>
+                        <div style="font-size:0.75rem; color:var(--text-light); margin-left:auto;">
+                            잔여 @FmtSize(Math.Max(0, _deviceQuotaBytes - _deviceUsedBytes))
+                        </div>
                     </div>
                 }
                 <div style="font-size:0.75rem; color:var(--text-light); line-height:1.5;">
@@ -359,6 +378,9 @@
     long _deviceUsedBytes = 0;
     long _deviceQuotaBytes = 0;
     bool _deviceUsageLoaded = false;
+    long _idbPhotoBytes = 0;
+    long _idbPdfBytes = 0;
+    long _idbOtherBytes = 0;
     double DeviceUsagePct => _deviceQuotaBytes > 0 ? Math.Min(100.0, _deviceUsedBytes / (double)_deviceQuotaBytes * 100) : 0;
     static long UsageLimitBytes => StorageService.PerUserLimitBytes;
     double UsagePhotoPct => Math.Min(100.0, _photoBytes / (double)UsageLimitBytes * 100);
@@ -411,6 +433,19 @@
                         using var doc = System.Text.Json.JsonDocument.Parse(estimateJson);
                         _deviceQuotaBytes = doc.RootElement.TryGetProperty("quota", out var q) ? q.GetInt64() : 0;
                         _deviceUsedBytes  = doc.RootElement.TryGetProperty("usage", out var u) ? u.GetInt64() : 0;
+                    }
+                }
+                catch { }
+                // IDB 용량 분류 로드
+                try
+                {
+                    var breakdownJson = await JS.InvokeAsync<string>("knitDB.getUsageBreakdown");
+                    if (!string.IsNullOrEmpty(breakdownJson))
+                    {
+                        using var doc = System.Text.Json.JsonDocument.Parse(breakdownJson);
+                        _idbPhotoBytes = doc.RootElement.TryGetProperty("photoBytes", out var p) ? p.GetInt64() : 0;
+                        _idbPdfBytes   = doc.RootElement.TryGetProperty("pdfBytes",   out var d) ? d.GetInt64() : 0;
+                        _idbOtherBytes = doc.RootElement.TryGetProperty("otherBytes", out var o) ? o.GetInt64() : 0;
                     }
                 }
                 catch { }

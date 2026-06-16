@@ -321,9 +321,14 @@ else
                     @if (!IsCollapsed("checklist") || _project.Checklist.Count == 0)
                     {
                         <p style="font-size:0.82rem; color:var(--text-mid); margin-bottom:16px;">완료한 단계를 체크해요</p>
+                        <div id="checklist-drag-container">
                         @foreach (var item in _project.Checklist)
                         {
-                            <div style="display:flex; align-items:center; gap:8px; padding:8px 0;">
+                            <div data-checkid="@item.Id" style="display:flex; align-items:center; gap:8px; padding:8px 0; touch-action:@(_checklistEditMode ? "none" : "auto");">
+                                @if (_checklistEditMode)
+                                {
+                                    <span class="drag-handle" style="cursor:grab; color:var(--text-light); flex-shrink:0; font-size:1rem; line-height:1; padding:0 2px;">⠿</span>
+                                }
                                 <input type="checkbox" checked="@item.Done"
                                        @onchange="() => ToggleCheck(item)"
                                        disabled="@IsPaused"
@@ -342,6 +347,7 @@ else
                                 }
                             </div>
                         }
+                        </div>
                         @if (_project.Checklist.Count > 0)
                         {
                             var done  = _project.Checklist.Count(c => c.Done);
@@ -1258,10 +1264,31 @@ else
         await Save();
     }
 
-    void EnterChecklistEditMode() { _checklistEditMode = true; _editingCheckId = null; }
-    void ExitChecklistEditMode()  { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; }
+    void EnterChecklistEditMode() { _checklistEditMode = true; _editingCheckId = null; _ = InitChecklistDragAsync(); }
+    void ExitChecklistEditMode()  { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; _ = JS.InvokeVoidAsync("cleanupChecklistDrag"); _ = Save(); }
     void StartAddCheck()  { _addingCheck = true; }
     void CancelAddCheck() { _addingCheck = false; _newCheckText = ""; }
+
+    async Task InitChecklistDragAsync()
+    {
+        await Task.Delay(50); // DOM 렌더 대기
+        if (_dragRef != null)
+            await JS.InvokeVoidAsync("initChecklistDrag", _dragRef, "checklist-drag-container");
+    }
+
+    [JSInvokable]
+    public async Task ReorderChecklist(string[] ids)
+    {
+        if (_project == null) return;
+        var ordered = ids
+            .Select(id => Guid.TryParse(id, out var g) ? _project.Checklist.FirstOrDefault(c => c.Id == g) : null)
+            .Where(c => c != null)
+            .Select(c => c!)
+            .ToList();
+        _project.Checklist = ordered;
+        await Save();
+        StateHasChanged();
+    }
 
     // ── 체크리스트 ──────────────────────────────────────
     async Task ToggleCheck(ChecklistItem item)
