@@ -607,24 +607,34 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
 
         if (clone) { clone.remove(); clone = null; }
 
-        // ph가 있는 위치 = srcId가 들어갈 자리
-        // ph 앞에 있는 [data-checkid] 행들 + srcId + ph 뒤 행들 순으로 ids 구성
-        let ids = [];
-        if (ph && ph.parentNode) {
-            const allRows = [...ph.parentNode.children];
-            for (const el of allRows) {
-                if (el === ph) ids.push(srcId);
-                else if (el.dataset && el.dataset.checkid) ids.push(el.dataset.checkid);
+        // container 안의 [data-checkid] 행 순서 읽기 (ph는 [data-checkid] 아님)
+        // ph 바로 다음 [data-checkid] 행을 찾아서 srcId를 그 앞에 삽입
+        let ids = [...container.querySelectorAll('[data-checkid]')].map(r => r.dataset.checkid);
+
+        if (ph && ph.parentNode && srcId) {
+            // ph 다음에 오는 첫 번째 [data-checkid] 행 찾기
+            let nextSibling = ph.nextElementSibling;
+            while (nextSibling && !nextSibling.dataset?.checkid) {
+                nextSibling = nextSibling.nextElementSibling;
+            }
+
+            if (nextSibling && nextSibling.dataset.checkid) {
+                // nextSibling 바로 앞에 srcId 삽입
+                const insertIdx = ids.indexOf(nextSibling.dataset.checkid);
+                if (insertIdx >= 0) ids.splice(insertIdx, 0, srcId);
+                else ids.push(srcId);
+            } else {
+                // ph가 마지막 → srcId를 끝에
+                ids.push(srcId);
             }
             ph.remove();
         } else {
-            // fallback: 현재 순서 끝에 추가
-            ids = [...container.querySelectorAll('[data-checkid]')].map(r => r.dataset.checkid);
-            if (srcId) ids.push(srcId);
+            if (srcId && !ids.includes(srcId)) ids.push(srcId);
+            if (ph) ph.remove();
         }
         ph = null;
 
-        if (srcId) dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
+        dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
         srcId = null;
     }
 
