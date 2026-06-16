@@ -748,13 +748,14 @@ body {
     }
 
     .modal-backdrop {
-        position: absolute;
+        position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        min-height: 100%;
+        bottom: 0;
         align-items: flex-start;
         padding: 0;
+        overflow-y: auto;
     }
 
     .modal {
@@ -763,6 +764,7 @@ body {
         border-radius: 0;
         min-height: 100%;
         box-shadow: none;
+        overflow-y: visible;
     }
 
     /* 추가/수정 팝업은 모바일에서도 내용에 맞게 */
