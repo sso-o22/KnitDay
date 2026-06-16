@@ -228,11 +228,10 @@
                     background:var(--theme-pale); color:var(--text-mid); line-height:1.6;">
             <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/warning.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /><b>도안 파일과 필기 내용은 로그인만으로 다른 기기에 연동되지 않아요.</b></span><br>
             다른 기기로 옮기려면 <b>데이터 내보내기</b>로 백업 파일을 만들고,<br>
-            새 기기에서 <b>데이터 불러오기</b>로 복원해주세요.<br>
-            <span style="color:var(--text-light);">※ 백업 파일에는 사진이 포함되지 않아요. (용량 절감)</span>
+            새 기기에서 <b>데이터 불러오기</b>로 복원해주세요.
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="ExportData"><img src="icons/export.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 내보내기</button>
+            <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="() => _showExportModal = true"><img src="icons/export.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 내보내기</button>
             <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="ImportDataClick"><img src="icons/download-simple.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 불러오기</button>
         </div>
         <InputFile id="import-file-input" OnChange="ImportData" accept=".json" style="display:none;" />
@@ -339,6 +338,118 @@
     </div>
 }
 
+@if (_showExportModal)
+{
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;"
+         @onclick="CloseExportModal">
+        <div style="background:var(--white);border-radius:20px;padding:24px 20px 20px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.18);max-height:85vh;display:flex;flex-direction:column;"
+             @onclick:stopPropagation="true">
+
+            @if (_exportStep == 1)
+            {
+                <!-- 1단계: 범위 선택 -->
+                <div style="display:flex;justify-content:center;margin-bottom:10px;"><img src="icons/export.svg" class="icon-line" style="width:32px;height:32px;" /></div>
+                <div style="font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--text-dark);text-align:center;">내보내기</div>
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px;">
+                    <button style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;background:none;cursor:pointer;text-align:left;width:100%;"
+                            @onclick="() => { _exportIsSelectMode = false; _exportExcludeProjects = false; _exportSelectedIds.Clear(); _exportStep = 2; }">
+                        <img src="icons/floppy-disk.svg" class="icon-line" style="width:22px;height:22px;flex-shrink:0;" />
+                        <div>
+                            <div style="font-size:0.9rem;font-weight:600;color:var(--text-dark);">전체 내보내기</div>
+                            <div style="font-size:0.75rem;color:var(--text-light);">모든 프로젝트·실·도구·스와치 포함</div>
+                        </div>
+                    </button>
+                    <button style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;background:none;cursor:pointer;text-align:left;width:100%;"
+                            @onclick="() => { _exportIsSelectMode = false; _exportExcludeProjects = true; _exportSelectedIds.Clear(); _exportStep = 2; }">
+                        <img src="icons/yarn.svg" class="icon-line" style="width:22px;height:22px;flex-shrink:0;" />
+                        <div>
+                            <div style="font-size:0.9rem;font-weight:600;color:var(--text-dark);">실·도구·스와치만</div>
+                            <div style="font-size:0.75rem;color:var(--text-light);">프로젝트·도안 제외 · 용량 작음</div>
+                        </div>
+                    </button>
+                    <button style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;background:none;cursor:pointer;text-align:left;width:100%;"
+                            @onclick="OpenProjectSelectStep">
+                        <img src="icons/push-pin.svg" class="icon-line" style="width:22px;height:22px;flex-shrink:0;" />
+                        <div>
+                            <div style="font-size:0.9rem;font-weight:600;color:var(--text-dark);">프로젝트 선택</div>
+                            <div style="font-size:0.75rem;color:var(--text-light);">내보낼 프로젝트만 골라요</div>
+                        </div>
+                    </button>
+                </div>
+                <div style="text-align:center;">
+                    <button class="btn btn-ghost" @onclick="CloseExportModal">취소</button>
+                </div>
+            }
+            else if (_exportStep == 2)
+            {
+                <!-- 2단계: 옵션 (전체 or 선택 공통) -->
+                <div style="font-size:1rem;font-weight:700;margin-bottom:4px;color:var(--text-dark);text-align:center;">
+                    @(_exportIsSelectMode ? $"프로젝트 {_exportSelectedIds.Count}개 선택됨" : _exportExcludeProjects ? "실·도구·스와치만" : "전체 내보내기")
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:14px;text-align:center;">
+                    @(_exportExcludeProjects ? "프로젝트·도안은 포함되지 않아요" : "도안 PDF는 항상 포함돼요")
+                </div>
+
+                @if (_exportSelectedIds.Count > 0)
+                {
+                    <!-- 선택된 프로젝트 목록 (스크롤) -->
+                    <div style="flex:1;overflow-y:auto;margin-bottom:12px;border:1px solid var(--border);border-radius:8px;">
+                        @foreach (var proj in _exportProjects)
+                        {
+                            var pid = proj.Id;
+                            var checked_ = _exportSelectedIds.Contains(pid);
+                            <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);"
+                                 @onclick="() => { if (_exportSelectedIds.Contains(pid)) _exportSelectedIds.Remove(pid); else _exportSelectedIds.Add(pid); }">
+                                <div style="width:18px;height:18px;border-radius:4px;border:2px solid @(checked_ ? "var(--theme-active)" : "var(--border)");background:@(checked_ ? "var(--theme-active)" : "transparent");flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+                                    @if (checked_)
+                                    {
+                                        <img src="icons/check.svg" class="icon-line" style="width:11px;height:11px;filter:invert(1);" />
+                                    }
+                                </div>
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:0.88rem;font-weight:500;color:var(--text-dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@proj.Title</div>
+                                    <div style="font-size:0.72rem;color:var(--text-light);">@proj.Status @(proj.HasSavedPattern ? "· 도안있음" : "")</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+
+                <!-- 사진 포함 옵션 (프로젝트 제외 모드에선 숨김) -->
+                @if (!_exportExcludeProjects)
+                {
+                <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid @(_exportIncludePhotos ? "var(--border)" : "var(--theme-active)");border-radius:10px;cursor:pointer;"
+                         @onclick="() => _exportIncludePhotos = false">
+                        <div style="width:16px;height:16px;border-radius:50%;border:2px solid @(_exportIncludePhotos ? "var(--border)" : "var(--theme-active)");background:@(_exportIncludePhotos ? "transparent" : "var(--theme-active)");flex-shrink:0;"></div>
+                        <div>
+                            <div style="font-size:0.85rem;font-weight:600;color:var(--text-dark);">사진 제외</div>
+                            <div style="font-size:0.72rem;color:var(--text-light);">파일 작음 · 빠름</div>
+                        </div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid @(_exportIncludePhotos ? "var(--theme-active)" : "var(--border)");border-radius:10px;cursor:pointer;"
+                         @onclick="() => _exportIncludePhotos = true">
+                        <div style="width:16px;height:16px;border-radius:50%;border:2px solid @(_exportIncludePhotos ? "var(--theme-active)" : "var(--border)");background:@(_exportIncludePhotos ? "var(--theme-active)" : "transparent");flex-shrink:0;"></div>
+                        <div>
+                            <div style="font-size:0.85rem;font-weight:600;color:var(--text-dark);">사진 포함</div>
+                            <div style="font-size:0.72rem;color:var(--text-light);">파일 클 수 있음 · 완전 백업</div>
+                        </div>
+                    </div>
+                </div>
+                }
+
+                <div style="display:flex;gap:8px;justify-content:center;">
+                    <button class="btn btn-ghost" @onclick="() => _exportStep = 1">뒤로</button>
+                    <button class="btn btn-primary" @onclick="ExecuteExport"
+                            disabled="@(_exportIsSelectMode && _exportSelectedIds.Count == 0)">
+                        내보내기
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+}
+
 <style>
     .import-msg-ok    { background: var(--theme-pale); color: var(--text-dark); }
     .import-msg-error { background: #ffe0e0; color: #c00; }
@@ -394,6 +505,24 @@
     bool _importError = false;
     bool _showImportModal = false;
     System.Text.Json.JsonDocument? _importDoc = null;
+    bool _showExportModal = false;
+    bool _exportIncludePhotos = false;
+    int _exportStep = 1;
+    bool _exportIsSelectMode = false;
+    bool _exportExcludeProjects = false;
+    List<KnitProject> _exportProjects = new();
+    HashSet<Guid> _exportSelectedIds = new();
+
+    void CloseExportModal() { _showExportModal = false; _exportStep = 1; _exportIsSelectMode = false; _exportExcludeProjects = false; _exportSelectedIds.Clear(); }
+
+    async Task OpenProjectSelectStep()
+    {
+        _exportIsSelectMode = true;
+        _exportProjects = await Storage.GetProjectsAsync();
+        _exportSelectedIds = _exportProjects.Select(p => p.Id).ToHashSet();
+        _exportStep = 2;
+        StateHasChanged();
+    }
     bool _isPremium = false;
     string _premiumCodeInput = "";
     string _premiumMsg = "";
@@ -710,47 +839,100 @@
     }
 
 
-    async Task ExportData()
+    async Task ExecuteExport()
     {
-        // IDB에서 데이터 읽기 (사진 base64 제외)
-        var exportJson = await JS.InvokeAsync<string>("eval", @"
-            (async () => {
-                const data = await window.knitDB.exportAll();
-                // 사진 base64 제거 (용량 절감)
-                if (data.knittracker_projects)
-                    data.knittracker_projects.forEach(p => { if (p.Photos) p.Photos.forEach(ph => { ph.Base64Data = ''; }); });
-                if (data.knittracker_yarns)
-                    data.knittracker_yarns.forEach(y => { y.PhotoBase64 = ''; });
-                if (data.knittracker_swatches)
-                    data.knittracker_swatches.forEach(s => { s.PhotoBase64 = ''; });
-                return JSON.stringify(data);
-            })()
-        ");
+        _showExportModal = false;
+        var includePhotos = _exportIncludePhotos;
+        var isSelectMode  = _exportIsSelectMode;
+        var selectedIds   = _exportSelectedIds.Select(id => id.ToString()).ToArray();
 
-        // PDF 포함
-        try
+        string exportJson;
+
+        if (isSelectMode)
         {
-            var pdfJson = await JS.InvokeAsync<string>("patternViewer.exportAllPdfs");
-            if (!string.IsNullOrEmpty(pdfJson) && pdfJson != "{}")
+            // ── 프로젝트 선택 모드: 해당 프로젝트만 필터 ──
+            var idsJson = System.Text.Json.JsonSerializer.Serialize(selectedIds);
+            exportJson = await JS.InvokeAsync<string>("eval", $@"
+                (async () => {{
+                    const ids = new Set({idsJson});
+                    const allData = await window.knitDB.exportAll();
+                    const data = {{ exportedAt: allData.exportedAt }};
+                    if (allData.knittracker_projects)
+                        data.knittracker_projects = allData.knittracker_projects.filter(p => ids.has(p.Id));
+                    if (!{includePhotos.ToString().ToLower()} && data.knittracker_projects)
+                        data.knittracker_projects.forEach(p => {{ if (p.Photos) p.Photos.forEach(ph => {{ ph.Base64Data = ''; }}); }});
+                    return JSON.stringify(data);
+                }})()
+            ");
+
+            // 선택된 프로젝트의 PDF만
+            var pdfIdsArr = System.Text.Json.JsonSerializer.Serialize(selectedIds);
+            try
             {
-                var exportObj = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(exportJson);
-                // PDF를 포함한 최종 객체 구성
-                await JS.InvokeVoidAsync("eval",
-                    $@"(async () => {{
-                        const data = JSON.parse({System.Text.Json.JsonSerializer.Serialize(exportJson)});
-                        try {{ data.knitlog_pdfs = JSON.parse({System.Text.Json.JsonSerializer.Serialize(pdfJson)}); }} catch(e) {{}}
-                        const blob = new Blob([JSON.stringify(data, null, 2)], {{type:'application/json'}});
-                        const a = document.createElement('a');
-                        a.href = URL.createObjectURL(blob);
-                        a.download = 'knitday_backup_' + new Date().toISOString().slice(0,10) + '.json';
-                        a.click();
-                    }})()");
-                return;
+                var pdfJson = await JS.InvokeAsync<string>("patternViewer.exportPdfsByIds", (object)selectedIds);
+                if (!string.IsNullOrEmpty(pdfJson) && pdfJson != "{}")
+                {
+                    await JS.InvokeVoidAsync("eval",
+                        $@"(async () => {{
+                            const data = JSON.parse({System.Text.Json.JsonSerializer.Serialize(exportJson)});
+                            try {{ data.knitlog_pdfs = JSON.parse({System.Text.Json.JsonSerializer.Serialize(pdfJson)}); }} catch(e) {{}}
+                            const blob = new Blob([JSON.stringify(data, null, 2)], {{type:'application/json'}});
+                            const a = document.createElement('a');
+                            a.href = URL.createObjectURL(blob);
+                            a.download = 'knitday_backup_' + new Date().toISOString().slice(0,10) + '.json';
+                            a.click();
+                        }})()");
+                    return;
+                }
+            }
+            catch { }
+        }
+        else
+        {
+            // ── 전체 모드 (프로젝트 포함 or 제외) ──
+            var excludeProjects = _exportExcludeProjects;
+            exportJson = await JS.InvokeAsync<string>("eval", $@"
+                (async () => {{
+                    const data = await window.knitDB.exportAll();
+                    if ({excludeProjects.ToString().ToLower()}) {{
+                        delete data.knittracker_projects;
+                    }} else if (!{includePhotos.ToString().ToLower()}) {{
+                        if (data.knittracker_projects)
+                            data.knittracker_projects.forEach(p => {{ if (p.Photos) p.Photos.forEach(ph => {{ ph.Base64Data = ''; }}); }});
+                        if (data.knittracker_yarns)
+                            data.knittracker_yarns.forEach(y => {{ y.PhotoBase64 = ''; }});
+                        if (data.knittracker_swatches)
+                            data.knittracker_swatches.forEach(s => {{ s.PhotoBase64 = ''; }});
+                    }}
+                    return JSON.stringify(data);
+                }})()
+            ");
+
+            if (!excludeProjects)
+            {
+                try
+                {
+                    var pdfJson = await JS.InvokeAsync<string>("patternViewer.exportAllPdfs");
+                    if (!string.IsNullOrEmpty(pdfJson) && pdfJson != "{}")
+                    {
+                        await JS.InvokeVoidAsync("eval",
+                            $@"(async () => {{
+                                const data = JSON.parse({System.Text.Json.JsonSerializer.Serialize(exportJson)});
+                                try {{ data.knitlog_pdfs = JSON.parse({System.Text.Json.JsonSerializer.Serialize(pdfJson)}); }} catch(e) {{}}
+                                const blob = new Blob([JSON.stringify(data, null, 2)], {{type:'application/json'}});
+                                const a = document.createElement('a');
+                                a.href = URL.createObjectURL(blob);
+                                a.download = 'knitday_backup_' + new Date().toISOString().slice(0,10) + '.json';
+                                a.click();
+                            }})()");
+                        return;
+                    }
+                }
+                catch { }
             }
         }
-        catch { }
 
-        // PDF 없을 때
+        // PDF 없을 때 공통
         await JS.InvokeVoidAsync("eval",
             $@"(async () => {{
                 const blob = new Blob([JSON.stringify(JSON.parse({System.Text.Json.JsonSerializer.Serialize(exportJson)}), null, 2)], {{type:'application/json'}});

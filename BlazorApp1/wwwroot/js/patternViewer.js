@@ -798,6 +798,27 @@ let basePaths = []; // 저장된 필기 (박제)
             } catch(e) { return '{}'; }
         },
 
+        async exportPdfsByIds(ids) {
+            try {
+                const db = await openDB();
+                const idSet = new Set(ids);
+                return new Promise((res, rej) => {
+                    const req = db.transaction(IDB_STORE,'readonly').objectStore(IDB_STORE).getAll();
+                    req.onsuccess = e => {
+                        const result = {};
+                        for (const item of e.target.result) {
+                            if (!idSet.has(item.projectId)) continue;
+                            const bytes = item.bytes instanceof Uint8Array ? item.bytes : new Uint8Array(item.bytes);
+                            let bin = ''; for (let i=0;i<bytes.length;i++) bin+=String.fromCharCode(bytes[i]);
+                            result[item.projectId] = { fileName: item.fileName, data: btoa(bin) };
+                        }
+                        res(JSON.stringify(result));
+                    };
+                    req.onerror = e => rej(e.target.error);
+                });
+            } catch(e) { return '{}'; }
+        },
+
         async importAllPdfs(jsonStr) {
             try {
                 const map = JSON.parse(jsonStr);
