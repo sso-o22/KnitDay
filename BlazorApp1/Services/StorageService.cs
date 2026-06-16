@@ -378,6 +378,24 @@ namespace KnitLog.Services
             }
         }
 
+        // ── Todos 저장 (IDB + Firebase 즉시) ────────────────────────
+        public async Task SaveTodosAsync(string todosJson)
+        {
+            await _js.InvokeVoidAsync("knitDB.setData", KEY_TODOS, todosJson);
+            if (!IsLoggedIn) return;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var payload = JsonSerializer.Serialize(
+                        new { data = JsonSerializer.Deserialize<JsonElement>(todosJson, _jsonOpts) }, _jsonOpts);
+                    await _js.InvokeAsync<bool>("firebaseStore.setDocument",
+                        $"users/{Uid}/settings/todos", payload);
+                }
+                catch { }
+            });
+        }
+
         // ── 통합 저장 (로컬 즉시 + Firebase 백그라운드) ──────────────
         // 로컬 저장은 즉시 완료 → UI 블로킹 없음
         // Firebase는 fire-and-forget: 오프라인이면 PushLocalToFirebaseAsync 로 나중에 올림

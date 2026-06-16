@@ -132,16 +132,16 @@ else
         <div id="todo-drag-container">
         @foreach (var item in _todoItems)
         {
-            var idx = _todoItems.IndexOf(item);
-            <div data-checkid="@item.Id" style="display:flex; align-items:center; gap:6px; padding:6px 0;">
+            var captured = item;
+            <div @key="item.Id"
+                 draggable="@(_todoEditMode ? "true" : "false")"
+                 @ondragstart="() => _dragItem = captured"
+                 @ondragover:preventDefault
+                 @ondrop="() => DropTodoItem(captured)"
+                 style="display:flex; align-items:center; gap:6px; padding:6px 0; @(_todoEditMode ? "cursor:grab;" : "")">
                 @if (_todoEditMode)
                 {
-                    <div style="display:flex;flex-direction:column;gap:1px;flex-shrink:0;">
-                        <button class="btn btn-ghost btn-sm" style="padding:0 4px;line-height:1;font-size:0.7rem;" disabled="@(idx==0)"
-                                @onclick="() => MoveTodoItem(idx, -1)">▲</button>
-                        <button class="btn btn-ghost btn-sm" style="padding:0 4px;line-height:1;font-size:0.7rem;" disabled="@(idx==_todoItems.Count-1)"
-                                @onclick="() => MoveTodoItem(idx, 1)">▼</button>
-                    </div>
+                    <img src="icons/dots-six-vertical.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;opacity:0.4;" />
                 }
                 <input type="checkbox" checked="@item.Done"
                        @onchange="async () => { item.Done = !item.Done; await SaveTodos(); }"
@@ -152,7 +152,7 @@ else
                            value="@item.Text"
                            @onchange="e => { item.Text = e.Value?.ToString() ?? item.Text; }" />
                     <button class="btn btn-danger btn-sm" style="padding:1px 4px; display:inline-flex;align-items:center;"
-                            @onclick="async () => { _todoItems.Remove(item); await SaveTodos(); }"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            @onclick="async () => { _todoItems.Remove(captured); await SaveTodos(); }"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                 }
                 else
                 {
@@ -357,12 +357,12 @@ else
     async Task SaveTodos()
     {
         _saving = true; StateHasChanged();
-        await JS.InvokeVoidAsync("knitDB.setData", "knitlog_todos",
-            System.Text.Json.JsonSerializer.Serialize(_todoItems));
-        StateHasChanged();
+        var json = System.Text.Json.JsonSerializer.Serialize(_todoItems);
+        await Storage.SaveTodosAsync(json);
         _saving = false;
+        StateHasChanged();
         await JS.InvokeVoidAsync("showToast", "저장됐어요");
-        }
+    }
     async Task AddTodo()
     {
         if (string.IsNullOrWhiteSpace(_newTodoText)) return;
@@ -379,21 +379,30 @@ else
         await SaveTodos();
     }
 
-    void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; }
-    async Task ExitTodoEditMode() { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; await SaveTodos(); }
+    TodoItem? _dragItem;
+
+    void DropTodoItem(TodoItem target)
+    {
+        if (_dragItem == null || _dragItem == target) return;
+        var fromIdx = _todoItems.IndexOf(_dragItem);
+        var toIdx   = _todoItems.IndexOf(target);
+        if (fromIdx < 0 || toIdx < 0) return;
+        _todoItems.RemoveAt(fromIdx);
+        _todoItems.Insert(toIdx, _dragItem);
+        _dragItem = null;
+    }
+
+    void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; _ = InitTouchDragAsync("todo-drag-container"); }
+    async Task ExitTodoEditMode() { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; _dragItem = null; await SaveTodos(); }
+    async Task InitTouchDragAsync(string containerId)
+    {
+        await Task.Delay(50); // DOM 렌더 대기
+        await JS.InvokeVoidAsync("initTouchDragPolyfill", containerId);
+    }
+
     void CancelTodoEdit() { _editingTodoId = null; _editingTodoText = ""; }
     void StartAddTodo() { _addingTodo = true; }
     void CancelAddTodo() { _addingTodo = false; _newTodoText = ""; }
-
-    void MoveTodoItem(int idx, int dir)
-    {
-        var newIdx = idx + dir;
-        if (newIdx < 0 || newIdx >= _todoItems.Count) return;
-        var item = _todoItems[idx];
-        _todoItems.RemoveAt(idx);
-        _todoItems.Insert(newIdx, item);
-        StateHasChanged();
-    }
 
     // 인증 상태 변경 콜백 — 로딩 플래그 해제 (데이터 재로딩은 sync 완료 후)
     void OnAuthChanged()
