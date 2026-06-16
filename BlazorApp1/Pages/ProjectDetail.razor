@@ -333,7 +333,7 @@ else
                                  style="display:flex; align-items:center; gap:8px; padding:8px 0; @(_checklistEditMode ? "cursor:grab;" : "")">
                                 @if (_checklistEditMode)
                                 {
-                                    <img src="icons/dots-six-vertical.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;opacity:0.4;" />
+                                    <img src="icons/dots-six-vertical.svg" class="drag-handle-icon" />
                                 }
                                 <input type="checkbox" checked="@item.Done"
                                        @onchange="() => ToggleCheck(item)"
