@@ -1207,6 +1207,22 @@ body {
     opacity: 0.8;
 }
 
+/* 드래그 핸들 아이콘 */
+.drag-handle-icon {
+    display: block;
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    opacity: 0.35;
+    filter: brightness(0);        /* 라이트모드: 검정 */
+    cursor: grab;
+}
+
+[data-dark="true"] .drag-handle-icon {
+    filter: brightness(0) invert(1);  /* 다크모드: 흰색 */
+    opacity: 0.5;
+}
+
 /* 페이지 제목 아이콘: 항상 진한색 */
 .page-title .icon-line {
     opacity: 1;
