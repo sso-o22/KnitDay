@@ -525,8 +525,7 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let dragging = null, placeholder = null;
-    let startY = 0, startScrollY = 0, dragStartTop = 0;
+    let dragging = null, placeholder = null, pointerOffsetY = 0;
 
     function getRow(el) { return el?.closest('[data-checkid]'); }
 
@@ -539,65 +538,46 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
 
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const rect = row.getBoundingClientRect();
-        startY = clientY;
-        startScrollY = window.scrollY;
-        dragStartTop = rect.top + window.scrollY;  // 문서 기준 절대 위치
 
-        // placeholder: 원본 크기와 동일한 빈 자리
+        // 포인터가 row 내 어디를 잡았는지 오프셋
+        pointerOffsetY = clientY - rect.top;
+
+        // placeholder: row 자리 유지
         placeholder = document.createElement('div');
-        placeholder.style.cssText = `height:${rect.height}px;background:var(--theme-pale);border-radius:6px;margin:0;flex-shrink:0;`;
+        placeholder.style.cssText = `height:${rect.height}px;background:var(--theme-pale);border-radius:6px;`;
         row.parentNode.insertBefore(placeholder, row);
+        row.remove();   // DOM에서 완전히 제거
 
-        // 원본: absolute로 띄워서 container 위에서 이동
+        // dragging: body에 fixed로 붙이기 (container 바깥, 레이아웃 오염 없음)
         dragging = row;
-        const containerRect = container.getBoundingClientRect();
-        const relTop = rect.top - containerRect.top;
-
-        dragging.style.cssText += `
-            position:absolute;
-            left:0;right:0;
-            top:${relTop}px;
-            z-index:50;
-            box-shadow:0 4px 16px rgba(0,0,0,0.15);
-            border-radius:8px;
-            background:var(--white);
-            pointer-events:none;
-            will-change:top;
-        `;
-        // container를 position:relative로
-        container._prevPosition = container.style.position;
-        container.style.position = 'relative';
-
-        row.remove();
-        container.appendChild(dragging);
+        dragging.style.cssText += `;position:fixed;left:${rect.left}px;width:${rect.width}px;top:${rect.top}px;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,0.18);border-radius:8px;background:var(--white);pointer-events:none;box-sizing:border-box;`;
+        document.body.appendChild(dragging);
     }
 
     function onMove(e) {
         if (!dragging || !placeholder) return;
         e.preventDefault();
         const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-        const dy = clientY - startY + (window.scrollY - startScrollY);
-        const containerRect = container.getBoundingClientRect();
 
-        // 원본 top 갱신
-        const newTop = (dragStartTop - (containerRect.top + window.scrollY)) + dy;
-        dragging.style.top = newTop + 'px';
+        // dragging 위치 갱신 (fixed이므로 clientY 기준)
+        dragging.style.top = (clientY - pointerOffsetY) + 'px';
 
-        // placeholder 위치 결정
-        const rows = [...container.querySelectorAll('[data-checkid]')].filter(r => r !== dragging);
-        let inserted = false;
+        // placeholder 위치: container 내 [data-checkid] 행들 기준
+        // dragging은 body에 있으므로 querySelectorAll에 포함 안 됨
+        const rows = [...container.querySelectorAll('[data-checkid]')];
+        let placed = false;
         for (const row of rows) {
-            const rect = row.getBoundingClientRect();
-            if (clientY < rect.top + rect.height / 2) {
-                container.insertBefore(placeholder, row);
-                inserted = true;
+            const mid = row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
+            if (clientY < mid) {
+                row.parentNode.insertBefore(placeholder, row);
+                placed = true;
                 break;
             }
         }
-        if (!inserted) {
-            // 마지막 data-checkid 뒤에 삽입
-            const lastRow = rows[rows.length - 1];
-            if (lastRow) lastRow.after(placeholder);
+        if (!placed) {
+            // 마지막 행 뒤 or container 끝
+            const last = rows[rows.length - 1];
+            if (last) last.after(placeholder);
             else container.appendChild(placeholder);
         }
     }
@@ -605,31 +585,25 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
     function onEnd() {
         if (!dragging || !placeholder) return;
 
-        // 원본 스타일 완전 초기화
-        dragging.style.position = '';
-        dragging.style.left = '';
-        dragging.style.right = '';
-        dragging.style.top = '';
-        dragging.style.zIndex = '';
-        dragging.style.boxShadow = '';
+        // dragging 스타일 초기화 후 placeholder 자리에 삽입
+        dragging.style.position   = '';
+        dragging.style.left       = '';
+        dragging.style.width      = '';
+        dragging.style.top        = '';
+        dragging.style.zIndex     = '';
+        dragging.style.boxShadow  = '';
         dragging.style.borderRadius = '';
         dragging.style.background = '';
         dragging.style.pointerEvents = '';
-        dragging.style.willChange = '';
-
-        // placeholder 자리에 원본 삽입
+        dragging.style.boxSizing  = '';
+        document.body.removeChild(dragging);
         placeholder.parentNode.insertBefore(dragging, placeholder);
         placeholder.remove();
         placeholder = null;
 
-        // container position 복원
-        container.style.position = container._prevPosition || '';
-        delete container._prevPosition;
-
         // 새 순서 → Blazor
         const ids = [...container.querySelectorAll('[data-checkid]')].map(r => r.dataset.checkid);
         dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
-
         dragging = null;
     }
 
@@ -648,17 +622,10 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
         document.removeEventListener('mouseup',     onEnd);
         document.removeEventListener('touchend',    onEnd);
         if (dragging) {
-            dragging.style.position = '';
-            dragging.style.left = dragging.style.right = dragging.style.top = '';
-            dragging.style.zIndex = dragging.style.boxShadow = '';
-            dragging.style.background = dragging.style.pointerEvents = '';
+            try { document.body.removeChild(dragging); } catch(_) {}
             if (placeholder?.parentNode) placeholder.parentNode.insertBefore(dragging, placeholder);
         }
         if (placeholder) placeholder.remove();
-        if (container._prevPosition !== undefined) {
-            container.style.position = container._prevPosition;
-            delete container._prevPosition;
-        }
         dragging = null; placeholder = null;
         window._checklistDragCleanup = null;
     };
