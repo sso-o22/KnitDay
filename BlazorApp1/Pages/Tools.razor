@@ -388,6 +388,12 @@ else
         _loading = false;
     }
 
+    bool _scrollModalTop = false;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_scrollModalTop) { _scrollModalTop = false; await JS.InvokeVoidAsync("scrollModalToTop"); }
+    }
+
     void OpenAddModal()
     {
         _editingTool = new KnitTool
@@ -403,6 +409,7 @@ else
         };
         _newSetSize = 0;
         _showModal = true;
+        _scrollModalTop = true;
         _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 
@@ -411,6 +418,7 @@ else
         _editingTool = tool;
         _newSetSize = 0;
         _showModal = true;
+        _scrollModalTop = true;
         _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 

@@ -662,11 +662,18 @@ else
         _loading  = false;
     }
 
+    bool _scrollModalTop = false;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_scrollModalTop) { _scrollModalTop = false; await JS.InvokeVoidAsync("scrollModalToTop"); }
+    }
+
     void OpenAddModal()
     {
         _editing = new Swatch { Id = Guid.Empty };
         _stitchSelect = "메리야스";
         _showModal = true;
+        _scrollModalTop = true;
         _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 
@@ -697,6 +704,7 @@ else
         var presets = new[] { "메리야스", "무늬" };
         _stitchSelect = presets.Contains(s.Stitch) ? s.Stitch : "직접입력";
         _showModal = true;
+        _scrollModalTop = true;
         _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 

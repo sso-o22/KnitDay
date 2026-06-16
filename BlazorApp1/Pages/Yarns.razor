@@ -468,9 +468,14 @@ else
                 _usedQty[u.YarnId] = (_usedQty.TryGetValue(u.YarnId, out var v) ? v : 0) + u.BallsUsed;
     }
 
-    void OpenAddModal() { _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 }; _showModal = true; _ = JS.InvokeVoidAsync("lockBodyScroll"); }
-    void OpenEditModal(Yarn yarn) { _editingYarn = yarn; _showModal = true; _ = JS.InvokeVoidAsync("lockBodyScroll"); }
-    void CloseModal() { _showModal = false; _editingYarn = null; _ = JS.InvokeVoidAsync("unlockBodyScroll"); }
+    bool _scrollModalTop = false;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_scrollModalTop) { _scrollModalTop = false; await JS.InvokeVoidAsync("scrollModalToTop"); }
+    }
+    async Task OpenAddModal() { _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 }; _showModal = true; _scrollModalTop = true; await JS.InvokeVoidAsync("lockBodyScroll"); }
+    async Task OpenEditModal(Yarn yarn) { _editingYarn = yarn; _showModal = true; _scrollModalTop = true; await JS.InvokeVoidAsync("lockBodyScroll"); }
+    async Task CloseModal() { _showModal = false; _editingYarn = null; await JS.InvokeVoidAsync("unlockBodyScroll"); }
 
     async Task SaveYarn()
     {
@@ -480,7 +485,7 @@ else
         await Storage.SaveYarnAsync(_editingYarn);
         _yarns = await Storage.GetYarnsAsync();
         _CalcUsed();
-        CloseModal();
+        await CloseModal();
         _saving = false;
         await JS.InvokeVoidAsync("showToast", "저장됐어요");
         }

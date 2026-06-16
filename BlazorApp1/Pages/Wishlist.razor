@@ -225,10 +225,17 @@ else
             PatternName = "" 
         };
         _showModal = true;
+        _scrollModalTop = true;
         _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 
-    void OpenEditModal(KnitProject proj) { _editingProject = proj; _showModal = true; _ = JS.InvokeVoidAsync("lockBodyScroll"); }
+    bool _scrollModalTop = false;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_scrollModalTop) { _scrollModalTop = false; await JS.InvokeVoidAsync("scrollModalToTop"); }
+    }
+
+    void OpenEditModal(KnitProject proj) { _editingProject = proj; _showModal = true; _scrollModalTop = true; _ = JS.InvokeVoidAsync("lockBodyScroll"); }
     void CloseModal() { _showModal = false; _editingProject = null; _ = JS.InvokeVoidAsync("unlockBodyScroll"); }
 
     async Task SaveProject()
