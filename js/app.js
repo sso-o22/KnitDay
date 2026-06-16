@@ -524,13 +524,11 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let src = null;       // 드래그 중인 원본 행 (DOM에서 제거됨)
-    let clone = null;     // body에 fixed로 띄운 시각적 복사본
-    let ph = null;        // placeholder (빈 자리 표시)
+    let src = null, clone = null, ph = null;
     let startY = 0, srcLeft = 0, srcWidth = 0, phHeight = 0;
+    let srcInlineStyle = '';   // 원본 인라인 스타일 보존용
 
-    function clientY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
-    function clientX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
+    function cy(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
 
     function onStart(e) {
         const handle = e.target.closest('.drag-handle');
@@ -540,47 +538,42 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
         e.preventDefault();
 
         const rect = row.getBoundingClientRect();
-        startY   = clientY(e);
+        startY   = cy(e);
         srcLeft  = rect.left;
         srcWidth = rect.width;
         phHeight = rect.height;
 
-        // placeholder 삽입 (원본 자리 유지)
+        // 원본 인라인 스타일 저장
+        srcInlineStyle = row.getAttribute('style') || '';
+
+        // placeholder 삽입
         ph = document.createElement('div');
-        ph.style.cssText = `height:${phHeight}px;background:var(--theme-pale);border-radius:6px;transition:none;`;
+        ph.style.cssText = `height:${phHeight}px;background:var(--theme-pale);border-radius:6px;`;
         row.before(ph);
 
-        // 원본 DOM에서 완전 제거
+        // 원본 DOM 제거
         src = row;
         row.remove();
 
-        // clone: body에 fixed
-        clone = row.cloneNode(true);
-        clone.style.cssText = `
-            position:fixed;left:${srcLeft}px;top:${rect.top}px;
-            width:${srcWidth}px;z-index:9999;
-            box-shadow:0 8px 24px rgba(0,0,0,0.18);border-radius:8px;
-            background:var(--white);opacity:0.96;pointer-events:none;
-            box-sizing:border-box;transition:none;
-        `;
+        // clone: body fixed
+        clone = src.cloneNode(true);
+        clone.style.cssText = `position:fixed;left:${srcLeft}px;top:${rect.top}px;width:${srcWidth}px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.18);border-radius:8px;background:var(--white);opacity:0.96;pointer-events:none;box-sizing:border-box;`;
         document.body.appendChild(clone);
     }
 
     function onMove(e) {
         if (!src || !clone || !ph) return;
         e.preventDefault();
-        const cy = clientY(e);
-        const dy = cy - startY;
+        const y  = cy(e);
+        const dy = y - startY;
 
-        // clone 이동 (transform 사용 — top 변경보다 빠름)
         clone.style.transform = `translateY(${dy}px)`;
 
-        // placeholder 위치: container 내 남은 행들 기준
         const rows = [...container.querySelectorAll('[data-checkid]')];
         let placed = false;
         for (const r of rows) {
             const mid = r.getBoundingClientRect().top + r.getBoundingClientRect().height / 2;
-            if (cy < mid) { r.before(ph); placed = true; break; }
+            if (y < mid) { r.before(ph); placed = true; break; }
         }
         if (!placed) container.appendChild(ph);
     }
@@ -589,38 +582,38 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
         if (!src || !clone || !ph) return;
         if (e.cancelable) e.preventDefault();
 
-        // clone 제거
         clone.remove(); clone = null;
 
-        // 원본 스타일 초기화 후 placeholder 자리에 삽입
-        src.style.cssText = '';
+        // 원본 인라인 스타일 복원 후 placeholder 교체
+        src.setAttribute('style', srcInlineStyle);
         ph.replaceWith(src);
         ph = null;
 
-        // 새 순서 → Blazor
         const ids = [...container.querySelectorAll('[data-checkid]')].map(r => r.dataset.checkid);
         dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
         src = null;
     }
 
-    // mouse
-    container.addEventListener('mousedown', onStart);
-    document.addEventListener('mousemove', onMove);
-    document.addEventListener('mouseup', onEnd);
-    // touch (passive:false 필수 — preventDefault 호출)
+    container.addEventListener('mousedown',  onStart);
+    document.addEventListener('mousemove',   onMove);
+    document.addEventListener('mouseup',     onEnd);
     container.addEventListener('touchstart', onStart, { passive: false });
-    document.addEventListener('touchmove',  onMove,  { passive: false });
-    document.addEventListener('touchend',   onEnd,   { passive: false });
+    document.addEventListener('touchmove',   onMove,  { passive: false });
+    document.addEventListener('touchend',    onEnd,   { passive: false });
 
     window._checklistDragCleanup = () => {
-        container.removeEventListener('mousedown', onStart);
-        document.removeEventListener('mousemove',  onMove);
-        document.removeEventListener('mouseup',    onEnd);
+        container.removeEventListener('mousedown',  onStart);
+        document.removeEventListener('mousemove',   onMove);
+        document.removeEventListener('mouseup',     onEnd);
         container.removeEventListener('touchstart', onStart);
-        document.removeEventListener('touchmove',  onMove);
-        document.removeEventListener('touchend',   onEnd);
+        document.removeEventListener('touchmove',   onMove);
+        document.removeEventListener('touchend',    onEnd);
         if (clone) { clone.remove(); clone = null; }
-        if (src && ph) { ph.replaceWith(src); } else if (ph) ph.remove();
+        if (src) {
+            src.setAttribute('style', srcInlineStyle);
+            if (ph) ph.replaceWith(src); else container.appendChild(src);
+        }
+        if (ph) ph.remove();
         src = null; ph = null;
         window._checklistDragCleanup = null;
     };
