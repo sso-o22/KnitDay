@@ -231,7 +231,7 @@
             새 기기에서 <b>데이터 불러오기</b>로 복원해주세요.
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="() => _showExportModal = true"><img src="icons/export.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 내보내기</button>
+            <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="OpenExportModal"><img src="icons/export.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 내보내기</button>
             <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="ImportDataClick"><img src="icons/download-simple.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 불러오기</button>
         </div>
         <InputFile id="import-file-input" OnChange="ImportData" accept=".json" style="display:none;" />
@@ -340,10 +340,9 @@
 
 @if (_showExportModal)
 {
-    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;"
-         @ontouchstart:stopPropagation @ontouchmove:preventDefault @ontouchmove:stopPropagation @onwheel:preventDefault>
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;">
         <div style="background:var(--white);border-radius:20px;padding:24px 20px 20px;max-width:380px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.18);max-height:85vh;display:flex;flex-direction:column;overflow-y:auto;"
-             @onclick:stopPropagation @ontouchstart:stopPropagation @ontouchmove:stopPropagation @onwheel:stopPropagation>
+             @onclick:stopPropagation>
 
             @if (_exportStep == 1)
             {
@@ -513,7 +512,18 @@
     List<KnitProject> _exportProjects = new();
     HashSet<Guid> _exportSelectedIds = new();
 
-    void CloseExportModal() { _showExportModal = false; _exportStep = 1; _exportIsSelectMode = false; _exportExcludeProjects = false; _exportSelectedIds.Clear(); }
+    async Task OpenExportModal()
+    {
+        _showExportModal = true;
+        await JS.InvokeVoidAsync("eval", "document.body.style.overflow='hidden';document.body.style.position='fixed';document.body.style.width='100%';");
+    }
+
+    async Task CloseExportModal()
+    {
+        _showExportModal = false;
+        _exportStep = 1; _exportIsSelectMode = false; _exportExcludeProjects = false; _exportSelectedIds.Clear();
+        await JS.InvokeVoidAsync("eval", "document.body.style.overflow='';document.body.style.position='';document.body.style.width='';");
+    }
 
     async Task OpenProjectSelectStep()
     {
@@ -842,6 +852,7 @@
     async Task ExecuteExport()
     {
         _showExportModal = false;
+        await JS.InvokeVoidAsync("eval", "document.body.style.overflow='';document.body.style.position='';document.body.style.width=''");
         var includePhotos = _exportIncludePhotos;
         var isSelectMode  = _exportIsSelectMode;
         var selectedIds   = _exportSelectedIds.Select(id => id.ToString()).ToArray();
