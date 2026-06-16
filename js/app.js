@@ -634,3 +634,77 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
 window.cleanupChecklistDrag = () => {
     if (window._checklistDragCleanup) window._checklistDragCleanup();
 };
+
+// ── iOS touch → HTML5 drag 폴리필 ─────────────────────────────────
+// iOS Safari는 draggable 이벤트를 지원하지 않음
+// touchstart/touchmove/touchend → dragstart/dragover/drop 에뮬레이션
+window.initTouchDragPolyfill = (containerId) => {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    // 이미 적용됐으면 스킵
+    if (container._touchDragInit) return;
+    container._touchDragInit = true;
+
+    let dragging = null, clone = null, lastTarget = null, offsetX = 0, offsetY = 0;
+
+    container.addEventListener('touchstart', e => {
+        const row = e.target.closest('[draggable="true"]');
+        if (!row) return;
+
+        const touch = e.touches[0];
+        const rect  = row.getBoundingClientRect();
+        offsetX = touch.clientX - rect.left;
+        offsetY = touch.clientY - rect.top;
+
+        dragging = row;
+
+        // 시각적 clone
+        clone = row.cloneNode(true);
+        clone.style.cssText = `
+            position:fixed; pointer-events:none; z-index:9999; opacity:0.9;
+            width:${rect.width}px; left:${rect.left}px; top:${rect.top}px;
+            box-shadow:0 6px 24px rgba(0,0,0,0.18); border-radius:8px;
+            background:var(--white); box-sizing:border-box;
+        `;
+        document.body.appendChild(clone);
+        row.style.opacity = '0.3';
+    }, { passive: true });
+
+    container.addEventListener('touchmove', e => {
+        if (!dragging || !clone) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        clone.style.left = (touch.clientX - offsetX) + 'px';
+        clone.style.top  = (touch.clientY - offsetY) + 'px';
+
+        // 현재 포인터 아래 행 찾기
+        clone.style.display = 'none';
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        clone.style.display = '';
+        const target = el?.closest('[draggable="true"]');
+        if (target && target !== dragging && target !== lastTarget) {
+            lastTarget = target;
+            // Blazor ondragover → dragover 이벤트 발생
+            target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }));
+        }
+    }, { passive: false });
+
+    container.addEventListener('touchend', e => {
+        if (!dragging) return;
+        const touch = e.changedTouches[0];
+
+        // clone 제거
+        if (clone) { document.body.removeChild(clone); clone = null; }
+        dragging.style.opacity = '';
+
+        // 드롭 대상 찾아서 drop 이벤트 발생
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        const target = el?.closest('[draggable="true"]');
+        if (target && target !== dragging) {
+            // dragstart는 이미 메모리에 있으므로 drop만 발생
+            target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true }));
+        }
+
+        dragging = null; lastTarget = null;
+    }, { passive: true });
+};
