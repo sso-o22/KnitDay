@@ -708,10 +708,6 @@ let _savedScrollY = 0;
 window.lockBodyScroll = () => {
     _savedScrollY = window.scrollY || document.documentElement.scrollTop;
     document.body.style.overflow = 'hidden';
-    requestAnimationFrame(() => {
-        const modal = document.querySelector('.modal');
-        if (modal) modal.scrollTop = 0;
-    });
 };
 
 window.unlockBodyScroll = () => {
@@ -719,7 +715,7 @@ window.unlockBodyScroll = () => {
     window.scrollTo(0, _savedScrollY);
 };
 
-window.scrollModalToTop = (selector) => {
-    const el = selector ? document.querySelector(selector) : null;
-    if (el) el.scrollTop = 0;
+window.scrollModalToTop = () => {
+    const modal = document.querySelector('.modal');
+    if (modal) modal.scrollTop = 0;
 };
