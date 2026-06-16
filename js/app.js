@@ -524,140 +524,176 @@ window.initChecklistDrag = (dotNetRef, containerId) => {
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let srcId = null;      // 드래그 중인 행의 data-checkid
-    let clone = null;      // body fixed 복사본
-    let ph = null;         // placeholder
-    let startY = 0;
-    let longPressTimer = null;
+    let srcId = null, clone = null, ph = null;
+    let startY = 0, startX = 0;
     let dragging = false;
+    let pendingRow = null;   // touchstart 시 잡아둔 행
+
+    const THRESHOLD = 8;    // 이 픽셀 이상 수직 이동 시 드래그 확정
 
     function cy(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
+    function cx(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
 
     function startDrag(e, row) {
+        if (dragging) return;
         dragging = true;
         const rect = row.getBoundingClientRect();
         startY  = cy(e);
         srcId   = row.dataset.checkid;
 
-        // placeholder
         ph = document.createElement('div');
-        ph.style.cssText = `height:${rect.height}px;background:var(--theme-pale);border-radius:6px;`;
+        ph.style.cssText = `height:${rect.height}px;background:var(--theme-pale);border-radius:6px;flex-shrink:0;`;
         row.before(ph);
         row.remove();
 
-        // 단순한 clone (텍스트만)
         clone = document.createElement('div');
         clone.style.cssText = `position:fixed;left:${rect.left}px;top:${rect.top}px;width:${rect.width}px;z-index:9999;box-shadow:0 8px 24px rgba(0,0,0,0.2);border-radius:8px;background:var(--white);padding:8px 12px;font-size:0.85rem;color:var(--text-dark);pointer-events:none;box-sizing:border-box;opacity:0.95;display:flex;align-items:center;gap:8px;`;
-        clone.innerHTML = `<span style="color:var(--text-light);font-size:1rem;">⠿</span><span>${row.querySelector('input[type="text"],input.form-control')?.value || row.querySelector('span')?.textContent || ''}</span>`;
+        const label = row.querySelector('input.form-control')?.value || row.querySelector('span')?.textContent || '';
+        clone.innerHTML = `<span style="color:var(--text-light);font-size:1rem;">⠿</span><span>${label}</span>`;
         document.body.appendChild(clone);
-
-        document.addEventListener('mousemove',  onMove);
-        document.addEventListener('mouseup',    onEnd);
-        document.addEventListener('touchmove',  onMove,  { passive: false });
-        document.addEventListener('touchend',   onEnd,   { passive: false });
     }
 
+    // ── Mouse ──
     function onMouseDown(e) {
-        const handle = e.target.closest('.drag-handle');
-        if (!handle) return;
-        const row = handle.closest('[data-checkid]');
+        if (!e.target.closest('.drag-handle')) return;
+        const row = e.target.closest('[data-checkid]');
         if (!row) return;
         e.preventDefault();
+        startY = cy(e); startX = cx(e);
         startDrag(e, row);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup',   onMouseUp);
     }
 
-    function onTouchStart(e) {
-        const handle = e.target.closest('.drag-handle');
-        if (!handle) return;
-        const row = handle.closest('[data-checkid]');
-        if (!row) return;
-
-        // long-press 150ms
-        longPressTimer = setTimeout(() => {
-            e.preventDefault();
-            startDrag(e, row);
-        }, 150);
-    }
-
-    function onMove(e) {
-        if (!dragging || !clone || !ph) return;
+    function onMouseMove(e) {
+        if (!dragging) return;
         e.preventDefault();
-        const y  = cy(e);
-        const dy = y - startY;
-        clone.style.transform = `translateY(${dy}px)`;
+        moveClone(e);
+        movePlaceholder(cy(e));
+    }
 
+    function onMouseUp(e) {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup',   onMouseUp);
+        finish();
+    }
+
+    // ── Touch ──
+    function onTouchStart(e) {
+        if (!e.target.closest('.drag-handle')) return;
+        const row = e.target.closest('[data-checkid]');
+        if (!row) return;
+        // passive:false이므로 preventDefault 가능 — 스크롤 차단
+        e.preventDefault();
+        startY = cy(e); startX = cx(e);
+        pendingRow = row;
+        document.addEventListener('touchmove', onTouchMove, { passive: false });
+        document.addEventListener('touchend',  onTouchEnd,  { passive: false });
+        document.addEventListener('touchcancel', onTouchCancel);
+    }
+
+    function onTouchMove(e) {
+        if (!pendingRow) return;
+        e.preventDefault();
+        const dy = cy(e) - startY;
+        const dx = cx(e) - startX;
+
+        if (!dragging) {
+            // threshold 초과 시 드래그 확정
+            if (Math.abs(dy) > THRESHOLD) {
+                startDrag(e, pendingRow);
+                pendingRow = null;
+            } else if (Math.abs(dx) > THRESHOLD * 2) {
+                // 수평 이동이 크면 스크롤 의도 → 취소
+                pendingRow = null;
+                cleanup();
+                return;
+            }
+        }
+
+        if (dragging) {
+            moveClone(e);
+            movePlaceholder(cy(e));
+        }
+    }
+
+    function onTouchEnd(e) {
+        cleanup();
+        finish();
+    }
+
+    function onTouchCancel() {
+        cleanup();
+        cancel();
+    }
+
+    function cleanup() {
+        document.removeEventListener('touchmove',   onTouchMove);
+        document.removeEventListener('touchend',    onTouchEnd);
+        document.removeEventListener('touchcancel', onTouchCancel);
+        pendingRow = null;
+    }
+
+    // ── 공통 ──
+    function moveClone(e) {
+        if (!clone) return;
+        const dy = cy(e) - startY;
+        clone.style.transform = `translateY(${dy}px)`;
+    }
+
+    function movePlaceholder(y) {
+        if (!ph) return;
         const rows = [...container.querySelectorAll('[data-checkid]')];
         let placed = false;
         for (const r of rows) {
-            const mid = r.getBoundingClientRect().top + r.getBoundingClientRect().height / 2;
-            if (y < mid) { r.before(ph); placed = true; break; }
+            const rect = r.getBoundingClientRect();
+            if (y < rect.top + rect.height / 2) { r.before(ph); placed = true; break; }
         }
         if (!placed) container.appendChild(ph);
     }
 
-    function onEnd(e) {
-        clearTimeout(longPressTimer);
-        if (!dragging) return;
+    function finish() {
+        if (!dragging) { cancel(); return; }
         dragging = false;
-
-        document.removeEventListener('mousemove',  onMove);
-        document.removeEventListener('mouseup',    onEnd);
-        document.removeEventListener('touchmove',  onMove);
-        document.removeEventListener('touchend',   onEnd);
-
         if (clone) { clone.remove(); clone = null; }
 
-        // container 안의 [data-checkid] 행 순서 읽기 (ph는 [data-checkid] 아님)
-        // ph 바로 다음 [data-checkid] 행을 찾아서 srcId를 그 앞에 삽입
+        // ph 위치 기준으로 새 순서 계산
         let ids = [...container.querySelectorAll('[data-checkid]')].map(r => r.dataset.checkid);
-
         if (ph && ph.parentNode && srcId) {
-            // ph 다음에 오는 첫 번째 [data-checkid] 행 찾기
-            let nextSibling = ph.nextElementSibling;
-            while (nextSibling && !nextSibling.dataset?.checkid) {
-                nextSibling = nextSibling.nextElementSibling;
-            }
-
-            if (nextSibling && nextSibling.dataset.checkid) {
-                // nextSibling 바로 앞에 srcId 삽입
-                const insertIdx = ids.indexOf(nextSibling.dataset.checkid);
-                if (insertIdx >= 0) ids.splice(insertIdx, 0, srcId);
-                else ids.push(srcId);
-            } else {
-                // ph가 마지막 → srcId를 끝에
-                ids.push(srcId);
-            }
+            let next = ph.nextElementSibling;
+            while (next && !next.dataset?.checkid) next = next.nextElementSibling;
+            const insertIdx = next ? ids.indexOf(next.dataset.checkid) : -1;
+            if (insertIdx >= 0) ids.splice(insertIdx, 0, srcId);
+            else ids.push(srcId);
             ph.remove();
         } else {
             if (srcId && !ids.includes(srcId)) ids.push(srcId);
             if (ph) ph.remove();
         }
         ph = null;
-
-        dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
+        if (srcId) dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
         srcId = null;
     }
 
-    function onTouchCancel() {
-        clearTimeout(longPressTimer);
-    }
-
-    container.addEventListener('mousedown',   onMouseDown);
-    container.addEventListener('touchstart',  onTouchStart, { passive: true });
-    container.addEventListener('touchcancel', onTouchCancel);
-
-    window._checklistDragCleanup = () => {
-        clearTimeout(longPressTimer);
-        container.removeEventListener('mousedown',   onMouseDown);
-        container.removeEventListener('touchstart',  onTouchStart);
-        container.removeEventListener('touchcancel', onTouchCancel);
-        document.removeEventListener('mousemove',    onMove);
-        document.removeEventListener('mouseup',      onEnd);
-        document.removeEventListener('touchmove',    onMove);
-        document.removeEventListener('touchend',     onEnd);
+    function cancel() {
+        dragging = false;
         if (clone) { clone.remove(); clone = null; }
         if (ph) { ph.remove(); ph = null; }
-        dragging = false; srcId = null;
+        srcId = null; pendingRow = null;
+    }
+
+    container.addEventListener('mousedown',  onMouseDown);
+    container.addEventListener('touchstart', onTouchStart, { passive: false });
+
+    window._checklistDragCleanup = () => {
+        container.removeEventListener('mousedown',  onMouseDown);
+        container.removeEventListener('touchstart', onTouchStart);
+        document.removeEventListener('mousemove',   onMouseMove);
+        document.removeEventListener('mouseup',     onMouseUp);
+        document.removeEventListener('touchmove',   onTouchMove);
+        document.removeEventListener('touchend',    onTouchEnd);
+        document.removeEventListener('touchcancel', onTouchCancel);
+        cancel();
         window._checklistDragCleanup = null;
     };
 };
