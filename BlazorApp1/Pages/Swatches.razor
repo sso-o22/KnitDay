@@ -98,7 +98,7 @@ else
                         {
                             <div style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text-mid); overflow:hidden;">
                                 <span class="color-dot" style="background:@yarn.ColorCode; width:12px; height:12px; flex-shrink:0;"></span>
-                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@yarn.Brand @yarn.Name</span>
+                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@yarn.Name</span>
                             </div>
                         }
                         else if (!string.IsNullOrEmpty(s.YarnNameDirect))
@@ -667,6 +667,7 @@ else
         _editing = new Swatch { Id = Guid.Empty };
         _stitchSelect = "메리야스";
         _showModal = true;
+        _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 
     void OnYarnChanged(ChangeEventArgs e)
@@ -696,9 +697,10 @@ else
         var presets = new[] { "메리야스", "무늬" };
         _stitchSelect = presets.Contains(s.Stitch) ? s.Stitch : "직접입력";
         _showModal = true;
+        _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 
-    void CloseModal() => _showModal = false;
+    void CloseModal() { _showModal = false; _ = JS.InvokeVoidAsync("unlockBodyScroll"); }
 
     void OnFilterProjectChanged(ChangeEventArgs e) => _filterProject = e.Value?.ToString() ?? "";
     void OnFilterStitchChanged(ChangeEventArgs e)  => _filterStitch  = e.Value?.ToString() ?? "";

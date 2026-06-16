@@ -225,10 +225,11 @@ else
             PatternName = "" 
         };
         _showModal = true;
+        _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 
-    void OpenEditModal(KnitProject proj) { _editingProject = proj; _showModal = true; }
-    void CloseModal() { _showModal = false; _editingProject = null; }
+    void OpenEditModal(KnitProject proj) { _editingProject = proj; _showModal = true; _ = JS.InvokeVoidAsync("lockBodyScroll"); }
+    void CloseModal() { _showModal = false; _editingProject = null; _ = JS.InvokeVoidAsync("unlockBodyScroll"); }
 
     async Task SaveProject()
     {

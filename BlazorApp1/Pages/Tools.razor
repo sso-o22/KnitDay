@@ -403,6 +403,7 @@ else
         };
         _newSetSize = 0;
         _showModal = true;
+        _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 
     void OpenEditModal(KnitTool tool)
@@ -410,9 +411,10 @@ else
         _editingTool = tool;
         _newSetSize = 0;
         _showModal = true;
+        _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 
-    void CloseModal() { _showModal = false; _editingTool = null; }
+    void CloseModal() { _showModal = false; _editingTool = null; _ = JS.InvokeVoidAsync("unlockBodyScroll"); }
 
     double GetStep(double size) => size < 4.0 ? 0.25 : 0.5;
 

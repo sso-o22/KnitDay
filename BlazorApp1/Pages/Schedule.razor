@@ -607,19 +607,19 @@ else
             StartDate = DateTime.Today
         };
         _showModal = true;
+        _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 
     void OpenEditModal(KnitProject proj)
     {
-        // 취소 시 복원을 위해 JSON 딥카피
         var json = System.Text.Json.JsonSerializer.Serialize(proj);
         _editingProject = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
-        // 스와치 연결 상태 스냅샷 (projectId 기준)
         _swatchSnapshot = _allSwatches
             .Where(s => s.ProjectId == proj.Id)
             .Select(s => s.Id)
             .ToList();
         _showModal = true;
+        _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
 
     async Task MoveToWishlist()
@@ -651,6 +651,7 @@ else
         }
         _showModal = false;
         _editingProject = null;
+        _ = JS.InvokeVoidAsync("unlockBodyScroll");
     }
 
     void OnAddYarn(ChangeEventArgs e)
