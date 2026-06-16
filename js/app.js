@@ -90,6 +90,55 @@ window.knitDB = (() => {
 
         // ── 가져오기 (덮어쓰기) ──
         async importData(key, jsonStr) { await set('data', key, jsonStr); },
+
+        // ── 용량 분류 계산 (사진 / 도안 / 기타) ──
+        // 사진: knittracker_projects 안 Base64Data + knittracker_yarns/swatches 안 PhotoBase64
+        // 도안: KnitLogPatternDB (별도 IDB)
+        // 기타: 나머지 data store 전체
+        async getUsageBreakdown() {
+            try {
+                // ── 기타 (data store 전체 JSON 크기) ──
+                const allValues = await getAll('data');
+                let otherBytes = 0;
+                let photoBytes = 0;
+                for (const val of allValues) {
+                    if (typeof val !== 'string') continue;
+                    const byteLen = new TextEncoder().encode(val).length;
+                    // Base64 이미지 크기만 따로 추출 (data:image/... 패턴)
+                    const imgMatches = val.match(/"data:image\/[^"]{10,}"/g) || [];
+                    let imgBytes = 0;
+                    for (const m of imgMatches) {
+                        // base64 문자 수 → 실제 bytes ≈ len * 3/4
+                        imgBytes += Math.floor(m.length * 0.75);
+                    }
+                    photoBytes += imgBytes;
+                    otherBytes += byteLen - imgBytes;
+                }
+
+                // ── 도안 (KnitLogPatternDB) ──
+                let pdfBytes = 0;
+                try {
+                    const pdfDb = await new Promise((res, rej) => {
+                        const req = indexedDB.open('KnitLogPatternDB', 1);
+                        req.onsuccess = e => res(e.target.result);
+                        req.onerror   = e => rej(e.target.error);
+                    });
+                    const pdfRecs = await new Promise((res, rej) => {
+                        const req = pdfDb.transaction('patterns','readonly').objectStore('patterns').getAll();
+                        req.onsuccess = e => res(e.target.result);
+                        req.onerror   = e => rej(e.target.error);
+                    });
+                    for (const rec of pdfRecs) {
+                        if (rec.bytes) pdfBytes += rec.bytes.byteLength ?? rec.bytes.length ?? 0;
+                    }
+                } catch(e) { /* PDF DB 없으면 0 */ }
+
+                return JSON.stringify({ photoBytes, pdfBytes, otherBytes });
+            } catch(e) {
+                console.error('getUsageBreakdown:', e);
+                return JSON.stringify({ photoBytes: 0, pdfBytes: 0, otherBytes: 0 });
+            }
+        },
     };
 })();
 
@@ -467,4 +516,101 @@ window.uploadToCloudinary = async function(base64DataUrl, publicId, resourceType
         console.error('uploadToCloudinary:', e);
         return null;
     }
+};
+
+// ── 체크리스트 touch 드래그 순서 변경 ────────────────────────────
+window.initChecklistDrag = (dotNetRef, containerId) => {
+    if (window._checklistDragCleanup) window._checklistDragCleanup();
+
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    let dragging = null, placeholder = null, startY = 0, offsetY = 0;
+
+    function getRow(el) { return el?.closest('[data-checkid]'); }
+
+    function createPlaceholder(h) {
+        const el = document.createElement('div');
+        el.style.cssText = `height:${h}px;background:var(--theme-pale);border-radius:6px;margin:2px 0;transition:none;`;
+        return el;
+    }
+
+    function onStart(e) {
+        const handle = e.target.closest('.drag-handle');
+        if (!handle) return;
+        e.preventDefault();
+        const row = getRow(handle);
+        if (!row) return;
+
+        dragging = row;
+        const rect = row.getBoundingClientRect();
+        startY = (e.touches ? e.touches[0].clientY : e.clientY);
+        offsetY = startY - rect.top;
+
+        placeholder = createPlaceholder(rect.height);
+        row.parentNode.insertBefore(placeholder, row.nextSibling);
+
+        row.style.cssText += `position:fixed;z-index:999;width:${rect.width}px;left:${rect.left}px;top:${rect.top}px;box-shadow:0 4px 16px rgba(0,0,0,0.15);background:var(--white);border-radius:8px;opacity:0.95;pointer-events:none;`;
+    }
+
+    function onMove(e) {
+        if (!dragging) return;
+        e.preventDefault();
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        dragging.style.top = (clientY - offsetY) + 'px';
+
+        // placeholder 위치 결정
+        const rows = [...container.querySelectorAll('[data-checkid]')].filter(r => r !== dragging);
+        let inserted = false;
+        for (const row of rows) {
+            const rect = row.getBoundingClientRect();
+            if (clientY < rect.top + rect.height / 2) {
+                container.insertBefore(placeholder, row);
+                inserted = true;
+                break;
+            }
+        }
+        if (!inserted) container.appendChild(placeholder);
+    }
+
+    function onEnd() {
+        if (!dragging) return;
+        // dragging 원래 스타일 복원
+        dragging.style.cssText = dragging.style.cssText
+            .replace(/position:[^;]+;/g,'').replace(/z-index:[^;]+;/g,'')
+            .replace(/width:[^;]+;/g,'').replace(/left:[^;]+;/g,'')
+            .replace(/top:[^;]+;/g,'').replace(/box-shadow:[^;]+;/g,'')
+            .replace(/background:[^;]+;/g,'').replace(/border-radius:[^;]+;/g,'')
+            .replace(/opacity:[^;]+;/g,'').replace(/pointer-events:[^;]+;/g,'');
+
+        container.insertBefore(dragging, placeholder);
+        placeholder.remove();
+
+        // 새 순서의 id 목록을 Blazor로 전달
+        const ids = [...container.querySelectorAll('[data-checkid]')].map(r => r.dataset.checkid);
+        dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
+
+        dragging = null; placeholder = null;
+    }
+
+    container.addEventListener('mousedown',  onStart);
+    container.addEventListener('touchstart', onStart, { passive: false });
+    document.addEventListener('mousemove',   onMove);
+    document.addEventListener('touchmove',   onMove, { passive: false });
+    document.addEventListener('mouseup',     onEnd);
+    document.addEventListener('touchend',    onEnd);
+
+    window._checklistDragCleanup = () => {
+        container.removeEventListener('mousedown',  onStart);
+        container.removeEventListener('touchstart', onStart);
+        document.removeEventListener('mousemove',   onMove);
+        document.removeEventListener('touchmove',   onMove);
+        document.removeEventListener('mouseup',     onEnd);
+        document.removeEventListener('touchend',    onEnd);
+        window._checklistDragCleanup = null;
+    };
+};
+
+window.cleanupChecklistDrag = () => {
+    if (window._checklistDragCleanup) window._checklistDragCleanup();
 };
