@@ -35,6 +35,20 @@
             {
                 <!-- 보기 모드 -->
 
+                <!-- 도안 파일 삭제 옵션 (도안이 저장된 경우에만) -->
+                @if (Project.HasSavedPattern)
+                {
+                    <div style="margin-bottom:14px; padding:10px 14px; background:var(--theme-pale); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                        <div>
+                            <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:2px;">도안 파일 삭제</div>
+                            <div style="font-size:0.78rem; color:var(--text-mid);">완성 후 도안이 필요 없다면 기기 공간을 확보할 수 있어요</div>
+                        </div>
+                        <button class="dark-toggle-btn @(_deletePdf ? "on" : "")" @onclick="() => { _deletePdf = !_deletePdf; StateHasChanged(); }">
+                            <div class="dark-toggle-thumb"></div>
+                        </button>
+                    </div>
+                }
+
                 <!-- 사진 갤러리 (5칸 슬롯, 읽기 전용) -->
                 @if (PopupValidPhotos.Any())
                 {
@@ -396,6 +410,9 @@
     [Parameter] public EventCallback OnSaved { get; set; }
     [Parameter] public EventCallback OnDelete { get; set; }
     [Parameter] public EventCallback OnMoveBack { get; set; }
+    [Parameter] public EventCallback OnDeletePdf { get; set; }
+
+    bool _deletePdf = false;
 
     class MeasureItem
     {
@@ -412,6 +429,7 @@
         if (Show && Project != null)
         {
             _editing = false;
+            _deletePdf = false;
             LoadMeasures();
             await JS.InvokeVoidAsync("eval", "document.body.style.overflow='hidden'");
         }
@@ -423,6 +441,9 @@
 
     async Task ClosePopup()
     {
+        if (_deletePdf && OnDeletePdf.HasDelegate)
+            await OnDeletePdf.InvokeAsync();
+        _deletePdf = false;
         await JS.InvokeVoidAsync("eval", "document.body.style.overflow=''");
         await OnClose.InvokeAsync();
     }

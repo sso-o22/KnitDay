@@ -177,7 +177,8 @@ else
 <CompletedPopup Show="_showCompletedPopup" Project="_completedPreview"
     Yarns="_yarns" Tools="_tools"
     OnClose="CloseCompletedPopup" OnSaved="LoadData"
-    OnDelete="DeleteCompletedFromPopup" OnMoveBack="MoveBackFromPopup" />
+    OnDelete="DeleteCompletedFromPopup" OnMoveBack="MoveBackFromPopup"
+    OnDeletePdf="DeletePdfFromCompletedPopup" />
 
 
 @if (_showModal)
@@ -751,6 +752,24 @@ else
         await JS.InvokeVoidAsync("showToast", "문어발로 복귀했어요");
     }
 
+    async Task DeletePdfFromCompletedPopup()
+    {
+        if (_completedPreview == null) return;
+        try
+        {
+            await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", _completedPreview.Id.ToString());
+            _completedPreview.HasSavedPattern = false;
+            _completedPreview.PatternFileName = null;
+            _completedPreview.PatternCloudUrl = null;
+            await Storage.SaveProjectAsync(_completedPreview);
+            await JS.InvokeVoidAsync("showToast", "도안 파일을 삭제했어요");
+        }
+        catch
+        {
+            await JS.InvokeVoidAsync("showToast", "도안 삭제에 실패했어요", "error");
+        }
+    }
+
 
 
 
@@ -764,6 +783,8 @@ else
     async Task DeleteProject(Guid id)
     {
         await Storage.DeleteProjectAsync(id);
+        // PDF도 IDB에서 삭제
+        try { await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", id.ToString()); } catch { }
         await LoadData();
     }
 

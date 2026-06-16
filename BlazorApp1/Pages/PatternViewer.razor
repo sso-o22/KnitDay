@@ -1179,10 +1179,11 @@
         if (_project != null)
         {
             _project.ViewerAnnotations = "";
-            
             _project.ViewerRowMarkers = "";
             _project.ViewerLastZoom = 0;
             _project.ViewerLastPage = 1;
+            // 기존 PDF IDB에서 삭제
+            try { await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", ProjectId.ToString()); } catch { }
         }
         await JS.InvokeVoidAsync("patternViewer.clearAnnotations");
         await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
