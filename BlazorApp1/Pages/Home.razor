@@ -132,10 +132,16 @@ else
         <div id="todo-drag-container">
         @foreach (var item in _todoItems)
         {
-            <div data-checkid="@item.Id" style="display:flex; align-items:center; gap:6px; padding:6px 0; touch-action:@(_todoEditMode ? "none" : "auto");">
+            var idx = _todoItems.IndexOf(item);
+            <div data-checkid="@item.Id" style="display:flex; align-items:center; gap:6px; padding:6px 0;">
                 @if (_todoEditMode)
                 {
-                    <span class="drag-handle" style="cursor:grab; color:var(--text-light); flex-shrink:0; font-size:1rem; line-height:1; padding:0 2px;">⠿</span>
+                    <div style="display:flex;flex-direction:column;gap:1px;flex-shrink:0;">
+                        <button class="btn btn-ghost btn-sm" style="padding:0 4px;line-height:1;font-size:0.7rem;" disabled="@(idx==0)"
+                                @onclick="() => MoveTodoItem(idx, -1)">▲</button>
+                        <button class="btn btn-ghost btn-sm" style="padding:0 4px;line-height:1;font-size:0.7rem;" disabled="@(idx==_todoItems.Count-1)"
+                                @onclick="() => MoveTodoItem(idx, 1)">▼</button>
+                    </div>
                 }
                 <input type="checkbox" checked="@item.Done"
                        @onchange="async () => { item.Done = !item.Done; await SaveTodos(); }"
@@ -373,31 +379,19 @@ else
         await SaveTodos();
     }
 
-    void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; _ = InitTodoDragAsync(); }
-    async Task ExitTodoEditMode() { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; await JS.InvokeVoidAsync("cleanupChecklistDrag"); await SaveTodos(); }
+    void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; }
+    async Task ExitTodoEditMode() { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; await SaveTodos(); }
     void CancelTodoEdit() { _editingTodoId = null; _editingTodoText = ""; }
     void StartAddTodo() { _addingTodo = true; }
     void CancelAddTodo() { _addingTodo = false; _newTodoText = ""; }
 
-    DotNetObjectReference<Home>? _todoDragRef;
-
-    async Task InitTodoDragAsync()
+    void MoveTodoItem(int idx, int dir)
     {
-        await Task.Delay(50);
-        _todoDragRef ??= DotNetObjectReference.Create(this);
-        await JS.InvokeVoidAsync("initChecklistDrag", _todoDragRef, "todo-drag-container");
-    }
-
-    [JSInvokable]
-    public void ReorderChecklist(string[] ids)
-    {
-        var ordered = ids
-            .Select(id => Guid.TryParse(id, out var g) ? _todoItems.FirstOrDefault(t => t.Id == g) : null)
-            .Where(t => t != null)
-            .Select(t => t!)
-            .ToList();
-        _todoItems = ordered;
-        // 저장은 완료 버튼(ExitTodoEditMode)에서만
+        var newIdx = idx + dir;
+        if (newIdx < 0 || newIdx >= _todoItems.Count) return;
+        var item = _todoItems[idx];
+        _todoItems.RemoveAt(idx);
+        _todoItems.Insert(newIdx, item);
         StateHasChanged();
     }
 
@@ -412,6 +406,9 @@ else
     async void OnSyncCompleted()
     {
         await LoadDataAsync();
+        // 수정 모드 중엔 덮어쓰지 않음 (작업 중 데이터 날아가는 것 방지)
+        if (!_todoEditMode)
+            await LoadTodos();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -477,6 +474,5 @@ else
     {
         Auth.OnAuthChanged -= OnAuthChanged;
         Storage.OnSyncCompleted -= OnSyncCompleted;
-        _todoDragRef?.Dispose();
     }
 }

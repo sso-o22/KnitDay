@@ -225,10 +225,8 @@ namespace KnitLog.Services
 
         private async Task SyncTodosAsync()
         {
-            // 할 일 목록은 배열 통째로 동기화 (항목 수가 더 많은 쪽 우선, 없으면 로컬 우선)
             var localJson = await _js.InvokeAsync<string?>("knitDB.getData", KEY_TODOS);
 
-            // Firebase에서 읽기
             string? cloudJson = null;
             try
             {
@@ -243,20 +241,38 @@ namespace KnitLog.Services
             }
             catch { }
 
-            // 병합: 둘 다 있으면 항목 수 많은 쪽 채택, 한쪽만 있으면 그쪽 사용
-            string mergedJson = localJson ?? "[]";
-            if (!string.IsNullOrEmpty(cloudJson))
+            // Id 기준 merge: 로컬 우선, 클라우드에만 있는 항목 추가
+            // (단순 항목 수 비교 방식은 중복 유발 가능)
+            string mergedJson;
+            if (string.IsNullOrEmpty(cloudJson))
             {
-                var localCount  = string.IsNullOrEmpty(localJson) ? 0
-                    : (JsonSerializer.Deserialize<JsonElement>(localJson,  _jsonOpts).GetArrayLength());
-                var cloudCount  = JsonSerializer.Deserialize<JsonElement>(cloudJson, _jsonOpts).GetArrayLength();
-                if (cloudCount > localCount) mergedJson = cloudJson;
+                mergedJson = localJson ?? "[]";
+            }
+            else if (string.IsNullOrEmpty(localJson) || localJson == "[]")
+            {
+                mergedJson = cloudJson;
+            }
+            else
+            {
+                try
+                {
+                    var localArr = JsonSerializer.Deserialize<List<JsonElement>>(localJson, _jsonOpts) ?? new();
+                    var cloudArr = JsonSerializer.Deserialize<List<JsonElement>>(cloudJson, _jsonOpts) ?? new();
+                    var localIds = localArr.Select(e => GetId(e)).Where(id => id != null).ToHashSet();
+                    // 클라우드에만 있는 항목을 로컬 끝에 추가
+                    foreach (var item in cloudArr)
+                    {
+                        var id = GetId(item);
+                        if (id != null && !localIds.Contains(id))
+                            localArr.Add(item);
+                    }
+                    mergedJson = JsonSerializer.Serialize(localArr, _jsonOpts);
+                }
+                catch { mergedJson = localJson ?? "[]"; }
             }
 
-            // 로컬 저장
             await _js.InvokeVoidAsync("knitDB.setData", KEY_TODOS, mergedJson);
 
-            // Firebase 저장
             try
             {
                 var payload = JsonSerializer.Serialize(new { data = JsonSerializer.Deserialize<JsonElement>(mergedJson, _jsonOpts) }, _jsonOpts);

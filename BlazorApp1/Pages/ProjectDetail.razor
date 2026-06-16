@@ -324,10 +324,16 @@ else
                         <div id="checklist-drag-container">
                         @foreach (var item in _project.Checklist)
                         {
-                            <div data-checkid="@item.Id" style="display:flex; align-items:center; gap:8px; padding:8px 0; touch-action:@(_checklistEditMode ? "none" : "auto");">
+                            var cidx = _project.Checklist.IndexOf(item);
+                            <div data-checkid="@item.Id" style="display:flex; align-items:center; gap:8px; padding:8px 0;">
                                 @if (_checklistEditMode)
                                 {
-                                    <span class="drag-handle" style="cursor:grab; color:var(--text-light); flex-shrink:0; font-size:1rem; line-height:1; padding:0 2px;">⠿</span>
+                                    <div style="display:flex;flex-direction:column;gap:1px;flex-shrink:0;">
+                                        <button class="btn btn-ghost btn-sm" style="padding:0 4px;line-height:1;font-size:0.7rem;" disabled="@(cidx==0)"
+                                                @onclick="() => MoveCheckItem(cidx, -1)">▲</button>
+                                        <button class="btn btn-ghost btn-sm" style="padding:0 4px;line-height:1;font-size:0.7rem;" disabled="@(cidx==_project.Checklist.Count-1)"
+                                                @onclick="() => MoveCheckItem(cidx, 1)">▼</button>
+                                    </div>
                                 }
                                 <input type="checkbox" checked="@item.Done"
                                        @onchange="() => ToggleCheck(item)"
@@ -1264,16 +1270,20 @@ else
         await Save();
     }
 
-    void EnterChecklistEditMode() { _checklistEditMode = true; _editingCheckId = null; _ = InitChecklistDragAsync(); }
-    async Task ExitChecklistEditMode() { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; await JS.InvokeVoidAsync("cleanupChecklistDrag"); await Save(); }
+    void EnterChecklistEditMode() { _checklistEditMode = true; _editingCheckId = null; }
+    async Task ExitChecklistEditMode() { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; await Save(); }
     void StartAddCheck()  { _addingCheck = true; }
     void CancelAddCheck() { _addingCheck = false; _newCheckText = ""; }
 
-    async Task InitChecklistDragAsync()
+    void MoveCheckItem(int idx, int dir)
     {
-        await Task.Delay(50); // DOM 렌더 대기
-        if (_dragRef != null)
-            await JS.InvokeVoidAsync("initChecklistDrag", _dragRef, "checklist-drag-container");
+        if (_project == null) return;
+        var newIdx = idx + dir;
+        if (newIdx < 0 || newIdx >= _project.Checklist.Count) return;
+        var item = _project.Checklist[idx];
+        _project.Checklist.RemoveAt(idx);
+        _project.Checklist.Insert(newIdx, item);
+        StateHasChanged();
     }
 
     [JSInvokable]
@@ -1286,7 +1296,6 @@ else
             .Select(c => c!)
             .ToList();
         _project.Checklist = ordered;
-        // 저장은 완료 버튼(ExitChecklistEditMode)에서만
         StateHasChanged();
     }
 
