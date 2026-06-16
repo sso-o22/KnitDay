@@ -35,28 +35,31 @@ else
                placeholder="실 이름, 브랜드, 색상으로 검색..." style="flex:1;" />
     </div>
 
-    <!-- 필터 + 정렬 -->
-    <div style="display:flex; gap:6px; margin-bottom:8px; overflow-x:auto; padding-bottom:2px; align-items:center;">
-        <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-        @foreach (var (label, val) in new[]{("전체","all"),("사용 중","linked"),("미사용","unlinked"),("부족","low"),("소진","empty")})
-        {
-            <button class="btn btn-sm @(_filter==val?"btn-primary":"btn-ghost")" style="flex-shrink:0;"
-                    @onclick='async ()=>{ _filter=val; await JS.InvokeVoidAsync("localStorage.setItem", "yarn_filter", val); }'>@label</button>
-        }
-    </div>
-    <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center; overflow-x:auto; padding-bottom:2px;">
-        <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-        @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("브랜드순","brand")})
-        {
-            var ascVal  = baseVal + "_asc";
-            var descVal = baseVal + "_desc";
-            var isActive = _yarnSort == ascVal || _yarnSort == descVal;
-            var isAsc   = _yarnSort == ascVal;
-            <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
-                    @onclick="async () => await SetYarnSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
-                @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
-            </button>
-        }
+    <!-- 필터 + 정렬 (태블릿 이상: 한 줄) -->
+    <div class="filter-sort-bar" style="margin-bottom:16px;">
+        <div class="filter-sort-group">
+            <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+            @foreach (var (label, val) in new[]{("전체","all"),("사용 중","linked"),("미사용","unlinked"),("부족","low"),("소진","empty")})
+            {
+                <button class="btn btn-sm @(_filter==val?"btn-primary":"btn-ghost")" style="flex-shrink:0;"
+                        @onclick='async ()=>{ _filter=val; await JS.InvokeVoidAsync("localStorage.setItem", "yarn_filter", val); }'>@label</button>
+            }
+        </div>
+        <div class="filter-sort-divider"></div>
+        <div class="filter-sort-group">
+            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+            @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("브랜드순","brand")})
+            {
+                var ascVal  = baseVal + "_asc";
+                var descVal = baseVal + "_desc";
+                var isActive = _yarnSort == ascVal || _yarnSort == descVal;
+                var isAsc   = _yarnSort == ascVal;
+                <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
+                        @onclick="async () => await SetYarnSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
+                    @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
+                </button>
+            }
+        </div>
     </div>
 
     <div class="grid-3">

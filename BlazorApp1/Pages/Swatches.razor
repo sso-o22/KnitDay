@@ -19,16 +19,33 @@
 @if (_swatches.Count > 0)
 {
     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
-        @* 1행: 프로젝트 연결 유무 *@
-        <div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:2px;">
-            <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-            @foreach (var (label, val) in new[]{("전체",""),("연결됨","linked"),("연결 없음","unlinked")})
-            {
-                <button class="btn btn-sm @(_filterProject==val?"btn-primary":"btn-ghost")" style="flex-shrink:0;"
-                        @onclick="() => SetFilterProject(val)">@label</button>
-            }
+        @* 1행: 연결유무 + (태블릿 이상) 구분선 + 정렬 *@
+        <div class="filter-sort-bar">
+            <div class="filter-sort-group">
+                <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+                @foreach (var (label, val) in new[]{("전체",""),("연결됨","linked"),("연결 없음","unlinked")})
+                {
+                    <button class="btn btn-sm @(_filterProject==val?"btn-primary":"btn-ghost")" style="flex-shrink:0;"
+                            @onclick="() => SetFilterProject(val)">@label</button>
+                }
+            </div>
+            <div class="filter-sort-divider"></div>
+            <div class="filter-sort-group">
+                <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+                @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("바늘","needle")})
+                {
+                    var ascVal  = baseVal + "_asc";
+                    var descVal = baseVal + "_desc";
+                    var isActive = _swatchSort == ascVal || _swatchSort == descVal;
+                    var isAsc   = _swatchSort == ascVal;
+                    <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
+                            @onclick="async () => await SetSwatchSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
+                        @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
+                    </button>
+                }
+            </div>
         </div>
-        @* 2행: 뜨개 방법 + 바늘 필터 *@
+        @* 2행: 뜨개법 + 바늘 필터 (항상 별도 줄) *@
         <div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:2px;">
             <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
             @foreach (var (label, val) in new[]{("전체",""),("메리야스","메리야스"),("무늬","무늬")})
@@ -48,21 +65,6 @@
             @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
             {
                 <button class="btn btn-ghost btn-sm" style="flex-shrink:0;" @onclick="ResetFilters">✕</button>
-            }
-        </div>
-        @* 3행: 정렬 *@
-        <div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:2px;">
-            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-            @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("바늘","needle")})
-            {
-                var ascVal  = baseVal + "_asc";
-                var descVal = baseVal + "_desc";
-                var isActive = _swatchSort == ascVal || _swatchSort == descVal;
-                var isAsc   = _swatchSort == ascVal;
-                <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
-                        @onclick="async () => await SetSwatchSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
-                    @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
-                </button>
             }
         </div>
     </div>
