@@ -15,9 +15,22 @@
 
 <div style="max-width:480px; display:flex; flex-direction:column; gap:16px;">
 
-    <!-- 계정 -->
+    <!-- 계정 (프리미엄 전용) -->
+    @if (_isPremium)
+    {
     <div class="card">
-        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">@if (Auth.IsLoggedIn) { <img src="icons/user-check.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" /> } else { <img src="icons/user.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" /> }계정</div>
+        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+            @if (Auth.IsLoggedIn)
+            {
+                <img src="icons/user-check.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />
+            }
+            else
+            {
+                <img src="icons/user.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />
+            }
+            계정
+            <span style="margin-left:auto; font-size:0.7rem; font-weight:700; letter-spacing:0.04em; padding:2px 8px; border-radius:99px; background:var(--theme-active); color:var(--white);">PREMIUM</span>
+        </div>
         @if (Auth.IsLoggedIn)
         {
             <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
@@ -59,6 +72,7 @@
             <button class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="SignIn"><img src="icons/key.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />구글 로그인</button>
         }
     </div>
+    } @* _isPremium *@
 
     <!-- 테마 -->
     <div class="card">
@@ -114,7 +128,7 @@
             프로젝트, 실 창고, 도구, 스와치 데이터가 저장돼요.
         </p>
 
-        @* ── 클라우드 저장공간 게이지 ── *@
+        @* ── 저장공간 게이지 (로그인: 클라우드 / 비로그인: 기기) ── *@
         @if (Auth.IsLoggedIn)
         {
             <div style="margin-bottom:16px; padding:14px 16px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
@@ -154,6 +168,40 @@
                             <span>잔여 @FmtSize(UsageLimitBytes - _photoBytes - _pdfBytes)</span>
                         }
                     </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            @* 기기 저장공간 게이지 (navigator.storage.estimate) *@
+            <div style="margin-bottom:16px; padding:14px 16px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                    <span style="font-size:0.82rem; font-weight:600; color:var(--text-dark);">기기 저장공간</span>
+                    @if (!_deviceUsageLoaded)
+                    {
+                        <span style="font-size:0.75rem; color:var(--text-light);">불러오는 중...</span>
+                    }
+                    else if (_deviceQuotaBytes <= 0)
+                    {
+                        <span style="font-size:0.75rem; color:var(--text-light);">정보 없음</span>
+                    }
+                    else
+                    {
+                        <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(_deviceUsedBytes) 사용 / @FmtSize(_deviceQuotaBytes)</span>
+                    }
+                </div>
+                @if (_deviceUsageLoaded && _deviceQuotaBytes > 0)
+                {
+                    <div style="height:10px; background:var(--border); border-radius:99px; overflow:hidden; margin-bottom:10px;">
+                        <div style="height:100%; width:@(DeviceUsagePct.ToString("F2"))%; background:@(DeviceUsagePct>=90?"#c03030":"var(--theme-active)"); border-radius:99px; transition:width 0.4s;"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:var(--text-light); margin-bottom:10px;">
+                        <span>앱 사용 @FmtSize(_deviceUsedBytes)</span>
+                        <span>잔여 @FmtSize(Math.Max(0, _deviceQuotaBytes - _deviceUsedBytes))</span>
+                    </div>
+                }
+                <div style="font-size:0.75rem; color:var(--text-light); line-height:1.5;">
+                    기기 여유 공간에 따라 자동으로 조정돼요. (iOS: 수 GB, Android: 수백 MB~수 GB)
                 </div>
             </div>
         }
@@ -222,6 +270,32 @@
         </div>
     </div>
 
+    <!-- 프리미엄 코드 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+            <img src="icons/key.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />
+            @(_isPremium ? "프리미엄 활성화됨" : "프리미엄 코드 입력")
+        </div>
+        @if (_isPremium)
+        {
+            <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:12px;">기기간 동기화 기능이 활성화되어 있어요.</p>
+            <button class="btn btn-ghost" style="font-size:0.82rem; color:var(--text-light);" @onclick="DeactivatePremium">비활성화</button>
+        }
+        else
+        {
+            <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:12px;">프리미엄 코드를 입력하면 구글 로그인 및 기기간 동기화 기능을 사용할 수 있어요.</p>
+            <div style="display:flex; gap:8px;">
+                <input type="text" placeholder="KNITDAY-XXXXX-0000" @bind="_premiumCodeInput"
+                       style="flex:1; min-width:0; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:0.88rem; background:var(--white); color:var(--text-dark);" />
+                <button class="btn btn-primary" @onclick="ActivatePremium">확인</button>
+            </div>
+            @if (!string.IsNullOrEmpty(_premiumMsg))
+            {
+                <div style="margin-top:8px; font-size:0.82rem; color:@(_premiumError ? "#c03030" : "var(--theme-active)");">@_premiumMsg</div>
+            }
+        }
+    </div>
+
 </div>
 
 @if (_showImportModal)
@@ -281,6 +355,11 @@
     long _photoBytes = 0;
     long _pdfBytes = 0;
     bool _usageLoaded = false;
+    // 기기 저장공간
+    long _deviceUsedBytes = 0;
+    long _deviceQuotaBytes = 0;
+    bool _deviceUsageLoaded = false;
+    double DeviceUsagePct => _deviceQuotaBytes > 0 ? Math.Min(100.0, _deviceUsedBytes / (double)_deviceQuotaBytes * 100) : 0;
     static long UsageLimitBytes => StorageService.PerUserLimitBytes;
     double UsagePhotoPct => Math.Min(100.0, _photoBytes / (double)UsageLimitBytes * 100);
     double UsagePdfPct   => Math.Min(100.0, (_photoBytes + _pdfBytes) / (double)UsageLimitBytes * 100);
@@ -293,6 +372,16 @@
     bool _importError = false;
     bool _showImportModal = false;
     System.Text.Json.JsonDocument? _importDoc = null;
+    bool _isPremium = false;
+    string _premiumCodeInput = "";
+    string _premiumMsg = "";
+    bool _premiumError = false;
+
+    // 유효한 프리미엄 코드 목록
+    static readonly HashSet<string> _validCodes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "KNITDAY-PREMIUM-7777"
+    };
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -305,16 +394,34 @@
             // 페이지 진입 시 테마/다크 재적용 (PWA 캐시 로드 후 불일치 방지)
             await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-theme','{_currentTheme}')");
             await JS.InvokeVoidAsync("eval", $"document.documentElement.setAttribute('data-dark','{_isDark.ToString().ToLower()}')");
-            // 클라우드 용량 로드
+            // 저장공간 로드
             if (Auth.IsLoggedIn)
             {
                 var (photo, pdf) = await Storage.GetCloudUsageAsync();
                 _photoBytes = photo; _pdfBytes = pdf;
             }
+            else
+            {
+                try
+                {
+                    var estimateJson = await JS.InvokeAsync<string>("eval",
+                        "(async()=>{if(!navigator.storage||!navigator.storage.estimate)return '{\"quota\":0,\"usage\":0}';const e=await navigator.storage.estimate();return JSON.stringify({quota:e.quota??0,usage:e.usage??0});})()");
+                    if (!string.IsNullOrEmpty(estimateJson))
+                    {
+                        using var doc = System.Text.Json.JsonDocument.Parse(estimateJson);
+                        _deviceQuotaBytes = doc.RootElement.TryGetProperty("quota", out var q) ? q.GetInt64() : 0;
+                        _deviceUsedBytes  = doc.RootElement.TryGetProperty("usage", out var u) ? u.GetInt64() : 0;
+                    }
+                }
+                catch { }
+                _deviceUsageLoaded = true;
+            }
             _usageLoaded = true;
             StateHasChanged();
             var debug = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_debug");
             _debugMode = debug == "1";
+            var premium = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_premium");
+            _isPremium = premium == "1";
             try
             {
                 _versionInfo = await Http.GetFromJsonAsync<VersionInfo>("version.json");
@@ -401,7 +508,7 @@
                 {
                     if (!_importDoc.RootElement.TryGetProperty(key, out var fileVal)) continue;
 
-                    var localJson = await JS.InvokeAsync<string?>("localStorage.getItem", key);
+                    var localJson = await JS.InvokeAsync<string?>("knitDB.getData", key);
                     var localArr  = string.IsNullOrEmpty(localJson)
                         ? new List<System.Text.Json.JsonElement>()
                         : System.Text.Json.JsonSerializer.Deserialize<List<System.Text.Json.JsonElement>>(localJson) ?? new();
@@ -422,7 +529,7 @@
                     }
 
                     var mergedJson = System.Text.Json.JsonSerializer.Serialize(merged.Values.ToList());
-                    await JS.InvokeVoidAsync("localStorage.setItem", key, mergedJson);
+                    await JS.InvokeVoidAsync("knitDB.setData", key, mergedJson);
                     count++;
                 }
             }
@@ -433,7 +540,7 @@
                 {
                     if (_importDoc.RootElement.TryGetProperty(key, out var val))
                     {
-                        await JS.InvokeVoidAsync("localStorage.setItem", key, val.GetRawText());
+                        await JS.InvokeVoidAsync("knitDB.setData", key, val.GetRawText());
                         count++;
                     }
                 }
@@ -540,53 +647,82 @@
     async Task SignIn() => await Auth.SignInWithGoogleAsync();
     async Task SignOut() { await Auth.SignOutAsync(); StateHasChanged(); }
 
+    async Task ActivatePremium()
+    {
+        var code = _premiumCodeInput.Trim();
+        if (_validCodes.Contains(code))
+        {
+            _isPremium = true;
+            await JS.InvokeVoidAsync("localStorage.setItem", "knitday_premium", "1");
+            _premiumMsg = "프리미엄이 활성화되었어요!";
+            _premiumError = false;
+            _premiumCodeInput = "";
+        }
+        else
+        {
+            _premiumMsg = "올바른 코드가 아니에요.";
+            _premiumError = true;
+        }
+        StateHasChanged();
+    }
+
+    async Task DeactivatePremium()
+    {
+        _isPremium = false;
+        await JS.InvokeVoidAsync("localStorage.removeItem", "knitday_premium");
+        if (Auth.IsLoggedIn) await Auth.SignOutAsync();
+        StateHasChanged();
+    }
 
 
     async Task ExportData()
     {
-        // localStorage 데이터 (사진 base64 제외)
-        await JS.InvokeVoidAsync("eval", @"
-            const keys = ['knittracker_projects','knittracker_yarns','knittracker_tools','knittracker_swatches'];
-            const data = {};
-            keys.forEach(k => {
-                const v = localStorage.getItem(k);
-                if (!v) return;
-                const arr = JSON.parse(v);
-                // 사진 base64 제거
-                if (k === 'knittracker_projects') {
-                    arr.forEach(p => {
-                        if (p.Photos) p.Photos.forEach(ph => { ph.Base64Data = ''; });
-                    });
-                }
-                if (k === 'knittracker_yarns' || k === 'knittracker_swatches') {
-                    arr.forEach(item => { item.PhotoBase64 = ''; });
-                }
-                data[k] = arr;
-            });
-            const todos = localStorage.getItem('knitlog_todos');
-            if (todos) data['knitlog_todos'] = JSON.parse(todos);
-            data.exportedAt = new Date().toISOString();
-            window._exportData = data;
+        // IDB에서 데이터 읽기 (사진 base64 제외)
+        var exportJson = await JS.InvokeAsync<string>("eval", @"
+            (async () => {
+                const data = await window.knitDB.exportAll();
+                // 사진 base64 제거 (용량 절감)
+                if (data.knittracker_projects)
+                    data.knittracker_projects.forEach(p => { if (p.Photos) p.Photos.forEach(ph => { ph.Base64Data = ''; }); });
+                if (data.knittracker_yarns)
+                    data.knittracker_yarns.forEach(y => { y.PhotoBase64 = ''; });
+                if (data.knittracker_swatches)
+                    data.knittracker_swatches.forEach(s => { s.PhotoBase64 = ''; });
+                return JSON.stringify(data);
+            })()
         ");
-        // IndexedDB PDF 데이터 포함
+
+        // PDF 포함
         try
         {
             var pdfJson = await JS.InvokeAsync<string>("patternViewer.exportAllPdfs");
             if (!string.IsNullOrEmpty(pdfJson) && pdfJson != "{}")
             {
-                // PDF JSON을 문자열로 그대로 저장 (이중 직렬화 방지)
+                var exportObj = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(exportJson);
+                // PDF를 포함한 최종 객체 구성
                 await JS.InvokeVoidAsync("eval",
-                    $"try{{window._exportData.knitlog_pdfs=JSON.parse({System.Text.Json.JsonSerializer.Serialize(pdfJson)})}}catch(e){{}}");
+                    $@"(async () => {{
+                        const data = JSON.parse({System.Text.Json.JsonSerializer.Serialize(exportJson)});
+                        try {{ data.knitlog_pdfs = JSON.parse({System.Text.Json.JsonSerializer.Serialize(pdfJson)}); }} catch(e) {{}}
+                        const blob = new Blob([JSON.stringify(data, null, 2)], {{type:'application/json'}});
+                        const a = document.createElement('a');
+                        a.href = URL.createObjectURL(blob);
+                        a.download = 'knitday_backup_' + new Date().toISOString().slice(0,10) + '.json';
+                        a.click();
+                    }})()");
+                return;
             }
         }
         catch { }
-        await JS.InvokeVoidAsync("eval", @"
-            const blob = new Blob([JSON.stringify(window._exportData, null, 2)], {type:'application/json'});
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'knitlog_backup_' + new Date().toISOString().slice(0,10) + '.json';
-            a.click();
-            delete window._exportData;
-        ");
+
+        // PDF 없을 때
+        await JS.InvokeVoidAsync("eval",
+            $@"(async () => {{
+                const blob = new Blob([JSON.stringify(JSON.parse({System.Text.Json.JsonSerializer.Serialize(exportJson)}), null, 2)], {{type:'application/json'}});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = 'knitday_backup_' + new Date().toISOString().slice(0,10) + '.json';
+                a.click();
+            }})()");
     }
 }

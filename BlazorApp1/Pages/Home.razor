@@ -335,14 +335,14 @@ else
 
     async Task LoadTodos()
     {
-        var json = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_todos");
+        var json = await JS.InvokeAsync<string?>("knitDB.getData", "knitlog_todos");
         if (!string.IsNullOrEmpty(json))
             try { _todoItems = System.Text.Json.JsonSerializer.Deserialize<List<TodoItem>>(json) ?? new(); } catch { }
     }
     async Task SaveTodos()
     {
         _saving = true; StateHasChanged();
-        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_todos",
+        await JS.InvokeVoidAsync("knitDB.setData", "knitlog_todos",
             System.Text.Json.JsonSerializer.Serialize(_todoItems));
         StateHasChanged();
         _saving = false;

@@ -1,3 +1,130 @@
+// ── KnitDay IndexedDB (데이터 저장소) ────────────────────────────
+// projects / yarns / tools / swatches / todos / photos 를 IDB에 저장
+// localStorage 대체 — 용량 제한 없음
+window.knitDB = (() => {
+    const DB_NAME = 'KnitDayDB', DB_VER = 1;
+    const STORES = ['data', 'photos'];   // data: JSON 컬렉션, photos: base64 이미지
+
+    function openDB() {
+        return new Promise((res, rej) => {
+            const req = indexedDB.open(DB_NAME, DB_VER);
+            req.onupgradeneeded = e => {
+                const db = e.target.result;
+                STORES.forEach(s => { if (!db.objectStoreNames.contains(s)) db.createObjectStore(s); });
+            };
+            req.onsuccess = e => res(e.target.result);
+            req.onerror   = e => rej(e.target.error);
+        });
+    }
+
+    async function get(store, key) {
+        const db = await openDB();
+        return new Promise((res, rej) => {
+            const req = db.transaction(store, 'readonly').objectStore(store).get(key);
+            req.onsuccess = e => res(e.target.result ?? null);
+            req.onerror   = e => rej(e.target.error);
+        });
+    }
+
+    async function set(store, key, value) {
+        const db = await openDB();
+        return new Promise((res, rej) => {
+            const tx = db.transaction(store, 'readwrite');
+            tx.objectStore(store).put(value, key);
+            tx.oncomplete = res;
+            tx.onerror    = e => rej(e.target.error);
+        });
+    }
+
+    async function remove(store, key) {
+        const db = await openDB();
+        return new Promise((res, rej) => {
+            const tx = db.transaction(store, 'readwrite');
+            tx.objectStore(store).delete(key);
+            tx.oncomplete = res;
+            tx.onerror    = e => rej(e.target.error);
+        });
+    }
+
+    async function getAllKeys(store) {
+        const db = await openDB();
+        return new Promise((res, rej) => {
+            const req = db.transaction(store, 'readonly').objectStore(store).getAllKeys();
+            req.onsuccess = e => res(e.target.result);
+            req.onerror   = e => rej(e.target.error);
+        });
+    }
+
+    async function getAll(store) {
+        const db = await openDB();
+        return new Promise((res, rej) => {
+            const req = db.transaction(store, 'readonly').objectStore(store).getAll();
+            req.onsuccess = e => res(e.target.result);
+            req.onerror   = e => rej(e.target.error);
+        });
+    }
+
+    return {
+        // ── 데이터 컬렉션 (JSON 문자열) ──
+        async getData(key)          { return await get('data', key); },
+        async setData(key, json)    { await set('data', key, json); },
+        async removeData(key)       { await remove('data', key); },
+
+        // ── 사진 (base64 문자열) ──
+        async getPhoto(key)         { return await get('photos', key); },
+        async setPhoto(key, b64)    { await set('photos', key, b64); },
+        async removePhoto(key)      { await remove('photos', key); },
+        async getAllPhotoKeys()      { return await getAllKeys('photos'); },
+
+        // ── 내보내기용 전체 데이터 ──
+        async exportAll() {
+            const keys = ['knittracker_projects','knittracker_yarns','knittracker_tools','knittracker_swatches','knitlog_todos'];
+            const result = {};
+            for (const k of keys) {
+                const v = await get('data', k);
+                if (v) result[k] = JSON.parse(v);
+            }
+            result.exportedAt = new Date().toISOString();
+            return result;
+        },
+
+        // ── 가져오기 (덮어쓰기) ──
+        async importData(key, jsonStr) { await set('data', key, jsonStr); },
+    };
+})();
+
+// ── localStorage → IDB 마이그레이션 (최초 1회) ────────────────────
+// 기존 localStorage에 데이터가 있으면 IDB로 옮기고 localStorage는 삭제
+(async () => {
+    const MIGRATE_FLAG = 'knitday_idb_migrated_v1';
+    if (localStorage.getItem(MIGRATE_FLAG)) return;  // 이미 마이그레이션 완료
+
+    const DATA_KEYS = [
+        'knittracker_projects',
+        'knittracker_yarns',
+        'knittracker_tools',
+        'knittracker_swatches',
+        'knitlog_todos',
+    ];
+
+    let migrated = 0;
+    for (const key of DATA_KEYS) {
+        const val = localStorage.getItem(key);
+        if (val && val !== '[]' && val !== 'null') {
+            try {
+                await window.knitDB.setData(key, val);
+                localStorage.removeItem(key);
+                migrated++;
+            } catch(e) {
+                console.warn('KnitDay migration failed for', key, e);
+            }
+        }
+    }
+
+    localStorage.setItem(MIGRATE_FLAG, '1');
+    if (migrated > 0) console.log(`KnitDay: localStorage → IDB 마이그레이션 완료 (${migrated}개)`);
+})();
+
 // ── 드래그앤드롭 ──────────────────────────────────────────
 document.addEventListener('dragover', e => e.preventDefault());
 

@@ -37,16 +37,16 @@ namespace KnitLog.Services
         private string? Uid => _auth?.CurrentUser?.Uid;
         public  bool IsLoggedIn => !string.IsNullOrEmpty(Uid);
 
-        // ── 로컬 스토리지 ────────────────────────────────────────────
+        // ── IndexedDB 저장소 ─────────────────────────────────────────
         private async Task SaveLocalAsync<T>(string key, List<T> list)
         {
             var json = JsonSerializer.Serialize(list, _jsonOpts);
-            await _js.InvokeVoidAsync("localStorage.setItem", key, json);
+            await _js.InvokeVoidAsync("knitDB.setData", key, json);
         }
 
         private async Task<List<T>> LoadLocalAsync<T>(string key)
         {
-            var json = await _js.InvokeAsync<string?>("localStorage.getItem", key);
+            var json = await _js.InvokeAsync<string?>("knitDB.getData", key);
             if (string.IsNullOrWhiteSpace(json)) return new();
             try { return JsonSerializer.Deserialize<List<T>>(json, _jsonOpts) ?? new(); }
             catch { return new(); }
@@ -226,7 +226,7 @@ namespace KnitLog.Services
         private async Task SyncTodosAsync()
         {
             // 할 일 목록은 배열 통째로 동기화 (항목 수가 더 많은 쪽 우선, 없으면 로컬 우선)
-            var localJson = await _js.InvokeAsync<string?>("localStorage.getItem", KEY_TODOS);
+            var localJson = await _js.InvokeAsync<string?>("knitDB.getData", KEY_TODOS);
 
             // Firebase에서 읽기
             string? cloudJson = null;
@@ -254,7 +254,7 @@ namespace KnitLog.Services
             }
 
             // 로컬 저장
-            await _js.InvokeVoidAsync("localStorage.setItem", KEY_TODOS, mergedJson);
+            await _js.InvokeVoidAsync("knitDB.setData", KEY_TODOS, mergedJson);
 
             // Firebase 저장
             try
@@ -268,7 +268,7 @@ namespace KnitLog.Services
 
         private async Task MergeCollectionAsync<T>(string localKey, string collectionName)
         {
-            var localJson = await _js.InvokeAsync<string?>("localStorage.getItem", localKey);
+            var localJson = await _js.InvokeAsync<string?>("knitDB.getData", localKey);
             var localList = string.IsNullOrWhiteSpace(localJson) || localJson == "[]"
                 ? new List<JsonElement>()
                 : JsonSerializer.Deserialize<List<JsonElement>>(localJson, _jsonOpts) ?? new();
@@ -308,7 +308,7 @@ namespace KnitLog.Services
             var mergedJson = JsonSerializer.Serialize(mergedList, _jsonOpts);
 
             // 로컬 저장
-            await _js.InvokeVoidAsync("localStorage.setItem", localKey, mergedJson);
+            await _js.InvokeVoidAsync("knitDB.setData", localKey, mergedJson);
 
             // Cloud 업데이트 (로컬에만 있던 것도 올리기)
             await _js.InvokeAsync<bool>("firebaseStore.saveCollection",
@@ -343,7 +343,7 @@ namespace KnitLog.Services
                 await SaveFirebaseAsync("swatches", await GetSwatchesAsync(), "Id");
 
                 // todos push
-                var todosJson = await _js.InvokeAsync<string?>("localStorage.getItem", KEY_TODOS);
+                var todosJson = await _js.InvokeAsync<string?>("knitDB.getData", KEY_TODOS);
                 if (!string.IsNullOrEmpty(todosJson))
                 {
                     try
