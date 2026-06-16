@@ -52,17 +52,16 @@
                 <!-- 사진 갤러리 (5칸 슬롯, 읽기 전용) -->
                 @if (PopupValidPhotos.Any())
                 {
-                    <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:16px;">
+                    <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; margin-bottom:16px;">
                         @for (int vi = 0; vi < 5; vi++)
                         {
                             var vIdx = vi;
                             @if (vIdx < PopupValidPhotos.Count)
                             {
                                 var vp = PopupValidPhotos[vIdx];
-                                <div style="position:relative; aspect-ratio:1;">
+                                <div style="position:relative; aspect-ratio:1; cursor:pointer;" @onclick="() => OpenPhotoLightbox(vp)">
                                     <img src="@(!string.IsNullOrEmpty(vp.StorageUrl) ? vp.StorageUrl : vp.Base64Data)"
                                          style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm);"
-                                         class="@(vIdx==0 ? "photo-slot-thumb photo-slot-active" : "photo-slot-thumb")"
                                          alt="사진" />
                                     @if (vIdx == 0)
                                     {
@@ -394,10 +393,28 @@
     </div>
 }
 
+@* 사진 라이트박스 *@
+@if (_lightboxPhoto != null)
+{
+    <div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;"
+         @onclick="() => _lightboxPhoto = null">
+        <img src="@(!string.IsNullOrEmpty(_lightboxPhoto.StorageUrl) ? _lightboxPhoto.StorageUrl : _lightboxPhoto.Base64Data)"
+             style="max-width:95vw;max-height:92vh;object-fit:contain;border-radius:8px;"
+             @onclick:stopPropagation="true" />
+        <button style="position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;"
+                @onclick="() => _lightboxPhoto = null">
+            <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
+        </button>
+    </div>
+}
+
 @code {
     bool _saving = false;
     bool _editing = false;
     bool _showDeleteConfirm = false;
+    ProjectPhoto? _lightboxPhoto = null;
+
+    void OpenPhotoLightbox(ProjectPhoto photo) => _lightboxPhoto = photo;
     List<ProjectPhoto> PopupValidPhotos => Project?.Photos
         .Where(p => !string.IsNullOrEmpty(p.Base64Data) || !string.IsNullOrEmpty(p.StorageUrl))
         .ToList() ?? new();

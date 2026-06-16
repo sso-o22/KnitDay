@@ -259,8 +259,13 @@ else
                                 }
                                 @if (counter.LastUpdatedAt.HasValue)
                                 {
+                                    var lastAt = counter.LastUpdatedAt.Value;
+                                    var isToday = lastAt.Date == DateTime.Today;
+                                    var timeStr = isToday
+                                        ? lastAt.ToString("HH:mm:ss")
+                                        : lastAt.ToString("MM.dd HH:mm");
                                     <div style="display:flex; align-items:center; justify-content:center; gap:4px; font-size:0.75rem; color:var(--text-light); margin-bottom:8px;">
-                                        <img src="icons/clock.svg" class="icon-line" style="width:12px;height:12px; flex-shrink:0;" /> 마지막 업데이트: @counter.LastUpdatedAt.Value.ToString("HH:mm:ss")
+                                        <img src="icons/clock.svg" class="icon-line" style="width:12px;height:12px; flex-shrink:0;" /> 마지막 업데이트: @timeStr
                                     </div>
                                 }
                                 <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; font-size:0.8rem; color:var(--text-mid);">
@@ -327,10 +332,6 @@ else
                             var captured = item;
                             <div @key="item.Id" data-checkid="@item.Id"
                                  style="display:flex; align-items:center; gap:8px; padding:8px 0;">
-                                @if (_checklistEditMode)
-                                {
-                                    <img src="icons/dots-six-vertical.svg" class="drag-handle-icon drag-handle" />
-                                }
                                 <input type="checkbox" checked="@item.Done"
                                        @onchange="() => ToggleCheck(item)"
                                        disabled="@IsPaused"
@@ -1266,28 +1267,10 @@ else
         await Save();
     }
 
-    void EnterChecklistEditMode() { _checklistEditMode = true; _editingCheckId = null; _ = InitChecklistDragAsync("checklist-drag-container"); }
-    async Task ExitChecklistEditMode() { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; await JS.InvokeVoidAsync("cleanupChecklistDrag"); await Save(); }
+    void EnterChecklistEditMode() { _checklistEditMode = true; _editingCheckId = null; }
+    async Task ExitChecklistEditMode() { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; await Save(); }
     void StartAddCheck()  { _addingCheck = true; }
     void CancelAddCheck() { _addingCheck = false; _newCheckText = ""; }
-
-    async Task InitChecklistDragAsync(string containerId)
-    {
-        await Task.Delay(50);
-        if (_dragRef == null) { _dragRef = DotNetObjectReference.Create(this); }
-        await JS.InvokeVoidAsync("initChecklistDrag", _dragRef, containerId);
-    }
-
-    [JSInvokable]
-    public void ReorderChecklist(string[] ids)
-    {
-        if (_project == null) return;
-        var ordered = ids
-            .Select(id => Guid.TryParse(id, out var g) ? _project.Checklist.FirstOrDefault(c => c.Id == g) : null)
-            .Where(c => c != null).Select(c => c!).ToList();
-        _project.Checklist = ordered;
-        StateHasChanged();
-    }
 
     // ── 체크리스트 ──────────────────────────────────────
     async Task ToggleCheck(ChecklistItem item)

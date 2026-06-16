@@ -129,16 +129,12 @@ else
             </div>
         </div>
 
-        <div id="todo-drag-container">
+        <div>
         @foreach (var item in _todoItems)
         {
             var captured = item;
             <div @key="item.Id" data-checkid="@item.Id"
                  style="display:flex; align-items:center; gap:6px; padding:6px 0;">
-                @if (_todoEditMode)
-                {
-                    <img src="icons/dots-six-vertical.svg" class="drag-handle-icon drag-handle" />
-                }
                 <input type="checkbox" checked="@item.Done"
                        @onchange="async () => { item.Done = !item.Done; await SaveTodos(); }"
                        style="width:14px; height:14px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
@@ -375,27 +371,8 @@ else
         await SaveTodos();
     }
 
-    void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; _ = InitChecklistDragAsync("todo-drag-container"); }
-    async Task ExitTodoEditMode() { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; await JS.InvokeVoidAsync("cleanupChecklistDrag"); await SaveTodos(); }
-    DotNetObjectReference<Home>? _todoDragRef;
-
-    async Task InitChecklistDragAsync(string containerId)
-    {
-        await Task.Delay(50);
-        _todoDragRef ??= DotNetObjectReference.Create(this);
-        await JS.InvokeVoidAsync("initChecklistDrag", _todoDragRef, containerId);
-    }
-
-    [JSInvokable]
-    public void ReorderChecklist(string[] ids)
-    {
-        var ordered = ids
-            .Select(id => Guid.TryParse(id, out var g) ? _todoItems.FirstOrDefault(t => t.Id == g) : null)
-            .Where(t => t != null).Select(t => t!).ToList();
-        _todoItems = ordered;
-        StateHasChanged();
-    }
-
+    void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; }
+    async Task ExitTodoEditMode() { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; await SaveTodos(); }
     void CancelTodoEdit() { _editingTodoId = null; _editingTodoText = ""; }
     void StartAddTodo() { _addingTodo = true; }
     void CancelAddTodo() { _addingTodo = false; _newTodoText = ""; }
@@ -479,6 +456,5 @@ else
     {
         Auth.OnAuthChanged -= OnAuthChanged;
         Storage.OnSyncCompleted -= OnSyncCompleted;
-        _todoDragRef?.Dispose();
     }
 }

@@ -275,19 +275,6 @@
         }
     </div>
 
-    <!-- 디버그 모드 -->
-    <div class="card">
-        <div style="display:flex; align-items:center; justify-content:space-between;">
-            <div>
-                <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;"><img src="icons/bug.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />디버그 모드</div>
-                <p style="font-size:0.85rem; color:var(--text-mid);">화면 하단에 콘솔 로그 패널을 표시해요</p>
-            </div>
-            <button class="dark-toggle-btn @(_debugMode ? "on" : "")" @onclick="ToggleDebug">
-                <div class="dark-toggle-thumb"></div>
-            </button>
-        </div>
-    </div>
-
     <!-- 프리미엄 코드 -->
     <div class="card">
         <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
