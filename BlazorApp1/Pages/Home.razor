@@ -133,15 +133,11 @@ else
         @foreach (var item in _todoItems)
         {
             var captured = item;
-            <div @key="item.Id"
-                 draggable="@(_todoEditMode ? "true" : "false")"
-                 @ondragstart="() => _dragItem = captured"
-                 @ondragover:preventDefault
-                 @ondrop="() => DropTodoItem(captured)"
-                 style="display:flex; align-items:center; gap:6px; padding:6px 0; @(_todoEditMode ? "cursor:grab;" : "")">
+            <div @key="item.Id" data-checkid="@item.Id"
+                 style="display:flex; align-items:center; gap:6px; padding:6px 0;">
                 @if (_todoEditMode)
                 {
-                    <img src="icons/dots-six-vertical.svg" class="drag-handle-icon" />
+                    <img src="icons/dots-six-vertical.svg" class="drag-handle-icon drag-handle" />
                 }
                 <input type="checkbox" checked="@item.Done"
                        @onchange="async () => { item.Done = !item.Done; await SaveTodos(); }"
@@ -379,25 +375,25 @@ else
         await SaveTodos();
     }
 
-    TodoItem? _dragItem;
+    void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; _ = InitChecklistDragAsync("todo-drag-container"); }
+    async Task ExitTodoEditMode() { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; await JS.InvokeVoidAsync("cleanupChecklistDrag"); await SaveTodos(); }
+    DotNetObjectReference<Home>? _todoDragRef;
 
-    void DropTodoItem(TodoItem target)
+    async Task InitChecklistDragAsync(string containerId)
     {
-        if (_dragItem == null || _dragItem == target) return;
-        var fromIdx = _todoItems.IndexOf(_dragItem);
-        var toIdx   = _todoItems.IndexOf(target);
-        if (fromIdx < 0 || toIdx < 0) return;
-        _todoItems.RemoveAt(fromIdx);
-        _todoItems.Insert(toIdx, _dragItem);
-        _dragItem = null;
+        await Task.Delay(50);
+        _todoDragRef ??= DotNetObjectReference.Create(this);
+        await JS.InvokeVoidAsync("initChecklistDrag", _todoDragRef, containerId);
     }
 
-    void EnterTodoEditMode() { _todoEditMode = true; _editingTodoId = null; _ = InitTouchDragAsync("todo-drag-container"); }
-    async Task ExitTodoEditMode() { _todoEditMode = false; _editingTodoId = null; _addingTodo = false; _dragItem = null; await SaveTodos(); }
-    async Task InitTouchDragAsync(string containerId)
+    [JSInvokable]
+    public void ReorderChecklist(string[] ids)
     {
-        await Task.Delay(50); // DOM 렌더 대기
-        await JS.InvokeVoidAsync("initTouchDragPolyfill", containerId);
+        var ordered = ids
+            .Select(id => Guid.TryParse(id, out var g) ? _todoItems.FirstOrDefault(t => t.Id == g) : null)
+            .Where(t => t != null).Select(t => t!).ToList();
+        _todoItems = ordered;
+        StateHasChanged();
     }
 
     void CancelTodoEdit() { _editingTodoId = null; _editingTodoText = ""; }
@@ -483,5 +479,6 @@ else
     {
         Auth.OnAuthChanged -= OnAuthChanged;
         Storage.OnSyncCompleted -= OnSyncCompleted;
+        _todoDragRef?.Dispose();
     }
 }

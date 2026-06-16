@@ -325,15 +325,11 @@ else
                         @foreach (var item in _project.Checklist)
                         {
                             var captured = item;
-                            <div @key="item.Id"
-                                 draggable="@(_checklistEditMode ? "true" : "false")"
-                                 @ondragstart="() => _checkDragItem = captured"
-                                 @ondragover:preventDefault
-                                 @ondrop="() => DropCheckItem(captured)"
-                                 style="display:flex; align-items:center; gap:8px; padding:8px 0; @(_checklistEditMode ? "cursor:grab;" : "")">
+                            <div @key="item.Id" data-checkid="@item.Id"
+                                 style="display:flex; align-items:center; gap:8px; padding:8px 0;">
                                 @if (_checklistEditMode)
                                 {
-                                    <img src="icons/dots-six-vertical.svg" class="drag-handle-icon" />
+                                    <img src="icons/dots-six-vertical.svg" class="drag-handle-icon drag-handle" />
                                 }
                                 <input type="checkbox" checked="@item.Done"
                                        @onchange="() => ToggleCheck(item)"
@@ -1270,28 +1266,16 @@ else
         await Save();
     }
 
-    ChecklistItem? _checkDragItem;
-
-    void DropCheckItem(ChecklistItem target)
-    {
-        if (_project == null || _checkDragItem == null || _checkDragItem == target) return;
-        var fromIdx = _project.Checklist.IndexOf(_checkDragItem);
-        var toIdx   = _project.Checklist.IndexOf(target);
-        if (fromIdx < 0 || toIdx < 0) return;
-        _project.Checklist.RemoveAt(fromIdx);
-        _project.Checklist.Insert(toIdx, _checkDragItem);
-        _checkDragItem = null;
-    }
-
-    void EnterChecklistEditMode() { _checklistEditMode = true; _editingCheckId = null; _ = InitTouchDragAsync("checklist-drag-container"); }
-    async Task ExitChecklistEditMode() { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; _checkDragItem = null; await Save(); }
+    void EnterChecklistEditMode() { _checklistEditMode = true; _editingCheckId = null; _ = InitChecklistDragAsync("checklist-drag-container"); }
+    async Task ExitChecklistEditMode() { _checklistEditMode = false; _editingCheckId = null; _addingCheck = false; await JS.InvokeVoidAsync("cleanupChecklistDrag"); await Save(); }
     void StartAddCheck()  { _addingCheck = true; }
     void CancelAddCheck() { _addingCheck = false; _newCheckText = ""; }
 
-    async Task InitTouchDragAsync(string containerId)
+    async Task InitChecklistDragAsync(string containerId)
     {
         await Task.Delay(50);
-        await JS.InvokeVoidAsync("initTouchDragPolyfill", containerId);
+        if (_dragRef == null) { _dragRef = DotNetObjectReference.Create(this); }
+        await JS.InvokeVoidAsync("initChecklistDrag", _dragRef, containerId);
     }
 
     [JSInvokable]

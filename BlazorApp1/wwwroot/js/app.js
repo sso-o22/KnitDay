@@ -521,190 +521,111 @@ window.uploadToCloudinary = async function(base64DataUrl, publicId, resourceType
 // ── 체크리스트 touch 드래그 순서 변경 ────────────────────────────
 window.initChecklistDrag = (dotNetRef, containerId) => {
     if (window._checklistDragCleanup) window._checklistDragCleanup();
-
     const container = document.getElementById(containerId);
     if (!container) return;
 
-    let dragging = null, placeholder = null, pointerOffsetY = 0;
+    let src = null;       // 드래그 중인 원본 행 (DOM에서 제거됨)
+    let clone = null;     // body에 fixed로 띄운 시각적 복사본
+    let ph = null;        // placeholder (빈 자리 표시)
+    let startY = 0, srcLeft = 0, srcWidth = 0, phHeight = 0;
 
-    function getRow(el) { return el?.closest('[data-checkid]'); }
+    function clientY(e) { return e.touches ? e.touches[0].clientY : e.clientY; }
+    function clientX(e) { return e.touches ? e.touches[0].clientX : e.clientX; }
 
     function onStart(e) {
         const handle = e.target.closest('.drag-handle');
         if (!handle) return;
-        e.preventDefault();
-        const row = getRow(handle);
+        const row = handle.closest('[data-checkid]');
         if (!row) return;
+        e.preventDefault();
 
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
         const rect = row.getBoundingClientRect();
+        startY   = clientY(e);
+        srcLeft  = rect.left;
+        srcWidth = rect.width;
+        phHeight = rect.height;
 
-        // 포인터가 row 내 어디를 잡았는지 오프셋
-        pointerOffsetY = clientY - rect.top;
+        // placeholder 삽입 (원본 자리 유지)
+        ph = document.createElement('div');
+        ph.style.cssText = `height:${phHeight}px;background:var(--theme-pale);border-radius:6px;transition:none;`;
+        row.before(ph);
 
-        // placeholder: row 자리 유지
-        placeholder = document.createElement('div');
-        placeholder.style.cssText = `height:${rect.height}px;background:var(--theme-pale);border-radius:6px;`;
-        row.parentNode.insertBefore(placeholder, row);
-        row.remove();   // DOM에서 완전히 제거
+        // 원본 DOM에서 완전 제거
+        src = row;
+        row.remove();
 
-        // dragging: body에 fixed로 붙이기 (container 바깥, 레이아웃 오염 없음)
-        dragging = row;
-        dragging.style.cssText += `;position:fixed;left:${rect.left}px;width:${rect.width}px;top:${rect.top}px;z-index:9999;box-shadow:0 6px 24px rgba(0,0,0,0.18);border-radius:8px;background:var(--white);pointer-events:none;box-sizing:border-box;`;
-        document.body.appendChild(dragging);
+        // clone: body에 fixed
+        clone = row.cloneNode(true);
+        clone.style.cssText = `
+            position:fixed;left:${srcLeft}px;top:${rect.top}px;
+            width:${srcWidth}px;z-index:9999;
+            box-shadow:0 8px 24px rgba(0,0,0,0.18);border-radius:8px;
+            background:var(--white);opacity:0.96;pointer-events:none;
+            box-sizing:border-box;transition:none;
+        `;
+        document.body.appendChild(clone);
     }
 
     function onMove(e) {
-        if (!dragging || !placeholder) return;
+        if (!src || !clone || !ph) return;
         e.preventDefault();
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const cy = clientY(e);
+        const dy = cy - startY;
 
-        // dragging 위치 갱신 (fixed이므로 clientY 기준)
-        dragging.style.top = (clientY - pointerOffsetY) + 'px';
+        // clone 이동 (transform 사용 — top 변경보다 빠름)
+        clone.style.transform = `translateY(${dy}px)`;
 
-        // placeholder 위치: container 내 [data-checkid] 행들 기준
-        // dragging은 body에 있으므로 querySelectorAll에 포함 안 됨
+        // placeholder 위치: container 내 남은 행들 기준
         const rows = [...container.querySelectorAll('[data-checkid]')];
         let placed = false;
-        for (const row of rows) {
-            const mid = row.getBoundingClientRect().top + row.getBoundingClientRect().height / 2;
-            if (clientY < mid) {
-                row.parentNode.insertBefore(placeholder, row);
-                placed = true;
-                break;
-            }
+        for (const r of rows) {
+            const mid = r.getBoundingClientRect().top + r.getBoundingClientRect().height / 2;
+            if (cy < mid) { r.before(ph); placed = true; break; }
         }
-        if (!placed) {
-            // 마지막 행 뒤 or container 끝
-            const last = rows[rows.length - 1];
-            if (last) last.after(placeholder);
-            else container.appendChild(placeholder);
-        }
+        if (!placed) container.appendChild(ph);
     }
 
-    function onEnd() {
-        if (!dragging || !placeholder) return;
+    function onEnd(e) {
+        if (!src || !clone || !ph) return;
+        if (e.cancelable) e.preventDefault();
 
-        // dragging 스타일 초기화 후 placeholder 자리에 삽입
-        dragging.style.position   = '';
-        dragging.style.left       = '';
-        dragging.style.width      = '';
-        dragging.style.top        = '';
-        dragging.style.zIndex     = '';
-        dragging.style.boxShadow  = '';
-        dragging.style.borderRadius = '';
-        dragging.style.background = '';
-        dragging.style.pointerEvents = '';
-        dragging.style.boxSizing  = '';
-        document.body.removeChild(dragging);
-        placeholder.parentNode.insertBefore(dragging, placeholder);
-        placeholder.remove();
-        placeholder = null;
+        // clone 제거
+        clone.remove(); clone = null;
+
+        // 원본 스타일 초기화 후 placeholder 자리에 삽입
+        src.style.cssText = '';
+        ph.replaceWith(src);
+        ph = null;
 
         // 새 순서 → Blazor
         const ids = [...container.querySelectorAll('[data-checkid]')].map(r => r.dataset.checkid);
         dotNetRef.invokeMethodAsync('ReorderChecklist', ids);
-        dragging = null;
+        src = null;
     }
 
-    container.addEventListener('mousedown',  onStart);
+    // mouse
+    container.addEventListener('mousedown', onStart);
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onEnd);
+    // touch (passive:false 필수 — preventDefault 호출)
     container.addEventListener('touchstart', onStart, { passive: false });
-    document.addEventListener('mousemove',   onMove);
-    document.addEventListener('touchmove',   onMove, { passive: false });
-    document.addEventListener('mouseup',     onEnd);
-    document.addEventListener('touchend',    onEnd);
+    document.addEventListener('touchmove',  onMove,  { passive: false });
+    document.addEventListener('touchend',   onEnd,   { passive: false });
 
     window._checklistDragCleanup = () => {
-        container.removeEventListener('mousedown',  onStart);
+        container.removeEventListener('mousedown', onStart);
+        document.removeEventListener('mousemove',  onMove);
+        document.removeEventListener('mouseup',    onEnd);
         container.removeEventListener('touchstart', onStart);
-        document.removeEventListener('mousemove',   onMove);
-        document.removeEventListener('touchmove',   onMove);
-        document.removeEventListener('mouseup',     onEnd);
-        document.removeEventListener('touchend',    onEnd);
-        if (dragging) {
-            try { document.body.removeChild(dragging); } catch(_) {}
-            if (placeholder?.parentNode) placeholder.parentNode.insertBefore(dragging, placeholder);
-        }
-        if (placeholder) placeholder.remove();
-        dragging = null; placeholder = null;
+        document.removeEventListener('touchmove',  onMove);
+        document.removeEventListener('touchend',   onEnd);
+        if (clone) { clone.remove(); clone = null; }
+        if (src && ph) { ph.replaceWith(src); } else if (ph) ph.remove();
+        src = null; ph = null;
         window._checklistDragCleanup = null;
     };
 };
 
 window.cleanupChecklistDrag = () => {
     if (window._checklistDragCleanup) window._checklistDragCleanup();
-};
-
-// ── iOS touch → HTML5 drag 폴리필 ─────────────────────────────────
-// iOS Safari는 draggable 이벤트를 지원하지 않음
-// touchstart/touchmove/touchend → dragstart/dragover/drop 에뮬레이션
-window.initTouchDragPolyfill = (containerId) => {
-    const container = document.getElementById(containerId);
-    if (!container) return;
-    // 이미 적용됐으면 스킵
-    if (container._touchDragInit) return;
-    container._touchDragInit = true;
-
-    let dragging = null, clone = null, lastTarget = null, offsetX = 0, offsetY = 0;
-
-    container.addEventListener('touchstart', e => {
-        const row = e.target.closest('[draggable="true"]');
-        if (!row) return;
-
-        const touch = e.touches[0];
-        const rect  = row.getBoundingClientRect();
-        offsetX = touch.clientX - rect.left;
-        offsetY = touch.clientY - rect.top;
-
-        dragging = row;
-
-        // 시각적 clone
-        clone = row.cloneNode(true);
-        clone.style.cssText = `
-            position:fixed; pointer-events:none; z-index:9999; opacity:0.9;
-            width:${rect.width}px; left:${rect.left}px; top:${rect.top}px;
-            box-shadow:0 6px 24px rgba(0,0,0,0.18); border-radius:8px;
-            background:var(--white); box-sizing:border-box;
-        `;
-        document.body.appendChild(clone);
-        row.style.opacity = '0.3';
-    }, { passive: true });
-
-    container.addEventListener('touchmove', e => {
-        if (!dragging || !clone) return;
-        e.preventDefault();
-        const touch = e.touches[0];
-        clone.style.left = (touch.clientX - offsetX) + 'px';
-        clone.style.top  = (touch.clientY - offsetY) + 'px';
-
-        // 현재 포인터 아래 행 찾기
-        clone.style.display = 'none';
-        const el = document.elementFromPoint(touch.clientX, touch.clientY);
-        clone.style.display = '';
-        const target = el?.closest('[draggable="true"]');
-        if (target && target !== dragging && target !== lastTarget) {
-            lastTarget = target;
-            // Blazor ondragover → dragover 이벤트 발생
-            target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true }));
-        }
-    }, { passive: false });
-
-    container.addEventListener('touchend', e => {
-        if (!dragging) return;
-        const touch = e.changedTouches[0];
-
-        // clone 제거
-        if (clone) { document.body.removeChild(clone); clone = null; }
-        dragging.style.opacity = '';
-
-        // 드롭 대상 찾아서 drop 이벤트 발생
-        const el = document.elementFromPoint(touch.clientX, touch.clientY);
-        const target = el?.closest('[draggable="true"]');
-        if (target && target !== dragging) {
-            // dragstart는 이미 메모리에 있으므로 drop만 발생
-            target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true }));
-        }
-
-        dragging = null; lastTarget = null;
-    }, { passive: true });
 };
