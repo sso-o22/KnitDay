@@ -16,24 +16,27 @@
     </div>
 </div>
 
-@* ── 로그인 배너 ── *@
-@if (_authLoading)
+@* ── 로그인 배너 (프리미엄 활성화 시에만 표시) ── *@
+@if (_isPremium)
 {
-    <div class="home-banner">
-        <div style="font-size:0.85rem;color:var(--text-mid);">로그인 상태 확인 중...</div>
-    </div>
-}
-else if (!Auth.IsLoggedIn)
-{
-    <div class="home-banner">
-        <div>
-            <div style="font-size:0.88rem;font-weight:600;color:var(--text-dark);">여러 기기에서 동기화하세요</div>
-            <div style="font-size:0.78rem;color:var(--text-mid);margin-top:2px;">구글 로그인하면 데이터가 자동으로 백업돼요</div>
+    @if (_authLoading)
+    {
+        <div class="home-banner">
+            <div style="font-size:0.85rem;color:var(--text-mid);">로그인 상태 확인 중...</div>
         </div>
-        <button class="btn btn-primary" style="white-space:nowrap;font-size:0.82rem;padding:6px 14px;flex-shrink:0;" @onclick="SignIn">
-            로그인
-        </button>
-    </div>
+    }
+    else if (!Auth.IsLoggedIn)
+    {
+        <div class="home-banner">
+            <div>
+                <div style="font-size:0.88rem;font-weight:600;color:var(--text-dark);">여러 기기에서 동기화하세요</div>
+                <div style="font-size:0.78rem;color:var(--text-mid);margin-top:2px;">구글 로그인하면 데이터가 자동으로 백업돼요</div>
+            </div>
+            <button class="btn btn-primary" style="white-space:nowrap;font-size:0.82rem;padding:6px 14px;flex-shrink:0;" @onclick="SignIn">
+                로그인
+            </button>
+        </div>
+    }
 }
 
 @if (_loading)
@@ -414,9 +417,20 @@ else
 
     bool _loading = true;
     bool _authLoading = true; // Firebase 세션 복원 대기 중
+    bool _isPremium = false;
 
     int _inProgress, _finished, _wishlist, _yarns, _swatches, _tools;
     List<KnitProject> _recentProjects = new();
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var p = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_premium");
+            _isPremium = p == "1";
+            StateHasChanged();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
