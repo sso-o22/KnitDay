@@ -322,6 +322,54 @@ body {
     gap: 16px;
 }
 
+/* ── 필터+정렬 바 ─────────────────────────────────────── */
+/* 모바일: 세로 쌓기 */
+.filter-sort-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-x: auto;
+}
+
+.filter-sort-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+}
+
+/* 구분선: 모바일에서 숨김 */
+.filter-sort-divider {
+    display: none;
+}
+
+/* 태블릿 이상: 한 줄로 */
+@media (min-width: 768px) {
+    .filter-sort-bar {
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        gap: 10px;
+    }
+
+    .filter-sort-group {
+        overflow-x: visible;
+        padding-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .filter-sort-divider {
+        display: block;
+        width: 1px;
+        height: 18px;
+        background: var(--border);
+        flex-shrink: 0;
+    }
+}
+
 .grid-2 {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
