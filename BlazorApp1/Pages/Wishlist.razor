@@ -56,12 +56,13 @@ else
                 {
                     <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:6px; display:flex; align-items:center; gap:4px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@proj.PatternName</div>
                 }
-                @if (!string.IsNullOrEmpty(proj.OriginalNeedle) || !string.IsNullOrEmpty(proj.OriginalGauge) || !string.IsNullOrEmpty(proj.OriginalYarn) || !string.IsNullOrEmpty(proj.OriginalOther))
+                @if (!string.IsNullOrEmpty(proj.OriginalNeedle) || !string.IsNullOrEmpty(proj.OriginalGauge) || !string.IsNullOrEmpty(proj.OriginalYarn) || !string.IsNullOrEmpty(proj.OriginalYarnAmount) || !string.IsNullOrEmpty(proj.OriginalOther))
                 {
                     <div style="font-size:0.78rem; color:var(--text-mid); margin-bottom:8px; display:flex; flex-direction:column; gap:2px;">
                         @if (!string.IsNullOrEmpty(proj.OriginalNeedle)) { <span>바늘: @proj.OriginalNeedle</span> }
                         @if (!string.IsNullOrEmpty(proj.OriginalGauge))  { <span>게이지: @proj.OriginalGauge</span> }
                         @if (!string.IsNullOrEmpty(proj.OriginalYarn))   { <span>실: @proj.OriginalYarn</span> }
+                        @if (!string.IsNullOrEmpty(proj.OriginalYarnAmount)) { <span>소요량: @proj.OriginalYarnAmount</span> }
                         @if (!string.IsNullOrEmpty(proj.OriginalOther))  { <span>부자재: @proj.OriginalOther</span> }
                     </div>
                 }
@@ -122,9 +123,15 @@ else
                         <input class="form-control" @bind="_editingProject.OriginalGauge" placeholder="예: 22코 × 30단 / 10cm" />
                     </div>
                 </div>
-                <div class="form-group">
-                    <label class="form-label" style="font-size:0.78rem;">원작 실</label>
-                    <input class="form-control" @bind="_editingProject.OriginalYarn" placeholder="예: 앵콜스 DK 400m, 5합 이상" />
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" style="font-size:0.78rem;">원작 실</label>
+                        <input class="form-control" @bind="_editingProject.OriginalYarn" placeholder="예: 솜솜뜨개 러스크 2합" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="font-size:0.78rem;">소요량</label>
+                        <input class="form-control" @bind="_editingProject.OriginalYarnAmount" placeholder="예: 400g / 3볼" />
+                    </div>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label" style="font-size:0.78rem;">기타 부자재</label>
