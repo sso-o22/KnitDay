@@ -14,7 +14,7 @@
          @onclick:stopPropagation="true">
         <div style="background:var(--white); border-radius:var(--radius); box-shadow:0 20px 60px rgba(0,0,0,0.14);
                     width:100%; max-width:520px; max-height:90vh;
-                    display:flex; flex-direction:column; overflow:hidden;"
+                    display:flex; flex-direction:column; overflow:hidden; min-width:0;"
              @onclick:stopPropagation="true">
 
             <!-- 헤더 -->
@@ -29,7 +29,7 @@
             </div>
 
             <!-- 스크롤 영역 -->
-            <div style="overflow-y:auto; flex:1; padding:16px 24px;">
+            <div style="overflow-y:auto; overflow-x:hidden; flex:1; padding:16px 24px; word-break:break-word; overflow-wrap:break-word;">
 
             @if (!_editing)
             {

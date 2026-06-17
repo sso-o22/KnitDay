@@ -231,7 +231,7 @@ else
                         </div>
                         <div class="form-group">
                             <label class="form-label" style="font-size:0.78rem;">소요량</label>
-                            <input class="form-control" @bind="_editingProject.OriginalYarnAmount" placeholder="예: 400g / 3볼" />
+                            <input class="form-control" @bind="_editingProject.OriginalYarnAmount" placeholder="예: M사이즈 400g" />
                         </div>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
@@ -634,14 +634,13 @@ else
     async Task MoveToWishlist()
     {
         if (_editingProject == null) return;
+        var id = _editingProject.Id;
         _editingProject.Status = ProjectStatus.위시리스트;
-        // 저장 먼저 (CloseModal이 _editingProject를 null로 만들기 전에)
         await Storage.SaveProjectAsync(_editingProject);
-        // 목록에서 즉시 제거 후 모달 닫기
-        _projects.Remove(_editingProject);
+        _projects.RemoveAll(p => p.Id == id);
         _showModal = false;
         _editingProject = null;
-        _swatchSnapshot = null; // 스냅샷 복원 스킵
+        _swatchSnapshot = null;
         await JS.InvokeVoidAsync("unlockBodyScroll");
         StateHasChanged();
     }
