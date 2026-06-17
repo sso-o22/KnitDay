@@ -15,7 +15,9 @@
 
 <div style="max-width:480px; display:flex; flex-direction:column; gap:16px;">
 
-    <!-- 계정 -->
+    <!-- 계정 (프리미엄 전용) -->
+    @if (_isPremium || Auth.IsLoggedIn)
+    {
     <div class="card">
         <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
             @if (Auth.IsLoggedIn)
@@ -27,10 +29,7 @@
                 <img src="icons/user.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />
             }
             계정
-            @if (_isPremium)
-            {
-                <span style="margin-left:auto; font-size:0.7rem; font-weight:700; letter-spacing:0.04em; padding:2px 8px; border-radius:99px; background:var(--theme-active); color:var(--white);">PREMIUM</span>
-            }
+            <span style="margin-left:auto; font-size:0.7rem; font-weight:700; letter-spacing:0.04em; padding:2px 8px; border-radius:99px; background:var(--theme-active); color:var(--white);">PREMIUM</span>
         </div>
         @if (Auth.IsLoggedIn)
         {
@@ -73,6 +72,7 @@
             <button class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="SignIn"><img src="icons/key.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />구글 로그인</button>
         }
     </div>
+    } @* _isPremium || IsLoggedIn *@
 
     <!-- 테마 -->
     <div class="card">
