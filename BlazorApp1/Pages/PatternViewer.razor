@@ -81,16 +81,18 @@
                             var borderH   = Math.Max(2, markerH * 0.12);
                             var markerId  = $"rowmarker-{marker.Id:N}";
                             var isDraggable = marker.IsCurrent;
+                            // 툴바가 닫혀있거나 행마커 도구가 아니면 마커는 보기 전용 — 실수로 건드려 이동되는 것을 방지
+                            var isInteractive = _drawMode && _tool == "rowmarker";
                             @if (isDraggable)
                             {
                                 var isSelected = _selectedMarkerId == marker.Id;
-                                <div id="@markerId" @onclick="() => SelectMarker(marker.Id)" @onclick:stopPropagation="true"
+                                <div @key="marker.Id" id="@markerId" @onclick="() => SelectMarker(marker.Id)" @onclick:stopPropagation="true"
                                      style="position:absolute;left:0;top:@(markerY)px;
                                             width:@(markerW)px;height:@(markerH)px;
                                             background:rgba(@rgb,@alpha);
                                             box-shadow:0 -@(borderH)px 0 0 rgba(@darkRgb,0.8),0 @(borderH)px 0 0 rgba(@darkRgb,0.8);
                                             @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
-                                            pointer-events:all;z-index:15;cursor:ns-resize;touch-action:none;">
+                                            pointer-events:@(isInteractive ? "all" : "none");z-index:16;cursor:@(isInteractive ? "ns-resize" : "default");touch-action:none;">
                                     <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
                                                 display:flex;flex-direction:column;gap:2px;pointer-events:none;">
                                         <div style="width:24px;height:2px;border-radius:1px;background:rgba(@darkRgb,0.6);"></div>
@@ -101,13 +103,13 @@
                             else
                             {
                                 var isSelected = _selectedMarkerId == marker.Id;
-                                <div id="@markerId" @onclick="() => SelectMarker(marker.Id)" @onclick:stopPropagation="true"
+                                <div @key="marker.Id" id="@markerId" @onclick="() => SelectMarker(marker.Id)" @onclick:stopPropagation="true"
                                      style="position:absolute;left:0;top:@(markerY)px;
                                             width:@(markerW)px;height:@(markerH)px;
                                             background:rgba(@rgb,@alpha);
                                             @(marker.IsCurrent ? $"box-shadow:0 -{borderH}px 0 0 rgba({darkRgb},0.8),0 {borderH}px 0 0 rgba({darkRgb},0.8);" : "")
                                             @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
-                                            pointer-events:all;z-index:15;cursor:pointer;">
+                                            pointer-events:@(isInteractive ? "all" : "none");z-index:@(isSelected ? 17 : 15);cursor:@(isInteractive ? "pointer" : "default");">
                                 </div>
                             }
                         }
@@ -992,7 +994,9 @@
         }
 
         // 현재 마커에 JS 드래그 부착 (드래그 중에는 재호출 스킵 — 타이머 재렌더와 충돌 방지)
-        if (_dotNetRef != null && !_isDraggingMarker)
+        // 행 마커 드래그는 툴바가 펼쳐져 있고 행마커 도구가 선택된 상태에서만 부착
+        // (그렇지 않으면 도안만 보던 중에도 모르고 마커가 움직여버림)
+        if (_dotNetRef != null && !_isDraggingMarker && _drawMode && _tool == "rowmarker")
         {
             var singleMarker = _rowMarkers.FirstOrDefault(m => m.IsCurrent);
             if (singleMarker != null)
