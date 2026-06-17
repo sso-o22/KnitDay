@@ -1491,6 +1491,16 @@
 
     void StartRowHeightDraw()
     {
+        // 기존에 지정해둔 행(드래그되던 마커)이 있으면 모두 제거하고 새로 높이 지정선만 표시
+        // — 사용자가 행 높이 지정을 다시 누르는 것은 새로 시작하겠다는 명시적 의도
+        if (_rowMarkers.Any())
+        {
+            _rowMarkers.Clear();
+            _selectedMarkerId = null;
+            _rowMarkersBaseCount = 0; // 되돌리기 경계도 초기화 — 새로 시작
+            _ = SaveRowMarkersAsync();
+        }
+
         _tool        = "rowheightdraw";
         _rowDrawPage = _currentPage;
         // 현재 보이는 스크롤 중앙 근처에 두 선 배치
@@ -1519,9 +1529,15 @@
     }
 
     [JSInvokable]
-    public async Task EndMarkerDrag(double finalCssY, double zoom)
+    public async Task EndMarkerDrag(double finalCssY, double zoom, bool moved = true)
     {
         _isDraggingMarker = false;
+        if (!moved)
+        {
+            // 실제 이동 없이 클릭만 한 경우 — 위치/저장 변경 없이 드래그 상태만 해제
+            StateHasChanged();
+            return;
+        }
         var marker = _rowMarkers.FirstOrDefault(m => m.IsCurrent);
         if (marker != null)
         {
