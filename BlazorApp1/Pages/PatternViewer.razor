@@ -985,8 +985,8 @@
             StateHasChanged();
         }
 
-        // 현재 마커에 JS 드래그 부착
-        if (_dotNetRef != null)
+        // 현재 마커에 JS 드래그 부착 (드래그 중에는 재호출 스킵 — 타이머 재렌더와 충돌 방지)
+        if (_dotNetRef != null && !_isDraggingMarker)
         {
             var singleMarker = _rowMarkers.FirstOrDefault(m => m.IsCurrent);
             if (singleMarker != null)
@@ -1498,13 +1498,33 @@
 
     // ── 행 마커 드래그 (JS 완전 위임) ─────────────────────────────
     RowMarker? _draggingMarker;
+    bool _isDraggingMarker = false; // 드래그 중에는 attachMarkerDrag 재호출 스킵 (타이머 재렌더와 충돌 방지)
+
+    [JSInvokable]
+    public Task StartMarkerDrag()
+    {
+        _isDraggingMarker = true;
+        return Task.CompletedTask;
+    }
 
     [JSInvokable]
     public async Task EndMarkerDrag(double finalCssY, double zoom)
     {
+        _isDraggingMarker = false;
         var marker = _rowMarkers.FirstOrDefault(m => m.IsCurrent);
         if (marker != null)
-            marker.Y = finalCssY / zoom;
+        {
+            var y = finalCssY / zoom;
+            // 페이지 경계를 넘어가면 마커가 화면 밖으로 사라지므로 0~페이지높이 범위로 고정
+            try
+            {
+                var pageHCss = await JS.InvokeAsync<double>("patternViewer.getPageHeight", marker.Page);
+                var maxY = Math.Max(0, pageHCss / zoom - marker.RowHeight);
+                y = Math.Clamp(y, 0, maxY);
+            }
+            catch { y = Math.Max(0, y); }
+            marker.Y = y;
+        }
         _draggingMarker = null;
         await SaveRowMarkersAsync();
         await InvokeAsync(StateHasChanged);
