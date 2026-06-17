@@ -61,15 +61,15 @@
     <nav class="bottom-nav">
         @if (_syncStatus == "syncing")
         {
-            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--theme-active);opacity:0.8;animation:pulse 1s infinite;"></span>
+            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--theme-active);opacity:0.8;animation:pulse 1s infinite;pointer-events:none;"></span>
         }
         else if (_syncStatus == "done")
         {
-            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;"><img src="icons/cloud-check.svg" class="icon-line" style="width:14px;height:14px;opacity:0.6;" /></span>
+            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;pointer-events:none;"><img src="icons/cloud-check.svg" class="icon-line" style="width:14px;height:14px;opacity:0.6;" /></span>
         }
         else if (_syncStatus == "error")
         {
-            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;"><img src="icons/cloud-slash.svg" class="icon-line" style="width:14px;height:14px;opacity:0.7;color:#c03030;" /></span>
+            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;pointer-events:none;"><img src="icons/cloud-slash.svg" class="icon-line" style="width:14px;height:14px;opacity:0.7;color:#c03030;" /></span>
         }
         <NavLink href="" Match="NavLinkMatch.All" class="bottom-nav-item">
             <span class="bottom-nav-icon"><img src="icons/house-line.svg" class="icon-line" style="width:24px;height:24px;" /></span><span class="bottom-nav-label">홈</span>
