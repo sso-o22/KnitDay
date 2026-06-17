@@ -162,21 +162,6 @@ else
                 </div>
             }
 
-            @* 참고 영상 *@
-            @* @if (_project.VideoLinks.Count > 0)
-            {
-                <div class="divider"></div>
-                <div class="form-label" style="display:flex; align-items:center; gap:6px;"><img src="icons/youtube-logo.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 참고 링크</div>
-                <div style="display:flex; flex-direction:column; gap:6px;">
-                    @foreach (var link in _project.VideoLinks)
-                    {
-                        <a href="@link" target="_blank" rel="noopener noreferrer"
-                           style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:var(--theme-active); word-break:break-all;">
-                            <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@link</span>
-                        </a>
-                    }
-                </div>
-            } *@
         </div>
 
         @foreach (var cardId in _cardOrder)
@@ -566,22 +551,19 @@ else
         <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
              @onclick='() => ToggleCard("video")'>
             <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/link-simple.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 참고 링크</div>
-            @if (AllLinks.Count > 0)
+            @if (_project.Links.Count > 0)
             {
                 <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("video") ? "▶" : "▼")</span>
             }
         </div>
-        @if (!IsCollapsed("video") || AllLinks.Count == 0)
+        @if (!IsCollapsed("video") || _project.Links.Count == 0)
         {
-        @if (AllLinks.Count > 0)
+        @if (_project.Links.Count > 0)
         {
             <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
-                @foreach (var lnk in AllLinks.ToList())
+                @foreach (var lnk in _project.Links.ToList())
                 {
                     var isYoutube = lnk.Url.Contains("youtube.com") || lnk.Url.Contains("youtu.be");
-                    var displayTitle = !string.IsNullOrEmpty(lnk.Title) ? lnk.Title
-                        : isYoutube ? "YouTube"
-                        : TryGetDomain(lnk.Url);
                     <div style="margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
                         @if (isYoutube)
                         {
@@ -598,16 +580,22 @@ else
                                 </iframe>
                             </div>
                         }
+                        else if (!string.IsNullOrEmpty(lnk.Title))
+                        {
+                            @* 일반 링크: 사용자 지정 제목 *@
+                            <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:4px;">@lnk.Title</div>
+                        }
                         else
                         {
-                            @* 일반 링크: 아이콘 + 제목/도메인 *@
+                            @* 일반 링크: 제목 없으면 도메인 표시 *@
+                            <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:4px;">@TryGetDomain(lnk.Url)</div>
                         }
-                        <div style="display:flex; align-items:center; gap:8px;">
-                            <a href="@lnk.Url" target="_blank" style="flex:1; font-size:0.8rem; color:var(--text-mid); display:inline-flex;align-items:center;gap:4px;min-width:0;">
-                                <img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />
-                                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@displayTitle</span>
+                        <div style="display:flex; align-items:flex-start; gap:8px;">
+                            <a href="@lnk.Url" target="_blank" style="flex:1; font-size:0.78rem; color:var(--text-mid); display:inline-flex;align-items:flex-start;gap:4px;min-width:0;">
+                                <img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;margin-top:2px;" />
+                                <span style="word-break:break-all; overflow-wrap:break-word;">@lnk.Url</span>
                             </a>
-                            <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveLink(lnk.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            <button class="btn btn-danger btn-sm" style="flex-shrink:0;" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveLink(lnk.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                         </div>
                     </div>
                 }
@@ -627,7 +615,7 @@ else
             <div style="display:flex; gap:8px;">
                 <input class="form-control" style="flex:1;"
                     @bind="_newLinkTitle"
-                    placeholder="제목 입력 (선택, 비우면 도메인 표시)" />
+                    placeholder="제목 입력 (선택)" />
                 <button class="btn btn-sage" style="flex-shrink:0;" @onclick="AddLinkAndSave">추가</button>
             </div>
         </div>
@@ -1222,6 +1210,15 @@ else
         _project = all.FirstOrDefault(p => p.Id == ProjectId);
         // 데이터 불러오기 후 빈 사진 항목 정리
         _project?.Photos.RemoveAll(p => string.IsNullOrEmpty(p.Base64Data) && string.IsNullOrEmpty(p.StorageUrl));
+        // 구버전 VideoLinks(string) → 신버전 Links(VideoLink)로 1회 마이그레이션
+        if (_project != null && _project.VideoLinks.Count > 0)
+        {
+            foreach (var url in _project.VideoLinks)
+                if (!_project.Links.Any(l => l.Url == url))
+                    _project.Links.Add(new VideoLink { Url = url });
+            _project.VideoLinks.Clear();
+            await Storage.SaveProjectAsync(_project);
+        }
         _yarns = await Storage.GetYarnsAsync();
         _allTools = await Storage.GetToolsAsync();
         _allSwatches = await Storage.GetSwatchesAsync();
@@ -1260,21 +1257,6 @@ else
             return url.Replace("youtu.be/", "youtube.com/embed/");
         }
         return url; // 유튜브가 아니면 그대로 반환
-    }
-
-    // 구버전 VideoLinks(string) + 신버전 Links(VideoLink) 통합 목록
-    List<VideoLink> AllLinks
-    {
-        get
-        {
-            if (_project == null) return new();
-            var result = new List<VideoLink>(_project.Links);
-            // 구버전 string 링크를 VideoLink로 변환해서 합침
-            foreach (var url in _project.VideoLinks)
-                if (!result.Any(l => l.Url == url))
-                    result.Add(new VideoLink { Url = url });
-            return result;
-        }
     }
 
     private static string TryGetDomain(string url)
@@ -1718,15 +1700,6 @@ else
         _showEditModal = false;
     }
 
-    void AddVideoLink()
-    {
-        if (string.IsNullOrWhiteSpace(_newVideoLink)) return;
-        if (!_project!.Links.Any(l => l.Url == _newVideoLink.Trim()))
-            _project.Links.Add(new VideoLink { Url = _newVideoLink.Trim(), Title = _newLinkTitle.Trim() });
-        _newVideoLink = "";
-        _newLinkTitle = "";
-    }
-
     async Task AddLinkAndSave()
     {
         if (string.IsNullOrWhiteSpace(_newVideoLink) || _project == null) return;
@@ -1741,17 +1714,6 @@ else
     {
         if (_project == null) return;
         _project.Links.RemoveAll(l => l.Id == id);
-        // 구버전 호환: VideoLinks에서도 제거 시도
-        await Save();
-    }
-
-    async Task AddVideoLinkAndSave() => await AddLinkAndSave();
-
-    async Task RemoveVideoLink(string link)
-    {
-        if (_project == null) return;
-        _project.VideoLinks.Remove(link);
-        _project.Links.RemoveAll(l => l.Url == link);
         await Save();
     }
 
