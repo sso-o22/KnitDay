@@ -1253,17 +1253,21 @@
                     _project.HasSavedPattern = true;
                     _project.PatternFileName = e.File.Name;
 
-                    // Cloudinary에도 업로드 (기기 간 동기화)
-                    try
+                    // 로그인 상태일 때만 Cloudinary 업로드 (기기 간 동기화) — 사진과 동일한 정책
+                    // 비로그인 상태에서 업로드하면 Uid가 없어 용량 추적이 안 되고, anon 경로에 익명으로 쌓여 추적·정리가 불가능해짐
+                    if (Storage.IsLoggedIn)
                     {
-                        var base64Pdf = Convert.ToBase64String(bytes);
-                        var (cloudUrl, cloudErr) = await Storage.UploadPdfAsync(ProjectId.ToString(), base64Pdf);
-                        if (cloudErr == "quota")
-                            await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
-                        else if (!string.IsNullOrEmpty(cloudUrl))
-                            _project.PatternCloudUrl = cloudUrl;
+                        try
+                        {
+                            var base64Pdf = Convert.ToBase64String(bytes);
+                            var (cloudUrl, cloudErr) = await Storage.UploadPdfAsync(ProjectId.ToString(), base64Pdf);
+                            if (cloudErr == "quota")
+                                await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
+                            else if (!string.IsNullOrEmpty(cloudUrl))
+                                _project.PatternCloudUrl = cloudUrl;
+                        }
+                        catch { }
                     }
-                    catch { }
 
                     await SaveProject();
                 }

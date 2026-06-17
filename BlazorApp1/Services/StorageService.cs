@@ -17,6 +17,7 @@ namespace KnitLog.Services
         private const string KEY_TOOLS    = "knittracker_tools";
         private const string KEY_SWATCHES = "knittracker_swatches";
         private const string KEY_TODOS    = "knitlog_todos";
+        private const string KEY_MEDIA_MIGRATED = "knitday_media_migrated"; // 사용자별 마이그레이션 완료 플래그 (1회만 실행되도록)
 
         private static readonly JsonSerializerOptions _jsonOpts = new()
         {
@@ -219,8 +220,83 @@ namespace KnitLog.Services
             await MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools");
             await MergeCollectionAsync<Swatch>(KEY_SWATCHES, "swatches");
             await SyncTodosAsync();
+
+            // 로그인 전 비로그인 상태로 쌓인 사진/도안(Base64, 로컬 전용)을 Cloudinary로 옮겨
+            // IDB·Firestore 용량 부담을 줄임 — 계정당 1회만 실행 (매번 폴링 동기화마다 전체 스캔하지 않도록)
+            try
+            {
+                var alreadyMigrated = await _js.InvokeAsync<string?>(
+                    "firebaseStore.getDocument", $"users/{Uid}/meta/{KEY_MEDIA_MIGRATED}");
+                if (string.IsNullOrEmpty(alreadyMigrated))
+                {
+                    await MigrateLocalMediaToCloudAsync();
+                    await _js.InvokeAsync<bool>(
+                        "firebaseStore.setDocument", $"users/{Uid}/meta/{KEY_MEDIA_MIGRATED}",
+                        JsonSerializer.Serialize(new { done = true, at = DateTime.Now }, _jsonOpts));
+                }
+            }
+            catch { }
+
             IsSyncing = false;
             OnSyncCompleted?.Invoke();
+        }
+
+        // ── 로컬(Base64) 사진/도안을 Cloudinary로 마이그레이션 ─────────────
+        // 로그인 직후 1회 실행됨. 이미 StorageUrl/PatternCloudUrl이 있는 항목은 건너뜀(중복 업로드 방지).
+        public async Task MigrateLocalMediaToCloudAsync()
+        {
+            var projects = await GetProjectsAsync();
+            var changed = false;
+            var quotaReached = false;
+
+            foreach (var proj in projects)
+            {
+                if (quotaReached) break;
+
+                // 사진: Base64Data가 남아있고 아직 클라우드에 안 올라간 것만 대상
+                foreach (var photo in proj.Photos)
+                {
+                    if (string.IsNullOrEmpty(photo.Base64Data) || !string.IsNullOrEmpty(photo.StorageUrl))
+                        continue;
+                    try
+                    {
+                        var (url, err) = await UploadPhotoAsync(proj.Id.ToString(), photo.Id.ToString(), photo.Base64Data);
+                        if (err == "quota") { quotaReached = true; break; } // 용량 초과 — 지금까지 옮긴 것은 저장하고 중단
+                        if (!string.IsNullOrEmpty(url))
+                        {
+                            photo.StorageUrl = url;
+                            photo.Base64Data = ""; // 업로드 성공 시에만 로컬 원본 비움 — 실패하면 그대로 보존
+                            changed = true;
+                        }
+                    }
+                    catch { /* 이 사진은 건너뛰고 다음으로 — 실패해도 로컬 데이터는 그대로 보존되어 안전 */ }
+                }
+                if (quotaReached) break;
+
+                // 도안 PDF: 저장된 PDF가 있는데 아직 클라우드 URL이 없는 경우만 대상
+                if (proj.HasSavedPattern && string.IsNullOrEmpty(proj.PatternCloudUrl))
+                {
+                    try
+                    {
+                        var base64Pdf = await _js.InvokeAsync<string?>("patternViewer.getSavedPdfBase64", proj.Id.ToString());
+                        if (!string.IsNullOrEmpty(base64Pdf))
+                        {
+                            var (cloudUrl, cloudErr) = await UploadPdfAsync(proj.Id.ToString(), base64Pdf);
+                            if (cloudErr == "quota") { quotaReached = true; }
+                            else if (!string.IsNullOrEmpty(cloudUrl))
+                            {
+                                proj.PatternCloudUrl = cloudUrl;
+                                changed = true;
+                            }
+                        }
+                    }
+                    catch { /* PDF 읽기/업로드 실패 — 로컬 PDF는 그대로 유지되므로 안전, 다음 프로젝트로 진행 */ }
+                }
+            }
+
+            // quota 초과로 중단됐어도 그 전까지 성공한 마이그레이션 결과는 반드시 저장
+            if (changed)
+                await SaveAsync(KEY_PROJECTS, "projects", "Id", projects);
         }
 
         private async Task SyncTodosAsync()
