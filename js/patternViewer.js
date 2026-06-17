@@ -765,6 +765,17 @@ let basePaths = []; // 저장된 필기 (박제)
             catch(e) { return null; }
         },
 
+        // 마이그레이션용: 저장된 PDF를 base64 문자열로 반환 (없으면 null)
+        async getSavedPdfBase64(projectId) {
+            try {
+                const r = await loadPdfFromIDB(projectId);
+                if (!r?.bytes) return null;
+                const bytes = r.bytes instanceof Uint8Array ? r.bytes : new Uint8Array(r.bytes);
+                let bin = ''; for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                return btoa(bin);
+            } catch(e) { return null; }
+        },
+
         async renderSavedPdf(projectId) {
             try {
                 const r = await loadPdfFromIDB(projectId);
