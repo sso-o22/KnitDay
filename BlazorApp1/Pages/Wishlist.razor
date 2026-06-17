@@ -6,6 +6,7 @@
 @using KnitLog.Services
 @inject StorageService Storage
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <div class="page-header">
     <div>
@@ -267,10 +268,8 @@ else
 
     async Task StartProject(Guid id)
     {
-        var proj = _projects.FirstOrDefault(p => p.Id == id);
-        if (proj != null) { proj.Status = KnitLog.Models.ProjectStatus.진행중; StateHasChanged(); }
         await Storage.StartProjectAsync(id);
-        await LoadData();
+        Nav.NavigateTo("projects");
     }
 
     async Task DeleteProject(Guid id)

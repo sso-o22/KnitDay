@@ -1671,11 +1671,11 @@ else
     {
         if (_project == null) return;
         _project.Status = ProjectStatus.위시리스트;
-        // UI 즉시 이동
-        CloseEditModal();
-        Nav.NavigateTo("projects");
-        // 백그라운드 저장
+        // 저장 완료 후 이동 (저장 전 네비게이션 시 저장 누락 방지)
         await Storage.SaveProjectAsync(_project);
+        _editSnapshot = null; // 스냅샷 복원 스킵하고 모달 닫기
+        _showEditModal = false;
+        Nav.NavigateTo("projects");
     }
 
     void CloseEditModal()

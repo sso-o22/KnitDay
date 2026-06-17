@@ -6,6 +6,7 @@
 @using KnitLog.Services
 @inject StorageService Storage
 @inject IJSRuntime JS
+@inject NavigationManager Nav
 
 <div class="page-header">
     <div>
@@ -148,8 +149,7 @@ else
         _selectedProject.EndDate = null;
         await Storage.SaveProjectAsync(_selectedProject);
         CloseDetail();
-        await LoadData();
-        await JS.InvokeVoidAsync("showToast", "문어발로 복귀했어요");
+        Nav.NavigateTo("projects");
     }
 
     async Task DeleteFromPopup()

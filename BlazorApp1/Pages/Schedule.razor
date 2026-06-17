@@ -629,11 +629,15 @@ else
     {
         if (_editingProject == null) return;
         _editingProject.Status = ProjectStatus.위시리스트;
-        _projects.Remove(_editingProject);
-        await CloseModal();
-        StateHasChanged();
+        // 저장 먼저 (CloseModal이 _editingProject를 null로 만들기 전에)
         await Storage.SaveProjectAsync(_editingProject);
-        await LoadData();
+        // 목록에서 즉시 제거 후 모달 닫기
+        _projects.Remove(_editingProject);
+        _showModal = false;
+        _editingProject = null;
+        _swatchSnapshot = null; // 스냅샷 복원 스킵
+        await JS.InvokeVoidAsync("unlockBodyScroll");
+        StateHasChanged();
     }
 
     async Task CloseModal()
