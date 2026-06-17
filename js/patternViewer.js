@@ -384,14 +384,14 @@ let basePaths = []; // 저장된 필기 (박제)
         if (_renderTasks[pageNum]) { try { _renderTasks[pageNum].cancel(); } catch(_){} _renderTasks[pageNum] = null; }
 
         const page = await pdfDoc.getPage(pageNum);
-        const dpr  = window.devicePixelRatio || 1;
+        // iOS Retina DPR=3은 메모리를 9배 사용 → 최대 2로 캡 (화질 차이 거의 없음)
+        const dpr  = Math.min(window.devicePixelRatio || 1, 2);
         const vp   = page.getViewport({ scale: zoom });
         const cssW = Math.floor(vp.width);
         const cssH = Math.floor(vp.height);
 
-        // 모바일 OOM 방지: canvas buffer 픽셀 수 상한 (32MP)
-        // 초과 시 render scale을 줄여서 buffer 크기를 제한
-        const MAX_BUF_PX = 32 * 1024 * 1024;
+        // 모바일 OOM 방지: canvas buffer 픽셀 수 상한 (16MP, 기존 32MP에서 절반)
+        const MAX_BUF_PX = 16 * 1024 * 1024;
         const rawBufW = Math.floor(cssW * dpr);
         const rawBufH = Math.floor(cssH * dpr);
         const rawPx   = rawBufW * rawBufH;
@@ -428,6 +428,8 @@ let basePaths = []; // 저장된 필기 (박제)
         try { await task.promise; }
         catch (err) { if (err?.name !== 'RenderingCancelledException') console.warn('render err', pageNum, err); return; }
         _renderTasks[pageNum] = null;
+        // 렌더 완료 후 PDF.js 내부 페이지 리소스(폰트·이미지 캐시) 해제
+        try { page.cleanup(); } catch(_) {}
         _renderedPages.add(pageNum);
         redrawPage(pageNum);
         addPageHandlers(pageNum);
