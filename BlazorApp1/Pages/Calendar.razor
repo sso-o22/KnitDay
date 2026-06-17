@@ -62,8 +62,9 @@ else
                             var isOther = cell.Date.Month != _current.Month;
                             var events  = GetEventsForDate(cell.Date);
                             string numColor = isToday ? "var(--ivory)" : isOther ? "#9a9a9a" : "var(--black)";
-                            <div style="min-height:80px; border-right:0.5px solid var(--border); border-bottom:0.5px solid var(--border);
-                                        padding:5px; overflow:hidden; background:transparent;">
+                            <div @onclick="() => OpenDayPopup(cell.Date)"
+                                 style="min-height:80px; border-right:0.5px solid var(--border); border-bottom:0.5px solid var(--border);
+                                        padding:5px; overflow:hidden; background:transparent; cursor:pointer;">
                                 <!-- 날짜 숫자 -->
                                 <div style="width:22px; height:22px; display:flex; align-items:center; justify-content:center;
                                             border-radius:50%; font-size:0.75rem; font-weight:@(isToday ? "700" : "500"); margin-bottom:3px;
@@ -71,14 +72,15 @@ else
                                             color:@numColor;">
                                     @cell.Date.Day
                                 </div>
-                                <!-- 이벤트: 시작/종료일은 텍스트 칩, 중간날짜는 동그라미 -->
+                                <!-- 이벤트: 시작/종료일은 텍스트 칩, 중간날짜는 동그라미. 칩 1개 + 나머지는 +N으로 요약, 자세히는 날짜 클릭 -->
                                 @{
-                                    var chips  = events.Where(e => e.Label != "·").Take(2).ToList();
+                                    var chips  = events.Where(e => e.Label != "·").Take(1).ToList();
+                                    var chipOverflow = events.Count(e => e.Label != "·") - chips.Count;
                                     var dots   = events.Where(e => e.Label == "·").ToList();
                                 }
                                 @foreach (var ev in chips)
                                 {
-                                    <div @onclick="() => GoToProject(ev.Id)" title="@ev.Title"
+                                    <div @onclick="() => GoToProject(ev.Id)" @onclick:stopPropagation="true" title="@ev.Title"
                                          style="font-size:0.65rem; border-radius:4px; padding:1px 5px; margin-bottom:2px;
                                                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
                                                 cursor:pointer; display:flex; align-items:center; gap:2px; width:100%; box-sizing:border-box;
@@ -86,12 +88,16 @@ else
                                         <span style="font-size:0.55rem; font-weight:700; opacity:0.85; flex-shrink:0;">@ev.Label</span><span style="overflow:hidden; text-overflow:ellipsis;">@ev.Title</span>
                                     </div>
                                 }
+                                @if (chipOverflow > 0)
+                                {
+                                    <div style="font-size:0.6rem; color:var(--text-light); margin-bottom:2px;">+@(chipOverflow)개 더</div>
+                                }
                                 @if (dots.Any())
                                 {
                                     <div style="display:flex; flex-wrap:wrap; gap:2px; margin-top:1px;">
                                         @foreach (var ev in dots.Take(6))
                                         {
-                                            <div @onclick="() => GoToProject(ev.Id)" title="@ev.Title"
+                                            <div @onclick="() => GoToProject(ev.Id)" @onclick:stopPropagation="true" title="@ev.Title"
                                                  style="width:8px; height:8px; border-radius:50%; cursor:pointer;
                                                         background:@ev.AccentColor; opacity:0.85;">
                                             </div>
@@ -199,16 +205,44 @@ else
             {
                 <div class="card" style="padding:14px 16px;">
                     <div style="font-size:0.82rem; font-weight:500; color:var(--text-dark); margin-bottom:10px; display:flex; align-items:center; gap:4px;"><img src="icons/octopus.svg" class="icon-line" style="width:16px;height:16px; flex-shrink:0;" /> 프로젝트</div>
-                    @foreach (var (proj, style) in _legendProjects)
-                    {
-                        <div @onclick="() => GoToProject(proj.Id)"
-                             style="display:flex; align-items:center; gap:8px; margin-bottom:7px; cursor:pointer;">
-                            <div style="width:10px; height:10px; border-radius:50%; background:@style.AccentColor; flex-shrink:0;"></div>
-                            <span style="font-size:0.78rem; color:var(--text-mid); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@proj.Title</span>
-                        </div>
-                    }
+                    <div style="max-height:280px; overflow-y:auto;">
+                        @foreach (var (proj, style) in _legendProjects)
+                        {
+                            <div @onclick="() => GoToProject(proj.Id)"
+                                 style="display:flex; align-items:center; gap:8px; margin-bottom:7px; cursor:pointer; min-width:0;">
+                                <div style="width:10px; height:10px; border-radius:50%; background:@style.AccentColor; flex-shrink:0;"></div>
+                                <span style="font-size:0.78rem; color:var(--text-mid); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@proj.Title</span>
+                            </div>
+                        }
+                    </div>
                 </div>
             }
+        </div>
+    </div>
+}
+
+<!-- 날짜별 프로젝트 목록 팝업 -->
+@if (_dayPopupDate.HasValue)
+{
+    <div class="modal-backdrop" @onclick="CloseDayPopup">
+        <div class="modal" style="max-width:420px;" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">@_dayPopupDate.Value.ToString("M월 d일 (ddd)", System.Globalization.CultureInfo.GetCultureInfo("ko-KR"))</h2>
+                <button class="btn btn-ghost btn-sm" @onclick="CloseDayPopup">✕</button>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:8px; padding:4px 0;">
+                @foreach (var ev in _dayPopupEvents)
+                {
+                    var labelText = ev.Label switch { "CO" => "시작", "FO" => "완성", "CO·FO" => "시작·완성", _ => "진행중" };
+                    <div @onclick="() => { CloseDayPopup(); GoToProject(ev.Id); }"
+                         style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm);
+                                background:var(--ivory-dark); cursor:pointer; min-width:0;">
+                        <span style="width:10px; height:10px; border-radius:50%; background:@ev.AccentColor; flex-shrink:0;"></span>
+                        <span style="font-size:0.85rem; font-weight:500; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">@ev.Title</span>
+                        <span style="font-size:0.72rem; color:var(--text-light); flex-shrink:0;">@labelText</span>
+                    </div>
+                }
+            </div>
         </div>
     </div>
 }
@@ -689,8 +723,7 @@ else
     void BuildLegend()
     {
         var visible = _allProjects
-            .Where(p => p.Status != ProjectStatus.위시리스트)
-            .Take(6)
+            .Where(p => p.Status != ProjectStatus.위시리스트 && p.Status != ProjectStatus.일시중단)
             .ToList();
         _legendProjects = visible
             .Select(p => (p, GetProjectStyle(p)))
@@ -705,15 +738,23 @@ else
             .Where(p => p.Status != ProjectStatus.위시리스트 && p.Status != ProjectStatus.일시중단)
             .ToList();
 
+        var today = DateTime.Today;
+
         for (int i = 0; i < relevant.Count; i++)
         {
             var p = relevant[i];
             var s = GetProjectStyle(p);
+            var isCompleted = p.Status == ProjectStatus.완료;
 
-            bool isStart    = p.StartDate.HasValue && p.StartDate.Value.Date == date;
-            bool isEnd      = p.EndDate.HasValue   && p.EndDate.Value.Date   == date;
-            bool isInRange  = p.StartDate.HasValue && p.EndDate.HasValue
-                              && p.StartDate.Value.Date < date && date < p.EndDate.Value.Date;
+            bool isStart = p.StartDate.HasValue && p.StartDate.Value.Date == date;
+            // FO(완성)는 실제로 완료 처리된 프로젝트에만 표시 — 목표 종료일만 적어둔 상태에서는 찍히지 않음
+            bool isEnd   = isCompleted && p.EndDate.HasValue && p.EndDate.Value.Date == date;
+
+            // 진행 구간: 시작일 다음날부터 — 완료된 프로젝트는 완료일 전날까지, 진행중인 프로젝트는 오늘까지(목표 종료일 유무와 무관)
+            DateTime? rangeEnd = isCompleted ? p.EndDate?.Date : (DateTime?)today;
+            bool isInRange = p.StartDate.HasValue && rangeEnd.HasValue
+                              && p.StartDate.Value.Date < date && date <= rangeEnd.Value
+                              && !(isEnd); // 완료일 당일은 isEnd로 별도 표시
 
             if (isStart || isEnd)
                 result.Add(new CalendarEvent(p.Id, p.Title,
@@ -818,6 +859,23 @@ else
         {
             Nav.NavigateTo("projects/" + id + "?from=schedule");
         }
+    }
+
+    DateTime? _dayPopupDate = null;
+    List<CalendarEvent> _dayPopupEvents = new();
+
+    void OpenDayPopup(DateTime date)
+    {
+        var events = GetEventsForDate(date);
+        if (!events.Any()) return; // 일정 없는 날은 팝업 띄울 필요 없음
+        _dayPopupDate = date;
+        _dayPopupEvents = events;
+    }
+
+    void CloseDayPopup()
+    {
+        _dayPopupDate = null;
+        _dayPopupEvents.Clear();
     }
 
     void CloseFinishedPopup()

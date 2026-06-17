@@ -776,8 +776,8 @@ else
         {
             await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", _completedPreview.Id.ToString());
             _completedPreview.HasSavedPattern = false;
-            _completedPreview.PatternFileName = null;
-            _completedPreview.PatternCloudUrl = null;
+            _completedPreview.PatternFileName = "";
+            _completedPreview.PatternCloudUrl = "";
             await Storage.SaveProjectAsync(_completedPreview);
             await JS.InvokeVoidAsync("showToast", "도안 파일을 삭제했어요");
         }
