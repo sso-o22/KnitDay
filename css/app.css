@@ -73,6 +73,13 @@
     --border:     #343434;
     --shadow:     rgba(0,0,0,0.5);
     --shadow-md:  rgba(0,0,0,0.7);
+    /* 테마 컬러도 흑백 계열로 강제 — 어두운 배경에서 충분한 명도 확보 (배지/포인트 색이 묻히는 문제 방지) */
+    --theme-pale:   #2c2c2c;
+    --theme-light:  #3a3a3a;
+    --theme-mid:    #4a4a4a;
+    --theme-muted:  #888888;
+    --theme-btn:    #2c2c2c;
+    --theme-active: #e8e8e8;
 }
 
 /* 다크모드에서는 테마 무관하게 흑백 팔레트로 통일 (아래 버튼 오버라이드 섹션에서 처리) */
