@@ -1073,48 +1073,55 @@ let basePaths = []; // 저장된 필기 (박제)
             el._markerDragAttached = true;
 
             const canvas   = document.getElementById('anno-canvas-' + pageNum);
-            const scrollEl = document.getElementById('scroll-container');
 
+            // getBoundingClientRect는 transform이 적용된 상태에서도 실제 화면 위치를 정확히 반환
+            // (offsetTop은 transform 영향을 안 받아서, 줌 애니메이션 중이면 큰 오차 발생)
             function getCanvasY(clientY) {
                 if (!canvas) return clientY;
-                const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
-                const off = getOffsetPos(canvas);
-                const scrollContainerTop = scrollEl ? scrollEl.getBoundingClientRect().top : 0;
-                return clientY - (off.y - scrollTop + scrollContainerTop);
+                const rect = canvas.getBoundingClientRect();
+                return clientY - rect.top;
             }
 
+            function clampY(y) {
+                const maxY = canvas ? canvas.clientHeight - 4 : y;
+                return Math.max(0, Math.min(y, maxY));
+            }
             function onMouseMove(ev) {
                 ev.preventDefault();
-                const y = getCanvasY(ev.clientY);
+                const y = clampY(getCanvasY(ev.clientY));
                 el.style.top = y + 'px';
             }
             function onMouseUp(ev) {
                 window.removeEventListener('mousemove', onMouseMove);
                 window.removeEventListener('mouseup', onMouseUp);
-                const y = getCanvasY(ev.clientY);
+                const y = clampY(getCanvasY(ev.clientY));
                 el.style.top = y + 'px';
                 dotNetRef.invokeMethodAsync('EndMarkerDrag', y, zoom);
             }
             function onTouchMove(ev) {
                 ev.preventDefault();
-                const y = getCanvasY(ev.touches[0].clientY);
+                const y = clampY(getCanvasY(ev.touches[0].clientY));
                 el.style.top = y + 'px';
             }
             function onTouchEnd(ev) {
                 window.removeEventListener('touchmove', onTouchMove);
                 window.removeEventListener('touchend', onTouchEnd);
                 const changedTouch = ev.changedTouches[0];
-                const y = getCanvasY(changedTouch.clientY);
+                const y = clampY(getCanvasY(changedTouch.clientY));
                 dotNetRef.invokeMethodAsync('EndMarkerDrag', y, zoom);
             }
 
             el.addEventListener('mousedown', function(ev) {
+                if (_isZooming || _isPinching) return; // 줌 전환 중엔 좌표 기준이 불안정하므로 드래그 시작 차단
                 ev.preventDefault();
+                dotNetRef.invokeMethodAsync('StartMarkerDrag');
                 window.addEventListener('mousemove', onMouseMove);
                 window.addEventListener('mouseup', onMouseUp);
             });
             el.addEventListener('touchstart', function(ev) {
+                if (_isZooming || _isPinching) return;
                 ev.preventDefault();
+                dotNetRef.invokeMethodAsync('StartMarkerDrag');
                 window.addEventListener('touchmove', onTouchMove, { passive: false });
                 window.addEventListener('touchend', onTouchEnd);
             }, { passive: false });
