@@ -817,6 +817,12 @@ body {
         font-size: 0.65rem;
         gap: 4px;
         transition: color 0.15s;
+        touch-action: manipulation; /* 더블탭 줌 등 지연 제거 → 탭 반응 일관성 */
+    }
+
+    /* 아이콘/라벨이 클릭 타겟이 되지 않도록 — 항상 탭 전체(.bottom-nav-item)가 클릭됨 */
+    .bottom-nav-item * {
+        pointer-events: none;
     }
 
     .bottom-nav-item.active {
