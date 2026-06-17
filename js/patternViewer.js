@@ -1086,42 +1086,65 @@ let basePaths = []; // 저장된 필기 (박제)
                 const maxY = canvas ? canvas.clientHeight - 4 : y;
                 return Math.max(0, Math.min(y, maxY));
             }
+            // 드래그 판정 임계값(px) — 이보다 적게 움직였으면 클릭(선택)으로 간주, 서버 호출(StartMarkerDrag) 자체를 보내지 않음
+            const DRAG_THRESHOLD = 4;
+            let _startClientY = 0, _hasMoved = false, _dragStarted = false;
+
             function onMouseMove(ev) {
                 ev.preventDefault();
+                if (!_hasMoved && Math.abs(ev.clientY - _startClientY) > DRAG_THRESHOLD) {
+                    _hasMoved = true;
+                    if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag'); }
+                }
+                if (!_hasMoved) return; // 임계값 이내에서는 위치 변경 없음 → 순수 클릭(선택)으로 처리
                 const y = clampY(getCanvasY(ev.clientY));
                 el.style.top = y + 'px';
             }
             function onMouseUp(ev) {
                 window.removeEventListener('mousemove', onMouseMove);
                 window.removeEventListener('mouseup', onMouseUp);
-                const y = clampY(getCanvasY(ev.clientY));
-                el.style.top = y + 'px';
-                dotNetRef.invokeMethodAsync('EndMarkerDrag', y, zoom);
+                if (_hasMoved) {
+                    const y = clampY(getCanvasY(ev.clientY));
+                    el.style.top = y + 'px';
+                    dotNetRef.invokeMethodAsync('EndMarkerDrag', y, zoom, true);
+                }
+                // 움직이지 않았으면 서버에 아무 것도 보내지 않음 — 곧바로 발생하는 click 이벤트(@onclick=SelectMarker)만 처리됨
             }
             function onTouchMove(ev) {
                 ev.preventDefault();
+                if (!_hasMoved && Math.abs(ev.touches[0].clientY - _startClientY) > DRAG_THRESHOLD) {
+                    _hasMoved = true;
+                    if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag'); }
+                }
+                if (!_hasMoved) return;
                 const y = clampY(getCanvasY(ev.touches[0].clientY));
                 el.style.top = y + 'px';
             }
             function onTouchEnd(ev) {
                 window.removeEventListener('touchmove', onTouchMove);
                 window.removeEventListener('touchend', onTouchEnd);
-                const changedTouch = ev.changedTouches[0];
-                const y = clampY(getCanvasY(changedTouch.clientY));
-                dotNetRef.invokeMethodAsync('EndMarkerDrag', y, zoom);
+                if (_hasMoved) {
+                    const changedTouch = ev.changedTouches[0];
+                    const y = clampY(getCanvasY(changedTouch.clientY));
+                    dotNetRef.invokeMethodAsync('EndMarkerDrag', y, zoom, true);
+                }
+                // 움직이지 않았으면 서버 호출 없이 종료 — 뒤따르는 click 이벤트가 선택을 처리
             }
 
             el.addEventListener('mousedown', function(ev) {
                 if (_isZooming || _isPinching) return; // 줌 전환 중엔 좌표 기준이 불안정하므로 드래그 시작 차단
-                ev.preventDefault();
-                dotNetRef.invokeMethodAsync('StartMarkerDrag');
+                _startClientY = ev.clientY;
+                _hasMoved = false;
+                _dragStarted = false;
+                // preventDefault는 호출하지 않음 — 클릭(선택) 이벤트가 정상 발생하도록 둠
                 window.addEventListener('mousemove', onMouseMove);
                 window.addEventListener('mouseup', onMouseUp);
             });
             el.addEventListener('touchstart', function(ev) {
                 if (_isZooming || _isPinching) return;
-                ev.preventDefault();
-                dotNetRef.invokeMethodAsync('StartMarkerDrag');
+                _startClientY = ev.touches[0].clientY;
+                _hasMoved = false;
+                _dragStarted = false;
                 window.addEventListener('touchmove', onTouchMove, { passive: false });
                 window.addEventListener('touchend', onTouchEnd);
             }, { passive: false });
