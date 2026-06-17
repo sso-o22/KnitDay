@@ -529,7 +529,7 @@ else
                     <div style="display:flex; gap:12px; align-items:flex-start;">
                         <div style="display:flex; flex-direction:column; align-items:center; padding-top:2px;">
                             <div style="width:28px; height:28px; border-radius:50%; background:var(--ivory-dark); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
-                                <img src="@iconSrc" class="icon-line" style="width:14px;height:14px; filter:none;" />
+                                <img src="@iconSrc" class="icon-line" style="width:14px;height:14px; opacity:0.85;" />
                             </div>
                             @if (!isLast)
                             {
@@ -641,7 +641,7 @@ else
                         @* 대표사진 배지 *@
                         @if (idx == 0)
                         {
-                            <span style="position:absolute;top:3px;left:3px;background:var(--theme-active);border-radius:4px;padding:1px 5px;font-size:0.6rem;color:#fff;font-weight:700;line-height:1.4;">대표</span>
+                            <span style="position:absolute;top:3px;left:3px;background:var(--theme-active);border-radius:4px;padding:1px 5px;font-size:0.6rem;color:var(--white);font-weight:700;line-height:1.4;">대표</span>
                         }
                         @* 대표로 설정 버튼 (1번 이상) *@
                         @if (idx > 0)
