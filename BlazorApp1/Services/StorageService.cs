@@ -228,6 +228,7 @@ namespace KnitLog.Services
             var localJson = await _js.InvokeAsync<string?>("knitDB.getData", KEY_TODOS);
 
             string? cloudJson = null;
+            DateTime cloudUpdatedAt = DateTime.MinValue;
             try
             {
                 var cloudDoc = await _js.InvokeAsync<string?>(
@@ -237,13 +238,16 @@ namespace KnitLog.Services
                     var el = JsonSerializer.Deserialize<JsonElement>(cloudDoc, _jsonOpts);
                     if (el.TryGetProperty("data", out var data))
                         cloudJson = data.GetRawText();
+                    if (el.TryGetProperty("updatedAt", out var ts) && ts.ValueKind == JsonValueKind.String)
+                        DateTime.TryParse(ts.GetString(), out cloudUpdatedAt);
                 }
             }
             catch { }
 
-            // Id 기준 merge: 로컬 우선, 클라우드에만 있는 항목 추가
-            // (단순 항목 수 비교 방식은 중복 유발 가능)
+            // 수정일 기반 winner-takes-all: 더 최신인 쪽 전체를 사용
+            // (항목 추가 방식은 삭제된 항목이 다시 살아나는 문제 발생)
             string mergedJson;
+            var localUpdatedAt = await GetTodosLocalUpdatedAt();
             if (string.IsNullOrEmpty(cloudJson))
             {
                 mergedJson = localJson ?? "[]";
@@ -252,23 +256,15 @@ namespace KnitLog.Services
             {
                 mergedJson = cloudJson;
             }
+            else if (cloudUpdatedAt > localUpdatedAt)
+            {
+                // 클라우드가 더 최신 → 클라우드 데이터 사용
+                mergedJson = cloudJson;
+            }
             else
             {
-                try
-                {
-                    var localArr = JsonSerializer.Deserialize<List<JsonElement>>(localJson, _jsonOpts) ?? new();
-                    var cloudArr = JsonSerializer.Deserialize<List<JsonElement>>(cloudJson, _jsonOpts) ?? new();
-                    var localIds = localArr.Select(e => GetId(e)).Where(id => id != null).ToHashSet();
-                    // 클라우드에만 있는 항목을 로컬 끝에 추가
-                    foreach (var item in cloudArr)
-                    {
-                        var id = GetId(item);
-                        if (id != null && !localIds.Contains(id))
-                            localArr.Add(item);
-                    }
-                    mergedJson = JsonSerializer.Serialize(localArr, _jsonOpts);
-                }
-                catch { mergedJson = localJson ?? "[]"; }
+                // 로컬이 더 최신이거나 동일 → 로컬 유지
+                mergedJson = localJson;
             }
 
             await _js.InvokeVoidAsync("knitDB.setData", KEY_TODOS, mergedJson);
@@ -364,8 +360,10 @@ namespace KnitLog.Services
                 {
                     try
                     {
+                        var tsStr = await _js.InvokeAsync<string?>("knitDB.getData", KEY_TODOS_TS);
+                        if (string.IsNullOrEmpty(tsStr)) tsStr = DateTime.UtcNow.ToString("O");
                         var payload = JsonSerializer.Serialize(
-                            new { data = JsonSerializer.Deserialize<JsonElement>(todosJson, _jsonOpts) }, _jsonOpts);
+                            new { data = JsonSerializer.Deserialize<JsonElement>(todosJson, _jsonOpts), updatedAt = tsStr }, _jsonOpts);
                         await _js.InvokeAsync<bool>("firebaseStore.setDocument",
                             $"users/{Uid}/settings/todos", payload);
                     }
@@ -379,21 +377,36 @@ namespace KnitLog.Services
         }
 
         // ── Todos 저장 (IDB + Firebase 즉시) ────────────────────────
+        private const string KEY_TODOS_TS = "knitlog_todos_ts"; // 로컬 수정 타임스탬프
+
         public async Task SaveTodosAsync(string todosJson)
         {
+            var nowStr = DateTime.UtcNow.ToString("O");
             await _js.InvokeVoidAsync("knitDB.setData", KEY_TODOS, todosJson);
+            await _js.InvokeVoidAsync("knitDB.setData", KEY_TODOS_TS, nowStr);
             if (!IsLoggedIn) return;
             _ = Task.Run(async () =>
             {
                 try
                 {
                     var payload = JsonSerializer.Serialize(
-                        new { data = JsonSerializer.Deserialize<JsonElement>(todosJson, _jsonOpts) }, _jsonOpts);
+                        new { data = JsonSerializer.Deserialize<JsonElement>(todosJson, _jsonOpts), updatedAt = nowStr }, _jsonOpts);
                     await _js.InvokeAsync<bool>("firebaseStore.setDocument",
                         $"users/{Uid}/settings/todos", payload);
                 }
                 catch { }
             });
+        }
+
+        private async Task<DateTime> GetTodosLocalUpdatedAt()
+        {
+            try
+            {
+                var ts = await _js.InvokeAsync<string?>("knitDB.getData", KEY_TODOS_TS);
+                if (!string.IsNullOrEmpty(ts) && DateTime.TryParse(ts, out var dt)) return dt;
+            }
+            catch { }
+            return DateTime.MinValue;
         }
 
         // ── 통합 저장 (로컬 즉시 + Firebase 백그라운드) ──────────────

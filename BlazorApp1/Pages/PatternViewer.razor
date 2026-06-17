@@ -976,6 +976,7 @@
             _project.ViewerEraserSize     = _eraserSize;
             _project.ViewerRowMarkerColor = _rowMarkerColor;
             _project.ViewerGridLineColor  = _gridLineColor;
+            _project.ViewerMarkerMode     = _markerMode;
 
             await SaveProject();
         }
@@ -1125,6 +1126,9 @@
             _eraserSize     = _project.ViewerEraserSize > 0 ? _project.ViewerEraserSize : 10;
             _rowMarkerColor = !string.IsNullOrEmpty(_project.ViewerRowMarkerColor) ? _project.ViewerRowMarkerColor : "#ffeb3b";
             _gridLineColor  = !string.IsNullOrEmpty(_project.ViewerGridLineColor)  ? _project.ViewerGridLineColor  : "rgba(220,50,50,0.55)";
+            // 행 감지 모드 복원
+            _markerMode = _project.ViewerMarkerMode is "single" or "multi" ? _project.ViewerMarkerMode : "single";
+            _pendingMode = _markerMode;
             var savedTool = _project.ViewerLastTool;
             _tool = savedTool is "pen" or "highlighter" or "eraser" or "rowmarker" ? savedTool : "pen";
             _drawMode = false; // 뷰어 열 때는 항상 툴바 접힌 상태
@@ -1501,8 +1505,8 @@
     List<double> _previewLineYs = new();   // 감지 미리보기 선 (확인 전)
     bool _showPreviewLines = false;
     int _detectPage = 0;
-    string _markerMode = "multi"; // "multi" = 여러행(누적), "single" = 단독행(드래그)
-    string _pendingMode = "multi"; // 높이 지정 후 적용할 모드
+    string _markerMode = "single"; // "multi" = 여러행(누적), "single" = 단독행(드래그)
+    string _pendingMode = "single"; // 높이 지정 후 적용할 모드
 
     // ── 수동 행 높이: 두 선 드래그 ───────────────────────────────────
     int    _rowDrawPage  = 0;

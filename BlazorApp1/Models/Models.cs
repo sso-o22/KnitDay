@@ -176,6 +176,7 @@ namespace KnitLog.Models
         public int ViewerEraserSize { get; set; } = 10;          // 지우개 굵기
         public string ViewerRowMarkerColor { get; set; } = "#ffeb3b"; // 행 마커 색상
         public string ViewerGridLineColor { get; set; } = "";    // 감지선 색상
+        public string ViewerMarkerMode { get; set; } = "single"; // "single" or "multi"
     }
 
     public class ProjectYarnUsage
