@@ -83,11 +83,13 @@
                             var isDraggable = marker.IsCurrent;
                             @if (isDraggable)
                             {
-                                <div id="@markerId"
+                                var isSelected = _selectedMarkerId == marker.Id;
+                                <div id="@markerId" @onclick="() => SelectMarker(marker.Id)" @onclick:stopPropagation="true"
                                      style="position:absolute;left:0;top:@(markerY)px;
                                             width:@(markerW)px;height:@(markerH)px;
                                             background:rgba(@rgb,@alpha);
                                             box-shadow:0 -@(borderH)px 0 0 rgba(@darkRgb,0.8),0 @(borderH)px 0 0 rgba(@darkRgb,0.8);
+                                            @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
                                             pointer-events:all;z-index:15;cursor:ns-resize;touch-action:none;">
                                     <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
                                                 display:flex;flex-direction:column;gap:2px;pointer-events:none;">
@@ -98,12 +100,14 @@
                             }
                             else
                             {
-                                <div id="@markerId"
+                                var isSelected = _selectedMarkerId == marker.Id;
+                                <div id="@markerId" @onclick="() => SelectMarker(marker.Id)" @onclick:stopPropagation="true"
                                      style="position:absolute;left:0;top:@(markerY)px;
                                             width:@(markerW)px;height:@(markerH)px;
                                             background:rgba(@rgb,@alpha);
                                             @(marker.IsCurrent ? $"box-shadow:0 -{borderH}px 0 0 rgba({darkRgb},0.8),0 {borderH}px 0 0 rgba({darkRgb},0.8);" : "")
-                                            pointer-events:none;z-index:15;">
+                                            @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
+                                            pointer-events:all;z-index:15;cursor:pointer;">
                                 </div>
                             }
                         }
@@ -253,12 +257,14 @@
                             </button>
                         </div>
                     }
-                    @* 전체 삭제 *@
+                    @* 선택한 행 삭제: 마커를 클릭해 선택해야 활성화됨 *@
                     @if (_rowMarkers.Any())
                     {
                         <div class="dp-sep"></div>
                         <div class="dp-row" style="justify-content:center;">
-                            <button class="dp-btn" title="행 마커 전체 삭제" @onclick="ClearRowMarkers" style="width:28px;height:28px;">
+                            <button class="dp-btn" title="@(_selectedMarkerId != null ? "선택한 행 삭제" : "지울 행을 먼저 선택하세요")"
+                                    disabled="@(_selectedMarkerId == null)"
+                                    @onclick="DeleteSelectedMarker" style="width:28px;height:28px; opacity:@(_selectedMarkerId == null ? "0.4" : "1");">
                                 <img src="icons/trash.svg" style="width:20px;height:20px;" />
                             </button>
                         </div>
@@ -1080,6 +1086,9 @@
                 }
                 catch { }
             }
+            // 행 마커 되돌리기 경계: 이 시점(복원 완료) 이전 마커는 절대 되돌리기로 지울 수 없음
+            // — 필기/형광펜의 basePaths와 동일한 원리 (새로고침 전 흔적 보존)
+            _rowMarkersBaseCount = _rowMarkers.Count;
 
             StateHasChanged();
 
@@ -1469,6 +1478,8 @@
     double _imageOrigW = 0;
     double _imageOrigH = 0;
     List<RowMarker> _rowMarkers = new();
+    int _rowMarkersBaseCount = 0; // 복원 시점 마커 개수 — 되돌리기는 이 경계를 넘지 못함
+    Guid? _selectedMarkerId = null; // 클릭으로 선택한 마커 (삭제 대상)
     string _rowMarkerColor = "#ffeb3b";
     double _detectedRowH = 0;
     string _markerMode = "single"; // 다중행 기능 제거됨 — 항상 단일행
@@ -1545,7 +1556,7 @@
 
         _tool = "rowmarker";
 
-        // 단일행: 마커 1개 생성 (두 선의 상단 위치에)
+        // 단일행: 마커 1개 생성 (두 선의 상단 위치에) — 사용자가 명시적으로 다시 설정하는 것이므로 전체 초기화
         _rowMarkers.Clear();
         _rowMarkers.Add(new RowMarker
         {
@@ -1556,6 +1567,8 @@
             Color = _rowMarkerColor,
             IsCurrent = true
         });
+        _selectedMarkerId = null;
+        _rowMarkersBaseCount = 0; // 새로 시작 — 되돌리기 경계 초기화
         _ = SaveRowMarkersAsync();
 
         StateHasChanged();
@@ -1599,7 +1612,8 @@
 
     void UndoRowMarker()
     {
-        if (!_rowMarkers.Any()) return;
+        // 복원된(새로고침 전) 마커 경계까지만 되돌리기 가능 — 그 이전은 보존
+        if (_rowMarkers.Count <= _rowMarkersBaseCount) return;
 
         // 현재 행 마커 제거
         var current = _rowMarkers.LastOrDefault(m => m.IsCurrent);
@@ -1612,17 +1626,47 @@
         }
         else
         {
-            // 현재 마커가 없으면 마지막 완료 마커 제거
-            var last = _rowMarkers.LastOrDefault();
-            if (last != null) _rowMarkers.Remove(last);
+            // 현재 마커가 없으면 마지막 완료 마커 제거 (단, 경계 이내일 때만)
+            if (_rowMarkers.Count > _rowMarkersBaseCount)
+            {
+                var last = _rowMarkers.LastOrDefault();
+                if (last != null) _rowMarkers.Remove(last);
+            }
         }
+        _selectedMarkerId = null;
         _ = SaveRowMarkersAsync();
         StateHasChanged();
     }
 
-    async Task ClearRowMarkers()
+    void SelectMarker(Guid markerId)
     {
-        _rowMarkers.Clear();
+        // 같은 마커 다시 클릭하면 선택 해제
+        _selectedMarkerId = _selectedMarkerId == markerId ? null : markerId;
+        StateHasChanged();
+    }
+
+    async Task DeleteSelectedMarker()
+    {
+        if (_selectedMarkerId == null) return;
+        var marker = _rowMarkers.FirstOrDefault(m => m.Id == _selectedMarkerId);
+        if (marker == null) { _selectedMarkerId = null; return; }
+
+        var wasCurrent = marker.IsCurrent;
+        _rowMarkers.Remove(marker);
+        _selectedMarkerId = null;
+
+        // 현재(드래그 가능) 마커를 지웠다면, 가장 최근 마커를 다시 현재로 승격
+        if (wasCurrent)
+        {
+            var last = _rowMarkers.LastOrDefault();
+            if (last != null) last.IsCurrent = true;
+        }
+
+        // 베이스 카운트 보정: 복원된 마커를 지웠다면 경계도 함께 줄여서
+        // 이후 되돌리기가 "삭제로 줄어든 상태"를 기준으로 정상 동작하도록 함
+        if (_rowMarkers.Count < _rowMarkersBaseCount)
+            _rowMarkersBaseCount = _rowMarkers.Count;
+
         await SaveRowMarkersAsync();
         StateHasChanged();
     }
