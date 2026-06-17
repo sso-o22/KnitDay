@@ -175,6 +175,7 @@ body {
     padding: 32px 36px;
     max-width: 1100px;
     min-width: 0;
+    overflow-x: hidden; /* 가로 스크롤 원천 차단 */
 }
 
 /* ── 페이지 헤더 ─────────────────────────────────────── */
@@ -300,6 +301,11 @@ body {
     padding: 20px;
     box-shadow: 0 2px 8px var(--shadow);
     transition: box-shadow 0.18s ease, transform 0.18s ease;
+    /* 카드 내용이 카드 밖으로 튀어나오지 않도록 */
+    min-width: 0;
+    overflow: hidden;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 .card:hover {
@@ -313,6 +319,8 @@ body {
     font-weight: 700;
     color: var(--black);
     margin-bottom: 8px;
+    word-break: break-word;
+    overflow-wrap: break-word;
 }
 
 /* ── 그리드 ──────────────────────────────────────────── */
@@ -320,6 +328,11 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 16px;
+}
+
+/* grid 자식이 grid 폭을 초과하지 않도록 */
+.grid-3 > * {
+    min-width: 0;
 }
 
 /* ── 필터+정렬 바 ─────────────────────────────────────── */

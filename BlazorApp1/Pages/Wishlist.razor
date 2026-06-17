@@ -70,7 +70,7 @@ else
                 }
                 @if (!string.IsNullOrEmpty(proj.PatternSource))
                 {
-                    <div style="font-size:0.78rem; color:var(--text-light); margin-bottom:10px; display:flex; align-items:center; gap:4px;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@proj.PatternSource</div>
+                    <div style="font-size:0.78rem; color:var(--text-light); margin-bottom:10px; display:flex; align-items:flex-start; gap:4px; min-width:0;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;margin-top:2px;" /><span style="word-break:break-all; overflow-wrap:break-word;">@proj.PatternSource</span></div>
                 }
 
                 <div class="flex gap-1" style="flex-wrap:wrap;">
