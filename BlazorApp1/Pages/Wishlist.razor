@@ -30,7 +30,7 @@ else
 {
     <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center;">
         <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-        @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name")})
+        @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("출처순","source")})
         {
             var ascVal  = baseVal + "_asc";
             var descVal = baseVal + "_desc";
@@ -105,7 +105,7 @@ else
                 </div>
                 <div class="form-group">
                     <label class="form-label">도안 출처</label>
-                    <input class="form-control" @bind="_editingProject.PatternSource" placeholder="작가명, 책 이름, URL 등" />
+                    <input class="form-control" @bind="_editingProject.PatternSource" placeholder="작가명, 책 이름 등" />
                 </div>
             </div>
 
@@ -188,6 +188,8 @@ else
         "name_asc"      => _projects.OrderBy(p => p.Title),
         "name_desc"     => _projects.OrderByDescending(p => p.Title),
         "created_asc"   => _projects.OrderBy(p => p.CreatedAt),
+        "source_asc"    => _projects.OrderBy(p => p.PatternSource).ThenBy(p => p.PatternName),
+        "source_desc"   => _projects.OrderByDescending(p => p.PatternSource).ThenBy(p => p.PatternName),
         _               => _projects.OrderByDescending(p => p.CreatedAt),
     };
     bool _showModal = false;

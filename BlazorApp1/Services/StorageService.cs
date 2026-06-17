@@ -456,6 +456,8 @@ namespace KnitLog.Services
             var proj = list.Find(p => p.Id == id);
             if (proj is null) return;
             proj.Status = ProjectStatus.일시중단;
+            proj.StatusLogs.Add(new StatusLog { At = DateTime.Now, Action = "중단" });
+            proj.UpdatedAt = DateTime.Now;
             await SaveAsync(KEY_PROJECTS, "projects", "Id", list);
         }
 
@@ -465,6 +467,8 @@ namespace KnitLog.Services
             var proj = list.Find(p => p.Id == id);
             if (proj is null) return;
             proj.Status = ProjectStatus.진행중;
+            proj.StatusLogs.Add(new StatusLog { At = DateTime.Now, Action = "재개" });
+            proj.UpdatedAt = DateTime.Now;
             await SaveAsync(KEY_PROJECTS, "projects", "Id", list);
         }
 
@@ -475,6 +479,8 @@ namespace KnitLog.Services
             if (proj is null) return;
             proj.Status    = ProjectStatus.진행중;
             proj.StartDate ??= DateTime.Today;
+            proj.StatusLogs.Add(new StatusLog { At = DateTime.Now, Action = "시작" });
+            proj.UpdatedAt = DateTime.Now;
             await SaveAsync(KEY_PROJECTS, "projects", "Id", list);
         }
 

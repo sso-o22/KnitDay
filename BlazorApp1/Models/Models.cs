@@ -156,7 +156,9 @@ namespace KnitLog.Models
 
         // 완성 치수 (세탁 전/후)
         public string MeasurementsMemo { get; set; } = ""; // 자유 입력 치수 메모
-        public List<string> VideoLinks { get; set; } = new();  // 참고 영상 링크
+        public List<string> VideoLinks { get; set; } = new();  // 참고 영상 링크 (하위호환용)
+        public List<VideoLink> Links { get; set; } = new();    // 참고 링크 (제목 포함)
+        public List<StatusLog> StatusLogs { get; set; } = new(); // 중단/재개 로그
 
         // ── 도안 뷰어 저장 데이터 ──────────────────────────────
         public bool HasSavedPattern { get; set; } = false;       // 저장된 PDF 있는지
@@ -227,6 +229,22 @@ namespace KnitLog.Models
         }
 
         public bool IsActive => !EndTime.HasValue;
+    }
+
+    // ── 중단/재개 로그 ──────────────────────────────────────────────
+    public class StatusLog
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public DateTime At { get; set; } = DateTime.Now;
+        public string Action { get; set; } = ""; // "중단" | "재개" | "시작" | "완료"
+    }
+
+    // ── 참고 링크 (제목 포함) ────────────────────────────────────────
+    public class VideoLink
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Url { get; set; } = "";
+        public string Title { get; set; } = ""; // 사용자 지정 제목 (없으면 도메인 표시)
     }
 
     // ── 행 마커 (도안 뷰어 행 추적용) ──────────────────────────────

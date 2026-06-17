@@ -511,39 +511,103 @@ else
             }
         }
 
+    @* ── 중단/재개 로그 ── *@
+    @if (_project.StatusLogs.Count > 0)
+    {
+    <div class="card" style="grid-column: span 2; overflow:hidden;">
+        <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:12px;"
+             @onclick='() => ToggleCard("statuslog")'>
+            <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;">
+                <img src="icons/clock-counter-clockwise.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 활동 기록
+            </div>
+            <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("statuslog") ? "▶" : "▼")</span>
+        </div>
+        @if (!IsCollapsed("statuslog"))
+        {
+            <div style="display:flex; flex-direction:column; gap:0;">
+                @foreach (var (log, idx) in _project.StatusLogs.OrderByDescending(l => l.At).Select((l, i) => (l, i)))
+                {
+                    var isLast = idx == _project.StatusLogs.Count - 1;
+                    var iconSrc = log.Action switch {
+                        "중단" => "icons/pause.svg",
+                        "재개" => "icons/play.svg",
+                        "시작" => "icons/play.svg",
+                        "완료" => "icons/check-circle.svg",
+                        _ => "icons/clock.svg"
+                    };
+                    var iconColor = log.Action switch {
+                        "중단" => "#e07b54",
+                        "재개" or "시작" => "var(--theme-active)",
+                        "완료" => "#6ab187",
+                        _ => "var(--text-light)"
+                    };
+                    <div style="display:flex; gap:12px; align-items:flex-start;">
+                        <div style="display:flex; flex-direction:column; align-items:center; padding-top:2px;">
+                            <div style="width:28px; height:28px; border-radius:50%; background:var(--ivory-dark); display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                <img src="@iconSrc" class="icon-line" style="width:14px;height:14px; filter:none;" />
+                            </div>
+                            @if (!isLast)
+                            {
+                                <div style="width:1px; flex:1; min-height:16px; background:var(--border); margin:3px 0;"></div>
+                            }
+                        </div>
+                        <div style="padding-bottom:@(isLast ? "0" : "12px"); padding-top:4px;">
+                            <span style="font-size:0.85rem; font-weight:600; color:@iconColor;">@log.Action</span>
+                            <span style="font-size:0.78rem; color:var(--text-light); margin-left:8px;">@log.At.ToString("yyyy. M. d  HH:mm")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+    }
+
     <div class="card" style="grid-column: span 2; overflow:hidden;">
         <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
              @onclick='() => ToggleCard("video")'>
-            <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/youtube-logo.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 참고 링크</div>
-            @if (_project.VideoLinks.Count > 0)
+            <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/link-simple.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 참고 링크</div>
+            @if (AllLinks.Count > 0)
             {
                 <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("video") ? "▶" : "▼")</span>
             }
         </div>
-        @if (!IsCollapsed("video") || _project.VideoLinks.Count == 0)
+        @if (!IsCollapsed("video") || AllLinks.Count == 0)
         {
-
-        @if (_project.VideoLinks.Count > 0)
+        @if (AllLinks.Count > 0)
         {
             <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
-                @foreach (var link in _project.VideoLinks.ToList())
+                @foreach (var lnk in AllLinks.ToList())
                 {
+                    var isYoutube = lnk.Url.Contains("youtube.com") || lnk.Url.Contains("youtu.be");
+                    var displayTitle = !string.IsNullOrEmpty(lnk.Title) ? lnk.Title
+                        : isYoutube ? "YouTube"
+                        : TryGetDomain(lnk.Url);
                     <div style="margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
-                        @if (link.Contains("youtube.com") || link.Contains("youtu.be"))
+                        @if (isYoutube)
                         {
-                            @* 유튜브 영상 플레이어 *@
+                            @* 유튜브: 제목 + 영상 플레이어 *@
+                            @if (!string.IsNullOrEmpty(lnk.Title))
+                            {
+                                <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:6px;">@lnk.Title</div>
+                            }
                             <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:var(--radius-sm); margin-bottom:8px;">
-                                <iframe src="@GetEmbedUrl(link)" 
-                                        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                                <iframe src="@GetEmbedUrl(lnk.Url)"
+                                        style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                                         allowfullscreen>
                                 </iframe>
                             </div>
                         }
-                        
+                        else
+                        {
+                            @* 일반 링크: 아이콘 + 제목/도메인 *@
+                        }
                         <div style="display:flex; align-items:center; gap:8px;">
-                            <a href="@link" target="_blank" style="flex:1; font-size:0.8rem; color:var(--text-mid); display:inline-flex;align-items:center;gap:4px;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />원문 링크 보기</a>
-                            <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveVideoLink(link))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            <a href="@lnk.Url" target="_blank" style="flex:1; font-size:0.8rem; color:var(--text-mid); display:inline-flex;align-items:center;gap:4px;min-width:0;">
+                                <img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />
+                                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@displayTitle</span>
+                            </a>
+                            <button class="btn btn-danger btn-sm" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveLink(lnk.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                         </div>
                     </div>
                 }
@@ -554,13 +618,18 @@ else
             <p style="color:var(--text-light); font-size:0.88rem; margin-bottom:12px;">참고 링크가 없어요. 유튜브, 노션, 블로그 링크를 추가해 보세요!</p>
         }
 
-        <div style="display:flex; gap:8px;">
-            <input class="form-control" 
-                @bind="_newVideoLink" 
+        <div style="display:flex; flex-direction:column; gap:6px;">
+            <input class="form-control"
+                @bind="_newVideoLink"
                 @bind:event="oninput"
-                placeholder="유튜브, 노션, 블로그 등 URL 입력"
-                @onkeydown="@(async e => { if (e.Key == "Enter") await AddVideoLinkAndSave(); })" />
-            <button class="btn btn-sage" style="flex-shrink:0;" @onclick="AddVideoLinkAndSave">추가</button>
+                placeholder="URL 입력 (유튜브, 노션, 블로그 등)"
+                @onkeydown="@(async e => { if (e.Key == "Enter") await AddLinkAndSave(); })" />
+            <div style="display:flex; gap:8px;">
+                <input class="form-control" style="flex:1;"
+                    @bind="_newLinkTitle"
+                    placeholder="제목 입력 (선택, 비우면 도메인 표시)" />
+                <button class="btn btn-sage" style="flex-shrink:0;" @onclick="AddLinkAndSave">추가</button>
+            </div>
         </div>
         }
     </div>
@@ -1104,6 +1173,7 @@ else
         "#ffb74d", "#a5d6a7", "#ef9a9a", "#90caf9", "#ce93d8"
     };
     string _newVideoLink = "";
+    string _newLinkTitle = "";
     bool _showPhoto = false;
     bool _addingCounter = false;
     bool _addingCheck = false;
@@ -1184,6 +1254,27 @@ else
             return url.Replace("youtu.be/", "youtube.com/embed/");
         }
         return url; // 유튜브가 아니면 그대로 반환
+    }
+
+    // 구버전 VideoLinks(string) + 신버전 Links(VideoLink) 통합 목록
+    List<VideoLink> AllLinks
+    {
+        get
+        {
+            if (_project == null) return new();
+            var result = new List<VideoLink>(_project.Links);
+            // 구버전 string 링크를 VideoLink로 변환해서 합침
+            foreach (var url in _project.VideoLinks)
+                if (!result.Any(l => l.Url == url))
+                    result.Add(new VideoLink { Url = url });
+            return result;
+        }
+    }
+
+    private static string TryGetDomain(string url)
+    {
+        try { return new Uri(url).Host.Replace("www.", ""); }
+        catch { return url; }
     }
 
     void GoBack() => Nav.NavigateTo(From == "schedule" ? "schedule" : From == "home" ? "" : "projects");
@@ -1624,24 +1715,37 @@ else
     void AddVideoLink()
     {
         if (string.IsNullOrWhiteSpace(_newVideoLink)) return;
-        if (!_project!.VideoLinks.Contains(_newVideoLink))
-            _project.VideoLinks.Add(_newVideoLink.Trim());
+        if (!_project!.Links.Any(l => l.Url == _newVideoLink.Trim()))
+            _project.Links.Add(new VideoLink { Url = _newVideoLink.Trim(), Title = _newLinkTitle.Trim() });
         _newVideoLink = "";
+        _newLinkTitle = "";
     }
 
-    async Task AddVideoLinkAndSave()
+    async Task AddLinkAndSave()
     {
         if (string.IsNullOrWhiteSpace(_newVideoLink) || _project == null) return;
-        if (!_project.VideoLinks.Contains(_newVideoLink.Trim()))
-            _project.VideoLinks.Add(_newVideoLink.Trim());
+        if (!_project.Links.Any(l => l.Url == _newVideoLink.Trim()))
+            _project.Links.Add(new VideoLink { Url = _newVideoLink.Trim(), Title = _newLinkTitle.Trim() });
         _newVideoLink = "";
+        _newLinkTitle = "";
         await Save();
     }
+
+    async Task RemoveLink(Guid id)
+    {
+        if (_project == null) return;
+        _project.Links.RemoveAll(l => l.Id == id);
+        // 구버전 호환: VideoLinks에서도 제거 시도
+        await Save();
+    }
+
+    async Task AddVideoLinkAndSave() => await AddLinkAndSave();
 
     async Task RemoveVideoLink(string link)
     {
         if (_project == null) return;
         _project.VideoLinks.Remove(link);
+        _project.Links.RemoveAll(l => l.Url == link);
         await Save();
     }
 
