@@ -994,27 +994,25 @@ let basePaths = []; // 저장된 필기 (박제)
         },
 
         // 수동 행 높이: 두 선을 각각 드래그해서 한 행 높이 지정
-        initRowLines(pageNum, dotNetRef) {
-            // 스크롤 중앙 위치 기준으로 두 선 초기 배치
+        // 현재 보이는 화면 중앙의 canvas(zoom 반영 CSS px) 기준 Y좌표 — 마커 추가 시 "보이는 화면 중앙"에 생성하기 위해 사용
+        getViewCenterCanvasY(pageNum) {
             const scrollEl = document.getElementById('scroll-container');
             const canvas   = document.getElementById('anno-canvas-' + pageNum);
+            if (!canvas) return 200;
+
+            const scrollTop  = scrollEl ? scrollEl.scrollTop : 0;
+            const scrollH    = scrollEl ? scrollEl.clientHeight : window.innerHeight;
+            const canvasRect = canvas.getBoundingClientRect();
+            const canvasTop  = canvasRect.top + scrollTop - (scrollEl ? scrollEl.getBoundingClientRect().top : 0);
+
+            return scrollTop + scrollH / 2 - canvasTop;
+        },
+
+        // 두 선(높이 조절용)에 드래그 이벤트만 부착 — 위치는 Blazor가 이미 선택한 마커 기준으로 설정해둔 상태이므로 덮어쓰지 않음
+        initRowLines(pageNum, dotNetRef) {
+            const canvas = document.getElementById('anno-canvas-' + pageNum);
             if (!canvas) return;
-
-            const scrollTop    = scrollEl ? scrollEl.scrollTop : 0;
-            const scrollH      = scrollEl ? scrollEl.clientHeight : window.innerHeight;
-            const canvasRect   = canvas.getBoundingClientRect();
-            const canvasTop    = canvasRect.top + scrollTop - (scrollEl ? scrollEl.getBoundingClientRect().top : 0);
-
-            // 현재 보이는 영역의 canvas 기준 중앙
-            const viewCenter = scrollTop + scrollH / 2 - canvasTop;
-            const dpr = window.devicePixelRatio || 1;
-
-            const initA = Math.max(20, viewCenter - 30);
-            const initB = initA + 60;
-            dotNetRef.invokeMethodAsync('SetRowLineAY', initA);
-            dotNetRef.invokeMethodAsync('SetRowLineBY', initB);
-
-            // 각 선에 드래그 이벤트 부착 (마운트 후 잠깐 기다림)
+            // 마운트 후 잠깐 기다린 다음 부착 (DOM에 선이 렌더링될 시간 필요)
             setTimeout(() => {
                 attachLineDrag('rowdraw-line-a-' + pageNum, pageNum, dotNetRef, 'SetRowLineAY');
                 attachLineDrag('rowdraw-line-b-' + pageNum, pageNum, dotNetRef, 'SetRowLineBY');
