@@ -1045,6 +1045,9 @@
                             await Task.Delay(500);
                             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
                                 await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
+
+                            // Cloudinary 재다운로드 경로에서도 행 마커/툴 설정 복원 누락되지 않도록 동일하게 적용
+                            await RestoreRowMarkersAndToolSettingsAsync();
                         }
                     }
                     catch { }
@@ -1069,49 +1072,8 @@
             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
                 await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
 
-            if (!string.IsNullOrEmpty(_project.ViewerRowMarkers))
-            {
-                try
-                {
-                    var markers = System.Text.Json.JsonSerializer.Deserialize<List<RowMarker>>(
-                        _project.ViewerRowMarkers,
-                        new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-                    if (markers != null)
-                    {
-                        _rowMarkers = markers;
-                        var first = _rowMarkers.FirstOrDefault();
-                        if (first != null)
-                        {
-                            _detectedRowH = first.RowHeight;
-                            _pageWidth    = first.PageWidth;
-                            _rowMarkerColor = first.Color;
-                        }
-                    }
-                }
-                catch { }
-            }
-            // 행 마커 되돌리기 경계: 이 시점(복원 완료) 이전 마커는 절대 되돌리기로 지울 수 없음
-            // — 필기/형광펜의 basePaths와 동일한 원리 (새로고침 전 흔적 보존)
-            _rowMarkersBaseCount = _rowMarkers.Count;
+            await RestoreRowMarkersAndToolSettingsAsync();
 
-            StateHasChanged();
-
-            // 필기 설정 복원 — _tool은 기억해두되 툴바는 닫힌 상태이므로 JS엔 select로 설정
-            _penColor       = !string.IsNullOrEmpty(_project.ViewerPenColor)   ? _project.ViewerPenColor  : "#000000";
-            _penSize        = _project.ViewerPenSize    > 0 ? _project.ViewerPenSize    : 4;
-            _penOpacity     = _project.ViewerPenOpacity > 0 ? _project.ViewerPenOpacity : 100;
-            _hlColor        = !string.IsNullOrEmpty(_project.ViewerHlColor)    ? _project.ViewerHlColor   : "#ffeb3b";
-            _hlSize         = _project.ViewerHlSize     > 0 ? _project.ViewerHlSize     : 8;
-            _eraserSize     = _project.ViewerEraserSize > 0 ? _project.ViewerEraserSize : 10;
-            _rowMarkerColor = !string.IsNullOrEmpty(_project.ViewerRowMarkerColor) ? _project.ViewerRowMarkerColor : "#ffeb3b";
-            // 다중행 기능 제거 → 항상 단일행
-            _markerMode = "single";
-            var savedTool = _project.ViewerLastTool;
-            // rowheightdraw는 임시 도구라 복원하지 않음 (rowmarker로 대체)
-            _tool = savedTool is "pen" or "highlighter" or "eraser" or "rowmarker" ? savedTool : "pen";
-            _drawMode = false; // 뷰어 열 때는 항상 툴바 접힌 상태
-            await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, false, "select", _penOpacity);
-            StateHasChanged();
             if (_currentPage > 1)
             {
                 await Task.Delay(150); // 렌더 완료 대기
@@ -1131,6 +1093,57 @@
             if (_pdfLoaded)
                 try { await JS.InvokeVoidAsync("acquireWakeLock"); } catch { }
         }
+    }
+
+    // 행 마커 + 필기 도구 설정 복원 — IndexedDB 정상 로드 / Cloudinary 재다운로드 두 경로 모두에서 공통 사용
+    async Task RestoreRowMarkersAndToolSettingsAsync()
+    {
+        if (_project == null) return;
+
+        if (!string.IsNullOrEmpty(_project.ViewerRowMarkers))
+        {
+            try
+            {
+                var markers = System.Text.Json.JsonSerializer.Deserialize<List<RowMarker>>(
+                    _project.ViewerRowMarkers,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                if (markers != null)
+                {
+                    _rowMarkers = markers;
+                    var first = _rowMarkers.FirstOrDefault();
+                    if (first != null)
+                    {
+                        _detectedRowH = first.RowHeight;
+                        _pageWidth    = first.PageWidth;
+                        _rowMarkerColor = first.Color;
+                    }
+                }
+            }
+            catch { }
+        }
+        // 행 마커 되돌리기 경계: 이 시점(복원 완료) 이전 마커는 절대 되돌리기로 지울 수 없음
+        // — 필기/형광펜의 basePaths와 동일한 원리 (새로고침 전 흔적 보존)
+        _rowMarkersBaseCount = _rowMarkers.Count;
+
+        StateHasChanged();
+
+        // 필기 설정 복원 — _tool은 기억해두되 툴바는 닫힌 상태이므로 JS엔 select로 설정
+        _penColor       = !string.IsNullOrEmpty(_project.ViewerPenColor)   ? _project.ViewerPenColor  : "#000000";
+        _penSize        = _project.ViewerPenSize    > 0 ? _project.ViewerPenSize    : 4;
+        _penOpacity     = _project.ViewerPenOpacity > 0 ? _project.ViewerPenOpacity : 100;
+        _hlColor        = !string.IsNullOrEmpty(_project.ViewerHlColor)    ? _project.ViewerHlColor   : "#ffeb3b";
+        _hlSize         = _project.ViewerHlSize     > 0 ? _project.ViewerHlSize     : 8;
+        _eraserSize     = _project.ViewerEraserSize > 0 ? _project.ViewerEraserSize : 10;
+        _rowMarkerColor = !string.IsNullOrEmpty(_project.ViewerRowMarkerColor) ? _project.ViewerRowMarkerColor : "#ffeb3b";
+        // 다중행 기능 제거 → 항상 단일행
+        _markerMode = "single";
+        var savedTool = _project.ViewerLastTool;
+        // rowheightdraw는 임시 도구라 복원하지 않음 (rowmarker로 대체) — 행 높이 미지정 상태(_detectedRowH==0)여도
+        // 마지막 선택 도구가 rowmarker였다면 그대로 기억되어야 함
+        _tool = savedTool is "pen" or "highlighter" or "eraser" or "rowmarker" ? savedTool : "pen";
+        _drawMode = false; // 뷰어 열 때는 항상 툴바 접힌 상태
+        await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, false, "select", _penOpacity);
+        StateHasChanged();
     }
 
 
@@ -1499,15 +1512,10 @@
 
     void StartRowHeightDraw()
     {
-        // 기존에 지정해둔 행(드래그되던 마커)이 있으면 모두 제거하고 새로 높이 지정선만 표시
-        // — 사용자가 행 높이 지정을 다시 누르는 것은 새로 시작하겠다는 명시적 의도
-        if (_rowMarkers.Any())
-        {
-            _rowMarkers.Clear();
-            _selectedMarkerId = null;
-            _rowMarkersBaseCount = 0; // 되돌리기 경계도 초기화 — 새로 시작
-            _ = SaveRowMarkersAsync();
-        }
+        // 기존에 등록해둔 행 마커는 그대로 유지 — 여러 행을 누적해서 등록할 수 있어야 함
+        // (행 높이 지정 버튼을 다시 누르는 것은 "새 행 높이 지정선을 다시 그리겠다"는 의도일 뿐,
+        //  이미 쌓인 마커를 지우겠다는 의도가 아님)
+        _selectedMarkerId = null;
 
         _tool        = "rowheightdraw";
         _rowDrawPage = _currentPage;
@@ -1580,8 +1588,11 @@
 
         _tool = "rowmarker";
 
-        // 단일행: 마커 1개 생성 (두 선의 상단 위치에) — 사용자가 명시적으로 다시 설정하는 것이므로 전체 초기화
-        _rowMarkers.Clear();
+        // 기존에 진행중이던(IsCurrent) 마커가 있으면 완료 처리하고, 새 마커를 현재 행으로 추가
+        // — 행 높이 지정을 다시 눌러도 과거 마커는 사라지지 않고 누적되어야 함
+        foreach (var m in _rowMarkers.Where(m => m.IsCurrent))
+            m.IsCurrent = false;
+
         _rowMarkers.Add(new RowMarker
         {
             Page = _rowDrawPage,
@@ -1592,7 +1603,6 @@
             IsCurrent = true
         });
         _selectedMarkerId = null;
-        _rowMarkersBaseCount = 0; // 새로 시작 — 되돌리기 경계 초기화
         _ = SaveRowMarkersAsync();
 
         StateHasChanged();

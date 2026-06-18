@@ -180,6 +180,9 @@ namespace KnitLog.Models
         public string ViewerRowMarkerColor { get; set; } = "#ffeb3b"; // 행 마커 색상
         public string ViewerGridLineColor { get; set; } = "";    // 감지선 색상
         public string ViewerMarkerMode { get; set; } = "single"; // "single" or "multi"
+
+        // 프로젝트 상세 페이지에서 접어둔 카드 목록 (예: "video", "counter", "checklist" 등)
+        public List<string> CollapsedCards { get; set; } = new();
     }
 
     public class ProjectYarnUsage

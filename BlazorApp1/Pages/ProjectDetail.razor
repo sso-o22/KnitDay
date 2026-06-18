@@ -590,13 +590,22 @@ else
                             @* 일반 링크: 제목 없으면 도메인 표시 *@
                             <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:4px;">@TryGetDomain(lnk.Url)</div>
                         }
-                        <div style="display:flex; align-items:flex-start; gap:8px;">
-                            <a href="@lnk.Url" target="_blank" style="flex:1; font-size:0.78rem; color:var(--text-mid); display:inline-flex;align-items:flex-start;gap:4px;min-width:0;">
-                                <img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;margin-top:2px;" />
-                                <span style="word-break:break-all; overflow-wrap:break-word;">@lnk.Url</span>
-                            </a>
-                            <button class="btn btn-danger btn-sm" style="flex-shrink:0;" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveLink(lnk.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
-                        </div>
+                        @if (isYoutube)
+                        {
+                            <div style="display:flex; justify-content:flex-end;">
+                                <button class="btn btn-danger btn-sm" style="flex-shrink:0;" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveLink(lnk.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="display:flex; align-items:flex-start; gap:8px;">
+                                <a href="@lnk.Url" target="_blank" style="flex:1; font-size:0.78rem; color:var(--text-mid); display:inline-flex;align-items:flex-start;gap:4px;min-width:0;">
+                                    <img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;margin-top:2px;" />
+                                    <span style="word-break:break-all; overflow-wrap:break-word;">@lnk.Url</span>
+                                </a>
+                                <button class="btn btn-danger btn-sm" style="flex-shrink:0;" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveLink(lnk.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            </div>
+                        }
                     </div>
                 }
             </div>
@@ -1142,7 +1151,18 @@ else
     string CardIcon(string id, bool hasItems) => !hasItems ? "" : _collapsedCards.Contains(id) ? "▶" : "▼";
     string CardCursor(bool hasItems) => hasItems ? "pointer" : "default";
     string FormatDuration(KnitSession s) { var e = s.EndTime ?? DateTime.Now; var t = (int)(e - s.StartTime).TotalSeconds; var h = t/3600; var m = (t%3600)/60; var sc = t%60; return h > 0 ? $"{h}:{m:D2}:{sc:D2}" : $"00:{m:D2}:{sc:D2}"; }
-    void ToggleCard(string id) { if (!_collapsedCards.Add(id)) _collapsedCards.Remove(id); }
+    void ToggleCard(string id)
+    {
+        if (!_collapsedCards.Add(id)) _collapsedCards.Remove(id);
+        SaveCollapsedCards();
+    }
+
+    void SaveCollapsedCards()
+    {
+        if (_project == null) return;
+        _project.CollapsedCards = _collapsedCards.ToList();
+        _ = Storage.SaveProjectAsync(_project);
+    }
 
     // 카운터 이름 편집
     Guid? _editingCounterId;
@@ -1210,6 +1230,8 @@ else
         _project = all.FirstOrDefault(p => p.Id == ProjectId);
         // 데이터 불러오기 후 빈 사진 항목 정리
         _project?.Photos.RemoveAll(p => string.IsNullOrEmpty(p.Base64Data) && string.IsNullOrEmpty(p.StorageUrl));
+        // 저장된 카드 접기 상태 복원
+        _collapsedCards = _project != null ? new HashSet<string>(_project.CollapsedCards ?? new()) : new HashSet<string>();
         // 구버전 VideoLinks(string) → 신버전 Links(VideoLink)로 1회 마이그레이션
         if (_project != null && _project.VideoLinks.Count > 0)
         {
