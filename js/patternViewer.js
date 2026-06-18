@@ -1021,60 +1021,6 @@ let basePaths = []; // 저장된 필기 (박제)
             }, 50);
         },
 
-        // 행 마커 드래그 (mouse)
-        initMarkerDrag(pageNum, startCssY, dotNetRef, moveCallback) {
-            const canvas   = document.getElementById('anno-canvas-' + pageNum);
-            const scrollEl = document.getElementById('scroll-container');
-            if (!canvas) return;
-
-            function getCanvasY(clientY) {
-                const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
-                const off = getOffsetPos(canvas);
-                const scrollContainerTop = scrollEl ? scrollEl.getBoundingClientRect().top : 0;
-                return clientY - (off.y - scrollTop + scrollContainerTop);
-            }
-
-            function onMove(ev) {
-                ev.preventDefault();
-                const y = getCanvasY(ev.clientY);
-                dotNetRef.invokeMethodAsync(moveCallback, y);
-            }
-            function onUp() {
-                window.removeEventListener('mousemove', onMove);
-                window.removeEventListener('mouseup', onUp);
-                dotNetRef.invokeMethodAsync('EndMarkerDrag');
-            }
-            window.addEventListener('mousemove', onMove);
-            window.addEventListener('mouseup', onUp);
-        },
-
-        // 행 마커 드래그 (touch)
-        initMarkerDragTouch(pageNum, startCssY, dotNetRef, moveCallback) {
-            const canvas   = document.getElementById('anno-canvas-' + pageNum);
-            const scrollEl = document.getElementById('scroll-container');
-            if (!canvas) return;
-
-            function getCanvasY(clientY) {
-                const scrollTop = scrollEl ? scrollEl.scrollTop : 0;
-                const off = getOffsetPos(canvas);
-                const scrollContainerTop = scrollEl ? scrollEl.getBoundingClientRect().top : 0;
-                return clientY - (off.y - scrollTop + scrollContainerTop);
-            }
-
-            function onMove(ev) {
-                ev.preventDefault();
-                const y = getCanvasY(ev.touches[0].clientY);
-                dotNetRef.invokeMethodAsync(moveCallback, y);
-            }
-            function onUp() {
-                window.removeEventListener('touchmove', onMove);
-                window.removeEventListener('touchend', onUp);
-                dotNetRef.invokeMethodAsync('EndMarkerDrag');
-            }
-            window.addEventListener('touchmove', onMove, { passive: false });
-            window.addEventListener('touchend', onUp);
-        },
-
         // 단일행 마커 드래그: JS가 직접 top 업데이트, 종료시만 Blazor 호출
         attachMarkerDrag(markerId, pageNum, zoom, dotNetRef) {
             const el = document.getElementById(markerId);
@@ -1105,7 +1051,7 @@ let basePaths = []; // 저장된 필기 (박제)
                 ev.preventDefault();
                 if (!_hasMoved && Math.abs(ev.clientY - _startClientY) > DRAG_THRESHOLD) {
                     _hasMoved = true;
-                    if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag'); }
+                    if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag', markerId); }
                 }
                 if (!_hasMoved) return; // 임계값 이내에서는 위치 변경 없음 → 순수 클릭(선택)으로 처리
                 const y = clampY(getCanvasY(ev.clientY));
@@ -1117,7 +1063,7 @@ let basePaths = []; // 저장된 필기 (박제)
                 if (_hasMoved) {
                     const y = clampY(getCanvasY(ev.clientY));
                     el.style.top = y + 'px';
-                    dotNetRef.invokeMethodAsync('EndMarkerDrag', y, zoom, true);
+                    dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, zoom, true);
                 }
                 // 움직이지 않았으면 서버에 아무 것도 보내지 않음 — 곧바로 발생하는 click 이벤트(@onclick=SelectMarker)만 처리됨
             }
@@ -1125,7 +1071,7 @@ let basePaths = []; // 저장된 필기 (박제)
                 ev.preventDefault();
                 if (!_hasMoved && Math.abs(ev.touches[0].clientY - _startClientY) > DRAG_THRESHOLD) {
                     _hasMoved = true;
-                    if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag'); }
+                    if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag', markerId); }
                 }
                 if (!_hasMoved) return;
                 const y = clampY(getCanvasY(ev.touches[0].clientY));
@@ -1137,7 +1083,7 @@ let basePaths = []; // 저장된 필기 (박제)
                 if (_hasMoved) {
                     const changedTouch = ev.changedTouches[0];
                     const y = clampY(getCanvasY(changedTouch.clientY));
-                    dotNetRef.invokeMethodAsync('EndMarkerDrag', y, zoom, true);
+                    dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, zoom, true);
                 }
                 // 움직이지 않았으면 서버 호출 없이 종료 — 뒤따르는 click 이벤트가 선택을 처리
             }
