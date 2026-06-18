@@ -70,7 +70,8 @@
                         }
 
                         @* ── 행 마커: IsCurrent=true는 이동/조절 가능한 마커(진한 테두리),
-                               IsCurrent=false는 "흔적 남기기"로 굳힌 행(테두리 없는 하이라이트) ── *@
+                               IsCurrent=false는 "흔적 남기기"로 굳힌 행(테두리 없는 하이라이트) ──
+                               두 상태 모두 클릭(선택)은 항상 가능 — 흔적 마커도 선택해서 색 변경/삭제 가능해야 함 *@
                         @foreach (var marker in _rowMarkers.Where(m => m.Page == pageNum))
                         {
                             var markerY   = marker.Y * _zoom;
@@ -82,34 +83,29 @@
                             var borderH   = Math.Max(2, markerH * 0.12);
                             var markerId  = $"rowmarker-{marker.Id:N}";
                             var isSelected = _selectedMarkerId == marker.Id;
-                            // 툴바가 닫혀있거나 행마커 도구가 아니면 마커는 보기 전용 — 실수로 건드려 이동되는 것을 방지
+                            // 드래그(이동)는 IsCurrent 마커만 가능. 클릭(선택)은 도구 패널이 열려있고 행마커 도구일 때 항상 가능
+                            // (흔적 마커도 선택해서 색 변경/삭제할 수 있어야 하므로 IsCurrent 여부와 무관하게 적용)
                             var isInteractive = _drawMode && _tool == "rowmarker";
-                            @if (marker.IsCurrent)
-                            {
-                                <div @key="marker.Id" id="@markerId" @onclick="() => SelectMarker(marker.Id)" @onclick:stopPropagation="true"
-                                     style="position:absolute;left:0;top:@(markerY)px;
-                                            width:@(markerW)px;height:@(markerH)px;
-                                            background:rgba(@rgb,@alpha);
-                                            box-shadow:0 -@(borderH)px 0 0 rgba(@darkRgb,0.8),0 @(borderH)px 0 0 rgba(@darkRgb,0.8);
-                                            @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
-                                            pointer-events:@(isInteractive ? "all" : "none");z-index:@(isSelected ? 17 : 16);cursor:@(isInteractive ? "ns-resize" : "default");touch-action:none;">
+                            var isDraggable   = isInteractive && marker.IsCurrent;
+                            var boxShadow = marker.IsCurrent
+                                ? $"box-shadow:0 -{borderH}px 0 0 rgba({darkRgb},0.8),0 {borderH}px 0 0 rgba({darkRgb},0.8);"
+                                : "";
+                            <div @key="marker.Id" id="@markerId" @onclick="() => SelectMarker(marker.Id)" @onclick:stopPropagation="true"
+                                 style="position:absolute;left:0;top:@(markerY)px;
+                                        width:@(markerW)px;height:@(markerH)px;
+                                        background:rgba(@rgb,@alpha);
+                                        @boxShadow
+                                        @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
+                                        pointer-events:@(isInteractive ? "all" : "none");z-index:@(isSelected ? 17 : (marker.IsCurrent ? 16 : 15));cursor:@(isDraggable ? "ns-resize" : (isInteractive ? "pointer" : "default"));touch-action:none;">
+                                @if (marker.IsCurrent)
+                                {
                                     <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
                                                 display:flex;flex-direction:column;gap:2px;pointer-events:none;">
                                         <div style="width:24px;height:2px;border-radius:1px;background:rgba(@darkRgb,0.6);"></div>
                                         <div style="width:24px;height:2px;border-radius:1px;background:rgba(@darkRgb,0.6);"></div>
                                     </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <div @key="marker.Id" id="@markerId" @onclick="() => SelectMarker(marker.Id)" @onclick:stopPropagation="true"
-                                     style="position:absolute;left:0;top:@(markerY)px;
-                                            width:@(markerW)px;height:@(markerH)px;
-                                            background:rgba(@rgb,@alpha);
-                                            @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
-                                            pointer-events:@(isInteractive ? "all" : "none");z-index:@(isSelected ? 17 : 15);cursor:@(isInteractive ? "pointer" : "default");">
-                                </div>
-                            }
+                                }
+                            </div>
                         }
                     </div>
                 }
@@ -206,7 +202,7 @@
                     @if (_rowMarkers.Any())
                     {
                         <div class="dp-val" style="font-size:9px;text-align:center;color:var(--text-light);">
-                            전체 @(_rowMarkers.Count)개 · 이 페이지 @(_rowMarkers.Count(m => m.Page == _currentPage))개
+                            전체 @(_rowMarkers.Count(m => m.IsCurrent))개 · 이 페이지 @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개
                         </div>
                         @if (GetSelectedMarkerIndex() is int selectedIndex)
                         {
@@ -1747,7 +1743,13 @@
         var groupId = ++_rowMarkerHistoryGroupSeq;
         _rowMarkerHistory.Add(("markedDone", target.Id, groupId));
 
+        // 더 이상 이동 가능하지 않으므로, DOM에 남아있던 드래그 리스너를 떼어내야 함
+        // (그대로 두면 Blazor diffing으로 엘리먼트가 재사용될 때 옛 리스너가 남아 클릭/선택이 꼬일 수 있음)
+        _ = JS.InvokeVoidAsync("patternViewer.detachMarkerDrag", $"rowmarker-{target.Id:N}");
+
         // 굳힌 행 바로 위(한 칸)에 같은 높이의 새 이동 가능 마커를 만들어 이어서 등록하기 편하게 함
+        // 색상은 "선택했던 마커의 실제 색"을 그대로 이어받음 — 선택 상태에서 색을 바꾸면 _rowMarkerColor(기본색)는
+        // 갱신되지 않으므로, 여기서 _rowMarkerColor를 쓰면 방금 바꾼 색이 아니라 예전 기본색으로 되돌아가버림
         var nextY = Math.Max(0, target.Y - target.RowHeight);
         var newMarker = new RowMarker
         {
@@ -1755,7 +1757,7 @@
             Y = nextY,
             RowHeight = target.RowHeight,
             PageWidth = target.PageWidth,
-            Color = _rowMarkerColor,
+            Color = target.Color,
             IsCurrent = true
         };
         _rowMarkers.Add(newMarker);

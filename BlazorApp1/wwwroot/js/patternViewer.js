@@ -1086,7 +1086,7 @@ let basePaths = []; // 저장된 필기 (박제)
                 // 움직이지 않았으면 서버 호출 없이 종료 — 뒤따르는 click 이벤트가 선택을 처리
             }
 
-            el.addEventListener('mousedown', function(ev) {
+            function onMouseDown(ev) {
                 if (_isZooming || _isPinching) return; // 줌 전환 중엔 좌표 기준이 불안정하므로 드래그 시작 차단
                 _startClientY = ev.clientY;
                 _hasMoved = false;
@@ -1094,15 +1094,35 @@ let basePaths = []; // 저장된 필기 (박제)
                 // preventDefault는 호출하지 않음 — 클릭(선택) 이벤트가 정상 발생하도록 둠
                 window.addEventListener('mousemove', onMouseMove);
                 window.addEventListener('mouseup', onMouseUp);
-            });
-            el.addEventListener('touchstart', function(ev) {
+            }
+            function onTouchStart(ev) {
                 if (_isZooming || _isPinching) return;
                 _startClientY = ev.touches[0].clientY;
                 _hasMoved = false;
                 _dragStarted = false;
                 window.addEventListener('touchmove', onTouchMove, { passive: false });
                 window.addEventListener('touchend', onTouchEnd);
-            }, { passive: false });
+            }
+
+            el.addEventListener('mousedown', onMouseDown);
+            el.addEventListener('touchstart', onTouchStart, { passive: false });
+
+            // 나중에 detachMarkerDrag로 떼어낼 수 있도록 참조 저장
+            el._markerDragHandlers = { onMouseDown, onTouchStart };
+        },
+
+        // 흔적 남기기 등으로 더 이상 이동 불가능해진 마커의 드래그 리스너를 제거
+        // (DOM 엘리먼트가 Blazor diffing으로 재사용될 때 옛 드래그 리스너가 남아있는 것을 방지)
+        detachMarkerDrag(markerId) {
+            const el = document.getElementById(markerId);
+            if (!el || !el._markerDragAttached) return;
+            const h = el._markerDragHandlers;
+            if (h) {
+                el.removeEventListener('mousedown', h.onMouseDown);
+                el.removeEventListener('touchstart', h.onTouchStart);
+            }
+            el._markerDragAttached = false;
+            el._markerDragHandlers = null;
         },
 
         // 이미지 크기 반환
