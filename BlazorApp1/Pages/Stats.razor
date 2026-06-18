@@ -38,11 +38,47 @@ else
     </div>
 
     <!-- 기간 탭 -->
-    <div style="display:flex; gap:8px; margin-bottom:20px;">
+    <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
         @foreach (var p in new[] { ("day","오늘"), ("week","이번 주"), ("month","이번 달") })
         {
             <button class="btn @(_period == p.Item1 ? "btn-sage" : "btn-secondary")"
                     @onclick="() => SetPeriod(p.Item1)">@p.Item2</button>
+        }
+    </div>
+
+    <!-- 기간 세부 선택: day/week는 날짜 이동, month는 연월 콤보박스 -->
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px; flex-wrap:wrap;">
+        @if (_period == "day" || _period == "week")
+        {
+            <button class="btn btn-ghost btn-sm" @onclick="GoPrevRef">‹</button>
+            <span style="font-size:0.92rem; font-weight:600; color:var(--text-dark); min-width:120px; text-align:center;">@RefRangeLabel()</span>
+            <button class="btn btn-ghost btn-sm" @onclick="GoNextRef">›</button>
+            <input type="date" class="form-control" style="max-width:160px;"
+                   value="@_refDate.ToString("yyyy-MM-dd")"
+                   @onchange="OnRefDateInput" />
+            @if (!IsRefToday())
+            {
+                <button class="btn btn-ghost btn-sm" @onclick="GoToToday">오늘로</button>
+            }
+        }
+        else
+        {
+            <select class="form-control" style="max-width:110px;" @onchange="OnYearSelect">
+                @foreach (var y in _yearOptions)
+                {
+                    <option value="@y" selected="@(y == _refDate.Year)">@(y)년</option>
+                }
+            </select>
+            <select class="form-control" style="max-width:90px;" @onchange="OnMonthSelect">
+                @for (int m = 1; m <= 12; m++)
+                {
+                    <option value="@m" selected="@(m == _refDate.Month)">@(m)월</option>
+                }
+            </select>
+            @if (!IsRefThisMonth())
+            {
+                <button class="btn btn-ghost btn-sm" @onclick="GoToToday">이번 달로</button>
+            }
         }
     </div>
 
@@ -53,8 +89,42 @@ else
         {
             <div style="text-align:center; padding:32px; color:var(--text-light);">이 기간에 기록이 없어요</div>
         }
+        else if (_period == "month")
+        {
+            @* 월 단위: 추세를 보기 좋은 꺾은선 그래프 *@
+            <div style="position:relative; height:180px; padding-bottom:4px;">
+                <svg viewBox="0 0 100 100" preserveAspectRatio="none" style="position:absolute; left:0; top:0; width:100%; height:100%; overflow:visible;">
+                    <polyline points="@MonthPolylinePoints()" fill="none" stroke="var(--theme-active)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke" />
+                    @for (int i = 0; i < _chartData.Count; i++)
+                    {
+                        var idx = i;
+                        var d = _chartData[idx];
+                        var cx = MonthXAt(idx);
+                        var cy = MonthYAt(d.Seconds);
+                        <circle cx="@cx.ToString("F2")" cy="@cy.ToString("F2")" r="@(d.Seconds > 0 ? "1.4" : "0.9")" fill="var(--theme-active)" vector-effect="non-scaling-stroke" />
+                    }
+                </svg>
+                @for (int i = 0; i < _chartData.Count; i++)
+                {
+                    var idx = i;
+                    var d = _chartData[idx];
+                    var cxPct = MonthXAt(idx);
+                    var cyPct = MonthYAt(d.Seconds);
+                    var showDateLabel = _chartData.Count <= 10 || idx % 5 == 0 || idx == _chartData.Count - 1;
+                    @if (d.Seconds > 0 && _chartData.Count <= 14)
+                    {
+                        <div style="position:absolute; left:@(cxPct.ToString("F2"))%; top:@(cyPct.ToString("F2"))%; transform:translate(-50%,-130%); font-size:0.62rem; font-weight:600; color:var(--theme-active); white-space:nowrap;">@FormatTime(d.Seconds)</div>
+                    }
+                    @if (showDateLabel)
+                    {
+                        <div style="position:absolute; left:@(cxPct.ToString("F2"))%; top:97%; transform:translate(-50%,0); font-size:0.6rem; color:var(--text-light); white-space:nowrap;">@d.Label</div>
+                    }
+                }
+            </div>
+        }
         else
         {
+            @* 일/주 단위: 각 구간이 독립적인 합계라 막대그래프가 더 직관적 *@
             <div style="display:flex; align-items:flex-end; gap:6px; height:160px; padding-bottom:8px;">
                 @{ var maxVal = _chartData.Max(d => d.Seconds); maxVal = maxVal == 0 ? 1 : maxVal; }
                 @foreach (var d in _chartData)
@@ -105,11 +175,15 @@ else
 @code {
     bool _loading = true;
     string _period = "week";
+    DateTime _refDate = DateTime.Now.Date; // 통계 기준 날짜 (오늘/이번 주/이번 달의 기준점)
     int _totalFinished, _totalInProgress;
     string _totalTimeStr = "0분";
     List<(string Label, int Seconds)> _chartData = new();
     List<(KnitSession Session, string ProjectTitle)> _recentSessions = new();
     List<KnitProject> _projects = new();
+
+    // 연도 콤보박스 옵션: 기록이 있는 최소 연도 ~ 현재 연도 (+1년 여유)
+    List<int> _yearOptions = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -120,6 +194,13 @@ else
             .Where(s => s.EndTime.HasValue)
             .Sum(s => (int)((s.EndTime!.Value) - s.StartTime).TotalSeconds);
         _totalTimeStr = FormatTime(allSecs);
+
+        var thisYear = DateTime.Now.Year;
+        var earliestYear = _projects.SelectMany(p => p.Sessions).Where(s => s.EndTime.HasValue)
+            .Select(s => s.StartTime.Year).DefaultIfEmpty(thisYear).Min();
+        _yearOptions = Enumerable.Range(Math.Min(earliestYear, thisYear), thisYear - Math.Min(earliestYear, thisYear) + 1)
+            .OrderByDescending(y => y).ToList();
+
         BuildChart();
         BuildRecentSessions();
         _loading = false;
@@ -135,49 +216,127 @@ else
 
     void SetPeriod(string period) { _period = period; BuildChart(); }
 
+    // ── 기간 기준일 이동/선택 ──────────────────────────────────
+    bool IsRefToday() => _refDate.Date == DateTime.Now.Date;
+    bool IsRefThisMonth() => _refDate.Year == DateTime.Now.Year && _refDate.Month == DateTime.Now.Month;
+
+    void GoToToday() { _refDate = DateTime.Now.Date; BuildChart(); }
+
+    void GoPrevRef()
+    {
+        _refDate = _period == "week" ? _refDate.AddDays(-7) : _refDate.AddDays(-1);
+        BuildChart();
+    }
+
+    void GoNextRef()
+    {
+        _refDate = _period == "week" ? _refDate.AddDays(7) : _refDate.AddDays(1);
+        BuildChart();
+    }
+
+    void OnRefDateInput(ChangeEventArgs e)
+    {
+        if (DateTime.TryParse(e.Value?.ToString(), out var d))
+        {
+            _refDate = d.Date;
+            BuildChart();
+        }
+    }
+
+    void OnYearSelect(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var y))
+        {
+            var day = Math.Min(_refDate.Day, DateTime.DaysInMonth(y, _refDate.Month));
+            _refDate = new DateTime(y, _refDate.Month, day);
+            BuildChart();
+        }
+    }
+
+    void OnMonthSelect(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var m))
+        {
+            var day = Math.Min(_refDate.Day, DateTime.DaysInMonth(_refDate.Year, m));
+            _refDate = new DateTime(_refDate.Year, m, day);
+            BuildChart();
+        }
+    }
+
+    string RefRangeLabel()
+    {
+        if (_period == "day") return _refDate.ToString("M월 d일");
+        // week: 월요일 시작 기준 주간 범위
+        var monday = _refDate.Date.AddDays(-((int)_refDate.DayOfWeek == 0 ? 6 : (int)_refDate.DayOfWeek - 1));
+        var sunday = monday.AddDays(6);
+        return monday.Month == sunday.Month
+            ? $"{monday:M월 d일} ~ {sunday:d일}"
+            : $"{monday:M월 d일} ~ {sunday:M월 d일}";
+    }
+
     void BuildChart()
     {
         _chartData.Clear();
-        var now = DateTime.Now;
+        var refD = _refDate;
 
         if (_period == "day")
         {
-            // 오늘 1시간 단위
+            // 선택한 날짜를 2시간 단위로
             for (int h = 0; h < 24; h += 2)
             {
-                var from = now.Date.AddHours(h);
+                var from = refD.Date.AddHours(h);
                 var to   = from.AddHours(2);
-                var mins = GetSeconds(from, to);
-                _chartData.Add(($"{h:D2}", mins));
+                var secs = GetSeconds(from, to);
+                _chartData.Add(($"{h:D2}", secs));
             }
         }
         else if (_period == "week")
         {
-            // 이번 주 7일
-            var monday = now.Date.AddDays(-((int)now.DayOfWeek == 0 ? 6 : (int)now.DayOfWeek - 1));
+            // 선택한 날짜가 속한 주 7일 (월요일 시작)
+            var monday = refD.Date.AddDays(-((int)refD.DayOfWeek == 0 ? 6 : (int)refD.DayOfWeek - 1));
             var dayNames = new[] { "월","화","수","목","금","토","일" };
             for (int i = 0; i < 7; i++)
             {
                 var day = monday.AddDays(i);
-                var mins = GetSeconds(day, day.AddDays(1));
-                _chartData.Add((dayNames[i], mins));
+                var secs = GetSeconds(day, day.AddDays(1));
+                _chartData.Add((dayNames[i], secs));
             }
         }
         else
         {
-            // 이번 달 주 단위
-            var firstDay = new DateTime(now.Year, now.Month, 1);
-            var lastDay  = firstDay.AddMonths(1);
-            var week = 1;
-            var cur  = firstDay;
-            while (cur < lastDay)
+            // 선택한 연/월 — 일 단위로 표시 (꺾은선 그래프와 함께 추세를 보기 좋게)
+            var firstDay = new DateTime(refD.Year, refD.Month, 1);
+            var daysInMonth = DateTime.DaysInMonth(refD.Year, refD.Month);
+            for (int day = 1; day <= daysInMonth; day++)
             {
-                var end = new DateTime[] { cur.AddDays(7), lastDay }.Min();
-                var mins = GetSeconds(cur, end);
-                _chartData.Add(($"{week}주", mins));
-                cur = end; week++;
+                var cur = firstDay.AddDays(day - 1);
+                var secs = GetSeconds(cur, cur.AddDays(1));
+                _chartData.Add(($"{day}", secs));
             }
         }
+    }
+
+    // ── 월 단위 꺾은선 그래프 좌표 계산 ──────────────────────────
+    double MonthXAt(int i)
+    {
+        var n = _chartData.Count;
+        double padX = 4, svgW = 100;
+        return n <= 1 ? svgW / 2 : padX + (svgW - padX * 2) * i / (n - 1);
+    }
+
+    double MonthYAt(int secs)
+    {
+        var maxVal = _chartData.Count > 0 ? _chartData.Max(d => d.Seconds) : 0;
+        maxVal = maxVal == 0 ? 1 : maxVal;
+        double padTop = 12, padBottom = 18, svgH = 100;
+        return padTop + (svgH - padTop - padBottom) * (1 - (double)secs / maxVal);
+    }
+
+    string MonthPolylinePoints()
+    {
+        var points = _chartData.Select((d, i) =>
+            $"{MonthXAt(i).ToString("F2")},{MonthYAt(d.Seconds).ToString("F2")}");
+        return string.Join(" ", points);
     }
 
     int GetSeconds(DateTime from, DateTime to) =>

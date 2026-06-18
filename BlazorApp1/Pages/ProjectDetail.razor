@@ -590,13 +590,22 @@ else
                             @* 일반 링크: 제목 없으면 도메인 표시 *@
                             <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:4px;">@TryGetDomain(lnk.Url)</div>
                         }
-                        <div style="display:flex; align-items:flex-start; gap:8px;">
-                            <a href="@lnk.Url" target="_blank" style="flex:1; font-size:0.78rem; color:var(--text-mid); display:inline-flex;align-items:flex-start;gap:4px;min-width:0;">
-                                <img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;margin-top:2px;" />
-                                <span style="word-break:break-all; overflow-wrap:break-word;">@lnk.Url</span>
-                            </a>
-                            <button class="btn btn-danger btn-sm" style="flex-shrink:0;" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveLink(lnk.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
-                        </div>
+                        @if (isYoutube)
+                        {
+                            <div style="display:flex; justify-content:flex-end;">
+                                <button class="btn btn-danger btn-sm" style="flex-shrink:0;" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveLink(lnk.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="display:flex; align-items:flex-start; gap:8px;">
+                                <a href="@lnk.Url" target="_blank" style="flex:1; font-size:0.78rem; color:var(--text-mid); display:inline-flex;align-items:flex-start;gap:4px;min-width:0;">
+                                    <img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;margin-top:2px;" />
+                                    <span style="word-break:break-all; overflow-wrap:break-word;">@lnk.Url</span>
+                                </a>
+                                <button class="btn btn-danger btn-sm" style="flex-shrink:0;" @onclick='() => Confirm("이 링크를 삭제할까요?", async () => await RemoveLink(lnk.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            </div>
+                        }
                     </div>
                 }
             </div>
