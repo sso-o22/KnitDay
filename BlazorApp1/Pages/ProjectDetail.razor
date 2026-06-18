@@ -1725,8 +1725,13 @@ else
     async Task AddLinkAndSave()
     {
         if (string.IsNullOrWhiteSpace(_newVideoLink) || _project == null) return;
-        if (!_project.Links.Any(l => l.Url == _newVideoLink.Trim()))
-            _project.Links.Add(new VideoLink { Url = _newVideoLink.Trim(), Title = _newLinkTitle.Trim() });
+        var url = _newVideoLink.Trim();
+        if (_project.Links.Any(l => l.Url == url))
+        {
+            await JS.InvokeVoidAsync("showToast", "이미 추가된 링크예요.", "error");
+            return;
+        }
+        _project.Links.Add(new VideoLink { Url = url, Title = _newLinkTitle.Trim() });
         _newVideoLink = "";
         _newLinkTitle = "";
         await Save();
