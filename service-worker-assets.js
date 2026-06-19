@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "ikUixCU+",
+  "version": "YHIhLJAu",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-XSWE9J+5QS9xE0Mse3+nef5O534SUuHJmFxhmAK4udU=",
+      "hash": "sha256-QNKr713+ZVIZoVvHUQamuh3g+KNCELyWsH4zrT6iW0k=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -22,7 +22,7 @@ self.assetsManifest = {
       "url": "_framework/Microsoft.AspNetCore.Components.WebAssembly.wasm"
     },
     {
-      "hash": "sha256-/3RWWWsYnd1CkaXq9lzxrJvo5qQ70Pfd0b8aAHph8Qc=",
+      "hash": "sha256-meQekDz6GHmNJrmb77TOHDbo5FLD4fUByaq5lVP4UcU=",
       "url": "_framework/Microsoft.AspNetCore.Components.wasm"
     },
     {
@@ -106,7 +106,7 @@ self.assetsManifest = {
       "url": "_framework/System.Diagnostics.DiagnosticSource.wasm"
     },
     {
-      "hash": "sha256-RlEySlikyNuHg9Y3PZnbjA3ts86JCydiwFF4OCWJU9M=",
+      "hash": "sha256-QaoPZuSUk+x3SJ7LZgvJgsM2ajCmQ0WBk1DXKrTL9S4=",
       "url": "_framework/System.Linq.wasm"
     },
     {
@@ -130,7 +130,7 @@ self.assetsManifest = {
       "url": "_framework/System.ObjectModel.wasm"
     },
     {
-      "hash": "sha256-6h5tBHyem60lAXdhGH/U3LOpFPviq3EPv002lv/XdpI=",
+      "hash": "sha256-4nUSoW3VrB4GUv5Q6zNAIit4hFFVSxgejktjD/PHQiY=",
       "url": "_framework/System.Private.CoreLib.wasm"
     },
     {
@@ -142,7 +142,7 @@ self.assetsManifest = {
       "url": "_framework/System.Runtime.InteropServices.JavaScript.wasm"
     },
     {
-      "hash": "sha256-QKVkAHnWkjdRDbKEZbLWXlXEg1oywiA9WPB3ZojwjWs=",
+      "hash": "sha256-tdYvGGFpx8bXcT2hHO+tsbb/6Y1oNqDrBxn6acrvb8I=",
       "url": "_framework/System.Runtime.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-CX0TmlggMnNiijFz5wL0kG9Ft73stUGiYerlZsFcf0E=",
+      "hash": "sha256-IDwCOecahxCOgoMHFKOpjV++ryL/SyYicXGdtKfCM7A=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -2534,7 +2534,7 @@ self.assetsManifest = {
       "url": "sample-data/weather.json"
     },
     {
-      "hash": "sha256-dAhEFqSAk86Dq8nwyc4P5OppYhzHCoft0xGEcuyab8o=",
+      "hash": "sha256-DcXP4YQqFOsxBv4SuNJjU2cLLkwTKiD9xujfeGbnv30=",
       "url": "version.json"
     }
   ]
