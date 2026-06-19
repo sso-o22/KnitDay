@@ -294,13 +294,16 @@ else
                     <div style="display:flex; align-items:center; gap:6px; padding-bottom:16px;">
                         <img src="icons/push-pin.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" />
                         <div class="card-title" style="margin-bottom:0; flex:1;">도안 체크리스트</div>
-                        @if (_checklistEditMode)
+                        @if (!IsCollapsed("checklist"))
                         {
-                            <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitChecklistEditMode" disabled="@_saving">@(_saving ? "저장 중..." : "완료")</button>
-                        }
-                        else
-                        {
-                            <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterChecklistEditMode"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
+                            @if (_checklistEditMode)
+                            {
+                                <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitChecklistEditMode" disabled="@_saving">@(_saving ? "저장 중..." : "완료")</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterChecklistEditMode"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
+                            }
                         }
                         @if (_project.Checklist.Count > 0)
                         {
