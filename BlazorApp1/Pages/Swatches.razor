@@ -19,13 +19,13 @@
 @if (_swatches.Count > 0)
 {
     <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:16px;">
-        @* 1행: 연결유무 + (태블릿 이상) 구분선 + 정렬 *@
+        @* 1행: 연결유무 + 구분선 + 정렬 *@
         <div class="filter-sort-bar">
             <div class="filter-sort-group">
                 <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
                 @foreach (var (label, val) in new[]{("전체",""),("연결됨","linked"),("연결 없음","unlinked")})
                 {
-                    <button class="btn btn-sm @(_filterProject==val?"btn-primary":"btn-ghost")" style="flex-shrink:0;"
+                    <button class="btn btn-sm @(_filterProject==val?"btn-primary":"btn-ghost")" style="flex-shrink:0; min-width:60px;"
                             @onclick="() => SetFilterProject(val)">@label</button>
                 }
             </div>
@@ -38,23 +38,23 @@
                     var descVal = baseVal + "_desc";
                     var isActive = _swatchSort == ascVal || _swatchSort == descVal;
                     var isAsc   = _swatchSort == ascVal;
-                    <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
+                    <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0; min-width:52px;"
                             @onclick="async () => await SetSwatchSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
                         @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
                     </button>
                 }
             </div>
         </div>
-        @* 2행: 뜨개법 + 바늘 필터 (항상 별도 줄) *@
+        @* 2행: 뜨개법 + 바늘 필터 — 아이콘/버튼/구분선이 1행과 세로 정렬 맞춤 *@
         <div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:2px;">
             <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-            @foreach (var (label, val) in new[]{("전체",""),("메리야스","메리야스"),("무늬","무늬")})
+            @foreach (var (label, val) in new[]{("전체",""),("메리야스","메리야스"),("무늬 ","무늬")})
             {
-                <button class="btn btn-sm @(_filterStitch==val?"btn-primary":"btn-ghost")" style="flex-shrink:0;"
-                        @onclick="() => SetFilterStitch(val)">@label</button>
+                <button class="btn btn-sm @(_filterStitch==val.Trim()?"btn-primary":"btn-ghost")" style="flex-shrink:0; min-width:60px;"
+                        @onclick="() => SetFilterStitch(val.Trim())">@label</button>
             }
-            <div style="width:1px;height:16px;background:var(--border);flex-shrink:0;"></div>
-            <select class="form-control" style="width:80px; font-size:0.8rem; flex-shrink:0; padding:6px 6px;"
+            <div class="swatch-filter-divider" style="width:1px;height:16px;background:var(--border);flex-shrink:0;display:none;"></div>
+            <select class="form-control swatch-needle-select" style="font-size:0.8rem; flex-shrink:0; padding:4px 8px; width:auto; min-width:100px;"
                     value="@_filterNeedle" @onchange="OnFilterNeedleChanged">
                 <option value="">바늘 전체</option>
                 @foreach (var mm in NeedleOptions)
