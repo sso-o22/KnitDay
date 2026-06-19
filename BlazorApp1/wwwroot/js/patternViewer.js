@@ -194,6 +194,8 @@ let basePaths = []; // 저장된 필기 (박제)
     function getAnnoCanvas(p) { return document.getElementById('anno-canvas-' + p); }
     function getPdfCanvas(p)  { return document.getElementById('pdf-canvas-'  + p); }
 
+    let _hasPen = false; // 펜슬 감지 시 true → 팜 리젝션 활성화
+
     function addPageHandlers(pageNum) {
         if (_pageHandlers[pageNum]) _pageHandlers[pageNum].abort();
         const anno = getAnnoCanvas(pageNum);
@@ -206,9 +208,13 @@ let basePaths = []; // 저장된 필기 (박제)
 
         function onDown(e) {
             if (_isPinching || _isZooming) return;
+            // 펜슬 감지 → 팜 리젝션 활성화
+            if (e.pointerType === 'pen') _hasPen = true;
+            // 팜 리젝션: 펜슬이 감지된 기기에서만 touch 차단 (아이폰은 touch가 유일 입력이므로 제외)
+            if (_hasPen && e.pointerType === 'touch') return;
             const {normX, normY} = getNormPos(anno, e, pageNum);
             if (_tool !== 'pen' && _tool !== 'eraser' && _tool !== 'highlighter') return;
-            if (e.touches) e.preventDefault();
+            e.preventDefault();
             currentPageNum = pageNum;
             isDrawing = true;
             _snapTriggered = false;
@@ -247,9 +253,10 @@ let basePaths = []; // 저장된 필기 (박제)
 
         function onMove(e) {
             if (_isPinching || _isZooming) return;
+            if (_hasPen && e.pointerType === 'touch') return;
             if (!isDrawing || currentPageNum !== pageNum ||
                 (_tool !== 'pen' && _tool !== 'eraser' && _tool !== 'highlighter')) return;
-            if (e.touches) e.preventDefault();
+            e.preventDefault();
             const {normX, normY} = getNormPos(anno, e, pageNum);
             if (_snapTriggered) {
                 // 직선 스냅 모드: 시작점→현재점만 실시간 미리보기
@@ -295,12 +302,11 @@ let basePaths = []; // 저장된 필기 (박제)
             currentPath = null;
         }
 
-        anno.addEventListener('mousedown',  onDown, sig);
-        anno.addEventListener('mousemove',  onMove, sig);
-        anno.addEventListener('mouseup',    onUp,   sig);
-        anno.addEventListener('touchstart', onDown, { passive: false, signal: ac.signal });
-        anno.addEventListener('touchmove',  onMove, { passive: false, signal: ac.signal });
-        anno.addEventListener('touchend',   onUp,   sig);
+        // pointer 이벤트로 통합 (팜 리젝션: pen/mouse만 필기 허용, touch는 차단)
+        anno.addEventListener('pointerdown', onDown, { signal: ac.signal });
+        anno.addEventListener('pointermove', onMove, { signal: ac.signal });
+        anno.addEventListener('pointerup',   onUp,   sig);
+        anno.addEventListener('pointercancel', onUp, sig);
     }
 
     // 매번 context 상태 완전 설정 (iOS context 상태 초기화 버그 방지)

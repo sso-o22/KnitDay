@@ -63,32 +63,26 @@
         align-items:center;
         justify-content:center;
         font-family:'Noto Sans KR',sans-serif;
-        color:#111111;
+        color:#444;
         gap:20px;
         text-align:center;
         padding:32px;
     ">
-        <img src="icons/Knit.svg" style="width:72px;height:72px;opacity:0.7;" />
-        <div id="rotate-message" style="font-size:1.1rem;font-weight:600;line-height:1.6;"></div>
+        <img id="rotate-icon" src="icons/arrows-counter-clockwise.svg" style="width:56px;height:56px;opacity:0.5;" />
+        <div id="rotate-message" style="font-size:1rem;font-weight:400;line-height:1.7;color:#555;"></div>
     </div>
 
     <style>
-        /* 모바일(max-width:1023px): 가로 방향이면 오버레이 표시 */
-        @media (max-width: 1023px) and (orientation: landscape) {
-            #rotate-overlay { display: flex !important; }
-        }
-        /* 태블릿(min-width:1024px): 세로 방향이면 오버레이 표시 */
-        @media (min-width: 1024px) and (orientation: portrait) {
-            #rotate-overlay { display: flex !important; }
-        }
+        /* 회전 오버레이: JS가 isTablet 판단 후 class 추가로 제어 */
+        #rotate-overlay.show { display: flex !important; }
 
         /* 🧶 새로 추가된 부드러운 뜨개 감성 스피너 애니메이션 */
         /* 🧶 말차 라떼 감성의 스피너 애니메이션 */
         .knit-spinner {
             width: 48px;
             height: 48px;
-            border: 5px solid #DCE3D5;        /* 부드러운 연한 올리브 빛 (바탕 실) */
-            border-bottom-color: #768A6B;     /* 진하고 차분한 말차 그린 (포인트 실) */
+            border: 5px solid #DCE3D5;
+            border-bottom-color: #768A6B;
             border-radius: 50%;
             display: inline-block;
             box-sizing: border-box;
@@ -103,20 +97,35 @@
 
     <script>
         (function () {
-            var msg = document.getElementById('rotate-message');
-            function updateMessage() {
-                // 기기의 긴 쪽 길이로 태블릿 여부 판단
-                var longerSide = Math.max(window.screen.width, window.screen.height);
-                var isTablet = longerSide >= 1024;
-                if (isTablet) {
-                    msg.textContent = '가로 모드로 회전해주세요 🔄';
+            var overlay = document.getElementById('rotate-overlay');
+            var msg     = document.getElementById('rotate-message');
+
+            function updateOverlay() {
+                // 물리 픽셀 기준 긴 쪽으로 태블릿 여부 판단 (devicePixelRatio 고려)
+                var dpr = window.devicePixelRatio || 1;
+                var cssW = window.innerWidth;
+                var cssH = window.innerHeight;
+                var longerCss = Math.max(cssW, cssH);
+
+                // 태블릿: 긴 CSS px 기준 900px 이상 (아이패드 10 = 820×1180)
+                var isTablet = longerCss >= 900;
+                var isPortrait = cssH > cssW;
+
+                var shouldShow = isTablet ? isPortrait : !isPortrait;
+
+                if (shouldShow) {
+                    msg.textContent = isTablet ? '가로 모드로 회전해주세요' : '세로 모드로 회전해주세요';
+                    overlay.classList.add('show');
                 } else {
-                    msg.textContent = '세로 모드로 회전해주세요 🔄';
+                    overlay.classList.remove('show');
                 }
             }
-            updateMessage();
-            window.addEventListener('resize', updateMessage);
-            window.addEventListener('orientationchange', updateMessage);
+
+            updateOverlay();
+            window.addEventListener('resize', updateOverlay);
+            window.addEventListener('orientationchange', function() {
+                setTimeout(updateOverlay, 100);
+            });
         })();
     </script>
 
