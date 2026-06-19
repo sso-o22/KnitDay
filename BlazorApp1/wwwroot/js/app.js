@@ -178,18 +178,17 @@ window.knitDB = (() => {
 document.addEventListener('dragover', e => e.preventDefault());
 
 window.initCardDrag = (dotNetRef) => {
-    // 기존 리스너 제거
     if (window._cardDragCleanup) window._cardDragCleanup();
 
     let dragId = null;
 
+    // ── 마우스 드래그 (PC) ──────────────────────────────────────
     const onDragStart = e => {
         const card = e.target.closest('[data-cardid]');
         if (!card) return;
         dragId = card.dataset.cardid;
         card.style.opacity = '0.5';
     };
-
     const onDragEnd = e => {
         document.querySelectorAll('[data-cardid]').forEach(c => {
             c.style.opacity = '';
@@ -197,14 +196,12 @@ window.initCardDrag = (dotNetRef) => {
         });
         dragId = null;
     };
-
     const onDragOver = e => {
         const card = e.target.closest('[data-cardid]');
         document.querySelectorAll('[data-cardid]').forEach(c => c.style.outline = '');
         if (card && card.dataset.cardid !== dragId)
             card.style.outline = '2px dashed #267848';
     };
-
     const onDrop = e => {
         e.preventDefault();
         const card = e.target.closest('[data-cardid]');
@@ -213,22 +210,136 @@ window.initCardDrag = (dotNetRef) => {
             c.style.opacity = '';
         });
         if (!card || !dragId || card.dataset.cardid === dragId) { dragId = null; return; }
-        const fromId = dragId;
-        dragId = null;
+        const fromId = dragId; dragId = null;
         dotNetRef.invokeMethodAsync('DropCard', fromId, card.dataset.cardid);
     };
 
     document.addEventListener('dragstart', onDragStart);
-    document.addEventListener('dragend', onDragEnd);
-    document.addEventListener('dragover', onDragOver);
-    document.addEventListener('drop', onDrop);
+    document.addEventListener('dragend',   onDragEnd);
+    document.addEventListener('dragover',  onDragOver);
+    document.addEventListener('drop',      onDrop);
 
-    // cleanup 함수 저장 — 페이지 이동 시 Blazor가 Dispose 호출하면 제거
+    // ── 터치 드래그 (iOS/Android) ──────────────────────────────
+    let touchDragId  = null;
+    let touchGhost   = null;
+    let touchOverId  = null;
+    let touchOffsetX = 0;
+    let touchOffsetY = 0;
+    let longPressTimer = null;
+    let touchStartEl = null;
+
+    function createGhost(card) {
+        const rect = card.getBoundingClientRect();
+        const ghost = card.cloneNode(true);
+        ghost.style.cssText = `
+            position:fixed; left:${rect.left}px; top:${rect.top}px;
+            width:${rect.width}px; pointer-events:none; z-index:9999;
+            opacity:0.85; border-radius:12px;
+            box-shadow:0 8px 32px rgba(0,0,0,0.22);
+            transform:scale(1.03); transition:transform 0.1s;
+        `;
+        document.body.appendChild(ghost);
+        return ghost;
+    }
+
+    function clearHighlight() {
+        document.querySelectorAll('[data-cardid]').forEach(c => {
+            c.style.outline = '';
+            c.style.opacity = '';
+        });
+    }
+
+    const onTouchStart = e => {
+        const card = e.target.closest('[data-cardid]');
+        if (!card) return;
+        // 내부 인터랙티브 요소 (버튼, input, a) 터치면 드래그 안 함
+        if (e.target.closest('button, input, select, textarea, a, label')) return;
+
+        touchStartEl = card;
+        const touch = e.touches[0];
+        const rect = card.getBoundingClientRect();
+        touchOffsetX = touch.clientX - rect.left;
+        touchOffsetY = touch.clientY - rect.top;
+
+        // 롱프레스(350ms) 후 드래그 시작
+        longPressTimer = setTimeout(() => {
+            touchDragId = card.dataset.cardid;
+            card.style.opacity = '0.4';
+            touchGhost = createGhost(card);
+            if (navigator.vibrate) navigator.vibrate(30);
+        }, 350);
+    };
+
+    const onTouchMove = e => {
+        if (!longPressTimer) return;
+        // 손가락이 많이 움직이면 롱프레스 취소 (스크롤로 판정)
+        if (!touchDragId) {
+            const touch = e.touches[0];
+            const card = touchStartEl;
+            if (!card) { clearTimeout(longPressTimer); longPressTimer = null; return; }
+            const rect = card.getBoundingClientRect();
+            const dx = touch.clientX - rect.left - touchOffsetX;
+            const dy = touch.clientY - rect.top  - touchOffsetY;
+            if (Math.abs(dx) > 8 || Math.abs(dy) > 8) {
+                clearTimeout(longPressTimer); longPressTimer = null;
+            }
+            return;
+        }
+        e.preventDefault();
+        const touch = e.touches[0];
+
+        // ghost 이동
+        if (touchGhost) {
+            touchGhost.style.left = (touch.clientX - touchOffsetX) + 'px';
+            touchGhost.style.top  = (touch.clientY - touchOffsetY) + 'px';
+        }
+
+        // 현재 손가락 아래 카드 감지
+        touchGhost && (touchGhost.style.display = 'none');
+        const el = document.elementFromPoint(touch.clientX, touch.clientY);
+        touchGhost && (touchGhost.style.display = '');
+        const overCard = el && el.closest('[data-cardid]');
+        const overId = overCard ? overCard.dataset.cardid : null;
+
+        if (overId !== touchOverId) {
+            clearHighlight();
+            if (touchDragId) document.querySelector(`[data-cardid="${touchDragId}"]`).style.opacity = '0.4';
+            if (overId && overId !== touchDragId) {
+                overCard.style.outline = '2px dashed #267848';
+            }
+            touchOverId = overId;
+        }
+    };
+
+    const onTouchEnd = e => {
+        clearTimeout(longPressTimer); longPressTimer = null;
+        if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+        clearHighlight();
+
+        if (!touchDragId) { touchStartEl = null; return; }
+        const fromId = touchDragId;
+        const toId   = touchOverId;
+        touchDragId = null; touchOverId = null; touchStartEl = null;
+
+        if (toId && toId !== fromId) {
+            dotNetRef.invokeMethodAsync('DropCard', fromId, toId);
+        }
+    };
+
+    document.addEventListener('touchstart', onTouchStart, { passive: true });
+    document.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    document.addEventListener('touchend',   onTouchEnd,   { passive: true });
+
     window._cardDragCleanup = () => {
         document.removeEventListener('dragstart', onDragStart);
-        document.removeEventListener('dragend', onDragEnd);
-        document.removeEventListener('dragover', onDragOver);
-        document.removeEventListener('drop', onDrop);
+        document.removeEventListener('dragend',   onDragEnd);
+        document.removeEventListener('dragover',  onDragOver);
+        document.removeEventListener('drop',      onDrop);
+        document.removeEventListener('touchstart', onTouchStart);
+        document.removeEventListener('touchmove',  onTouchMove);
+        document.removeEventListener('touchend',   onTouchEnd);
+        if (touchGhost) { touchGhost.remove(); touchGhost = null; }
+        clearTimeout(longPressTimer);
         window._cardDragCleanup = null;
     };
 };
