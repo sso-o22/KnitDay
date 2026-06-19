@@ -80,7 +80,7 @@
                             var alpha     = marker.IsCurrent ? "0.45" : "0.30";
                             var rgb       = HexToRgb(marker.Color);
                             var darkRgb   = DarkenRgb(marker.Color);
-                            var borderH   = Math.Max(2, markerH * 0.12);
+                            var borderH   = Math.Min(3, Math.Max(1.5, markerH * 0.06));
                             var markerId  = $"rowmarker-{marker.Id:N}";
                             var isSelected = _selectedMarkerId == marker.Id;
                             // 드래그(이동)는 IsCurrent 마커만 가능. 클릭(선택)은 도구 패널이 열려있고 행마커 도구일 때 항상 가능
@@ -1530,7 +1530,7 @@
     string _rowMarkerColor = "#ffeb3b";
     double _detectedRowH = 0;
     string _markerMode = "single"; // 다중행 기능 제거됨 — 항상 단일행
-    const double DefaultRowHeight = 40; // 마커가 하나도 없을 때 "마커 추가"에 사용할 기본 높이(zoom=1 기준 px)
+    const double DefaultRowHeight = 24; // 마커가 하나도 없을 때 "마커 추가"에 사용할 기본 높이(zoom=1 기준 px)
 
     // 되돌리기 히스토리: "added"(마커 추가) → 되돌리면 그 마커 삭제, "markedDone"(흔적 남기기) → 되돌리면 다시 이동 가능 상태로 복원
     // GroupId가 같은 항목들은 한 번의 사용자 동작(예: 흔적 남기기 = 굳히기+새 마커 추가)이므로 되돌리기 한 번에 함께 처리됨
