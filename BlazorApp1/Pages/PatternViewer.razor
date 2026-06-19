@@ -1530,7 +1530,7 @@
     string _rowMarkerColor = "#ffeb3b";
     double _detectedRowH = 0;
     string _markerMode = "single"; // 다중행 기능 제거됨 — 항상 단일행
-    const double DefaultRowHeight = 24; // 마커가 하나도 없을 때 "마커 추가"에 사용할 기본 높이(zoom=1 기준 px)
+    const double DefaultRowHeight = 5; // 마커가 하나도 없을 때 "마커 추가"에 사용할 기본 높이(zoom=1 기준 px)
 
     // 되돌리기 히스토리: "added"(마커 추가) → 되돌리면 그 마커 삭제, "markedDone"(흔적 남기기) → 되돌리면 다시 이동 가능 상태로 복원
     // GroupId가 같은 항목들은 한 번의 사용자 동작(예: 흔적 남기기 = 굳히기+새 마커 추가)이므로 되돌리기 한 번에 함께 처리됨
