@@ -614,6 +614,19 @@ body {
     .schedule-sort-inline { display: flex !important; }
     .schedule-sort-row { display: none !important; }
 
+    /* 스와치 2행: 구분선 표시 + 바늘 콤보박스 너비 확보 */
+    .swatch-filter-divider { display: block !important; }
+    .swatch-needle-select {
+        min-width: 120px !important;
+        width: auto !important;
+        height: 30px !important;
+        min-height: 30px !important;
+        max-height: 30px !important;
+        line-height: 30px !important;
+        padding: 0 8px !important;
+        font-size: 0.82rem !important;
+    }
+
     /* 설정 카드 너비 제한 해제 */
     .settings-wrapper {
         max-width: 100% !important;
@@ -631,9 +644,17 @@ body {
         box-sizing: border-box !important;
         line-height: 40px !important;
         display: block !important;
-        -webkit-appearance: none;
-        appearance: none;
         overflow: hidden;
+    }
+
+    /* 체크리스트 수정 input은 높이 강제 예외 */
+    .checklist-input {
+        height: auto !important;
+        min-height: unset !important;
+        max-height: unset !important;
+        line-height: 1.4 !important;
+        padding: 4px 8px !important;
+        font-size: inherit !important;
     }
 
     /* text input은 기본 스타일 유지 (height 강제 안 함) */
