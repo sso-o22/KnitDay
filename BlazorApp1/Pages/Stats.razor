@@ -134,7 +134,7 @@ else
                     </div>
                 </div>
                 <!-- 이중 꺾은선 SVG 그래프 -->
-                <div style="position:relative; height:200px; margin-bottom:8px;">
+                <div style="position:relative; height:clamp(200px, 30vw, 320px); margin-bottom:8px;">
                     @((MarkupString)BuildYearSvg())
                     <!-- 좌우 Y축 레이블 텍스트 (SVG 밖) -->
                     <div style="position:absolute; bottom:0; left:0; font-size:0.6rem; color:var(--theme-active); opacity:0.7;">누적</div>
@@ -151,7 +151,7 @@ else
             }
             else
             {
-                <div style="position:relative; height:170px; margin-bottom:4px;">
+                <div style="position:relative; height:clamp(170px, 26vw, 280px); margin-bottom:4px;">
                     @((MarkupString)BuildMonthSvg())
                 </div>
                 <!-- 기간 요약 -->
@@ -171,7 +171,7 @@ else
             }
             else
             {
-                <div style="position:relative; height:190px;">
+                <div style="position:relative; height:clamp(190px, 28vw, 300px);">
                     @((MarkupString)BuildBarSvg())
                 </div>
                 <div style="font-size:0.8rem; color:var(--text-mid); margin-top:4px;">합계 <span style="font-weight:700; color:var(--theme-active);">@FormatTime(_chartData.Sum(d => d.Seconds))</span></div>

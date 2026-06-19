@@ -9,12 +9,10 @@
 
 @if (Show && Project != null)
 {
-    <div style="position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,0.32);
-                display:flex; align-items:flex-end; justify-content:center;"
+    <div class="completed-popup-backdrop"
          @onclick:stopPropagation="true">
-        <div style="background:var(--white); width:100%; max-width:600px; height:100%;
-                    display:flex; flex-direction:column; overflow:hidden; min-width:0;
-                    box-shadow:0 -4px 32px rgba(0,0,0,0.12);"
+        <!-- 모바일: 풀스크린 / 태블릿+: 가운데 모달 -->
+        <div class="completed-popup-inner"
              @onclick:stopPropagation="true">
 
             <!-- 헤더 -->
@@ -426,6 +424,43 @@
         </button>
     </div>
 }
+
+<style>
+    .completed-popup-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 1100;
+        background: rgba(0,0,0,0.32);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+    }
+    /* 모바일: 하단에서 올라오는 풀스크린 */
+    .completed-popup-inner {
+        background: var(--white);
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        min-width: 0;
+        box-shadow: 0 -4px 32px rgba(0,0,0,0.12);
+    }
+    /* 태블릿(641px+): 가운데 떠 있는 모달 */
+    @@media (min-width: 641px) {
+        .completed-popup-backdrop {
+            align-items: center;
+        }
+        .completed-popup-inner {
+            width: 90%;
+            max-width: 680px;
+            height: auto;
+            max-height: 90vh;
+            border-radius: var(--radius);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+        }
+    }
+</style>
 
 @code {
     bool _saving = false;
