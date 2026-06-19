@@ -450,7 +450,7 @@
         height: 100vh;
         height: 100dvh; /* 모바일 주소창 대응 */
         overflow: hidden;
-        background: #aaa;
+        background: var(--ivory-dark, #f5f5f0);
     }
     /* 태블릿+모바일(1024px 이하): 사이드바 없으므로 fixed fullscreen */
     @@media (max-width: 1024px) {
@@ -468,6 +468,8 @@
         overflow: auto;
         display: flex;
         justify-content: center;
+        padding-top: 66px; /* 제목줄(28px) + 툴바(38px) */
+        box-sizing: border-box;
     }
 
     /* ── 프로젝트명/파일명 표시줄 ── */
@@ -1823,6 +1825,30 @@
         // 삭제된 마커에 대한 과거 히스토리 항목은 더 이상 의미가 없으므로 함께 제거
         // (예: "added" 항목이 남아있으면 되돌리기 시 이미 없는 마커를 찾으려 함)
         _rowMarkerHistory.RemoveAll(h => h.MarkerId == marker.Id);
+
+        await SaveRowMarkersAsync();
+        StateHasChanged();
+    }
+
+    // 지우개 탭: cssY 위치에 겹치는 흔적 마커(!IsCurrent)를 삭제
+    [JSInvokable]
+    public async Task EraseMarkerAt(double cssY, int pageNum)
+    {
+        // marker.Y * _zoom = 마커 top(cssY 기준), marker.RowHeight * _zoom = 높이
+        var hit = _rowMarkers
+            .Where(m => !m.IsCurrent && m.Page == pageNum)
+            .FirstOrDefault(m =>
+            {
+                var top    = m.Y * _zoom;
+                var bottom = top + Math.Max(m.RowHeight * _zoom, 4);
+                return cssY >= top && cssY <= bottom;
+            });
+
+        if (hit == null) return;
+
+        _rowMarkers.Remove(hit);
+        _rowMarkerHistory.RemoveAll(h => h.MarkerId == hit.Id);
+        if (_selectedMarkerId == hit.Id) _selectedMarkerId = null;
 
         await SaveRowMarkersAsync();
         StateHasChanged();
