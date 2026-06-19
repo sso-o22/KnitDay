@@ -735,7 +735,7 @@ else
     {
         var result = new List<CalendarEvent>();
         var relevant = _allProjects
-            .Where(p => p.Status != ProjectStatus.위시리스트 && p.Status != ProjectStatus.일시중단)
+            .Where(p => p.Status != ProjectStatus.위시리스트)
             .ToList();
 
         var today = DateTime.Today;
@@ -745,10 +745,27 @@ else
             var p = relevant[i];
             var s = GetProjectStyle(p);
             var isCompleted = p.Status == ProjectStatus.완료;
+            var isPaused    = p.Status == ProjectStatus.일시중단;
 
             bool isStart = p.StartDate.HasValue && p.StartDate.Value.Date == date;
             // FO(완성)는 실제로 완료 처리된 프로젝트에만 표시 — 목표 종료일만 적어둔 상태에서는 찍히지 않음
             bool isEnd   = isCompleted && p.EndDate.HasValue && p.EndDate.Value.Date == date;
+
+            if (isPaused)
+            {
+                // 일시중단: 시작일 표시 + 마지막 중단 날짜에만 점 표시 (이후 날짜엔 안 나옴)
+                var lastPausedAt = p.StatusLogs
+                    .Where(l => l.Action == "중단")
+                    .OrderByDescending(l => l.At)
+                    .Select(l => (DateTime?)l.At.Date)
+                    .FirstOrDefault();
+
+                if (isStart)
+                    result.Add(new CalendarEvent(p.Id, p.Title, "CO", "transparent", "#d6eefa", "#1a6a8a"));
+                else if (lastPausedAt.HasValue && lastPausedAt.Value == date)
+                    result.Add(new CalendarEvent(p.Id, p.Title, "·", s.PaleBg, s.AccentColor, s.TextColor));
+                continue;
+            }
 
             // 진행 구간: 시작일 다음날부터 — 완료된 프로젝트는 완료일 전날까지, 진행중인 프로젝트는 오늘까지(목표 종료일 유무와 무관)
             DateTime? rangeEnd = isCompleted ? p.EndDate?.Date : (DateTime?)today;

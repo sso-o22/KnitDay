@@ -171,7 +171,7 @@ else
                 <!-- ── 단수 카운터 ── -->
                 <div class="card" draggable="true" data-cardid="counter" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
-                         @onclick='() => { if (_project.Counters.Count > 0) ToggleCard("counter"); }'>
+                         @onclick='async () => { if (_project.Counters.Count > 0) await ToggleCard("counter"); }'>
                         <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/plus-minus.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 단수 카운터</div>
                         @if (_project.Counters.Count > 0)
                         {
@@ -305,7 +305,7 @@ else
                         @if (_project.Checklist.Count > 0)
                         {
                             <span style="font-size:0.85rem; color:var(--text-light); cursor:pointer; padding:2px 4px;"
-                                  @onclick='() => ToggleCard("checklist")'>@(IsCollapsed("checklist") ? "▶" : "▼")</span>
+                                  @onclick='async () => await ToggleCard("checklist")'>@(IsCollapsed("checklist") ? "▶" : "▼")</span>
                         }
                     </div>
                     @if (!IsCollapsed("checklist") || _project.Checklist.Count == 0)
@@ -369,7 +369,7 @@ else
                 <!-- ── 뜨개 시간 기록 ── -->
                 <div class="card" draggable="true" data-cardid="timer" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
-                         @onclick='() => ToggleCard("timer")'>
+                         @onclick='async () => await ToggleCard("timer")'>
                         <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/clock-user.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 뜨개 시간</div>
                         <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("timer") ? "▶" : "▼")</span>
                     </div>
@@ -438,7 +438,7 @@ else
                 <!-- ── 누적 시간 ── -->
                 <div class="card" draggable="true" data-cardid="accum" style="overflow:hidden;">
                     <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
-                         @onclick='() => ToggleCard("accum")'>
+                         @onclick='async () => await ToggleCard("accum")'>
                         <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/chart-bar.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 누적 시간</div>
                         <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("accum") ? "▶" : "▼")</span>
                     </div>
@@ -501,7 +501,7 @@ else
     {
     <div class="card" style="grid-column: span 2; overflow:hidden;">
         <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:12px;"
-             @onclick='() => ToggleCard("statuslog")'>
+             @onclick='async () => await ToggleCard("statuslog")'>
             <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;">
                 <img src="icons/clock-counter-clockwise.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 활동 기록
             </div>
@@ -549,7 +549,7 @@ else
 
     <div class="card" style="grid-column: span 2; overflow:hidden;">
         <div style="display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding-bottom:16px;"
-             @onclick='() => ToggleCard("video")'>
+             @onclick='async () => await ToggleCard("video")'>
             <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/link-simple.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 참고 링크</div>
             @if (_project.Links.Count > 0)
             {
@@ -755,6 +755,31 @@ else
                             @{
                                 var wRate = CalcSwatchRate(s.PreWashStitches, s.PostWashStitches, s.PreWashWidthCm, s.PostWashWidthCm);
                                 var hRate = CalcSwatchRate(s.PreWashRows, s.PostWashRows, s.PreWashHeightCm, s.PostWashHeightCm);
+                                bool hasPostGauge = s.PostWashStitches > 0 || s.PostWashRows > 0 || s.PostWashWidthCm > 0 || s.PostWashHeightCm > 0;
+                            }
+                            @if (hasPostGauge)
+                            {
+                                <div style="margin-top:6px; font-size:0.75rem; color:var(--text-mid); background:var(--ivory-mid); border-radius:4px; padding:5px 7px;">
+                                    <div style="font-size:0.68rem; color:var(--text-light); margin-bottom:3px;">세탁 후 게이지</div>
+                                    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                                        @if (s.PostWashStitches > 0)
+                                        {
+                                            <span>@s.PostWashStitches 코</span>
+                                        }
+                                        @if (s.PostWashRows > 0)
+                                        {
+                                            <span>@s.PostWashRows 단</span>
+                                        }
+                                        @if (s.PostWashWidthCm > 0)
+                                        {
+                                            <span>@s.PostWashWidthCm cm</span>
+                                        }
+                                        @if (s.PostWashHeightCm > 0)
+                                        {
+                                            <span>@s.PostWashHeightCm cm</span>
+                                        }
+                                    </div>
+                                </div>
                             }
                             @if (wRate.HasValue || hRate.HasValue)
                             {
@@ -1142,17 +1167,17 @@ else
     string CardIcon(string id, bool hasItems) => !hasItems ? "" : _collapsedCards.Contains(id) ? "▶" : "▼";
     string CardCursor(bool hasItems) => hasItems ? "pointer" : "default";
     string FormatDuration(KnitSession s) { var e = s.EndTime ?? DateTime.Now; var t = (int)(e - s.StartTime).TotalSeconds; var h = t/3600; var m = (t%3600)/60; var sc = t%60; return h > 0 ? $"{h}:{m:D2}:{sc:D2}" : $"00:{m:D2}:{sc:D2}"; }
-    void ToggleCard(string id)
+    async Task ToggleCard(string id)
     {
         if (!_collapsedCards.Add(id)) _collapsedCards.Remove(id);
-        SaveCollapsedCards();
+        await SaveCollapsedCards();
     }
 
-    void SaveCollapsedCards()
+    async Task SaveCollapsedCards()
     {
         if (_project == null) return;
         _project.CollapsedCards = _collapsedCards.ToList();
-        _ = Storage.SaveProjectAsync(_project);
+        await Storage.SaveProjectAsync(_project);
     }
 
     // 카운터 이름 편집
