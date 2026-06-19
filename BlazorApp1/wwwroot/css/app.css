@@ -993,6 +993,18 @@ body {
 }
 
 
+/* ── 드래그 카드 텍스트 선택 방지 ──────────────────────── */
+[data-cardid] {
+    -webkit-user-select: none;
+    user-select: none;
+}
+/* 카드 내부 input/textarea는 텍스트 선택 허용 */
+[data-cardid] input,
+[data-cardid] textarea {
+    -webkit-user-select: text;
+    user-select: text;
+}
+
 /* ── 설정 페이지 래퍼 ────────────────────────────────────── */
 .settings-wrapper {
     max-width: 480px;
