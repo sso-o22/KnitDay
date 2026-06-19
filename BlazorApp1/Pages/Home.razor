@@ -137,7 +137,7 @@ else
                  style="display:flex; align-items:center; gap:6px; padding:6px 0;">
                 <input type="checkbox" checked="@item.Done"
                        @onchange="async () => { item.Done = !item.Done; await SaveTodos(); }"
-                       style="width:14px; height:14px; accent-color:#2a5a26; cursor:pointer; flex-shrink:0;" />
+                       style="width:14px; height:14px; accent-color:var(--theme-active); cursor:pointer; flex-shrink:0;" />
                 @if (_todoEditMode)
                 {
                     <input class="form-control" style="flex:1; font-size:0.78rem; padding:2px 6px;"
