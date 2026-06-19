@@ -242,10 +242,10 @@ else
     {
         if (firstRender)
         {
-            // 카드 실제 너비 측정 (사이드바 등 제외한 main-content 기준)
+            // 카드 실제 너비 측정 (사이드바 등 제외한 main-content 기준, 카드 padding 32px 제외)
             var w = await JS.InvokeAsync<double>("eval",
-                "(document.querySelector('.main-content') ?? document.body).clientWidth - 64");
-            _svgWidth = Math.Max(260, Math.Min(w, 900));
+                "Math.max(0, (document.querySelector('.main-content') || document.body).clientWidth - 80)");
+            _svgWidth = Math.Max(260, w);
             StateHasChanged();
         }
     }

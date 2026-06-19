@@ -1268,7 +1268,7 @@ else
         // 저장된 카드 순서 불러오기
         try
         {
-            var savedOrder = await JS.InvokeAsync<string?>("localStorage.getItem", CARD_ORDER_KEY);
+            var savedOrder = await JS.InvokeAsync<string?>("localStorage.getItem", CardOrderKey);
             if (!string.IsNullOrEmpty(savedOrder))
             {
                 var parsed = System.Text.Json.JsonSerializer.Deserialize<List<string>>(savedOrder);
@@ -1313,7 +1313,7 @@ else
     string _dragCard = "";
     string _dragOver = "";
     List<string> _cardOrder = new() { "counter", "checklist", "timer", "accum" };
-    const string CARD_ORDER_KEY = "knitlog_card_order";
+    string CardOrderKey => $"knitlog_card_order_{ProjectId}";
     DotNetObjectReference<ProjectDetail>? _dragRef;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -1334,7 +1334,7 @@ else
         _cardOrder.RemoveAt(fromIdx);
         _cardOrder.Insert(toIdx, fromId);
         var json = System.Text.Json.JsonSerializer.Serialize(_cardOrder);
-        await JS.InvokeVoidAsync("localStorage.setItem", CARD_ORDER_KEY, json);
+        await JS.InvokeVoidAsync("localStorage.setItem", CardOrderKey, json);
         StateHasChanged();
     }
 
