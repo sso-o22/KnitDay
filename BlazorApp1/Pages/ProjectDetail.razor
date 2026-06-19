@@ -1668,6 +1668,7 @@ else
         if (_project == null) return;
         await Storage.PauseProjectAsync(_project.Id);
         _project.Status = ProjectStatus.일시중단;
+        _project.StatusLogs.Add(new StatusLog { At = DateTime.Now, Action = "중단" });
         StateHasChanged();
     }
 
@@ -1676,6 +1677,7 @@ else
         if (_project == null) return;
         await Storage.ResumeProjectAsync(_project.Id);
         _project.Status = ProjectStatus.진행중;
+        _project.StatusLogs.Add(new StatusLog { At = DateTime.Now, Action = "재개" });
         StateHasChanged();
     }
 

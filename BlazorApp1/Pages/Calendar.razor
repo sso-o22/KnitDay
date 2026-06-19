@@ -748,41 +748,74 @@ else
             var isPaused    = p.Status == ProjectStatus.일시중단;
 
             bool isStart = p.StartDate.HasValue && p.StartDate.Value.Date == date;
-            // FO(완성)는 실제로 완료 처리된 프로젝트에만 표시 — 목표 종료일만 적어둔 상태에서는 찍히지 않음
             bool isEnd   = isCompleted && p.EndDate.HasValue && p.EndDate.Value.Date == date;
 
-            if (isPaused)
+            // CO 표시
+            if (isStart)
             {
-                // 일시중단: 시작일 표시 + 마지막 중단 날짜에만 점 표시 (이후 날짜엔 안 나옴)
-                var lastPausedAt = p.StatusLogs
-                    .Where(l => l.Action == "중단")
-                    .OrderByDescending(l => l.At)
-                    .Select(l => (DateTime?)l.At.Date)
-                    .FirstOrDefault();
+                result.Add(new CalendarEvent(p.Id, p.Title, "CO", "transparent", "#d6eefa", "#1a6a8a"));
+                continue;
+            }
 
-                if (isStart)
-                    result.Add(new CalendarEvent(p.Id, p.Title, "CO", "transparent", "#d6eefa", "#1a6a8a"));
-                else if (lastPausedAt.HasValue && lastPausedAt.Value == date)
+            // FO 표시 (완료된 프로젝트만)
+            if (isEnd)
+            {
+                result.Add(new CalendarEvent(p.Id, p.Title, "FO", "transparent", "#fad5de", "#a03060"));
+                continue;
+            }
+
+            // 시작일 이전이면 스킵
+            if (!p.StartDate.HasValue || date <= p.StartDate.Value.Date)
+                continue;
+
+            // 완료 프로젝트: 시작일 다음날 ~ 완료일 전날 구간 점
+            if (isCompleted)
+            {
+                if (p.EndDate.HasValue && date < p.EndDate.Value.Date)
                     result.Add(new CalendarEvent(p.Id, p.Title, "·", s.PaleBg, s.AccentColor, s.TextColor));
                 continue;
             }
 
-            // 진행 구간: 시작일 다음날부터 — 완료된 프로젝트는 완료일 전날까지, 진행중인 프로젝트는 오늘까지(목표 종료일 유무와 무관)
-            DateTime? rangeEnd = isCompleted ? p.EndDate?.Date : (DateTime?)today;
-            bool isInRange = p.StartDate.HasValue && rangeEnd.HasValue
-                              && p.StartDate.Value.Date < date && date <= rangeEnd.Value
-                              && !(isEnd); // 완료일 당일은 isEnd로 별도 표시
+            // 진행중 / 일시중단: date가 "활성 구간"인지 확인
+            // 활성 구간 = 시작일 이후로 중단→재개 로그를 순서대로 보며 date가 어느 구간에 속하는지
+            // 중단 중이면 점 없음, 진행 중이면 점 찍음
+            // 현재 오늘 이후는 찍지 않음
+            if (date > today) continue;
 
-            if (isStart || isEnd)
-                result.Add(new CalendarEvent(p.Id, p.Title,
-                    isStart && isEnd ? "CO·FO" : isStart ? "CO" : "FO",
-                    "transparent",
-                    isStart ? "#d6eefa" : "#fad5de",
-                    isStart ? "#1a6a8a" : "#a03060"));
-            else if (isInRange)
+            bool isActive = IsDateActive(p, date);
+            if (isActive)
                 result.Add(new CalendarEvent(p.Id, p.Title, "·", s.PaleBg, s.AccentColor, s.TextColor));
         }
         return result;
+    }
+
+    // date가 해당 프로젝트의 "활성(진행 중)" 구간에 속하는지 판단
+    // 시작일 이후 StatusLogs를 시간순으로 보며 상태 전환을 추적
+    bool IsDateActive(KnitProject p, DateTime date)
+    {
+        if (!p.StartDate.HasValue) return false;
+        var startDate = p.StartDate.Value.Date;
+        if (date <= startDate) return false;
+
+        // 로그를 시간순 정렬
+        var logs = p.StatusLogs
+            .OrderBy(l => l.At)
+            .ToList();
+
+        // 시작 시점은 "활성" 상태
+        // 로그를 순회하며 date 기준으로 상태 결정
+        bool active = true; // 시작 후 기본 활성
+        foreach (var log in logs)
+        {
+            var logDate = log.At.Date;
+            if (logDate > date) break; // date 이후 로그는 무시
+
+            if (log.Action == "중단")
+                active = false;
+            else if (log.Action == "재개")
+                active = true;
+        }
+        return active;
     }
 
     // ── 타임라인 바 위치 계산 (이번달 기준 %) ─────────────────────────

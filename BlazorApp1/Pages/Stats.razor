@@ -38,7 +38,7 @@ else
 
     <!-- 기간 탭 -->
     <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
-        @foreach (var p in new[] { ("day","오늘"), ("week","이번 주"), ("month","이번 달"), ("year","연간") })
+        @foreach (var p in new[] { ("day","일일"), ("week","주간"), ("month","월간"), ("year","연간") })
         {
             <button class="btn @(_period == p.Item1 ? "btn-sage" : "btn-secondary")"
                     @onclick="() => SetPeriod(p.Item1)">@p.Item2</button>
@@ -76,7 +76,7 @@ else
             </select>
             @if (!IsRefThisMonth())
             {
-                <button class="btn btn-ghost btn-sm" @onclick="GoToToday">이번 달로</button>
+                <button class="btn btn-ghost btn-sm" @onclick="GoToToday">이번 달</button>
             }
         }
         else
@@ -164,28 +164,15 @@ else
         }
         else
         {
-            <!-- 일/주 단위: 개선된 막대 그래프 -->
+            <!-- 일/주 단위: SVG 막대 그래프 -->
             @if (_chartData.All(d => d.Seconds == 0))
             {
                 <div style="text-align:center; padding:32px; color:var(--text-light);">이 기간에 기록이 없어요</div>
             }
             else
             {
-                <div style="display:flex; align-items:flex-end; gap:@(_period == "day" ? "3px" : "6px"); height:160px; padding-bottom:8px;">
-                    @foreach (var d in _chartData)
-                    {
-                        var heightPct = BarHeightPct(d.Seconds);
-                        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%;">
-                            <div style="flex:1; display:flex; align-items:flex-end; width:100%;">
-                                <div style="width:100%; height:@(heightPct.ToString("F1"))%; background:var(--theme-active); border-radius:4px 4px 0 0; opacity:@(d.Seconds > 0 ? "1" : "0.12"); min-height:@(d.Seconds > 0 ? "4px" : "0"); transition:height 0.3s;"></div>
-                            </div>
-                            @if (d.Seconds > 0)
-                            {
-                                <div style="font-size:0.58rem; color:var(--theme-active); font-weight:600; text-align:center; line-height:1.2;">@FormatTimeShort(d.Seconds)</div>
-                            }
-                            <div style="font-size:0.62rem; color:var(--text-light); white-space:nowrap;">@d.Label</div>
-                        </div>
-                    }
+                <div style="position:relative; height:190px;">
+                    @((MarkupString)BuildBarSvg())
                 </div>
                 <div style="font-size:0.8rem; color:var(--text-mid); margin-top:4px;">합계 <span style="font-weight:700; color:var(--theme-active);">@FormatTime(_chartData.Sum(d => d.Seconds))</span></div>
             }
@@ -534,6 +521,70 @@ else
         var maxVal = _chartData.Count > 0 ? _chartData.Max(d => d.Seconds) : 1;
         if (maxVal == 0) maxVal = 1;
         return (double)secs / maxVal * 100;
+    }
+
+    string BuildBarSvg()
+    {
+        int n = _chartData.Count;
+        if (n == 0) return "";
+
+        // SVG 고정 뷰박스: 320 x 170 (padTop=20 for label, padBot=22 for x-label, barArea=128)
+        double svgW = 320; double svgH = 170;
+        double padL = 4; double padR = 4; double padTop = 24; double padBot = 22;
+        double plotW = svgW - padL - padR;
+        double plotH = svgH - padTop - padBot; // 124
+        double gap = n <= 7 ? 6 : 3;
+        double totalGap = gap * (n - 1);
+        double barW = (plotW - totalGap) / n;
+        double maxVal = _chartData.Max(d => (double)d.Seconds);
+        if (maxVal == 0) maxVal = 1;
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<svg viewBox=\"0 0 {svgW} {svgH}\" preserveAspectRatio=\"xMidYMid meet\" style=\"width:100%;height:100%;overflow:visible;\">");
+        sb.Append("<defs>");
+        sb.Append("<linearGradient id=\"barGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">");
+        sb.Append("<stop offset=\"0%\" stop-color=\"var(--theme-active)\" stop-opacity=\"1\"/>");
+        sb.Append("<stop offset=\"100%\" stop-color=\"var(--theme-active)\" stop-opacity=\"0.5\"/>");
+        sb.Append("</linearGradient>");
+        sb.Append("</defs>");
+
+        // X축 베이스라인
+        double baseY = padTop + plotH;
+        sb.Append($"<line x1=\"{padL:F1}\" y1=\"{baseY:F1}\" x2=\"{(svgW-padR):F1}\" y2=\"{baseY:F1}\" stroke=\"var(--border)\" stroke-width=\"0.8\"/>");
+
+        for (int i = 0; i < n; i++)
+        {
+            var d = _chartData[i];
+            double x = padL + i * (barW + gap);
+            double barH = d.Seconds > 0 ? plotH * d.Seconds / maxVal : 0;
+            double barH2 = Math.Max(barH, d.Seconds > 0 ? 4 : 0);
+            double y = baseY - barH2;
+            double r = Math.Min(4, barW / 2); // rounded top radius
+
+            if (d.Seconds > 0)
+            {
+                // rounded top rect via path
+                string bx = x.ToString("F1"); string by = y.ToString("F1");
+                string bw = barW.ToString("F1"); string bh = barH2.ToString("F1");
+                string br = r.ToString("F1");
+                double rx = x + barW; double ry = y + barH2;
+                sb.Append($"<path d=\"M {bx} {(y+r):F1} Q {bx} {by} {(x+r):F1} {by} L {(rx-r):F1} {by} Q {rx:F1} {by} {rx:F1} {(y+r):F1} L {rx:F1} {ry:F1} L {bx} {ry:F1} Z\" fill=\"url(#barGrad)\"/>");
+                // 값 레이블 (막대 위)
+                double labelY = y - 3;
+                sb.Append($"<text x=\"{(x + barW/2):F1}\" y=\"{labelY:F1}\" text-anchor=\"middle\" font-size=\"7\" font-weight=\"600\" fill=\"var(--theme-active)\">{FormatTimeShort(d.Seconds)}</text>");
+            }
+            else
+            {
+                // 빈 막대 — 얇은 점선
+                sb.Append($"<line x1=\"{(x + barW/2):F1}\" y1=\"{(baseY-2):F1}\" x2=\"{(x + barW/2):F1}\" y2=\"{(baseY-6):F1}\" stroke=\"var(--border)\" stroke-width=\"{barW*0.5:F1}\"/>");
+            }
+
+            // X축 레이블
+            sb.Append($"<text x=\"{(x + barW/2):F1}\" y=\"{(baseY+14):F1}\" text-anchor=\"middle\" font-size=\"8\" fill=\"var(--text-light)\">{d.Label}</text>");
+        }
+
+        sb.Append("</svg>");
+        return sb.ToString();
     }
 
     void BuildRecentSessions()
