@@ -10,16 +10,16 @@
 @if (Show && Project != null)
 {
     <div style="position:fixed; inset:0; z-index:1100; background:rgba(0,0,0,0.32);
-                display:flex; align-items:center; justify-content:center; padding:20px;"
+                display:flex; align-items:flex-end; justify-content:center;"
          @onclick:stopPropagation="true">
-        <div style="background:var(--white); border-radius:var(--radius); box-shadow:0 20px 60px rgba(0,0,0,0.14);
-                    width:100%; max-width:520px; max-height:90vh;
-                    display:flex; flex-direction:column; overflow:hidden; min-width:0;"
+        <div style="background:var(--white); width:100%; max-width:600px; height:100%;
+                    display:flex; flex-direction:column; overflow:hidden; min-width:0;
+                    box-shadow:0 -4px 32px rgba(0,0,0,0.12);"
              @onclick:stopPropagation="true">
 
             <!-- 헤더 -->
             <div style="display:flex; align-items:center; justify-content:space-between;
-                        padding:20px 24px 14px; flex-shrink:0; border-bottom:1px solid var(--border);">
+                        padding:20px 20px 14px; flex-shrink:0; border-bottom:1px solid var(--border);">
                 <h2 style="font-family:'DM Sans','Noto Sans KR',sans-serif; font-size:1.15rem; font-weight:700; color:var(--black); margin:0;">@Project.Title</h2>
                 <button style="display:flex; align-items:center; justify-content:center;
                                width:32px; height:32px; border-radius:8px;
@@ -29,7 +29,7 @@
             </div>
 
             <!-- 스크롤 영역 -->
-            <div style="overflow-y:auto; overflow-x:hidden; flex:1; padding:16px 24px; word-break:break-word; overflow-wrap:break-word;">
+            <div style="overflow-y:auto; overflow-x:hidden; flex:1; padding:16px 20px; word-break:break-word; overflow-wrap:break-word;">
 
             @if (!_editing)
             {
@@ -340,7 +340,7 @@
 
             <!-- 하단 버튼 -->
             <div style="display:flex; align-items:center; justify-content:space-between; gap:8px;
-                        padding:14px 24px; border-top:1px solid var(--border); flex-shrink:0; flex-wrap:wrap;">
+                        padding:14px 20px; border-top:1px solid var(--border); flex-shrink:0; flex-wrap:wrap;">
 
                 <!-- 왼쪽: 문어발로 복귀 -->
                 <div>
