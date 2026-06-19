@@ -35,7 +35,7 @@
                         {
                             <canvas id="pdf-canvas-@pageNum" style="display:block;"></canvas>
                         }
-                        <canvas id="anno-canvas-@pageNum" style="position:absolute;top:0;left:0;z-index:10;cursor:@GetCursor();touch-action:none;pointer-events:@(_drawMode && _tool == "rowmarker" ? "none" : "auto");"
+                        <canvas id="anno-canvas-@pageNum" style="position:absolute;top:0;left:0;z-index:10;cursor:@GetCursor();touch-action:@(_drawMode && _tool != "rowmarker" ? "none" : "auto");pointer-events:@(_drawMode && _tool == "rowmarker" ? "none" : "auto");"
                                 @onclick="e => OnAnnoCanvasClick(e, pageNum)"></canvas>
 
                         @* ── 행 높이 수동 지정: 두 선 드래그 ── *@
