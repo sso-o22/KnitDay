@@ -606,36 +606,38 @@ body {
     .nav-item { justify-content: center; padding: 12px 8px; }
     .nav-icon { width: auto; }
     .main-content { padding: 24px 20px; }
+}
 
-    /* 아이패드: 설정 카드 너비 제한 해제 */
+/* 태블릿+PC (641px 이상) — 아이패드 10 가로(1180px) 포함 */
+@media (min-width: 641px) {
+    /* 설정 카드 너비 제한 해제 */
     .settings-wrapper {
         max-width: 100% !important;
     }
 
-    /* 태블릿+PC: 모든 form-control 높이 통일 */
+    /* 모든 form-control 높이 통일 */
     select.form-control,
     input.form-control,
-    input[type="date"].form-control {
+    input[type="date"].form-control,
+    input[type="date"] {
         height: 44px !important;
         min-height: 44px !important;
-        padding: 10px 14px !important;
+        padding: 0 14px !important;
         font-size: 0.95rem !important;
         box-sizing: border-box !important;
-        line-height: 1.4 !important;
+        line-height: 44px !important;
+        display: flex !important;
+        align-items: center !important;
+        vertical-align: middle !important;
     }
-}
 
-/* 태블릿+PC (641px 이상): 사이드바 있는 환경 — 아이패드 Pro 포함 */
-@media (min-width: 641px) {
-    /* 아이패드: 날짜 input — 그리드 셀 너비에 맞게 강제 */
+    /* 날짜 input 너비 강제 */
     input[type="date"] {
-        display: block;
+        display: block !important;
         width: 100%;
         max-width: 100%;
         min-width: 0;
-        box-sizing: border-box;
     }
-    /* 날짜 input을 감싸는 form-group도 overflow 방지 */
     .form-row .form-group {
         min-width: 0;
         overflow: hidden;

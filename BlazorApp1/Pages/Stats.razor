@@ -134,7 +134,7 @@ else
                     </div>
                 </div>
                 <!-- 이중 꺾은선 SVG 그래프 -->
-                <div style="position:relative; height:clamp(200px, 30vw, 320px); margin-bottom:8px;">
+                <div style="position:relative; height:clamp(240px, 30vw, 360px); margin-bottom:8px;">
                     @((MarkupString)BuildYearSvg())
                     <!-- 좌우 Y축 레이블 텍스트 (SVG 밖) -->
                     <div style="position:absolute; bottom:0; left:0; font-size:0.6rem; color:var(--theme-active); opacity:0.7;">누적</div>
@@ -151,7 +151,7 @@ else
             }
             else
             {
-                <div style="position:relative; height:clamp(170px, 26vw, 280px); margin-bottom:4px;">
+                <div style="position:relative; height:clamp(200px, 26vw, 320px); margin-bottom:4px;">
                     @((MarkupString)BuildMonthSvg())
                 </div>
                 <!-- 기간 요약 -->
@@ -171,7 +171,7 @@ else
             }
             else
             {
-                <div style="position:relative; height:clamp(190px, 28vw, 300px);">
+                <div style="position:relative; height:clamp(220px, 28vw, 340px);">
                     @((MarkupString)BuildBarSvg())
                 </div>
                 <div style="font-size:0.8rem; color:var(--text-mid); margin-top:4px;">합계 <span style="font-weight:700; color:var(--theme-active);">@FormatTime(_chartData.Sum(d => d.Seconds))</span></div>
@@ -245,7 +245,7 @@ else
             // 카드 실제 너비 측정 (사이드바 등 제외한 main-content 기준, 카드 padding 32px 제외)
             var w = await JS.InvokeAsync<double>("eval",
                 "Math.max(0, (document.querySelector('.main-content') || document.body).clientWidth - 80)");
-            _svgWidth = Math.Max(260, w);
+            _svgWidth = Math.Max(260, Math.Min(w, 800)); // 최대 800px 제한
             StateHasChanged();
         }
     }
@@ -388,8 +388,8 @@ else
     // ── SVG 빌더 (text 태그가 Razor에서 파싱 오류 발생 → MarkupString으로 우회) ──
     string BuildYearSvg()
     {
-        double W = _svgWidth; double H = 160;
-        double padL = 44, padR = 44, padTop = 12, plotH = 120;
+        double W = _svgWidth; double H = 200;
+        double padL = 44, padR = 44, padTop = 12, plotH = 160;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
         int n = _yearChartData.Count;
@@ -439,8 +439,8 @@ else
 
     string BuildMonthSvg()
     {
-        double W = _svgWidth; double H = 140;
-        double padL = 36, padR = 8, padTop = 12, plotH = 104;
+        double W = _svgWidth; double H = 180;
+        double padL = 36, padR = 8, padTop = 12, plotH = 144;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
         int n = _chartData.Count;
@@ -512,7 +512,7 @@ else
     {
         int n = _chartData.Count;
         if (n == 0) return "";
-        double svgW = _svgWidth; double svgH = 170;
+        double svgW = _svgWidth; double svgH = 220;
         double padL = 4, padR = 4, padTop = 24, padBot = 22;
         double plotW = svgW - padL - padR;
         double plotH = svgH - padTop - padBot;
