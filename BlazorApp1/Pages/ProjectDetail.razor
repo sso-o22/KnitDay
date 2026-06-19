@@ -812,23 +812,19 @@ else
 <!-- 사진 확대 모달 -->
 @if (_showPhoto && _selectedPhoto != null)
 {
-    <div class="modal-backdrop" @onclick="() => _showPhoto = false"
-         style="position:fixed; top:0; left:0; right:0; bottom:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:16px; z-index:1000;">
-        <div style="position:relative; max-width:90vw;" @onclick:stopPropagation="true">
-            <button @onclick="() => _showPhoto = false"
-                    style="position:absolute; top:-12px; right:-12px; z-index:10;
-                           width:32px; height:32px; border-radius:50%; border:none;
-                           background:rgba(0,0,0,0.6); color:white; font-size:1rem;
-                           cursor:pointer; display:flex; align-items:center; justify-content:center;">
-                ×
-            </button>
-            <img src="@(!string.IsNullOrEmpty(_selectedPhoto.StorageUrl) ? _selectedPhoto.StorageUrl : _selectedPhoto.Base64Data)"
-                 style="max-width:90vw; max-height:80vh; object-fit:contain; border-radius:var(--radius); display:block;" />
-            @if (!string.IsNullOrEmpty(_selectedPhoto.Caption))
-            {
-                <p style="text-align:center; color:white; margin-top:10px;">@_selectedPhoto.Caption</p>
-            }
-        </div>
+    <div @onclick="() => _showPhoto = false"
+         style="position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;">
+        <button @onclick="() => _showPhoto = false"
+                style="position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10000;">
+            <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
+        </button>
+        <img src="@(!string.IsNullOrEmpty(_selectedPhoto.StorageUrl) ? _selectedPhoto.StorageUrl : _selectedPhoto.Base64Data)"
+             style="max-width:95vw;max-height:92vh;object-fit:contain;border-radius:8px;"
+             @onclick:stopPropagation="true" />
+        @if (!string.IsNullOrEmpty(_selectedPhoto.Caption))
+        {
+            <p style="position:fixed;bottom:24px;left:0;right:0;text-align:center;color:white;font-size:0.9rem;">@_selectedPhoto.Caption</p>
+        }
     </div>
 }
 

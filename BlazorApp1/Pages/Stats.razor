@@ -215,7 +215,8 @@ else
     List<(KnitSession Session, string ProjectTitle)> _recentSessions = new();
     List<KnitProject> _projects = new();
     List<int> _yearOptions = new();
-    double _svgWidth = 320; // SVG 플롯 너비 (JS에서 실제 카드 너비로 업데이트)
+    double _svgWidth = 320;     // 막대 그래프 너비
+    double _svgWidthLine = 320; // 꺾은선 그래프 너비 (더 넓게)
 
     protected override async Task OnInitializedAsync()
     {
@@ -245,7 +246,8 @@ else
             // 카드 실제 너비 측정 (사이드바 등 제외한 main-content 기준, 카드 padding 32px 제외)
             var w = await JS.InvokeAsync<double>("eval",
                 "Math.max(0, (document.querySelector('.main-content') || document.body).clientWidth - 80)");
-            _svgWidth = Math.Max(260, Math.Min(w, 800)); // 최대 800px 제한
+            _svgWidth = Math.Max(260, Math.Min(w, 600));     // 막대: 최대 600px
+            _svgWidthLine = Math.Max(260, Math.Min(w, 900)); // 꺾은선: 최대 900px
             StateHasChanged();
         }
     }
@@ -388,7 +390,7 @@ else
     // ── SVG 빌더 (text 태그가 Razor에서 파싱 오류 발생 → MarkupString으로 우회) ──
     string BuildYearSvg()
     {
-        double W = _svgWidth; double H = 200;
+        double W = _svgWidthLine; double H = 200;
         double padL = 44, padR = 44, padTop = 12, plotH = 160;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
@@ -439,7 +441,7 @@ else
 
     string BuildMonthSvg()
     {
-        double W = _svgWidth; double H = 180;
+        double W = _svgWidthLine; double H = 180;
         double padL = 36, padR = 8, padTop = 12, plotH = 144;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
