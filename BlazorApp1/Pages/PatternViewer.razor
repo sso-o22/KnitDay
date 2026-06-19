@@ -19,7 +19,7 @@
 
     <!-- PDF 스크롤 영역 (꽉 차게) -->
     <div id="scroll-container" class="pv-scroll">
-        <div id="pdf-wrapper" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 0;">
+        <div id="pdf-wrapper" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:66px 0 8px;">
             @if (_pdfLoaded)
             {
                 @for (int pg = 1; pg <= _totalPages; pg++)
@@ -468,7 +468,6 @@
         overflow: auto;
         display: flex;
         justify-content: center;
-        padding-top: 66px; /* 제목줄(28px) + 툴바(38px) */
         box-sizing: border-box;
     }
 
