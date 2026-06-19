@@ -35,8 +35,8 @@
             {
                 <!-- 보기 모드 -->
 
-                <!-- 도안 파일 삭제 옵션 (도안이 저장된 경우에만) -->
-                @if (Project.HasSavedPattern)
+                <!-- 도안 파일 삭제 옵션 (도안이 저장된 경우에만, 읽기전용 제외) -->
+                @if (Project.HasSavedPattern && !ReadOnly)
                 {
                     <div style="margin-bottom:14px; padding:10px 14px; background:var(--theme-pale); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:10px;">
                         <div>
@@ -354,9 +354,14 @@
                     }
                 </div>
 
-                <!-- 오른쪽: 수정/삭제/닫기 or 저장/취소 -->
+                <!-- 오른쪽 -->
                 <div style="display:flex; gap:8px; align-items:center;">
-                    @if (!_editing)
+                    @if (ReadOnly)
+                    {
+                        <button class="btn btn-ghost btn-sm" @onclick="ClosePopup">닫기</button>
+                        <button class="btn btn-primary btn-sm" @onclick='() => Nav.NavigateTo("finished")'>완성작 목록 →</button>
+                    }
+                    else if (!_editing)
                     {
                         @if (OnDelete.HasDelegate)
                         {
@@ -423,6 +428,7 @@
     [Parameter] public KnitProject? Project { get; set; }
     [Parameter] public List<Yarn> Yarns { get; set; } = new();
     [Parameter] public List<KnitTool> Tools { get; set; } = new();
+    [Parameter] public bool ReadOnly { get; set; } = false;
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
     [Parameter] public EventCallback OnDelete { get; set; }
