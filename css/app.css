@@ -612,7 +612,7 @@ body {
         max-width: 100% !important;
     }
 
-    /* 아이패드: 모든 form-control 높이 통일 */
+    /* 태블릿+PC: 모든 form-control 높이 통일 */
     select.form-control,
     input.form-control,
     input[type="date"].form-control {
@@ -623,6 +623,10 @@ body {
         box-sizing: border-box !important;
         line-height: 1.4 !important;
     }
+}
+
+/* 태블릿+PC (641px 이상): 사이드바 있는 환경 — 아이패드 Pro 포함 */
+@media (min-width: 641px) {
     /* 아이패드: 날짜 input — 그리드 셀 너비에 맞게 강제 */
     input[type="date"] {
         display: block;
