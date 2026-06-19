@@ -607,16 +607,21 @@ body {
     .nav-icon { width: auto; }
     .main-content { padding: 24px 20px; }
 
+    /* 아이패드: 설정 카드 너비 제한 해제 */
+    .settings-wrapper {
+        max-width: 100% !important;
+    }
+
     /* 아이패드: 모든 form-control 높이 통일 */
     select.form-control,
     input.form-control,
     input[type="date"].form-control {
-        height: 44px;
-        min-height: 44px;
-        padding: 10px 14px;
-        font-size: 0.95rem;
-        box-sizing: border-box;
-        line-height: 1.4;
+        height: 44px !important;
+        min-height: 44px !important;
+        padding: 10px 14px !important;
+        font-size: 0.95rem !important;
+        box-sizing: border-box !important;
+        line-height: 1.4 !important;
     }
     /* 아이패드: 날짜 input — 그리드 셀 너비에 맞게 강제 */
     input[type="date"] {
@@ -987,6 +992,14 @@ body {
     box-shadow: 0 0 0 2px var(--ivory), 0 0 0 4px rgba(0,0,0,0.25);
 }
 
+
+/* ── 설정 페이지 래퍼 ────────────────────────────────────── */
+.settings-wrapper {
+    max-width: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
 
 /* ── 설정 페이지 테마 버튼 ──────────────────────────────── */
 .settings-theme-btn {
