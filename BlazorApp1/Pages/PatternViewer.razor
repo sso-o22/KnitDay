@@ -96,7 +96,7 @@
                                         background:rgba(@rgb,@alpha);
                                         @boxShadow
                                         @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
-                                        pointer-events:@(isInteractive ? "all" : "none");z-index:@(isSelected ? 17 : (marker.IsCurrent ? 16 : 15));cursor:@(isDraggable ? "ns-resize" : (isInteractive ? "pointer" : "default"));touch-action:none;">
+                                        pointer-events:@(isInteractive ? "all" : "none");z-index:@(isSelected ? 17 : (marker.IsCurrent ? 16 : 15));cursor:@(isDraggable ? "ns-resize" : (isInteractive ? "pointer" : "default"));@(marker.IsCurrent ? "touch-action:none;" : "")">
                                 @if (marker.IsCurrent)
                                 {
                                     <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
@@ -1653,10 +1653,14 @@
     }
 
     // 선택한 마커가 전체 마커 중 몇 번째(추가된 순서)인지 반환 — 1부터 시작, 없으면 null
+    // 선택한 마커가 "행마커"(이동 가능한 슬라이더) 중 몇 번째인지 반환 — 흔적으로 굳힌 행은 행마커로 치지 않으므로 제외
+    // 1부터 시작, 선택된 게 없거나 흔적 마커를 선택한 경우엔 null
     int? GetSelectedMarkerIndex()
     {
         if (_selectedMarkerId == null) return null;
-        var idx = _rowMarkers.FindIndex(m => m.Id == _selectedMarkerId);
+        var selected = _rowMarkers.FirstOrDefault(m => m.Id == _selectedMarkerId);
+        if (selected == null || !selected.IsCurrent) return null;
+        var idx = _rowMarkers.Where(m => m.IsCurrent).ToList().FindIndex(m => m.Id == _selectedMarkerId);
         return idx >= 0 ? idx + 1 : null;
     }
 
