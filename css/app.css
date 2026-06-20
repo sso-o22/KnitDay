@@ -654,7 +654,7 @@ body {
         max-height: unset !important;
         line-height: 1.4 !important;
         padding: 4px 8px !important;
-        font-size: inherit !important;
+        font-size: 0.78rem !important;
     }
 
     /* text input은 기본 스타일 유지 (height 강제 안 함) */
