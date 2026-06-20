@@ -134,7 +134,7 @@ else
                     </div>
                 </div>
                 <!-- 이중 꺾은선 SVG 그래프 -->
-                <div style="position:relative; height:clamp(240px, 30vw, 360px); margin-bottom:8px;">
+                <div style="position:relative; height:clamp(240px, 32vw, 420px); margin-bottom:8px;">
                     @((MarkupString)BuildYearSvg())
                     <!-- 좌우 Y축 레이블 텍스트 (SVG 밖) -->
                     <div style="position:absolute; bottom:0; left:0; font-size:0.6rem; color:var(--theme-active); opacity:0.7;">누적</div>
@@ -151,7 +151,7 @@ else
             }
             else
             {
-                <div style="position:relative; height:clamp(200px, 26vw, 320px); margin-bottom:4px;">
+                <div style="position:relative; height:clamp(200px, 30vw, 400px); margin-bottom:4px;">
                     @((MarkupString)BuildMonthSvg())
                 </div>
                 <!-- 기간 요약 -->
@@ -246,7 +246,7 @@ else
             // 카드 실제 너비 측정 (사이드바 등 제외한 main-content 기준, 카드 padding 32px 제외)
             var w = await JS.InvokeAsync<double>("eval",
                 "Math.max(0, (document.querySelector('.main-content') || document.body).clientWidth - 80)");
-            _svgWidth = Math.Max(260, Math.Min(w, 600));     // 막대: 최대 600px
+            _svgWidth = Math.Max(260, Math.Min(w, 480));     // 막대: 최대 480px
             _svgWidthLine = Math.Max(260, Math.Min(w, 900)); // 꺾은선: 최대 900px
             StateHasChanged();
         }
@@ -390,8 +390,8 @@ else
     // ── SVG 빌더 (text 태그가 Razor에서 파싱 오류 발생 → MarkupString으로 우회) ──
     string BuildYearSvg()
     {
-        double W = _svgWidthLine; double H = 200;
-        double padL = 44, padR = 44, padTop = 12, plotH = 160;
+        double W = _svgWidthLine; double H = 240;
+        double padL = 44, padR = 44, padTop = 12, plotH = 200;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
         int n = _yearChartData.Count;
@@ -441,8 +441,8 @@ else
 
     string BuildMonthSvg()
     {
-        double W = _svgWidthLine; double H = 180;
-        double padL = 36, padR = 8, padTop = 12, plotH = 144;
+        double W = _svgWidthLine; double H = 220;
+        double padL = 36, padR = 8, padTop = 12, plotH = 180;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
         int n = _chartData.Count;
