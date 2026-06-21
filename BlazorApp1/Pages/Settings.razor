@@ -822,13 +822,16 @@
         if (!Auth.IsLoggedIn) { _usageDebugMsg = "로그인 상태가 아닙니다"; StateHasChanged(); return; }
         try
         {
-            // Firebase에서 raw JSON 직접 읽기
             var uid = Auth.CurrentUser?.Uid;
             var path = $"users/{uid}/meta/usage";
             var raw = await JS.InvokeAsync<string?>("firebaseStore.getDocument", path);
-            if (string.IsNullOrEmpty(raw))
+            if (raw != null && raw.StartsWith("__error__:"))
             {
-                _usageDebugMsg = $"Firebase 응답 없음 (uid={uid?.Substring(0,6)}… path={path})";
+                _usageDebugMsg = $"Firebase 오류: {raw.Substring(10)}";
+            }
+            else if (string.IsNullOrEmpty(raw))
+            {
+                _usageDebugMsg = $"문서 없음 (uid={uid?.Substring(0,6)}… path={path})";
             }
             else
             {
