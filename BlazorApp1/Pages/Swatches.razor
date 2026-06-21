@@ -45,8 +45,8 @@
                 }
             </div>
         </div>
-        @* 2행: 뜨개법 + 바늘 필터 — 1행과 동일한 filter-sort-bar 패턴으로 구분선 위치 자동 정렬 *@
-        <div class="filter-sort-bar">
+        @* 2행: 뜨개법 + 바늘 필터 — 1행과 동일한 구분선 위치, 모바일에서도 한 줄 유지 *@
+        <div class="filter-sort-bar swatch-filter-bar">
             <div class="filter-sort-group">
                 <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
                 @foreach (var (label, val) in new[]{("전체",""),("메리야스","메리야스"),("무늬","무늬")})
