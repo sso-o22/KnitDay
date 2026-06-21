@@ -54,18 +54,20 @@
                         @onclick="() => SetFilterStitch(val.Trim())">@label</button>
             }
             <div class="swatch-filter-divider" style="width:1px;height:16px;background:var(--border);flex-shrink:0;display:none;"></div>
-            <select class="form-control swatch-needle-select" style="font-size:0.8rem; flex-shrink:0; padding:4px 8px; width:auto; min-width:100px;"
-                    value="@_filterNeedle" @onchange="OnFilterNeedleChanged">
-                <option value="">바늘 전체</option>
-                @foreach (var mm in NeedleOptions)
+            <div class="swatch-needle-wrapper" style="margin-left:auto; flex-shrink:0; display:flex; align-items:center; gap:6px;">
+                <select class="form-control swatch-needle-select" style="font-size:0.8rem; flex-shrink:0; padding:4px 8px; width:auto; min-width:100px;"
+                        value="@_filterNeedle" @onchange="OnFilterNeedleChanged">
+                    <option value="">바늘 전체</option>
+                    @foreach (var mm in NeedleOptions)
+                    {
+                        <option value="@mm">@mm mm</option>
+                    }
+                </select>
+                @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
                 {
-                    <option value="@mm">@mm mm</option>
+                    <button class="btn btn-ghost btn-sm" style="flex-shrink:0;" @onclick="ResetFilters">✕</button>
                 }
-            </select>
-            @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
-            {
-                <button class="btn btn-ghost btn-sm" style="flex-shrink:0;" @onclick="ResetFilters">✕</button>
-            }
+            </div>
         </div>
     </div>
 }
