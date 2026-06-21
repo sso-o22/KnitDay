@@ -609,7 +609,7 @@ body {
 
     /* 꺾은선 그래프: 아이패드에서 더 높게 */
     .stats-line-chart {
-        height: clamp(420px, 50vw, 680px) !important;
+        height: clamp(300px, 38vw, 500px) !important;
     }
 
     /* 스와치 2행: 구분선 표시 + 바늘 콤보박스 너비 확보 */
@@ -726,7 +726,19 @@ body {
     }
 
     .page-title { font-size: 1.4rem; }
-    .page-header { margin-bottom: 16px; }
+    .page-header {
+        position: sticky;
+        top: 0;
+        z-index: 50;
+        background: var(--white);
+        margin-bottom: 16px;
+        padding-top: 8px;
+        padding-bottom: 4px;
+        margin-left: -14px;
+        margin-right: -14px;
+        padding-left: 14px;
+        padding-right: 14px;
+    }
 
     .form-row,
     .form-row-3 { grid-template-columns: 1fr; }
