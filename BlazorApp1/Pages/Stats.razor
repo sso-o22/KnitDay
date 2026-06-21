@@ -377,8 +377,8 @@ else
     // ── SVG 빌더 (text 태그가 Razor에서 파싱 오류 발생 → MarkupString으로 우회) ──
     string BuildYearSvg()
     {
-        double W = _svgWidthLine; double H = 240;
-        double padL = 44, padR = 44, padTop = 12, plotH = 200;
+        double W = _svgWidthLine; double H = 420;
+        double padL = 44, padR = 44, padTop = 16, plotH = 370;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
         int n = _yearChartData.Count;
@@ -400,7 +400,7 @@ else
         string ar = string.IsNullOrEmpty(tp) ? "" : tp + $" L {XAt(n-1):F1} {baseY:F1} L {padL:F1} {baseY:F1} Z";
 
         var sb = new System.Text.StringBuilder();
-        sb.Append($"<svg viewBox=\"0 0 {W:F0} {H:F0}\" preserveAspectRatio=\"none\" style=\"position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;\">");
+        sb.Append($"<svg viewBox=\"0 0 {W:F0} {H:F0}\" preserveAspectRatio=\"xMidYMid meet\" style=\"position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;\">");
         sb.Append("<defs><linearGradient id=\"areaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">");
         sb.Append("<stop offset=\"0%\" stop-color=\"var(--theme-active)\" stop-opacity=\"0.15\"/>");
         sb.Append("<stop offset=\"100%\" stop-color=\"var(--theme-active)\" stop-opacity=\"0\"/>");
@@ -428,8 +428,8 @@ else
 
     string BuildMonthSvg()
     {
-        double W = _svgWidthLine; double H = 220;
-        double padL = 36, padR = 8, padTop = 12, plotH = 180;
+        double W = _svgWidthLine; double H = 400;
+        double padL = 36, padR = 8, padTop = 16, plotH = 350;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
         int n = _chartData.Count;
@@ -451,7 +451,7 @@ else
         if (mxS == 0) mxS = 1;
 
         var sb = new System.Text.StringBuilder();
-        sb.Append($"<svg viewBox=\"0 0 {W:F0} {H:F0}\" preserveAspectRatio=\"none\" style=\"position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;\">");
+        sb.Append($"<svg viewBox=\"0 0 {W:F0} {H:F0}\" preserveAspectRatio=\"xMidYMid meet\" style=\"position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;\">");
         sb.Append("<defs><linearGradient id=\"mAreaGrad\" x1=\"0\" y1=\"0\" x2=\"0\" y2=\"1\">");
         sb.Append("<stop offset=\"0%\" stop-color=\"var(--theme-active)\" stop-opacity=\"0.12\"/>");
         sb.Append("<stop offset=\"100%\" stop-color=\"var(--theme-active)\" stop-opacity=\"0\"/>");
