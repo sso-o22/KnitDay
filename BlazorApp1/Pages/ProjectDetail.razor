@@ -464,7 +464,8 @@ else
                                         <span>00:00:@(_displaySecs.ToString("D2"))</span>
                                     }
                                 </div>
-                                <div style="font-size:0.75rem; color:var(--text-mid); margin-top:8px;">
+                                <div style="font-size:0.75rem; color:var(--text-mid); margin-top:8px; cursor:pointer; text-decoration:underline; text-decoration-style:dotted;"
+                                     @onclick="() => _showAllSessions = true">
                                     @(_project.Sessions.Count)개 세션
                                 </div>
                             </div>
@@ -482,7 +483,7 @@ else
                                     <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:10px; margin-bottom:8px; border:1px solid var(--border); font-size:0.85rem;">
                                         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                                             <span style="color:var(--text-mid);">@(session.StartTime.ToString("M월 d일 HH:mm"))</span>
-                                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick='() => Confirm("이 뜨개 기록을 삭제할까요?", async () => await RemoveSession(session.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                                            <button class="btn btn-danger btn-sm" style="padding:2px 6px; font-size:0.7rem;" @onclick='() => Confirm("이 뜨개 기록을 삭제할까요?\n삭제하면 누적 시간에서 해당 시간이 빠져요.", async () => await RemoveSession(session.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                         </div>
                                         <div style="font-weight:600; color:var(--sage-dark);">
                                             <span>@FormatDuration(session)</span>
@@ -1107,6 +1108,44 @@ else
 }
 
 <!-- 삭제 확인 모달 -->
+@if (_showAllSessions && _project != null)
+{
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9998;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;"
+         @onclick="() => _showAllSessions = false">
+        <div style="background:var(--white);border-radius:16px;max-width:480px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.18);"
+             @onclick:stopPropagation="true">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;">
+                <div style="font-size:1rem;font-weight:700;color:var(--text-dark);">전체 뜨개 기록</div>
+                <button class="btn btn-ghost btn-sm" @onclick="() => _showAllSessions = false">
+                    <img src="icons/x.svg" class="icon-line" style="width:14px;height:14px;" />
+                </button>
+            </div>
+            <div style="padding:0 20px 6px;font-size:0.78rem;color:var(--text-mid);">
+                총 @(_project.Sessions.Count)개 · @(_displayHours > 0 ? $"{_displayHours}:{_displayMins:D2}:{_displaySecs:D2}" : $"00:{_displayMins:D2}:{_displaySecs:D2}")
+            </div>
+            <div style="overflow-y:auto;padding:8px 20px 20px;flex:1;">
+                @foreach (var session in _project.Sessions.OrderByDescending(s => s.StartTime))
+                {
+                    <div style="background:var(--ivory);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);font-size:0.85rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                            <span style="color:var(--text-mid);">@session.StartTime.ToString("yyyy년 M월 d일 HH:mm")</span>
+                            <button class="btn btn-danger btn-sm" style="padding:2px 6px;font-size:0.7rem;"
+                                    @onclick='() => { _showAllSessions = false; Confirm("이 뜨개 기록을 삭제할까요?\n삭제하면 누적 시간에서 해당 시간이 빠져요.", async () => await RemoveSession(session.Id)); }'>
+                                <img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" />
+                            </button>
+                        </div>
+                        <div style="font-weight:600;color:var(--sage-dark);">@FormatDuration(session)</div>
+                        @if (!string.IsNullOrEmpty(session.Memo))
+                        {
+                            <div style="font-size:0.75rem;color:var(--text-mid);margin-top:3px;">@session.Memo</div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
 @if (_showConfirm)
 {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
@@ -1134,6 +1173,7 @@ else
     }
 
     bool _showConfirm = false;
+    bool _showAllSessions = false;
     string _confirmMsg = "";
     Func<Task>? _confirmAction;
 
@@ -1595,6 +1635,7 @@ else
     async Task RemoveSession(Guid id)
     {
         _project?.Sessions.RemoveAll(s => s.Id == id);
+        if (_project?.Sessions.Count == 0) _showAllSessions = false;
         await Save();
     }
 
