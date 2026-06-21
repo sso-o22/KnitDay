@@ -614,7 +614,7 @@ body {
     .schedule-sort-inline { display: flex !important; }
     .schedule-sort-row { display: none !important; }
 
-    /* 스와치 2행: 구분선 표시 */
+    /* 스와치 2행: 구분선 표시 + 바늘 콤보박스 너비 확보 */
     .swatch-filter-divider { display: block !important; }
 
     /* 설정 카드 너비 제한 해제 */
@@ -622,38 +622,18 @@ body {
         max-width: 100% !important;
     }
 
-    /* 태블릿+PC: select, date 높이를 btn과 통일 */
-    select.form-control {
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
-        padding: 0 10px !important;
-        font-size: 0.9rem !important;
-        box-sizing: border-box !important;
-        line-height: 36px !important;
-        overflow: hidden;
-    }
-
+    /* select, date만 높이 통일 — text/textarea/file은 제외 */
+    select.form-control,
     input[type="date"].form-control,
     input[type="date"] {
-        height: 36px !important;
-        min-height: 36px !important;
-        max-height: 36px !important;
+        height: 40px !important;
+        min-height: 40px !important;
+        max-height: 40px !important;
         padding: 0 12px !important;
         font-size: 0.9rem !important;
         box-sizing: border-box !important;
-        line-height: 36px !important;
-        text-align: center;
-        width: 100%;
-        min-width: 0;
-    }
-
-    /* form-row: grid 간격 유지 */
-    .form-row {
-        gap: 16px;
-    }
-    .form-row > * {
-        min-width: 0;
+        line-height: 40px !important;
+        display: block !important;
         overflow: hidden;
     }
 
@@ -667,7 +647,19 @@ body {
         font-size: 0.78rem !important;
     }
 
-    /* text/file input은 기본 스타일 유지 */
+    /* 스와치 바늘 콤보박스: select.form-control 40px 규칙보다 뒤에 위치해 버튼 높이와 맞춤 */
+    select.form-control.swatch-needle-select {
+        min-width: 120px !important;
+        width: auto !important;
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        line-height: 34px !important;
+        padding: 0 8px !important;
+        font-size: 0.82rem !important;
+    }
+
+    /* text input은 기본 스타일 유지 (height 강제 안 함) */
     input[type="text"].form-control,
     input[type="number"].form-control,
     input[type="email"].form-control,
@@ -678,6 +670,8 @@ body {
         display: block;
         line-height: 1.4;
     }
+
+    /* file input 원래대로 */
     input[type="file"].form-control,
     input[type="file"] {
         height: auto !important;
@@ -686,16 +680,19 @@ body {
         padding: 8px 12px !important;
     }
 
-    /* 스와치 바늘 콤보박스: btn-sm과 동일 높이 */
-    .swatch-needle-select {
-        height: 30px !important;
-        min-height: 30px !important;
-        max-height: 30px !important;
-        line-height: 30px !important;
-        padding: 0 8px !important;
-        font-size: 0.82rem !important;
-        min-width: 110px !important;
-        width: auto !important;
+    /* 날짜 input 너비 강제 */
+    input[type="date"] {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
+        text-align: center;
+    }
+    .form-row .form-group {
+        min-width: 0;
+        overflow: hidden;
+    }
+    .form-row {
+        gap: 16px;
     }
 }
 
@@ -707,6 +704,7 @@ body {
 
     .main-content {
         padding: 16px 14px;
+        padding-top: calc(16px + env(safe-area-inset-top, 0px));
         padding-bottom: 90px; /* 하단 탭바 높이 확보 (높아진 탭바 반영) */
         max-width: 100%;
     }
@@ -736,19 +734,6 @@ body {
         font-size: 16px; /* iOS에서 줌 방지 */
         -webkit-appearance: none;
         appearance: none;
-    }
-
-    /* 모바일 바늘 콤보박스: btn-sm과 높이 맞춤 */
-    .swatch-needle-select {
-        height: 30px;
-        min-height: 30px;
-        max-height: 30px;
-        line-height: 30px;
-        padding: 0 8px;
-        font-size: 0.82rem;
-        min-width: 90px;
-        width: auto;
-        box-sizing: border-box;
     }
 
     /* iOS Safari: 빈 날짜 input placeholder - wrapper DOM 없이 CSS로 처리 */
@@ -872,6 +857,17 @@ body {
         box-shadow: var(--shadow-lg) !important;
         margin: auto !important;
         overflow-y: auto !important;
+    }
+
+    /* 스와치 바늘 콤보박스: 모바일에서 버튼과 높이 맞춤 */
+    .swatch-needle-select {
+        height: 34px !important;
+        min-height: 34px !important;
+        max-height: 34px !important;
+        line-height: 34px !important;
+        padding: 0 8px !important;
+        font-size: 0.8rem !important;
+        box-sizing: border-box !important;
     }
 
     /* 하단 탭바 활성화 */

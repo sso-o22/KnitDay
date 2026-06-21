@@ -466,7 +466,15 @@ window.registerVisibilitySync = (dotNetRef) => {
         if (_hidden && !nowHidden) {
             dotNetRef.invokeMethodAsync('OnAppResumed').catch(() => {});
         }
+        // 보임 → 숨김 (백그라운드 진입): 진행 중 타이머 종료 요청
+        if (!_hidden && nowHidden) {
+            dotNetRef.invokeMethodAsync('OnAppHidden').catch(() => {});
+        }
         _hidden = nowHidden;
+    });
+    // iOS PWA: pagehide = 앱 종료/스와이프 아웃
+    window.addEventListener('pagehide', () => {
+        dotNetRef.invokeMethodAsync('OnAppHidden').catch(() => {});
     });
 };
 
