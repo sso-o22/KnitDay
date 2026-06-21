@@ -243,28 +243,21 @@ body {
     color: var(--theme-active);
     border: 1px solid var(--theme-mid);
 }
-
-.btn-primary:hover {
-    background: var(--theme-light);
-    color: var(--theme-active);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    opacity: 1;
-}
+.btn-primary:hover { opacity: 0.88; }
 
 .btn-secondary {
     background: var(--ivory);
     color: var(--text-mid);
     border: 1px solid var(--border);
 }
-.btn-secondary:hover { background: var(--ivory-mid); }
+.btn-secondary:hover { opacity: 0.88; }
 
 .btn-sage {
     background: var(--theme-pale);
     color: var(--theme-active);
     border: 1px solid var(--theme-mid);
 }
-.btn-sage:hover { background: var(--theme-light); color: var(--theme-active); }
+.btn-sage:hover { opacity: 0.88; }
 
 /* 일시중단/재개 버튼 — 라이트: 연한 배경, 다크: btn-secondary 패턴 */
 .btn-pause {
@@ -272,27 +265,27 @@ body {
     color: var(--text-mid);
     border: 1px solid var(--border);
 }
-.btn-pause:hover { background: var(--ivory-mid); }
+.btn-pause:hover { opacity: 0.88; }
 
 .btn-mint {
     background: var(--theme-light);
     color: var(--black);
 }
-.btn-mint:hover { background: var(--theme-light); }
+.btn-mint:hover { opacity: 0.88; }
 
 .btn-ghost {
     background: transparent;
     color: var(--text-mid);
     border: 1px solid var(--border);
 }
-.btn-ghost:hover { background: var(--ivory-dark); }
+.btn-ghost:hover { opacity: 0.88; }
 
 .btn-danger {
     background: transparent;
     color: #c0392b;
     border: 1px solid #f0c0c0;
 }
-.btn-danger:hover { background: var(--pink-pale); }
+.btn-danger:hover { opacity: 0.88; }
 
 .btn-sm { padding: 6px 12px; font-size: 0.8rem; white-space: nowrap; }
 
@@ -616,7 +609,7 @@ body {
 
     /* 꺾은선 그래프: 아이패드에서 더 높게 */
     .stats-line-chart {
-        height: clamp(380px, 45vw, 600px) !important;
+        height: clamp(420px, 50vw, 680px) !important;
     }
 
     /* 스와치 2행: 구분선 표시 + 바늘 콤보박스 너비 확보 */
@@ -1335,24 +1328,21 @@ body {
 }
 
 [data-dark="true"] .btn-primary:hover,
-[data-dark="true"] .btn-sage:hover {
-    background: var(--theme-light);
-    color: var(--theme-active);
-}
+[data-dark="true"] .btn-sage:hover { opacity: 0.88; }
 
 [data-dark="true"] .btn-secondary {
     background: var(--ivory-mid);
     color: var(--text-mid);
     border-color: var(--border);
 }
-[data-dark="true"] .btn-secondary:hover { background: var(--ivory-dark); }
+[data-dark="true"] .btn-secondary:hover { opacity: 0.88; }
 
 [data-dark="true"] .btn-ghost {
     background: transparent;
     color: var(--text-mid);
     border-color: var(--border);
 }
-[data-dark="true"] .btn-ghost:hover { background: var(--ivory-dark); }
+[data-dark="true"] .btn-ghost:hover { opacity: 0.88; }
 
 [data-dark="true"] .btn-mint {
     color: var(--theme-active);

@@ -139,7 +139,8 @@ window.firebaseStore = {
             return snap.exists() ? JSON.stringify(snap.data()) : null;
         } catch (e) {
             console.error('getDocument:', path, e);
-            return null;
+            // 디버그용: 오류 내용을 특수 접두어로 반환
+            return '__error__:' + (e.code || e.message || String(e));
         }
     },
 
