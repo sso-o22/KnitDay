@@ -134,15 +134,23 @@
             <div style="margin-bottom:16px; padding:14px 16px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
                     <span style="font-size:0.82rem; font-weight:600; color:var(--text-dark);">클라우드 저장공간</span>
-                    @if (!_usageLoaded)
-                    {
-                        <span style="font-size:0.75rem; color:var(--text-light);">불러오는 중...</span>
-                    }
-                    else
-                    {
-                        <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(_photoBytes + _pdfBytes) / @FmtSize(UsageLimitBytes)</span>
-                    }
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        @if (!_usageLoaded)
+                        {
+                            <span style="font-size:0.75rem; color:var(--text-light);">불러오는 중...</span>
+                        }
+                        else
+                        {
+                            <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(_photoBytes + _pdfBytes) / @FmtSize(UsageLimitBytes)</span>
+                        }
+                        <button class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:0.72rem;"
+                                @onclick="RefreshUsageAsync">↺</button>
+                    </div>
                 </div>
+                @if (!string.IsNullOrEmpty(_usageDebugMsg))
+                {
+                    <div style="font-size:0.7rem; color:#c03030; margin-bottom:6px; word-break:break-all;">@_usageDebugMsg</div>
+                }
                 @* 전체 게이지바 *@
                 <div style="height:10px; background:var(--border); border-radius:99px; overflow:hidden; margin-bottom:10px; position:relative;">
                     <div style="position:absolute;left:0;top:0;height:100%;width:@(UsagePdfPct.ToString("F2"))%;background:var(--text-light);border-radius:99px;opacity:0.5;"></div>
@@ -804,6 +812,38 @@
             _pdfBytes = pdf;
             _usageLoaded = true;
         }
+    }
+
+    string _usageDebugMsg = "";
+
+    async Task RefreshUsageAsync()
+    {
+        _usageDebugMsg = "";
+        if (!Auth.IsLoggedIn) { _usageDebugMsg = "로그인 상태가 아닙니다"; StateHasChanged(); return; }
+        try
+        {
+            // Firebase에서 raw JSON 직접 읽기
+            var uid = Auth.CurrentUser?.Uid;
+            var path = $"users/{uid}/meta/usage";
+            var raw = await JS.InvokeAsync<string?>("firebaseStore.getDocument", path);
+            if (string.IsNullOrEmpty(raw))
+            {
+                _usageDebugMsg = $"Firebase 응답 없음 (uid={uid?.Substring(0,6)}… path={path})";
+            }
+            else
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(raw);
+                long p = doc.RootElement.TryGetProperty("photoBytes", out var pb) ? pb.GetInt64() : 0;
+                long d2 = doc.RootElement.TryGetProperty("pdfBytes", out var db) ? db.GetInt64() : 0;
+                _photoBytes = p; _pdfBytes = d2; _usageLoaded = true;
+                _usageDebugMsg = "";
+            }
+        }
+        catch (Exception ex)
+        {
+            _usageDebugMsg = $"오류: {ex.Message}";
+        }
+        StateHasChanged();
     }
 
     async void OnDarkChangedHandler(bool isDark)
