@@ -207,7 +207,7 @@ else
                                 </div>
                                 <!-- 원형 게이지 + 카운터 버튼 -->
                                 <div style="display:flex; align-items:center; gap:16px; justify-content:center; margin-bottom:10px;">
-                                    <button class="btn btn-secondary" style="width:44px; height:44px; font-size:1.3rem; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;"
+                                    <button class="btn btn-ghost" style="width:44px; height:44px; font-size:1.3rem; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;"
                                             disabled="@IsPaused"
                                             @onclick="() => CounterChange(counter, -counter.Step)">−</button>
                                     <div style="position:relative; width:88px; height:88px; flex-shrink:0;">
@@ -228,7 +228,7 @@ else
                                             @if (hasTarget) { <span style="font-size:0.65rem; color:var(--text-light); margin-top:1px;">/ @counter.Target</span> }
                                         </div>
                                     </div>
-                                    <button class="btn btn-primary" style="width:44px; height:44px; font-size:1.3rem; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;"
+                                    <button class="btn btn-ghost" style="width:44px; height:44px; font-size:1.3rem; padding:0; display:flex; align-items:center; justify-content:center; border-radius:50%;"
                                             disabled="@IsPaused"
                                             @onclick="() => CounterChange(counter, counter.Step)">+</button>
                                 </div>
@@ -885,7 +885,7 @@ else
             </div>
 
             @* ── 날짜 ── *@
-            <div style="display:flex; gap:16px;">
+            <div class="form-row">
                 <div class="form-group" style="flex:1; min-width:0;">
                     <label class="form-label">시작일</label>
                     <input type="date" class="form-control" style="width:100%; box-sizing:border-box;"

@@ -194,16 +194,29 @@ namespace KnitLog.Services
         public async Task<(long photoBytes, long pdfBytes)> GetCloudUsageAsync()
         {
             if (string.IsNullOrEmpty(Uid)) return (0, 0);
-            try
+            // 재시도 2회 (Firebase 일시 지연 대응)
+            for (int attempt = 0; attempt < 2; attempt++)
             {
-                var json = await _js.InvokeAsync<string?>("firebaseStore.getDocument", $"users/{Uid}/meta/usage");
-                if (string.IsNullOrEmpty(json)) return (0, 0);
-                using var doc = System.Text.Json.JsonDocument.Parse(json);
-                long p = doc.RootElement.TryGetProperty("photoBytes", out var pb) ? pb.GetInt64() : 0;
-                long d = doc.RootElement.TryGetProperty("pdfBytes",   out var db) ? db.GetInt64() : 0;
-                return (p, d);
+                try
+                {
+                    var json = await _js.InvokeAsync<string?>("firebaseStore.getDocument", $"users/{Uid}/meta/usage");
+                    if (string.IsNullOrEmpty(json))
+                    {
+                        if (attempt == 0) { await Task.Delay(800); continue; }
+                        return (0, 0);
+                    }
+                    using var doc = System.Text.Json.JsonDocument.Parse(json);
+                    long p = doc.RootElement.TryGetProperty("photoBytes", out var pb) ? pb.GetInt64() : 0;
+                    long d = doc.RootElement.TryGetProperty("pdfBytes",   out var db) ? db.GetInt64() : 0;
+                    return (p, d);
+                }
+                catch
+                {
+                    if (attempt == 0) { await Task.Delay(800); continue; }
+                    return (0, 0);
+                }
             }
-            catch { return (0, 0); }
+            return (0, 0);
         }
 
         // Cloudinary 무료: 클라이언트 삭제 불가 → 무시
@@ -385,10 +398,19 @@ namespace KnitLog.Services
                 }
                 else
                 {
-                    // UpdatedAt 비교 (없으면 Cloud 우선)
-                    var localUpdated  = GetUpdatedAt(merged[id]);
-                    var cloudUpdated  = GetUpdatedAt(item);
-                    if (cloudUpdated > localUpdated) merged[id] = item;
+                    var localUpdated = GetUpdatedAt(merged[id]);
+                    var cloudUpdated = GetUpdatedAt(item);
+                    // 프로젝트 컬렉션: Sessions 배열을 Id 기준으로 union merge
+                    if (collectionName == "projects")
+                    {
+                        var winner = cloudUpdated > localUpdated ? item : merged[id];
+                        var loser  = cloudUpdated > localUpdated ? merged[id] : item;
+                        merged[id] = MergeProjectSessions(winner, loser, _jsonOpts);
+                    }
+                    else
+                    {
+                        if (cloudUpdated > localUpdated) merged[id] = item;
+                    }
                 }
             }
 
@@ -416,6 +438,44 @@ namespace KnitLog.Services
                 if (el.TryGetProperty(key, out var val) && val.ValueKind == JsonValueKind.String)
                     if (DateTime.TryParse(val.GetString(), out var dt)) return dt;
             return DateTime.MinValue;
+        }
+
+        // 프로젝트 merge 시 Sessions 배열을 Id 기준으로 합침 (winner 기반, loser의 세션만 추가)
+        private static JsonElement MergeProjectSessions(JsonElement winner, JsonElement loser, JsonSerializerOptions opts)
+        {
+            try
+            {
+                // winner를 딕셔너리로 변환
+                var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(winner.GetRawText(), opts);
+                if (dict == null) return winner;
+
+                // winner Sessions Id set
+                var winnerSessionIds = new HashSet<string>();
+                if (dict.TryGetValue("Sessions", out var winSessions) && winSessions.ValueKind == JsonValueKind.Array)
+                    foreach (var s in winSessions.EnumerateArray())
+                        if (s.TryGetProperty("Id", out var sid)) winnerSessionIds.Add(sid.ToString());
+
+                // loser Sessions에서 winner에 없는 것만 추가
+                if (loser.TryGetProperty("Sessions", out var loserSessions) && loserSessions.ValueKind == JsonValueKind.Array)
+                {
+                    var extra = loserSessions.EnumerateArray()
+                        .Where(s => s.TryGetProperty("Id", out var sid) && !winnerSessionIds.Contains(sid.ToString()))
+                        .Select(s => JsonSerializer.Deserialize<JsonElement>(s.GetRawText(), opts))
+                        .ToList();
+
+                    if (extra.Count > 0)
+                    {
+                        var existing = winSessions.ValueKind == JsonValueKind.Array
+                            ? winSessions.EnumerateArray().Select(s => JsonSerializer.Deserialize<JsonElement>(s.GetRawText(), opts)).ToList()
+                            : new List<JsonElement>();
+                        existing.AddRange(extra);
+                        dict["Sessions"] = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(existing, opts), opts);
+                        return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(dict, opts), opts);
+                    }
+                }
+                return winner;
+            }
+            catch { return winner; }
         }
 
         // ── 온라인 복귀 시 로컬 → Firebase push ─────────────────────

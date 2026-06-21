@@ -384,7 +384,7 @@
                 @if (_exportSelectedIds.Count > 0)
                 {
                     <!-- 선택된 프로젝트 목록 (스크롤) -->
-                    <div style="flex:1;overflow-y:auto;margin-bottom:12px;border:1px solid var(--border);border-radius:8px;">
+                    <div style="max-height:200px;overflow-y:auto;margin-bottom:12px;border:1px solid var(--border);border-radius:8px;flex-shrink:0;">
                         @foreach (var proj in _exportProjects)
                         {
                             var pid = proj.Id;

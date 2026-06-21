@@ -279,6 +279,30 @@
     }
 
     [Microsoft.JSInterop.JSInvokable]
+    public async Task OnAppHidden()
+    {
+        // 백그라운드 진입 / 앱 종료 시: 진행 중인 세션 자동 종료 후 저장
+        try
+        {
+            var projects = await Storage.GetProjectsAsync();
+            bool changed = false;
+            foreach (var p in projects)
+            {
+                var active = p.Sessions.FirstOrDefault(s => s.IsActive);
+                if (active != null)
+                {
+                    active.EndTime = DateTime.Now;
+                    await Storage.SaveProjectAsync(p);
+                    changed = true;
+                }
+            }
+            if (changed)
+                await Storage.PushLocalToFirebaseAsync();
+        }
+        catch { }
+    }
+
+    [Microsoft.JSInterop.JSInvokable]
     public async Task OnBackOnline()
     {
         // 온라인 복귀 시 로컬 내용 push 후 최신 pull
