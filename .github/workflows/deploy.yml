@@ -29,15 +29,6 @@ jobs:
           sed -i "s|%%FIREBASE_API_KEY%%|${{ secrets.FIREBASE_API_KEY }}|g" \
             BlazorApp1/wwwroot/js/firebase.js
 
-      - name: Update version.json
-        run: |
-          DATE=$(date -u +"%Y-%m-%d")
-          BUILD=$(date -u +"%Y%m%d%H%M")
-          jq --arg v "1.0.$BUILD" --arg d "$DATE" \
-            '.version = $v | .date = $d' \
-            BlazorApp1/wwwroot/version.json > /tmp/version.json
-          mv /tmp/version.json BlazorApp1/wwwroot/version.json
-
       - name: Publish
         run: dotnet publish BlazorApp1/BlazorApp1.csproj -c Release -o publish
 
