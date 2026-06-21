@@ -239,14 +239,14 @@ body {
 }
 
 .btn-primary {
-    background: var(--theme-btn);
-    color: var(--theme-active);
-    border: 1px solid var(--theme-mid);
+    background: var(--theme-pale);
+    color: var(--text-mid);
+    border: 1px solid var(--border);
 }
 
 .btn-primary:hover {
     background: var(--theme-light);
-    color: var(--theme-active);
+    color: var(--text-dark);
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
     opacity: 1;
@@ -260,11 +260,11 @@ body {
 .btn-secondary:hover { background: var(--ivory-mid); }
 
 .btn-sage {
-    background: var(--theme-btn);
-    color: var(--theme-active);
-    border: 1px solid var(--theme-mid);
+    background: var(--theme-pale);
+    color: var(--text-mid);
+    border: 1px solid var(--border);
 }
-.btn-sage:hover { background: var(--theme-light); color: var(--theme-active); }
+.btn-sage:hover { background: var(--theme-light); color: var(--text-dark); }
 
 /* 일시중단/재개 버튼 — 라이트: 연한 배경, 다크: btn-secondary 패턴 */
 .btn-pause {
@@ -876,10 +876,6 @@ body {
         font-size: 0.8rem !important;
         box-sizing: border-box !important;
     }
-    /* 모바일에서 바늘 wrapper auto margin 해제 — 그냥 흐름대로 */
-    .swatch-needle-wrapper {
-        margin-left: 0 !important;
-    }
 
     /* 하단 탭바 활성화 */
     .bottom-nav {
@@ -1308,13 +1304,15 @@ body {
 
 [data-dark="true"] .btn-primary,
 [data-dark="true"] .btn-sage {
-    color: var(--theme-active);
-    border-color: var(--theme-light);
+    background: var(--theme-pale);
+    color: var(--text-mid);
+    border-color: var(--border);
 }
 
 [data-dark="true"] .btn-primary:hover,
 [data-dark="true"] .btn-sage:hover {
-    color: var(--theme-active);
+    background: var(--theme-light);
+    color: var(--text-dark);
 }
 
 [data-dark="true"] .btn-secondary {
