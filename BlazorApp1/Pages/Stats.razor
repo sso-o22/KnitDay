@@ -113,7 +113,7 @@ else
             else
             {
                 <!-- 이중 꺾은선 SVG 그래프 -->
-                <div class="stats-line-chart" style="position:relative; height:clamp(240px, 35vw, 480px); margin-bottom:8px;">
+                <div class="stats-line-chart" style="position:relative; height:clamp(180px, 55vw, 480px); margin-bottom:8px;">
                     @((MarkupString)BuildYearSvg())
                 </div>
                 <!-- 그래프 아래: 범례 + 수치 -->
@@ -138,7 +138,7 @@ else
             }
             else
             {
-                <div class="stats-line-chart" style="position:relative; height:clamp(200px, 35vw, 480px); margin-bottom:4px;">
+                <div class="stats-line-chart" style="position:relative; height:clamp(170px, 52vw, 480px); margin-bottom:4px;">
                     @((MarkupString)BuildMonthSvg())
                 </div>
                 <!-- 기간 요약 -->
@@ -377,8 +377,8 @@ else
     // ── SVG 빌더 (text 태그가 Razor에서 파싱 오류 발생 → MarkupString으로 우회) ──
     string BuildYearSvg()
     {
-        double W = _svgWidthLine; double H = 420;
-        double padL = 44, padR = 44, padTop = 16, plotH = 370;
+        double W = _svgWidthLine; double H = Math.Max(240, W * 0.55);
+        double padL = 44, padR = 44, padTop = 16, plotH = H - padTop - 30;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
         int n = _yearChartData.Count;
@@ -428,8 +428,8 @@ else
 
     string BuildMonthSvg()
     {
-        double W = _svgWidthLine; double H = 400;
-        double padL = 36, padR = 8, padTop = 16, plotH = 350;
+        double W = _svgWidthLine; double H = Math.Max(220, W * 0.52);
+        double padL = 36, padR = 8, padTop = 16, plotH = H - padTop - 28;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
         int n = _chartData.Count;
