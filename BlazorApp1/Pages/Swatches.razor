@@ -45,16 +45,18 @@
                 }
             </div>
         </div>
-        @* 2행: 뜨개법 + 바늘 필터 — 아이콘/버튼/구분선이 1행과 세로 정렬 맞춤 *@
-        <div style="display:flex; gap:6px; align-items:center; overflow-x:auto; padding-bottom:2px;">
-            <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-            @foreach (var (label, val) in new[]{("전체",""),("메리야스","메리야스"),("무늬  ","무늬")})
-            {
-                <button class="btn btn-sm @(_filterStitch==val.Trim()?"btn-primary":"btn-ghost")" style="flex-shrink:0; min-width:60px; text-align:center; justify-content:center;"
-                        @onclick="() => SetFilterStitch(val.Trim())">@label</button>
-            }
-            <div class="swatch-filter-divider" style="width:1px;height:16px;background:var(--border);flex-shrink:0;display:none;"></div>
-            <div class="swatch-needle-wrapper" style="margin-left:auto; flex-shrink:0; display:flex; align-items:center; gap:6px;">
+        @* 2행: 뜨개법 + 바늘 필터 — 1행과 동일한 filter-sort-bar 패턴으로 구분선 위치 자동 정렬 *@
+        <div class="filter-sort-bar">
+            <div class="filter-sort-group">
+                <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+                @foreach (var (label, val) in new[]{("전체",""),("메리야스","메리야스"),("무늬","무늬")})
+                {
+                    <button class="btn btn-sm @(_filterStitch==val.Trim()?"btn-primary":"btn-ghost")" style="flex-shrink:0; min-width:60px; text-align:center; justify-content:center;"
+                            @onclick="() => SetFilterStitch(val.Trim())">@label</button>
+                }
+            </div>
+            <div class="filter-sort-divider"></div>
+            <div class="filter-sort-group swatch-needle-wrapper">
                 <select class="form-control swatch-needle-select" style="font-size:0.8rem; flex-shrink:0; padding:4px 8px; width:auto; min-width:100px;"
                         value="@_filterNeedle" @onchange="OnFilterNeedleChanged">
                     <option value="">바늘 전체</option>
