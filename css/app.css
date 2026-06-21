@@ -694,17 +694,24 @@ body {
     .form-row {
         gap: 16px;
     }
+    /* 날짜 두 칸이 시각적으로 붙어 보이지 않도록 */
+    .form-row input[type="date"].form-control {
+        border: 1.5px solid var(--border) !important;
+        background: var(--ivory) !important;
+    }
 }
 
 /* 모바일 (640px 이하): 사이드바 숨기고 하단 탭바 표시 */
 @media (max-width: 640px) {
-    .app-shell { flex-direction: column; }
+    .app-shell {
+        flex-direction: column;
+        padding-top: env(safe-area-inset-top, 0px); /* iOS 상태바 아래에서 시작 */
+    }
 
     .sidebar { display: none; }
 
     .main-content {
         padding: 16px 14px;
-        padding-top: calc(16px + env(safe-area-inset-top, 0px));
         padding-bottom: 90px; /* 하단 탭바 높이 확보 (높아진 탭바 반영) */
         max-width: 100%;
     }
@@ -859,7 +866,7 @@ body {
         overflow-y: auto !important;
     }
 
-    /* 스와치 바늘 콤보박스: 모바일에서 버튼과 높이 맞춤 */
+    /* 스와치 바늘 콤보박스: 모바일에서 버튼과 높이 맞춤 + auto margin 해제 */
     .swatch-needle-select {
         height: 34px !important;
         min-height: 34px !important;
@@ -868,6 +875,10 @@ body {
         padding: 0 8px !important;
         font-size: 0.8rem !important;
         box-sizing: border-box !important;
+    }
+    /* 모바일에서 바늘 wrapper auto margin 해제 — 그냥 흐름대로 */
+    .swatch-needle-wrapper {
+        margin-left: 0 !important;
     }
 
     /* 하단 탭바 활성화 */
