@@ -609,7 +609,7 @@ body {
 
     /* 꺾은선 그래프: 아이패드에서 더 높게 */
     .stats-line-chart {
-        height: clamp(300px, 38vw, 500px) !important;
+        height: clamp(300px, 36vw, 480px) !important;
     }
 
     /* 스와치 2행: 구분선 표시 + 바늘 콤보박스 너비 확보 */
@@ -694,6 +694,7 @@ body {
     .date-row .form-group {
         flex: 1 !important;
         min-width: 0 !important;
+        max-width: 220px !important;
     }
     .date-row input[type="date"].form-control {
         border: 1.5px solid var(--border) !important;
@@ -714,21 +715,21 @@ body {
 @media (max-width: 640px) {
     .app-shell {
         flex-direction: column;
-        padding-top: env(safe-area-inset-top, 0px); /* iOS 상태바 아래에서 시작 */
     }
 
     .sidebar { display: none; }
 
     .main-content {
         padding: 16px 14px;
-        padding-bottom: 72px; /* 하단 탭바 높이 확보 */
+        padding-top: calc(16px + env(safe-area-inset-top, 0px));
+        padding-bottom: 60px; /* 하단 탭바 높이 확보 */
         max-width: 100%;
     }
 
     .page-title { font-size: 1.4rem; }
     .page-header {
         position: sticky;
-        top: 0;
+        top: env(safe-area-inset-top, 0px);
         z-index: 50;
         background: var(--white);
         margin-bottom: 16px;
@@ -918,7 +919,7 @@ body {
         background: var(--theme-pale);
         border-top: 1px solid var(--theme-mid);
         box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-bottom: 0;
     }
 
     .bottom-nav-item {
