@@ -61,6 +61,6 @@ jobs:
           CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
           CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
           EOF
-          firebase deploy --only functions --project knitlog-94c63
+          firebase deploy --only functions --project knitlog-94c63 --force
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/service-account.json
