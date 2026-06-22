@@ -240,10 +240,9 @@
                 </div>
             </div>
         }
-        <div style="font-size:0.82rem;margin-bottom:16px;color:var(--text-light);display:flex;align-items:center;gap:5px;">
+        <div style="font-size:0.82rem;margin-bottom:16px;color:var(--text-light);display:flex;align-items:center;gap:5px;flex-wrap:nowrap;">
             <img src="icons/question.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />
-            저장·동기화·내보내기 관련 궁금한 점은
-            <a href="faq" style="color:var(--theme-active);font-weight:600;text-decoration:none;">FAQ</a>를 확인해 보세요.
+            <span>저장·동기화·내보내기 궁금한 점은 <a href="faq" style="color:var(--theme-active);font-weight:600;text-decoration:none;">FAQ</a> 확인!</span>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="OpenExportModal"><img src="icons/export.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 내보내기</button>
