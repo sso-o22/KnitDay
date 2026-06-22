@@ -39,6 +39,24 @@ window.firebaseAuth = {
             await _persistenceReady;
             const result = await signInWithPopup(auth, provider);
             const u = result.user;
+
+            // ── 허용된 계정 확인 ────────────────────────────────────────
+            // Firestore allowedUsers/{email} 문서 존재 여부로 접근 허용 결정
+            try {
+                const allowDoc = await getDoc(doc(db, 'allowedUsers', u.email));
+                if (!allowDoc.exists()) {
+                    // 미등록 계정 — 즉시 로그아웃 후 거부 신호 반환
+                    await signOut(auth);
+                    return { __denied__: true, email: u.email };
+                }
+            } catch (checkErr) {
+                // Firestore 접근 오류 시 안전하게 거부
+                console.error('allowedUsers check failed:', checkErr);
+                await signOut(auth);
+                return { __denied__: true, email: u.email };
+            }
+            // ────────────────────────────────────────────────────────────
+
             return { uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL };
         } catch (e) {
             // iOS Safari 등 팝업 차단 시 redirect 방식으로 폴백
