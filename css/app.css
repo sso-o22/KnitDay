@@ -419,26 +419,6 @@ body {
     box-shadow: 0 0 0 3px rgba(184, 224, 200, 0.3);
 }
 
-/* 체크리스트 수정 input — 언더라인 스타일 */
-.checklist-input {
-    border: none;
-    border-bottom: 1.5px solid var(--border);
-    border-radius: 0;
-    background: transparent;
-    outline: none;
-    box-shadow: none;
-    padding: 2px 4px;
-    font-size: 0.78rem;
-    font-family: inherit;
-    color: var(--text-dark);
-    width: 100%;
-    line-height: 1.4;
-}
-.checklist-input:focus {
-    border-bottom-color: var(--theme-active);
-    box-shadow: none;
-}
-
 .form-row {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -661,20 +641,8 @@ body {
         min-height: unset !important;
         max-height: unset !important;
         line-height: 1.4 !important;
-        padding: 2px 4px !important;
+        padding: 4px 8px !important;
         font-size: 0.78rem !important;
-        border: none !important;
-        border-bottom: 1.5px solid var(--border) !important;
-        border-radius: 0 !important;
-        background: transparent !important;
-        outline: none !important;
-        box-shadow: none !important;
-        color: var(--text-dark);
-        width: 100%;
-    }
-    .checklist-input:focus {
-        border-bottom-color: var(--theme-active) !important;
-        box-shadow: none !important;
     }
 
     /* 스와치 바늘 콤보박스: select.form-control 40px 규칙보다 뒤에 위치해 버튼 높이와 맞춤 */
