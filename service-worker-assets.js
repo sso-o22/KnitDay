@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "eNpVdl0Y",
+  "version": "R2MH/8v2",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-fQEXwXiEamUaT4q2gurXsCOaKdfI1j54un0+ZAAlcmE=",
+      "hash": "sha256-tHgZYs0skHhU8MwAWvwi6sqo/wD7FijXd/H/tEAkRgs=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-9Od419nYJPGxvN2peycI+gj6Eq8HwzJ6ukRc144SZmE=",
+      "hash": "sha256-4OpjdW2dt+HMtPVrfnMa58PuCD1SEvMnfschQOdC07A=",
       "url": "_framework/blazor.boot.json"
     },
     {
