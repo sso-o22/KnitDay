@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "2Z2dz/xE",
+  "version": "V2iz76Ky",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-OyxLUv57gX2kp1IJXxsxs8IEqPQYxDJenSzh1/HlNFQ=",
+      "hash": "sha256-dL5OVq6MVDGwkpcYaB8PpAAPFL+vGaEnsNEI/IVbuUo=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-MuJSjc0FBxxsbIHkb4cjDGNRiB3HYpepbLFPwiKEvxs=",
+      "hash": "sha256-kCi1TTvMBXHcXG4C87chSm7zcxKqnDmBTZZKG7wexEM=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -502,6 +502,10 @@ self.assetsManifest = {
       "url": "icons/dresser.svg"
     },
     {
+      "hash": "sha256-GeiFQtGuWOG0XiEse9/Ag2oa8cWjABpa6PaI1J9z0GY=",
+      "url": "icons/envelope.svg"
+    },
+    {
       "hash": "sha256-VdPOksh/EcCYUVro9akBqck4xYMevpPmScvpifA2VJg=",
       "url": "icons/eraser.svg"
     },
@@ -564,6 +568,10 @@ self.assetsManifest = {
     {
       "hash": "sha256-hzf2pVbBeRmMlgV91xmjADQyVC8mvFTbfGhsoitdhfI=",
       "url": "icons/image.svg"
+    },
+    {
+      "hash": "sha256-r2KHpDzllwugQKDCH/vk97cgw1mo5QrcI6M7uRg3fBg=",
+      "url": "icons/instagram-logo.svg"
     },
     {
       "hash": "sha256-89+zw0xLzJxQBKyDIg+PqkLZa1xpHFQpLZnCdpz6GLY=",
