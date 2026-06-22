@@ -128,6 +128,17 @@ window.firebaseAuth = {
 
 // ── Firestore ────────────────────────────────────────────────────
 window.firebaseStore = {
+    async getCollectionIds(path) {
+        try {
+            const parts = path.split('/');
+            const snap = await getDocs(collection(db, ...parts));
+            return JSON.stringify(snap.docs.map(d => d.id));
+        } catch (e) {
+            console.error('getCollectionIds:', path, e);
+            return null;
+        }
+    },
+
     async getCollection(path) {
         try {
             const parts = path.split('/');

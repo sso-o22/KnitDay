@@ -1,0 +1,225 @@
+@page "/admin"
+@inject IJSRuntime JS
+@inject AuthService Auth
+@implements IDisposable
+
+@* ── 관리자 UID (본인 계정만 접근 가능) ── *@
+@code {
+    // 본인 구글 계정 UID로 교체하세요
+    // Firebase Console → Authentication → 사용자 목록에서 확인
+    const string AdminUid = "YOUR_UID_HERE";
+}
+
+@if (!Auth.IsInitialized)
+{
+    <div style="display:flex;align-items:center;justify-content:center;height:60vh;font-size:0.9rem;color:var(--text-light);">
+        로딩 중...
+    </div>
+}
+else if (!Auth.IsLoggedIn || Auth.CurrentUser?.Uid != AdminUid)
+{
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:12px;">
+        <img src="icons/warning.svg" class="icon-line" style="width:40px;height:40px;opacity:0.4;" />
+        <div style="font-size:0.9rem;color:var(--text-light);">접근 권한이 없습니다.</div>
+    </div>
+}
+else
+{
+    <div class="page-header">
+        <div>
+            <h1 class="page-title">
+                <img src="icons/key.svg" class="icon-line" style="width:36px;height:36px;" />관리자
+            </h1>
+            <p class="page-subtitle">구매자 계정을 등록하고 관리해요</p>
+        </div>
+    </div>
+
+    <div class="settings-wrapper">
+
+        <!-- 계정 등록 -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                <img src="icons/user-check.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />구매자 등록
+            </div>
+            <div style="display:flex;gap:8px;margin-bottom:@(_addMsg != "" ? "10px" : "0");">
+                <input type="email" placeholder="구글 이메일 입력" @bind="_emailInput" @bind:event="oninput"
+                       @onkeydown="OnKeyDown"
+                       style="flex:1;min-width:0;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;background:var(--white);color:var(--text-dark);" />
+                <button class="btn btn-primary" @onclick="AddUser" disabled="@(_adding || string.IsNullOrWhiteSpace(_emailInput))">
+                    @(_adding ? "등록 중..." : "등록")
+                </button>
+            </div>
+            @if (_addMsg != "")
+            {
+                <div style="font-size:0.82rem;color:@(_addError ? "#c03030" : "var(--theme-active)");">@_addMsg</div>
+            }
+        </div>
+
+        <!-- 등록된 계정 목록 -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+                <img src="icons/list.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />
+                등록된 계정
+                @if (_users != null)
+                {
+                    <span style="margin-left:auto;font-size:0.78rem;font-weight:400;color:var(--text-light);">@_users.Count명</span>
+                }
+                <button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:0.75rem;" @onclick="LoadUsers">↺</button>
+            </div>
+
+            @if (_loading)
+            {
+                <div style="font-size:0.85rem;color:var(--text-light);padding:8px 0;">불러오는 중...</div>
+            }
+            else if (_users == null || _users.Count == 0)
+            {
+                <div style="font-size:0.85rem;color:var(--text-light);padding:8px 0;">등록된 계정이 없어요.</div>
+            }
+            else
+            {
+                <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+                    @foreach (var email in _users)
+                    {
+                        var e = email;
+                        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);">
+                            <img src="icons/user.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;opacity:0.5;" />
+                            <span style="flex:1;font-size:0.85rem;color:var(--text-dark);word-break:break-all;">@e</span>
+                            @if (_deletingEmail == e)
+                            {
+                                <span style="font-size:0.75rem;color:var(--text-light);">삭제 중...</span>
+                            }
+                            else
+                            {
+                                <button class="btn btn-ghost btn-sm"
+                                        style="padding:3px 8px;font-size:0.75rem;color:#c03030;flex-shrink:0;"
+                                        @onclick="() => ConfirmDelete(e)">삭제</button>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+    </div>
+
+    @* 삭제 확인 팝업 *@
+    @if (_confirmDeleteEmail != null)
+    {
+        <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;"
+             @onclick="() => _confirmDeleteEmail = null">
+            <div style="background:var(--white);border-radius:20px;padding:28px 24px 20px;max-width:300px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);"
+                 @onclick:stopPropagation="true">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:10px;color:var(--text-dark);">계정을 삭제할까요?</div>
+                <div style="font-size:0.83rem;color:var(--text-mid);margin-bottom:20px;word-break:break-all;">@_confirmDeleteEmail</div>
+                <div style="display:flex;gap:8px;justify-content:center;">
+                    <button class="btn btn-ghost" @onclick="() => _confirmDeleteEmail = null">취소</button>
+                    <button class="btn btn-primary" style="background:#c03030;" @onclick="DeleteUser">삭제</button>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    List<string>? _users;
+    bool _loading = false;
+    string _emailInput = "";
+    bool _adding = false;
+    string _addMsg = "";
+    bool _addError = false;
+    string? _deletingEmail;
+    string? _confirmDeleteEmail;
+
+    protected override void OnInitialized()
+    {
+        Auth.OnAuthChanged += OnAuthChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Auth.IsLoggedIn && Auth.CurrentUser?.Uid == AdminUid)
+            await LoadUsers();
+    }
+
+    async void OnAuthChanged()
+    {
+        if (Auth.IsLoggedIn && Auth.CurrentUser?.Uid == AdminUid)
+            await LoadUsers();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task LoadUsers()
+    {
+        _loading = true;
+        StateHasChanged();
+        try
+        {
+            var json = await JS.InvokeAsync<string?>("firebaseStore.getCollectionIds", "allowedUsers");
+            _users = string.IsNullOrEmpty(json)
+                ? new()
+                : System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? new();
+            _users.Sort();
+        }
+        catch { _users = new(); }
+        _loading = false;
+        StateHasChanged();
+    }
+
+    async Task AddUser()
+    {
+        var email = _emailInput.Trim().ToLower();
+        if (string.IsNullOrEmpty(email)) return;
+        _adding = true; _addMsg = ""; StateHasChanged();
+        try
+        {
+            var ok = await JS.InvokeAsync<bool>("firebaseStore.setDocument",
+                $"allowedUsers/{email}",
+                System.Text.Json.JsonSerializer.Serialize(new { registeredAt = DateTime.UtcNow.ToString("yyyy-MM-dd") }));
+            if (ok)
+            {
+                _addMsg = $"{email} 등록 완료!";
+                _addError = false;
+                _emailInput = "";
+                await LoadUsers();
+            }
+            else
+            {
+                _addMsg = "등록 실패. Firestore 규칙을 확인하세요.";
+                _addError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _addMsg = "오류: " + ex.Message;
+            _addError = true;
+        }
+        _adding = false;
+        StateHasChanged();
+    }
+
+    void ConfirmDelete(string email) => _confirmDeleteEmail = email;
+
+    async Task DeleteUser()
+    {
+        var email = _confirmDeleteEmail;
+        if (email == null) return;
+        _confirmDeleteEmail = null;
+        _deletingEmail = email;
+        StateHasChanged();
+        try
+        {
+            await JS.InvokeAsync<bool>("firebaseStore.deleteDocument", $"allowedUsers/{email}");
+            _users?.Remove(email);
+        }
+        catch { }
+        _deletingEmail = null;
+        StateHasChanged();
+    }
+
+    async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await AddUser();
+    }
+
+    public void Dispose() => Auth.OnAuthChanged -= OnAuthChanged;
+}
