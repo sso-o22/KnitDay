@@ -41,19 +41,22 @@ window.firebaseAuth = {
             const u = result.user;
 
             // ── 허용된 계정 확인 ────────────────────────────────────────
-            // Firestore allowedUsers/{email} 문서 존재 여부로 접근 허용 결정
-            try {
-                const allowDoc = await getDoc(doc(db, 'allowedUsers', u.email));
-                if (!allowDoc.exists()) {
-                    // 미등록 계정 — 즉시 로그아웃 후 거부 신호 반환
+            // 관리자 UID는 allowedUsers 체크 없이 바로 통과
+            const adminUid = 'xAz2xO8kulWUgoHnaaxCkzZV2nG2';
+            if (u.uid !== adminUid) {
+                try {
+                    const allowDoc = await getDoc(doc(db, 'allowedUsers', u.email));
+                    if (!allowDoc.exists()) {
+                        // 미등록 계정 — 즉시 로그아웃 후 거부 신호 반환
+                        await signOut(auth);
+                        return { __denied__: true, email: u.email };
+                    }
+                } catch (checkErr) {
+                    // Firestore 접근 오류 시 안전하게 거부
+                    console.error('allowedUsers check failed:', checkErr);
                     await signOut(auth);
                     return { __denied__: true, email: u.email };
                 }
-            } catch (checkErr) {
-                // Firestore 접근 오류 시 안전하게 거부
-                console.error('allowedUsers check failed:', checkErr);
-                await signOut(auth);
-                return { __denied__: true, email: u.email };
             }
             // ────────────────────────────────────────────────────────────
 
