@@ -759,7 +759,7 @@ body {
     .main-content {
         padding: 16px 14px;
         padding-top: calc(16px + env(safe-area-inset-top, 0px));
-        padding-bottom: 68px; /* 하단 탭바 높이 확보 */
+        padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); /* 하단 탭바 높이 확보 */
         max-width: 100%;
     }
 
@@ -962,7 +962,7 @@ body {
         background: var(--theme-pale);
         border-top: 1px solid var(--theme-mid);
         box-shadow: 0 -2px 12px rgba(0,0,0,0.07);
-        padding-bottom: 0;
+        padding-bottom: env(safe-area-inset-bottom, 0px);
     }
 
     .bottom-nav-item {
@@ -971,14 +971,14 @@ body {
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: 10px 4px;
+        padding: 14px 4px;
         text-decoration: none;
         color: var(--text-light);
         font-size: 0.65rem;
-        gap: 4px;
+        gap: 5px;
         transition: color 0.1s;
-        touch-action: manipulation; /* 더블탭 줌 등 지연 제거 → 탭 반응 일관성 */
-        -webkit-tap-highlight-color: transparent; /* 모바일 기본 회색 터치 하이라이트 제거 */
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
         -webkit-touch-callout: none;
         outline: none;
     }
