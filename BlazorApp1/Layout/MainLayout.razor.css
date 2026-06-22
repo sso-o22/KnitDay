@@ -4,3 +4,7 @@
     0%, 100% { opacity: 0.7; transform: scale(1); }
     50%       { opacity: 0.3; transform: scale(0.7); }
 }
+
+.migration-pulse {
+    animation: pulse 1s infinite;
+}

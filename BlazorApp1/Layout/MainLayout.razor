@@ -58,6 +58,61 @@
 
     <main class="main-content">@Body</main>
 
+    @* 클라우드 마이그레이션 진행률 오버레이 *@
+    @if (_migration != null && (_migration.IsRunning || _migration.Total > 0))
+    {
+        <div style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);z-index:8000;
+                    background:var(--white);border-radius:16px;padding:16px 20px;
+                    box-shadow:0 8px 32px rgba(0,0,0,0.18);min-width:260px;max-width:320px;width:90%;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <img src="icons/cloud-arrow-up.svg" class="icon-line @(_migration.IsRunning ? "migration-pulse" : "")" style="width:18px;height:18px;flex-shrink:0;" />
+                <span style="font-size:0.88rem;font-weight:700;color:var(--text-dark);flex:1;">
+                    @if (_migration.IsRunning)
+                    {
+                        <span>클라우드 이전 중...</span>
+                    }
+                    else if (_migration.QuotaReached)
+                    {
+                        <span>저장공간 한도 초과</span>
+                    }
+                    else if (_migration.Failed > 0)
+                    {
+                        <span>이전 완료 (일부 실패)</span>
+                    }
+                    else
+                    {
+                        <span>클라우드 이전 완료 ✓</span>
+                    }
+                </span>
+                <span style="font-size:0.8rem;font-weight:600;color:var(--theme-active);">@(_migration.Percent)%</span>
+            </div>
+            @* 게이지바 *@
+            <div style="height:6px;background:var(--border);border-radius:99px;overflow:hidden;margin-bottom:8px;">
+                <div style="height:100%;width:@(_migration.Percent)%;border-radius:99px;transition:width 0.4s;
+                            background:@(_migration.QuotaReached ? "#c03030" : _migration.Failed > 0 ? "#e6a817" : "var(--theme-active)");"></div>
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-light);display:flex;justify-content:space-between;">
+                @if (_migration.IsRunning && !string.IsNullOrEmpty(_migration.CurrentLabel))
+                {
+                    <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">↑ @_migration.CurrentLabel</span>
+                }
+                else if (_migration.QuotaReached)
+                {
+                    <span style="color:#c03030;">500MB 한도에 도달했어요</span>
+                }
+                else if (_migration.Failed > 0)
+                {
+                    <span>@(_migration.Failed)개 실패 — 로컬에 보존됨</span>
+                }
+                else if (!_migration.IsRunning)
+                {
+                    <span>사진·도안이 클라우드에 저장됐어요</span>
+                }
+                <span style="flex-shrink:0;">@(_migration.Done)/@(_migration.Total)</span>
+            </div>
+        </div>
+    }
+
     <nav class="bottom-nav">
         @if (_syncStatus == "syncing")
         {
@@ -102,6 +157,7 @@
     string _syncStatus = "";
     System.Threading.CancellationTokenSource? _syncDoneCts;
     DotNetObjectReference<MainLayout>? _visibilityRef;
+    MigrationProgress? _migration;
 
     protected override async Task OnInitializedAsync()
     {
@@ -109,6 +165,7 @@
         StartSidebarTimer();
         StartPollTimer();
         Auth.OnAuthChanged += OnAuthChanged;
+        Storage.OnMigrationProgress += OnMigrationProgress;
     }
 
     void OnAuthChanged()
@@ -271,8 +328,13 @@
         await JS.InvokeVoidAsync("eval", $"(function(){{var m=document.querySelector('meta[name=\"theme-color\"]');if(m)m.setAttribute('content','{color}');}})()");
     }
 
+    void OnMigrationProgress(MigrationProgress p)
+    {
+        _migration = p.Total == 0 ? null : p;
+        InvokeAsync(StateHasChanged);
+    }
+
     [Microsoft.JSInterop.JSInvokable]
-    public async Task OnAppResumed()
     {
         // 포그라운드 복귀 시 즉시 pull
         await SyncWithStatusAsync();
@@ -318,6 +380,7 @@
         _syncDoneCts?.Cancel();
         _syncDoneCts?.Dispose();
         Auth.OnAuthChanged -= OnAuthChanged;
+        Storage.OnMigrationProgress -= OnMigrationProgress;
         _visibilityRef?.Dispose();
         _visibilityRef = null;
         try { await JS.InvokeVoidAsync("unregisterOnlineSync"); } catch { }

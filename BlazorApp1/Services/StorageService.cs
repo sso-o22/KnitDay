@@ -30,6 +30,10 @@ namespace KnitLog.Services
         public event Action? OnSyncStarted;
         public bool IsSyncing { get; private set; }
 
+        // 마이그레이션 진행 이벤트
+        public event Action<MigrationProgress>? OnMigrationProgress;
+        public MigrationProgress? CurrentMigration { get; private set; }
+
         public StorageService(IJSRuntime js) { _js = js; }
 
         // AuthService는 순환 의존 방지를 위해 나중에 주입
@@ -259,57 +263,123 @@ namespace KnitLog.Services
         public async Task MigrateLocalMediaToCloudAsync()
         {
             var projects = await GetProjectsAsync();
+
+            // 총 작업 수 계산 (업로드 필요한 사진 + PDF)
+            int total = 0;
+            foreach (var p in projects)
+            {
+                total += p.Photos.Count(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl));
+                if (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) total++;
+            }
+
+            if (total == 0) return;
+
+            var progress = new MigrationProgress { Total = total, Done = 0, Failed = 0, IsRunning = true };
+            CurrentMigration = progress;
+            OnMigrationProgress?.Invoke(progress);
+
             var changed = false;
             var quotaReached = false;
+            const int MaxRetry = 3;
 
             foreach (var proj in projects)
             {
                 if (quotaReached) break;
 
-                // 사진: Base64Data가 남아있고 아직 클라우드에 안 올라간 것만 대상
+                // 사진
                 foreach (var photo in proj.Photos)
                 {
                     if (string.IsNullOrEmpty(photo.Base64Data) || !string.IsNullOrEmpty(photo.StorageUrl))
                         continue;
-                    try
+
+                    string? url = null;
+                    for (int attempt = 1; attempt <= MaxRetry; attempt++)
                     {
-                        var (url, err) = await UploadPhotoAsync(proj.Id.ToString(), photo.Id.ToString(), photo.Base64Data);
-                        if (err == "quota") { quotaReached = true; break; } // 용량 초과 — 지금까지 옮긴 것은 저장하고 중단
-                        if (!string.IsNullOrEmpty(url))
+                        try
                         {
-                            photo.StorageUrl = url;
-                            photo.Base64Data = ""; // 업로드 성공 시에만 로컬 원본 비움 — 실패하면 그대로 보존
-                            changed = true;
+                            var (u, err) = await UploadPhotoAsync(proj.Id.ToString(), photo.Id.ToString(), photo.Base64Data);
+                            if (err == "quota") { quotaReached = true; break; }
+                            if (!string.IsNullOrEmpty(u)) { url = u; break; }
                         }
+                        catch { }
+                        if (attempt < MaxRetry)
+                            await Task.Delay(1500 * attempt); // 재시도 간격: 1.5s, 3s
                     }
-                    catch { /* 이 사진은 건너뛰고 다음으로 — 실패해도 로컬 데이터는 그대로 보존되어 안전 */ }
+
+                    if (quotaReached) break;
+
+                    if (!string.IsNullOrEmpty(url))
+                    {
+                        photo.StorageUrl = url;
+                        photo.Base64Data = "";
+                        changed = true;
+                        progress.Done++;
+                    }
+                    else
+                    {
+                        progress.Failed++;
+                    }
+                    progress.CurrentLabel = $"{proj.Title} 사진";
+                    OnMigrationProgress?.Invoke(progress);
                 }
+
                 if (quotaReached) break;
 
-                // 도안 PDF: 저장된 PDF가 있는데 아직 클라우드 URL이 없는 경우만 대상
+                // 도안 PDF
                 if (proj.HasSavedPattern && string.IsNullOrEmpty(proj.PatternCloudUrl))
                 {
-                    try
+                    progress.CurrentLabel = $"{proj.Title} 도안";
+                    OnMigrationProgress?.Invoke(progress);
+
+                    string? cloudUrl = null;
+                    for (int attempt = 1; attempt <= MaxRetry; attempt++)
                     {
-                        var base64Pdf = await _js.InvokeAsync<string?>("patternViewer.getSavedPdfBase64", proj.Id.ToString());
-                        if (!string.IsNullOrEmpty(base64Pdf))
+                        try
                         {
-                            var (cloudUrl, cloudErr) = await UploadPdfAsync(proj.Id.ToString(), base64Pdf);
-                            if (cloudErr == "quota") { quotaReached = true; }
-                            else if (!string.IsNullOrEmpty(cloudUrl))
+                            var base64Pdf = await _js.InvokeAsync<string?>("patternViewer.getSavedPdfBase64", proj.Id.ToString());
+                            if (!string.IsNullOrEmpty(base64Pdf))
                             {
-                                proj.PatternCloudUrl = cloudUrl;
-                                changed = true;
+                                var (u, err) = await UploadPdfAsync(proj.Id.ToString(), base64Pdf);
+                                if (err == "quota") { quotaReached = true; break; }
+                                if (!string.IsNullOrEmpty(u)) { cloudUrl = u; break; }
                             }
+                            else break; // PDF 없음 — 재시도 불필요
                         }
+                        catch { }
+                        if (attempt < MaxRetry)
+                            await Task.Delay(1500 * attempt);
                     }
-                    catch { /* PDF 읽기/업로드 실패 — 로컬 PDF는 그대로 유지되므로 안전, 다음 프로젝트로 진행 */ }
+
+                    if (quotaReached) break;
+
+                    if (!string.IsNullOrEmpty(cloudUrl))
+                    {
+                        proj.PatternCloudUrl = cloudUrl;
+                        changed = true;
+                        progress.Done++;
+                    }
+                    else
+                    {
+                        progress.Failed++;
+                    }
+                    OnMigrationProgress?.Invoke(progress);
                 }
             }
 
-            // quota 초과로 중단됐어도 그 전까지 성공한 마이그레이션 결과는 반드시 저장
             if (changed)
                 await SaveAsync(KEY_PROJECTS, "projects", "Id", projects);
+
+            progress.IsRunning = false;
+            progress.QuotaReached = quotaReached;
+            CurrentMigration = progress;
+            OnMigrationProgress?.Invoke(progress);
+
+            // 5초 후 진행 상태 초기화
+            _ = Task.Delay(5000).ContinueWith(_ =>
+            {
+                CurrentMigration = null;
+                OnMigrationProgress?.Invoke(new MigrationProgress());
+            });
         }
 
         private async Task SyncTodosAsync()
@@ -702,5 +772,16 @@ namespace KnitLog.Services
             };
             return JsonSerializer.Serialize(data, _jsonOpts);
         }
+    }
+
+    public class MigrationProgress
+    {
+        public int Total { get; set; }
+        public int Done { get; set; }
+        public int Failed { get; set; }
+        public bool IsRunning { get; set; }
+        public bool QuotaReached { get; set; }
+        public string CurrentLabel { get; set; } = "";
+        public int Percent => Total > 0 ? (int)((Done + Failed) * 100.0 / Total) : 0;
     }
 }
