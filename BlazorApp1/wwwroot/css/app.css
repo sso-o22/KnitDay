@@ -854,7 +854,7 @@ body {
         box-sizing: border-box;
     }
     .checklist-input {
-        font-size: 0.78rem !important;
+        font-size: 16px !important;
         max-width: 100%;
         min-width: 0;
         box-sizing: border-box;
