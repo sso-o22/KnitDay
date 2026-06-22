@@ -56,7 +56,11 @@ jobs:
       - name: Deploy Firebase Functions
         run: |
           echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/service-account.json
-          firebase deploy --only functions --project knitlog-94c63 \
-            --set-env-vars CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }},CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }},CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+          cat > functions/.env << EOF
+          CLOUDINARY_CLOUD_NAME=${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }}
+          EOF
+          firebase deploy --only functions --project knitlog-94c63
         env:
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/service-account.json
