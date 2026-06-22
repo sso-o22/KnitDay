@@ -887,14 +887,14 @@ else
             </div>
 
             @* ── 날짜 ── *@
-            <div class="date-row" style="display:flex; gap:16px;">
+            <div class="date-row" style="display:flex; gap:24px; align-items:flex-end;">
                 <div class="form-group" style="flex:1; min-width:0;">
                     <label class="form-label">시작일</label>
                     <input type="date" class="form-control" style="width:100%; box-sizing:border-box;"
                            value="@_project.StartDate?.ToString("yyyy-MM-dd")"
                            @onchange="e => _project.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                 </div>
-                <div class="form-group" style="flex:1; min-width:0;">
+                <div class="form-group" style="flex:1; min-width:0; max-width:48%;">
                     <label class="form-label">@(_project!.Status == ProjectStatus.완료 ? "완성일" : "목표 완성일")</label>
                     <input type="date" class="form-control" style="width:100%; box-sizing:border-box;"
                            value="@_project.EndDate?.ToString("yyyy-MM-dd")"

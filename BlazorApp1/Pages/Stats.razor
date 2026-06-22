@@ -378,7 +378,7 @@ else
     string BuildYearSvg()
     {
         double W = _svgWidthLine; double H = Math.Max(240, W * 0.55);
-        double padL = 44, padR = 44, padTop = 16, plotH = H - padTop - 30;
+        double padL = 52, padR = 52, padTop = 16, plotH = H - padTop - 30;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
         int n = _yearChartData.Count;
@@ -405,11 +405,11 @@ else
         sb.Append("<stop offset=\"0%\" stop-color=\"var(--theme-active)\" stop-opacity=\"0.15\"/>");
         sb.Append("<stop offset=\"100%\" stop-color=\"var(--theme-active)\" stop-opacity=\"0\"/>");
         sb.Append("</linearGradient></defs>");
-        for (int k = 1; k <= 4; k++) {
-            var gy = padTop + plotH * (1.0 - (double)k/4);
+        for (int k = 1; k <= 3; k++) {
+            var gy = padTop + plotH * (1.0 - (double)k/3);
             sb.Append($"<line x1=\"{padL:F0}\" y1=\"{gy:F1}\" x2=\"{W-padR:F0}\" y2=\"{gy:F1}\" stroke=\"var(--border)\" stroke-width=\"0.5\"/>");
-            sb.Append($"<text x=\"{padL-4:F0}\" y=\"{gy+3:F1}\" text-anchor=\"end\" font-size=\"7\" fill=\"var(--theme-active)\" opacity=\"0.8\">{YSvgLabelTotal(k)}</text>");
-            sb.Append($"<text x=\"{W-padR+4:F0}\" y=\"{gy+3:F1}\" text-anchor=\"start\" font-size=\"7\" fill=\"var(--theme-muted)\" opacity=\"0.8\">{YSvgLabelAvg(k)}</text>");
+            sb.Append($"<text x=\"{padL-4:F0}\" y=\"{gy+3:F1}\" text-anchor=\"end\" font-size=\"9\" fill=\"var(--theme-active)\" opacity=\"0.9\">{YSvgLabelTotal(k)}</text>");
+            sb.Append($"<text x=\"{W-padR+4:F0}\" y=\"{gy+3:F1}\" text-anchor=\"start\" font-size=\"9\" fill=\"var(--theme-muted)\" opacity=\"0.9\">{YSvgLabelAvg(k)}</text>");
         }
         sb.Append($"<line x1=\"{padL:F0}\" y1=\"{baseY:F1}\" x2=\"{W-padR:F0}\" y2=\"{baseY:F1}\" stroke=\"var(--border)\" stroke-width=\"0.8\"/>");
         sb.Append($"<path d=\"{ar}\" fill=\"url(#areaGrad)\"/>");
@@ -420,7 +420,7 @@ else
             sb.Append($"<circle cx=\"{xi:F1}\" cy=\"{yt:F1}\" r=\"{(_yearChartData[i].TotalSecs>0?"3":"1.5")}\" fill=\"var(--theme-active)\" stroke=\"white\" stroke-width=\"1\"/>");
             if (_yearChartData[i].TotalSecs > 0)
                 sb.Append($"<circle cx=\"{xi:F1}\" cy=\"{ya:F1}\" r=\"2.5\" fill=\"white\" stroke=\"var(--theme-muted)\" stroke-width=\"1.5\"/>");
-            sb.Append($"<text x=\"{xi:F1}\" y=\"{baseY+14:F0}\" text-anchor=\"middle\" font-size=\"8\" fill=\"var(--text-light)\">{_yearChartData[i].Label}</text>");
+            sb.Append($"<text x=\"{xi:F1}\" y=\"{baseY+14:F0}\" text-anchor=\"middle\" font-size=\"9\" fill=\"var(--text-light)\">{_yearChartData[i].Label}</text>");
         }
         sb.Append("</svg>");
         return sb.ToString();
@@ -429,7 +429,7 @@ else
     string BuildMonthSvg()
     {
         double W = _svgWidthLine; double H = Math.Max(220, W * 0.52);
-        double padL = 36, padR = 8, padTop = 16, plotH = H - padTop - 28;
+        double padL = 44, padR = 8, padTop = 16, plotH = H - padTop - 28;
         double plotW = W - padL - padR;
         double baseY = padTop + plotH;
         int n = _chartData.Count;
@@ -459,7 +459,7 @@ else
         for (int k = 1; k <= 3; k++) {
             var gy = padTop + plotH*(1.0-(double)k/3);
             sb.Append($"<line x1=\"{padL:F0}\" y1=\"{gy:F1}\" x2=\"{W-padR:F0}\" y2=\"{gy:F1}\" stroke=\"var(--border)\" stroke-width=\"0.5\"/>");
-            sb.Append($"<text x=\"{padL-4:F0}\" y=\"{gy+3:F1}\" text-anchor=\"end\" font-size=\"7\" fill=\"var(--text-light)\">{FormatTimeShort((int)(mxS*k/3))}</text>");
+            sb.Append($"<text x=\"{padL-4:F0}\" y=\"{gy+3:F1}\" text-anchor=\"end\" font-size=\"9\" fill=\"var(--text-light)\">{FormatTimeShort((int)(mxS*k/3))}</text>");
         }
         sb.Append($"<line x1=\"{padL:F0}\" y1=\"{baseY:F1}\" x2=\"{W-padR:F0}\" y2=\"{baseY:F1}\" stroke=\"var(--border)\" stroke-width=\"0.8\"/>");
         sb.Append($"<path d=\"{ma}\" fill=\"url(#mAreaGrad)\"/>");
@@ -471,7 +471,7 @@ else
             if (_chartData[i].Seconds > 0)
                 sb.Append($"<circle cx=\"{xi:F1}\" cy=\"{yi:F1}\" r=\"2.5\" fill=\"var(--theme-active)\" stroke=\"white\" stroke-width=\"1\"/>");
             if (i % step == 0 || i == n-1)
-                sb.Append($"<text x=\"{xi:F1}\" y=\"{baseY+13:F0}\" text-anchor=\"middle\" font-size=\"7\" fill=\"var(--text-light)\">{_chartData[i].Label}</text>");
+                sb.Append($"<text x=\"{xi:F1}\" y=\"{baseY+13:F0}\" text-anchor=\"middle\" font-size=\"9\" fill=\"var(--text-light)\">{_chartData[i].Label}</text>");
         }
         sb.Append("</svg>");
         return sb.ToString();
