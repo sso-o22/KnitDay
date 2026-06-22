@@ -891,8 +891,13 @@
     void PrevCounter(){if(_project==null||_project.Counters.Count==0)return;_activeCounterIndex=(_activeCounterIndex-1+_project.Counters.Count)%_project.Counters.Count;}
     void NextCounter(){if(_project==null||_project.Counters.Count==0)return;_activeCounterIndex=(_activeCounterIndex+1)%_project.Counters.Count;}
 
-    // 마지막 클릭 시간: 시분초 표시 (ProjectDetail과 동일)
-    string FormatLastUpdated(DateTime dt) => dt.ToString("HH:mm:ss");
+    // 마지막 클릭 시간: 오늘→시분초, 올해 다른날→월.일 시분, 작년이전→년.월.일 시분
+    string FormatLastUpdated(DateTime dt)
+    {
+        if (dt.Date == DateTime.Today) return dt.ToString("HH:mm:ss");
+        if (dt.Year == DateTime.Today.Year) return dt.ToString("M.dd HH:mm");
+        return dt.ToString("yyyy.M.dd HH:mm");
+    }
     string _cwNewLabel = "";
     bool _cwAddMode = false;
 

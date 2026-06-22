@@ -245,10 +245,11 @@ else
                                 @if (counter.LastUpdatedAt.HasValue)
                                 {
                                     var lastAt = counter.LastUpdatedAt.Value;
-                                    var isToday = lastAt.Date == DateTime.Today;
-                                    var timeStr = isToday
+                                    var timeStr = lastAt.Date == DateTime.Today
                                         ? lastAt.ToString("HH:mm:ss")
-                                        : lastAt.ToString("MM.dd HH:mm");
+                                        : lastAt.Year == DateTime.Today.Year
+                                            ? lastAt.ToString("M.dd HH:mm")
+                                            : lastAt.ToString("yyyy.M.dd HH:mm");
                                     <div style="display:flex; align-items:center; justify-content:center; gap:4px; font-size:0.75rem; color:var(--text-light); margin-bottom:8px;">
                                         <img src="icons/clock.svg" class="icon-line" style="width:12px;height:12px; flex-shrink:0;" /> 마지막 업데이트: @timeStr
                                     </div>
