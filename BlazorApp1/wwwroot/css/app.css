@@ -703,6 +703,12 @@ body {
 
     .form-row .form-group {
         min-width: 0;
+        overflow: visible;
+    }
+    .form-row input[type="date"] {
+        width: 100%;
+        max-width: 100%;
+        min-width: 0;
         overflow: hidden;
     }
     .form-row {
