@@ -335,6 +335,7 @@
     }
 
     [Microsoft.JSInterop.JSInvokable]
+    public async Task OnAppResumed()
     {
         // 포그라운드 복귀 시 즉시 pull
         await SyncWithStatusAsync();

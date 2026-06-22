@@ -246,6 +246,13 @@
             데이터 내보내기는 백업이나 비로그인 상태에서 기기를 옮길 때 사용해요.<br>
             <b>파일이 너무 크면 나중에 불러오기가 안 될 수 있어요.</b> 도안이 많다면 전체보다는 <b>프로젝트별로 나눠서</b> 내보내는 걸 추천해요.
         </div>
+        <div style="font-size:0.82rem; padding:10px 12px; border-radius:8px; margin-bottom:16px;
+                    background:#fff8e6; color:var(--text-mid); line-height:1.7; border:1px solid #f0d080;">
+            <span style="display:inline-flex;align-items:center;gap:4px;margin-bottom:2px;"><img src="icons/cloud-arrow-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /><b>비로그인 상태에서 데이터를 많이 쌓은 후 로그인하면?</b></span><br>
+            기존 사진·도안이 클라우드로 자동 이전되지만, 용량이 크면 시간이 오래 걸려요.<br>
+            <b>아이폰/아이패드는 50~100MB 이하</b>일 때 안정적이에요. 그 이상이면 중간에 끊길 수 있어요.<br>
+            <b>PC 크롬에서 로그인하면 더 안정적</b>으로 이전할 수 있어요.
+        </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="OpenExportModal"><img src="icons/export.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 내보내기</button>
             <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="ImportDataClick"><img src="icons/download-simple.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />데이터 불러오기</button>
@@ -319,6 +326,19 @@
         }
     </div>
     }
+
+    <!-- 자주 묻는 질문 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+            <img src="icons/question.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />자주 묻는 질문
+        </div>
+        <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:12px;">
+            저장, 동기화, 내보내기 등 앱 사용 중 헷갈리는 것들을 정리했어요.
+        </p>
+        <a href="faq" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--theme-active);text-decoration:none;font-weight:600;">
+            <img src="icons/question.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />FAQ 보기
+        </a>
+    </div>
 
     <!-- 개인정보 처리방침 -->
     <div class="card">

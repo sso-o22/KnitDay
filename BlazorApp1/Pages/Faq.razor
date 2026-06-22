@@ -1,0 +1,144 @@
+@page "/faq"
+@implements IDisposable
+
+<div class="page-header">
+    <div>
+        <h1 class="page-title"><img src="icons/question.svg" class="icon-line" style="width:36px;height:36px;" />자주 묻는 질문</h1>
+        <p class="page-subtitle">궁금한 게 있으면 여기서 찾아보세요</p>
+    </div>
+</div>
+
+<div class="settings-wrapper">
+
+    @foreach (var section in _sections)
+    {
+        <div class="card" style="padding:0;overflow:hidden;">
+            <div style="padding:16px 18px 12px;font-size:0.78rem;font-weight:700;letter-spacing:0.06em;color:var(--text-light);border-bottom:1px solid var(--border);">
+                @section.Category
+            </div>
+            @foreach (var item in section.Items)
+            {
+                var key = item.Q;
+                var isOpen = _openKeys.Contains(key);
+                <div style="border-bottom:1px solid var(--border);">
+                    <button style="width:100%;display:flex;align-items:center;gap:10px;padding:14px 18px;background:none;border:none;cursor:pointer;text-align:left;"
+                            @onclick="() => Toggle(key)">
+                        <span style="flex:1;font-size:0.88rem;font-weight:600;color:var(--text-dark);line-height:1.45;">@item.Q</span>
+                        <img src="icons/@(isOpen ? "arrow-up" : "arrow-down").svg" class="icon-line"
+                             style="width:16px;height:16px;flex-shrink:0;opacity:0.5;transition:transform 0.2s;" />
+                    </button>
+                    @if (isOpen)
+                    {
+                        <div style="padding:0 18px 16px;font-size:0.85rem;color:var(--text-mid);line-height:1.75;border-top:1px solid var(--border);">
+                            @((MarkupString)item.A)
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+
+</div>
+
+@code {
+    readonly HashSet<string> _openKeys = new();
+
+    void Toggle(string key)
+    {
+        if (!_openKeys.Add(key)) _openKeys.Remove(key);
+    }
+
+    public void Dispose() { }
+
+    record FaqItem(string Q, string A);
+    record FaqSection(string Category, List<FaqItem> Items);
+
+    readonly List<FaqSection> _sections = new()
+    {
+        new("💾 저장 & 데이터", new()
+        {
+            new("데이터는 어디에 저장되나요?",
+                "로그인하지 않은 상태에서는 모든 데이터가 <b>기기 안 (IndexedDB)</b>에만 저장돼요. 앱을 삭제하거나 브라우저 데이터를 지우면 사라질 수 있어요.<br><br>" +
+                "구글 계정으로 로그인하면 프로젝트·실창고·도구·스와치 데이터는 <b>Firebase(클라우드)</b>에, 사진과 도안 PDF는 <b>Cloudinary(클라우드)</b>에 저장돼요."),
+
+            new("로그인 전에 쌓아둔 데이터는 어떻게 되나요?",
+                "로그인하는 순간 기기에 있던 데이터가 클라우드로 자동 이전돼요.<br><br>" +
+                "단, 사진·도안이 많을수록 시간이 오래 걸려요. <b>아이폰/아이패드는 50~100MB 이하</b>일 때 안정적이에요. " +
+                "그 이상이면 중간에 끊길 수 있으니 <b>PC 크롬에서 로그인</b>하는 걸 추천해요.<br><br>" +
+                "이전 중에는 화면 하단에 진행률 바가 표시돼요."),
+
+            new("앱을 삭제하면 데이터가 사라지나요?",
+                "<b>로그인 상태</b>라면 클라우드에 저장되어 있어서 재설치 후 로그인하면 복구돼요.<br><br>" +
+                "<b>비로그인 상태</b>라면 기기에만 있어서 앱 삭제 시 데이터가 사라질 수 있어요. 중요한 데이터는 <b>데이터 내보내기</b>로 백업해 두세요."),
+
+            new("클라우드 저장 용량은 얼마나 되나요?",
+                "계정당 <b>500MB</b>가 제공돼요. 사진과 도안 PDF가 용량을 차지하고, 프로젝트 기록·실창고·도구 등 텍스트 데이터는 거의 용량을 차지하지 않아요.<br><br>" +
+                "설정 → 데이터 섹션에서 현재 사용량을 확인할 수 있어요."),
+        }),
+
+        new("☁️ 동기화", new()
+        {
+            new("여러 기기에서 동기화가 되나요?",
+                "네! 같은 구글 계정으로 로그인하면 자동으로 동기화돼요.<br><br>" +
+                "앱이 열릴 때, 포그라운드로 돌아올 때, 2분마다 자동으로 동기화되고, " +
+                "설정에서 수동으로 업로드·다운로드도 할 수 있어요."),
+
+            new("동기화가 안 될 때는 어떻게 하나요?",
+                "화면 상단에 구름 아이콘 상태를 확인해 보세요.<br><br>" +
+                "설정 → 계정 → <b>DB에 업로드 / DB에서 가져오기</b>로 수동 동기화를 시도해 보세요.<br><br>" +
+                "그래도 안 된다면 로그아웃 후 재로그인하면 해결되는 경우가 많아요."),
+
+            new("오프라인에서도 사용할 수 있나요?",
+                "네! KnitDay는 PWA로 설치하면 오프라인에서도 사용할 수 있어요. 데이터는 기기에 저장되고, 온라인이 되면 자동으로 클라우드와 동기화돼요."),
+        }),
+
+        new("📤 내보내기 & 불러오기", new()
+        {
+            new("내보내기는 언제 사용하나요?",
+                "주로 두 가지 경우에 사용해요.<br><br>" +
+                "① <b>기기 교체</b>: 비로그인 상태에서 기기를 바꿀 때 데이터를 옮기고 싶을 때<br>" +
+                "② <b>백업</b>: 중요한 데이터를 따로 보관해두고 싶을 때<br><br>" +
+                "로그인 상태라면 클라우드에 자동 저장되므로 내보내기가 필수는 아니에요."),
+
+            new("파일이 너무 크면 어떻게 되나요?",
+                "사진·도안을 포함한 전체 내보내기는 파일이 매우 커질 수 있어요.<br><br>" +
+                "나중에 불러오기가 실패할 수 있으니, 도안이 많다면 <b>프로젝트별로 나눠서</b> 내보내는 걸 추천해요.<br><br>" +
+                "실창고·도구·스와치만 내보내는 옵션을 사용하면 용량을 크게 줄일 수 있어요."),
+
+            new("불러오기에서 '합치기'와 '덮어쓰기' 차이가 뭔가요?",
+                "<b>합치기</b>: 현재 데이터를 유지하면서 파일의 내용을 추가해요. 같은 항목이 있으면 파일 쪽이 우선 적용돼요.<br><br>" +
+                "<b>덮어쓰기</b>: 현재 데이터를 모두 지우고 파일 내용으로 완전히 교체해요. 현재 데이터가 사라지므로 주의하세요."),
+        }),
+
+        new("🔐 로그인 & 계정", new()
+        {
+            new("어떤 계정으로 로그인할 수 있나요?",
+                "구글 계정으로만 로그인할 수 있어요. 네이버 스토어에서 앱을 구매한 후, 등록된 구글 계정으로만 로그인이 가능해요.<br><br>" +
+                "미등록 계정으로 로그인을 시도하면 접근이 거부돼요."),
+
+            new("로그인은 꼭 해야 하나요?",
+                "아니요! 로그인 없이도 앱의 모든 기능을 사용할 수 있어요.<br><br>" +
+                "단, 로그인하지 않으면 <b>기기간 동기화</b>와 <b>클라우드 백업</b>이 지원되지 않아요. 데이터는 해당 기기에만 저장돼요."),
+
+            new("로그아웃하면 데이터가 사라지나요?",
+                "아니요. 로그아웃해도 기기에 저장된 데이터는 그대로 남아요. 다시 로그인하면 클라우드 데이터와 합쳐져요."),
+        }),
+
+        new("📱 앱 설치 & 사용", new()
+        {
+            new("홈 화면에 추가하는 방법은?",
+                "<b>아이폰/아이패드 (Safari)</b>: 하단 공유 버튼 → '홈 화면에 추가'<br><br>" +
+                "<b>안드로이드 (Chrome)</b>: 주소창 옆 메뉴 → '앱 설치' 또는 '홈 화면에 추가'<br><br>" +
+                "홈 화면에 추가하면 전체 화면으로 앱처럼 사용할 수 있어요."),
+
+            new("도안 PDF에 필기는 어떻게 하나요?",
+                "프로젝트 상세 → 도안 탭에서 PDF를 열고, 상단 그리기 모드 버튼을 켜면 돼요.<br><br>" +
+                "펜으로 자유롭게 필기할 수 있고, 행 마커를 놓아서 현재 뜨고 있는 줄을 표시할 수도 있어요.<br><br>" +
+                "Apple Pencil을 사용하면 손바닥이 닿아도 필기가 되지 않는 손바닥 거부 기능이 자동으로 적용돼요."),
+
+            new("데이터를 실수로 지웠어요. 복구할 수 있나요?",
+                "로그인 상태라면 설정 → 계정 → <b>DB에서 가져오기</b>로 클라우드의 마지막 저장본을 불러올 수 있어요.<br><br>" +
+                "비로그인 상태에서 삭제한 경우엔 복구가 어려워요. 평소에 <b>데이터 내보내기</b>로 정기 백업을 권장해요."),
+        }),
+    };
+}
