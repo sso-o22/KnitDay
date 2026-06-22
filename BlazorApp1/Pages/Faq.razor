@@ -13,7 +13,8 @@
     @foreach (var section in _sections)
     {
         <div class="card" style="padding:0;overflow:hidden;">
-            <div style="padding:16px 18px 12px;font-size:0.78rem;font-weight:700;letter-spacing:0.06em;color:var(--text-light);border-bottom:1px solid var(--border);">
+            <div style="padding:16px 18px 12px;display:flex;align-items:center;gap:6px;font-size:0.78rem;font-weight:700;letter-spacing:0.06em;color:var(--text-light);border-bottom:1px solid var(--border);">
+                <img src="icons/@(section.Icon).svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.6;" />
                 @section.Category
             </div>
             @foreach (var item in section.Items)
@@ -51,11 +52,11 @@
     public void Dispose() { }
 
     record FaqItem(string Q, string A);
-    record FaqSection(string Category, List<FaqItem> Items);
+    record FaqSection(string Icon, string Category, List<FaqItem> Items);
 
     readonly List<FaqSection> _sections = new()
     {
-        new("💾 저장 & 데이터", new()
+        new("floppy-disk", "저장 & 데이터", new()
         {
             new("데이터는 어디에 저장되나요?",
                 "로그인하지 않은 상태에서는 모든 데이터가 <b>기기 안 (IndexedDB)</b>에만 저장돼요. 앱을 삭제하거나 브라우저 데이터를 지우면 사라질 수 있어요.<br><br>" +
@@ -76,7 +77,7 @@
                 "설정 → 데이터 섹션에서 현재 사용량을 확인할 수 있어요."),
         }),
 
-        new("☁️ 동기화", new()
+        new("cloud", "동기화", new()
         {
             new("여러 기기에서 동기화가 되나요?",
                 "네! 같은 구글 계정으로 로그인하면 자동으로 동기화돼요.<br><br>" +
@@ -92,7 +93,7 @@
                 "네! KnitDay는 PWA로 설치하면 오프라인에서도 사용할 수 있어요. 데이터는 기기에 저장되고, 온라인이 되면 자동으로 클라우드와 동기화돼요."),
         }),
 
-        new("📤 내보내기 & 불러오기", new()
+        new("export", "내보내기 & 불러오기", new()
         {
             new("내보내기는 언제 사용하나요?",
                 "주로 두 가지 경우에 사용해요.<br><br>" +
@@ -110,7 +111,7 @@
                 "<b>덮어쓰기</b>: 현재 데이터를 모두 지우고 파일 내용으로 완전히 교체해요. 현재 데이터가 사라지므로 주의하세요."),
         }),
 
-        new("🔐 로그인 & 계정", new()
+        new("lock-key", "로그인 & 계정", new()
         {
             new("어떤 계정으로 로그인할 수 있나요?",
                 "구글 계정으로만 로그인할 수 있어요. 네이버 스토어에서 앱을 구매한 후, 등록된 구글 계정으로만 로그인이 가능해요.<br><br>" +
@@ -124,7 +125,7 @@
                 "아니요. 로그아웃해도 기기에 저장된 데이터는 그대로 남아요. 다시 로그인하면 클라우드 데이터와 합쳐져요."),
         }),
 
-        new("📱 앱 설치 & 사용", new()
+        new("app-window", "앱 설치 & 사용", new()
         {
             new("홈 화면에 추가하는 방법은?",
                 "<b>아이폰/아이패드 (Safari)</b>: 하단 공유 버튼 → '홈 화면에 추가'<br><br>" +
