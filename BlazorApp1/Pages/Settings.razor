@@ -63,6 +63,12 @@
                 </div>
             }
             <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="SignOut"><img src="icons/sign-out.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />로그아웃</button>
+            @if (Auth.CurrentUser?.Uid == "xAz2xO8kulWUgoHnaaxCkzZV2nG2")
+            {
+                <a href="admin" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:0.78rem;color:var(--text-light);text-decoration:none;">
+                    <img src="icons/key.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />관리자 페이지
+                </a>
+            }
         }
         else
         {
@@ -323,7 +329,7 @@
             KnitDay는 Google 계정으로만 로그인하며, 개인정보 보호를 중요하게 생각해요.
         </p>
         <a href="privacy" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--theme-active);text-decoration:none;font-weight:600;">
-            <img src="icons/shield-check.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />개인정보 처리방침 보기
+            개인정보 처리방침 보기
         </a>
     </div>
 
@@ -334,7 +340,7 @@
         </div>
         <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:14px;line-height:1.6;">
             버그 제보, 개선 아이디어, 기능 요청을 보내주세요!<br />
-            소중한 의견을 반영해 더 좋은 앱으로 만들겠습니다 <img src="icons/yarn.svg" class="icon-line" style="width:15px;height:15px;vertical-align:middle;" />
+            소중한 의견을 반영해 더 좋은 앱으로 만들겠습니다
         </p>
         <div style="display:flex;flex-direction:column;gap:10px;">
             <a href="https://open.kakao.com/o/sUX2zHAi" target="_blank" rel="noopener noreferrer"
