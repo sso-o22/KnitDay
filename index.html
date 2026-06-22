@@ -107,8 +107,8 @@
                 var cssH = window.innerHeight;
                 var longerCss = Math.max(cssW, cssH);
 
-                // 태블릿: 긴 CSS px 기준 900px 이상 (아이패드 10 = 820×1180)
-                var isTablet = longerCss >= 900;
+                // 태블릿: 긴 CSS px 기준 1024px 이상 (아이패드 10 = 820×1180) 갤럭시 때문에 1024로 변경
+                var isTablet = longerCss >= 1024;
                 var isPortrait = cssH > cssW;
 
                 var shouldShow = isTablet ? isPortrait : !isPortrait;
