@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "zn/05Jt4",
+  "version": "2Z2dz/xE",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-ofa8Z7bpcyng5QQGbJnoEsiEbtb36sTSHqYTrRdZa8Y=",
+      "hash": "sha256-OyxLUv57gX2kp1IJXxsxs8IEqPQYxDJenSzh1/HlNFQ=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -130,7 +130,7 @@ self.assetsManifest = {
       "url": "_framework/System.ObjectModel.wasm"
     },
     {
-      "hash": "sha256-4nUSoW3VrB4GUv5Q6zNAIit4hFFVSxgejktjD/PHQiY=",
+      "hash": "sha256-6HqCVlFV8tOAJJGoPkGi5v2E74DUobsWdbFT4Ln1WdM=",
       "url": "_framework/System.Private.CoreLib.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-/98GZnCb3grnU7cfh9t4WIoRc3aVjOx4NuOm1YtpBag=",
+      "hash": "sha256-MuJSjc0FBxxsbIHkb4cjDGNRiB3HYpepbLFPwiKEvxs=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -404,6 +404,10 @@ self.assetsManifest = {
     {
       "hash": "sha256-OkLGJJopjLxsXAm8agbwZKtGZ0kboGMNV2WbIHQKFoI=",
       "url": "icons/chart-bar.svg"
+    },
+    {
+      "hash": "sha256-wIBboVPWqeH33kF8Aj7GgGnvpf9ZLonApKF2a86wHUM=",
+      "url": "icons/chat-circle-text.svg"
     },
     {
       "hash": "sha256-YAmY/HRvM5a8sDz9nKldyoF3y5woDtGgGRvU92HMrBg=",
@@ -758,6 +762,10 @@ self.assetsManifest = {
       "url": "icons/search.svg"
     },
     {
+      "hash": "sha256-vO/ySPCQChkqkVK17jhptUDllYhtmaUykvfZrlWAD4I=",
+      "url": "icons/shield-check.svg"
+    },
+    {
       "hash": "sha256-Lmqwrt7vLP06YclbCIlBNshpRMKqPW1G3z862ToWWpA=",
       "url": "icons/shooting-star-bold.svg"
     },
@@ -902,7 +910,7 @@ self.assetsManifest = {
       "url": "js/app.js"
     },
     {
-      "hash": "sha256-zU2EubvfMohuzoxCEFrcgcp+seMC2xzlTiCDKCRnmlg=",
+      "hash": "sha256-+8rkS4qXRPCtcJ4tPdO2ppvba76bt0PTEgd2udWV32Y=",
       "url": "js/firebase.js"
     },
     {
@@ -2538,7 +2546,7 @@ self.assetsManifest = {
       "url": "sample-data/weather.json"
     },
     {
-      "hash": "sha256-JlecBUgyCDgsM4lf0NeYhvYJaLjpPeHMQMXQyeYBckE=",
+      "hash": "sha256-KdmsuGkm35t6XXWgA9sC5Bpoxg+2kz3bBNKC2NX1xEg=",
       "url": "version.json"
     }
   ]
