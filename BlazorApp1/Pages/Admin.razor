@@ -62,7 +62,7 @@ else
                 등록된 계정
                 @if (_users != null)
                 {
-                    <span style="margin-left:auto;font-size:0.78rem;font-weight:400;color:var(--text-light);">@_users.Count명</span>
+                    <span style="margin-left:auto;font-size:0.78rem;font-weight:400;color:var(--text-light);">@(_users.Count)명</span>
                 }
                 <button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:0.75rem;" @onclick="LoadUsers">↺</button>
             </div>
