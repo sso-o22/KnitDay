@@ -140,7 +140,7 @@ else
                        style="width:14px; height:14px; accent-color:var(--theme-active); cursor:pointer; flex-shrink:0;" />
                 @if (_todoEditMode)
                 {
-                    <input class="form-control checklist-input" style="flex:1; font-size:0.78rem; padding:2px 6px;"
+                    <input class="checklist-input" style="flex:1; font-size:0.78rem;"
                            value="@item.Text"
                            @onchange="e => { item.Text = e.Value?.ToString() ?? item.Text; }" />
                     <button class="btn btn-danger btn-sm" style="padding:1px 4px; display:inline-flex;align-items:center;"
