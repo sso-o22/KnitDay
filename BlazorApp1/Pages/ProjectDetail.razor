@@ -466,7 +466,7 @@ else
                                     }
                                 </div>
                                 <div style="font-size:0.75rem; color:var(--text-mid); margin-top:8px; cursor:pointer; text-decoration:underline; text-decoration-style:dotted;"
-                                     @onclick="() => _showAllSessions = true">
+                                     @onclick="async () => await OpenSessionsAsync()">
                                     @(_project.Sessions.Count)개 세션
                                 </div>
                             </div>
@@ -1111,13 +1111,12 @@ else
 <!-- 삭제 확인 모달 -->
 @if (_showAllSessions && _project != null)
 {
-    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9998;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;"
-         @onclick="() => _showAllSessions = false">
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9998;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
         <div style="background:var(--white);border-radius:16px;max-width:480px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.18);"
              @onclick:stopPropagation="true">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;">
                 <div style="font-size:1rem;font-weight:700;color:var(--text-dark);">전체 뜨개 기록</div>
-                <button class="btn btn-ghost btn-sm" @onclick="() => _showAllSessions = false">
+                <button class="btn btn-ghost btn-sm" @onclick="async () => await CloseSessionsAsync()">
                     <img src="icons/x.svg" class="icon-line" style="width:14px;height:14px;" />
                 </button>
             </div>
@@ -1131,7 +1130,7 @@ else
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                             <span style="color:var(--text-mid);">@session.StartTime.ToString("yyyy년 M월 d일 HH:mm")</span>
                             <button class="btn btn-danger btn-sm" style="padding:2px 6px;font-size:0.7rem;"
-                                    @onclick='() => { _showAllSessions = false; Confirm("이 뜨개 기록을 삭제할까요?\n삭제하면 누적 시간에서 해당 시간이 빠져요.", async () => await RemoveSession(session.Id)); }'>
+                                    @onclick='async () => { await CloseSessionsAsync(); Confirm("이 뜨개 기록을 삭제할까요?\n삭제하면 누적 시간에서 해당 시간이 빠져요.", async () => await RemoveSession(session.Id)); }'>
                                 <img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" />
                             </button>
                         </div>
@@ -1177,6 +1176,18 @@ else
     bool _showAllSessions = false;
     string _confirmMsg = "";
     Func<Task>? _confirmAction;
+
+    async Task OpenSessionsAsync()
+    {
+        _showAllSessions = true;
+        await JS.InvokeVoidAsync("eval", "document.body.style.overflow='hidden';document.body.style.position='fixed';document.body.style.width='100%';");
+    }
+
+    async Task CloseSessionsAsync()
+    {
+        _showAllSessions = false;
+        await JS.InvokeVoidAsync("eval", "document.body.style.overflow='';document.body.style.position='';document.body.style.width='';");
+    }
 
     void Confirm(string msg, Func<Task> action)
     {
@@ -1636,7 +1647,7 @@ else
     async Task RemoveSession(Guid id)
     {
         _project?.Sessions.RemoveAll(s => s.Id == id);
-        if (_project?.Sessions.Count == 0) _showAllSessions = false;
+        if (_project?.Sessions.Count == 0) await CloseSessionsAsync();
         await Save();
     }
 
