@@ -847,8 +847,14 @@ body {
     }
 
     /* 모든 input/textarea 에서 iOS 줌 방지 (16px 미만이면 자동 확대) */
-    input, textarea {
+    input:not(.checklist-input), textarea {
         font-size: 16px !important;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+    .checklist-input {
+        font-size: 0.78rem !important;
         max-width: 100%;
         min-width: 0;
         box-sizing: border-box;
