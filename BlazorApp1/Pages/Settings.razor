@@ -314,15 +314,19 @@
         else
         {
             <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:12px;">프리미엄 코드를 입력하면 구글 로그인 및 기기간 동기화 기능을 사용할 수 있어요.</p>
-            <div style="display:flex; gap:8px;">
-                <input type="text" placeholder="KNITDAY-XXXXX-0000" @bind="_premiumCodeInput"
+            <div style="display:flex; gap:8px; margin-bottom:10px;">
+                <input type="text" @bind="_premiumCodeInput"
                        style="flex:1; min-width:0; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:0.88rem; background:var(--white); color:var(--text-dark);" />
                 <button class="btn btn-primary" @onclick="ActivatePremium">확인</button>
             </div>
             @if (!string.IsNullOrEmpty(_premiumMsg))
             {
-                <div style="margin-top:8px; font-size:0.82rem; color:@(_premiumError ? "#c03030" : "var(--theme-active)");">@_premiumMsg</div>
+                <div style="margin-top:0; margin-bottom:10px; font-size:0.82rem; color:@(_premiumError ? "#c03030" : "var(--theme-active)");">@_premiumMsg</div>
             }
+            <a href="https://smartstore.naver.com/knitday" target="_blank" rel="noopener noreferrer"
+               style="display:inline-flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--text-light);text-decoration:none;">
+                <img src="icons/storefront.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />네이버 스토어에서 구매하기
+            </a>
         }
     </div>
     }
