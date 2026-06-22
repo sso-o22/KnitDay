@@ -223,8 +223,33 @@ namespace KnitLog.Services
             return (0, 0);
         }
 
-        // Cloudinary 무료: 클라이언트 삭제 불가 → 무시
-        public Task DeletePhotoAsync(string projectId, string photoId) => Task.CompletedTask;
+        // Cloudinary 파일 삭제 — Firebase Cloud Function 경유 (API Secret 보안)
+        public async Task DeletePhotoAsync(string projectId, string photoId)
+        {
+            if (!IsLoggedIn) return;
+            var publicId = $"{Uid}/projects/{projectId}/{photoId}";
+            await DeleteCloudinaryAssetAsync(publicId, "image");
+        }
+
+        public async Task DeletePdfAsync(string projectId)
+        {
+            if (!IsLoggedIn) return;
+            var publicId = $"{Uid}/pdfs/{projectId}";
+            await DeleteCloudinaryAssetAsync(publicId, "raw");
+        }
+
+        async Task DeleteCloudinaryAssetAsync(string publicId, string resourceType)
+        {
+            try
+            {
+                await _js.InvokeVoidAsync("callFirebaseFunction", "deleteCloudinaryAsset",
+                    System.Text.Json.JsonSerializer.Serialize(new { publicId, resourceType }));
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"Cloudinary 삭제 실패 ({publicId}): {ex.Message}");
+            }
+        }
 
         public async Task SyncOnLoginAsync()
         {

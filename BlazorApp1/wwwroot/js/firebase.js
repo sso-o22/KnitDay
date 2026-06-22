@@ -7,6 +7,9 @@ import {
 import {
     getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import {
+    getFunctions, httpsCallable
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
 
 const firebaseConfig = {
     apiKey:            "%%FIREBASE_API_KEY%%",
@@ -17,10 +20,19 @@ const firebaseConfig = {
     appId:             "1:448627074243:web:32924c7262d7efc6e5ae76"
 };
 
-const app     = initializeApp(firebaseConfig);
-const auth    = getAuth(app);
-const db      = getFirestore(app);
+const app      = initializeApp(firebaseConfig);
+const auth     = getAuth(app);
+const db       = getFirestore(app);
+const functions = getFunctions(app, 'asia-northeast3');
 const provider = new GoogleAuthProvider();
+
+// Blazor에서 Cloud Function 호출용 전역 함수
+window.callFirebaseFunction = async (name, jsonData) => {
+    const fn = httpsCallable(functions, name);
+    const data = jsonData ? JSON.parse(jsonData) : {};
+    const result = await fn(data);
+    return JSON.stringify(result.data);
+};
 
 // ── 영구 세션 유지 (IndexedDB) ────────────────────────────────────
 // setPersistence는 비동기지만 auth 객체에 즉시 반영됨

@@ -1206,6 +1206,14 @@
             _project.ViewerLastPage = 1;
             // 기존 PDF IDB에서 삭제
             try { await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", ProjectId.ToString()); } catch { }
+            // 클라우드 PDF 삭제
+            if (!string.IsNullOrEmpty(_project.PatternCloudUrl))
+            {
+                _ = Storage.DeletePdfAsync(ProjectId.ToString());
+                await Storage.SubtractCloudUsageAsync("pdf", 0);
+                _project.PatternCloudUrl = "";
+                _project.HasSavedPattern = false;
+            }
         }
         await JS.InvokeVoidAsync("patternViewer.clearAnnotations");
         await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
