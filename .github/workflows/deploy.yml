@@ -55,16 +55,16 @@ jobs:
 
       - name: Set Cloudinary Secrets
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/service-account.json
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/service-account.json
           firebase functions:secrets:set CLOUDINARY_CLOUD_NAME --data-stdin <<< "${{ secrets.CLOUDINARY_CLOUD_NAME }}" --project knitlog-94c63 || true
           firebase functions:secrets:set CLOUDINARY_API_KEY --data-stdin <<< "${{ secrets.CLOUDINARY_API_KEY }}" --project knitlog-94c63 || true
           firebase functions:secrets:set CLOUDINARY_API_SECRET --data-stdin <<< "${{ secrets.CLOUDINARY_API_SECRET }}" --project knitlog-94c63 || true
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.HOME }}/service-account.json
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/service-account.json
 
       - name: Deploy Firebase Functions
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/service-account.json
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/service-account.json
           firebase deploy --only functions --project knitlog-94c63
         env:
-          GOOGLE_APPLICATION_CREDENTIALS: ${{ env.HOME }}/service-account.json
+          GOOGLE_APPLICATION_CREDENTIALS: /tmp/service-account.json
