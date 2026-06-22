@@ -30,6 +30,9 @@ namespace KnitLog.Services
 
         public event Action? OnAuthChanged;
 
+        /// <summary>로그인 시도했지만 미등록 계정으로 거부된 경우 해당 이메일, 아니면 null</summary>
+        public string? DeniedEmail { get; private set; }
+
         public AuthService(IJSRuntime js) { _js = js; }
 
         public async Task InitAsync()
@@ -83,10 +86,20 @@ namespace KnitLog.Services
 
         public async Task<bool> SignInWithGoogleAsync()
         {
+            DeniedEmail = null;
             try
             {
                 var result = await _js.InvokeAsync<JsonElement?>("firebaseAuth.signInWithGoogle");
                 if (result == null || result.Value.ValueKind == JsonValueKind.Null) return false;
+
+                // 미등록 계정 거부 신호 확인
+                if (result.Value.TryGetProperty("__denied__", out var denied) && denied.GetBoolean())
+                {
+                    DeniedEmail = result.Value.TryGetProperty("email", out var em) ? em.GetString() : null;
+                    OnAuthChanged?.Invoke();
+                    return false;
+                }
+
                 // 팝업 완료 즉시 상태 반영 (onAuthStateChanged 콜백 대기 없이)
                 CurrentUser = JsonSerializer.Deserialize<UserInfo>(
                     result.Value.GetRawText(),

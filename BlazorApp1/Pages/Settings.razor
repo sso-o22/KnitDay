@@ -314,6 +314,42 @@
     </div>
     }
 
+    <!-- 개인정보 처리방침 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+            <img src="icons/clipboard-text.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />법적 고지
+        </div>
+        <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:12px;">
+            KnitDay는 Google 계정으로만 로그인하며, 개인정보 보호를 중요하게 생각해요.
+        </p>
+        <a href="privacy" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--theme-active);text-decoration:none;font-weight:600;">
+            <img src="icons/clipboard-text.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />개인정보 처리방침 보기
+        </a>
+    </div>
+
+    <!-- 피드백 -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+            <img src="icons/notepad.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />피드백 보내기
+        </div>
+        <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:14px;line-height:1.6;">
+            버그 제보, 개선 아이디어, 기능 요청을 보내주세요!<br />
+            소중한 의견을 반영해 더 좋은 앱으로 만들겠습니다 🧶
+        </p>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+            <a href="https://open.kakao.com/o/knitday" target="_blank" rel="noopener noreferrer"
+               style="display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:#FEE500;text-decoration:none;color:#3C1E1E;font-weight:600;font-size:0.88rem;">
+                <img src="icons/hand-peace.svg" style="width:20px;height:20px;flex-shrink:0;" />
+                카카오톡 오픈채팅 참여하기
+            </a>
+            <a href="https://instagram.com/knitday.app" target="_blank" rel="noopener noreferrer"
+               style="display:inline-flex;align-items:center;gap:10px;padding:12px 16px;border-radius:12px;background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888);text-decoration:none;color:#fff;font-weight:600;font-size:0.88rem;">
+                <img src="icons/link-simple.svg" style="width:20px;height:20px;flex-shrink:0;filter:invert(1);" />
+                인스타그램 DM 보내기 (@knitday.app)
+            </a>
+        </div>
+    </div>
+
 </div>
 
 @if (_showImportModal)
@@ -445,6 +481,28 @@
                     </button>
                 </div>
             }
+        </div>
+    </div>
+}
+
+@if (_showDeniedPopup)
+{
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;"
+         @onclick="CloseDeniedPopup">
+        <div style="background:var(--white);border-radius:20px;padding:28px 24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);"
+             @onclick:stopPropagation="true">
+            <div style="margin-bottom:12px;display:flex;justify-content:center;">
+                <img src="icons/warning.svg" class="icon-line" style="width:36px;height:36px;" />
+            </div>
+            <div style="font-size:1rem;font-weight:700;margin-bottom:10px;color:var(--text-dark);">접근이 제한된 계정이에요</div>
+            <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:6px;line-height:1.6;">
+                <b>@_deniedEmail</b> 계정은<br />KnitDay 구매 등록이 되어 있지 않아요.
+            </div>
+            <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:20px;line-height:1.6;">
+                구매 후 등록된 계정으로만 로그인할 수 있어요.<br />
+                문의: 스토어 구매 내역을 확인해 주세요.
+            </div>
+            <button class="btn btn-primary" @onclick="CloseDeniedPopup">확인</button>
         </div>
     </div>
 }
@@ -869,8 +927,22 @@
         Auth.OnAuthChanged -= OnAuthChangedHandler;
     }
 
-    async Task SignIn() => await Auth.SignInWithGoogleAsync();
+    async Task SignIn()
+    {
+        await Auth.SignInWithGoogleAsync();
+        if (Auth.DeniedEmail != null)
+        {
+            _showDeniedPopup = true;
+            _deniedEmail = Auth.DeniedEmail;
+        }
+        StateHasChanged();
+    }
     async Task SignOut() { await Auth.SignOutAsync(); StateHasChanged(); }
+
+    bool _showDeniedPopup = false;
+    string? _deniedEmail;
+    void CloseDeniedPopup() { _showDeniedPopup = false; _deniedEmail = null; }
+
 
     async Task ActivatePremium()
     {
