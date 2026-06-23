@@ -1204,6 +1204,8 @@
             _project.ViewerRowMarkers = "";
             _project.ViewerLastZoom = 0;
             _project.ViewerLastPage = 1;
+            _project.HasSavedPattern = false;
+            _project.PatternFileName = "";
             // 기존 PDF IDB에서 삭제
             try { await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", ProjectId.ToString()); } catch { }
             // 클라우드 PDF 삭제
@@ -1212,8 +1214,8 @@
                 _ = Storage.DeletePdfAsync(ProjectId.ToString());
                 await Storage.SubtractCloudUsageAsync("pdf", 0);
                 _project.PatternCloudUrl = "";
-                _project.HasSavedPattern = false;
             }
+            await SaveProject();
         }
         await JS.InvokeVoidAsync("patternViewer.clearAnnotations");
         await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
@@ -1284,7 +1286,10 @@
             _currentPage = 1;
             // 파일명 먼저 업데이트 → 상단바 즉시 반영
             if (_project != null)
+            {
                 _project.PatternFileName = e.File.Name;
+                _project.HasSavedPattern = true;
+            }
             StateHasChanged();
             await Task.Delay(100);
 
@@ -1301,8 +1306,7 @@
                     _project.HasSavedPattern = true;
                     _project.PatternFileName = e.File.Name;
 
-                    // 로그인 상태일 때만 Cloudinary 업로드 (기기 간 동기화) — 사진과 동일한 정책
-                    // 비로그인 상태에서 업로드하면 Uid가 없어 용량 추적이 안 되고, anon 경로에 익명으로 쌓여 추적·정리가 불가능해짐
+                    // 로그인 상태일 때만 Cloudinary 업로드
                     if (Storage.IsLoggedIn)
                     {
                         try
@@ -1312,9 +1316,17 @@
                             if (cloudErr == "quota")
                                 await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
                             else if (!string.IsNullOrEmpty(cloudUrl))
+                            {
                                 _project.PatternCloudUrl = cloudUrl;
+                                await JS.InvokeVoidAsync("showToast", $"클라우드 업로드 완료", "info");
+                            }
+                            else
+                                await JS.InvokeVoidAsync("showToast", $"클라우드 업로드 실패: {cloudErr ?? "url없음"}", "error");
                         }
-                        catch { }
+                        catch (Exception uploadEx)
+                        {
+                            await JS.InvokeVoidAsync("showToast", $"업로드 오류: {uploadEx.Message}", "error");
+                        }
                     }
 
                     await SaveProject();
