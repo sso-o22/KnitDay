@@ -848,7 +848,7 @@ window.scrollModalToTop = () => {
 window.uploadPdfToCloudinary = async function(streamRef, publicId) {
     try {
         const arrayBuffer = await streamRef.arrayBuffer();
-        const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+        const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
         const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/auto/upload`;
         const fd = new FormData();
         fd.append('file', blob, 'file.pdf');
