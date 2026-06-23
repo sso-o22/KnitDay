@@ -605,7 +605,9 @@ const _UPLOAD_PRESET = 'knitday_upload';
 // resourceType: 'image' | 'raw' (PDF는 'raw')
 window.uploadToCloudinary = async function(base64DataUrl, publicId, resourceType = 'image') {
     try {
-        const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/${resourceType}/upload`;
+        // Unsigned preset은 auto만 허용 — raw/image 구분은 Cloudinary가 자동 판단
+        const uploadType = 'auto';
+        const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/${uploadType}/upload`;
 
         // base64 → Blob 변환
         let blob;
@@ -617,11 +619,11 @@ window.uploadToCloudinary = async function(base64DataUrl, publicId, resourceType
             const binary = atob(base64DataUrl);
             const bytes = new Uint8Array(binary.length);
             for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            blob = new Blob([bytes], { type: resourceType === 'raw' ? 'application/pdf' : 'image/jpeg' });
+            blob = new Blob([bytes], { type: 'application/pdf' });
         }
 
         const fd = new FormData();
-        fd.append('file', blob);
+        fd.append('file', blob, resourceType === 'raw' ? 'file.pdf' : 'file.jpg');
         fd.append('upload_preset', _UPLOAD_PRESET);
         fd.append('public_id', publicId);
 
