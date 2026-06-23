@@ -1,4 +1,4 @@
-/* Manifest version: Dw3qFp4M */
+/* Manifest version: ZgtNbN44 */
 // Caution! Be sure you understand the caveats before publishing an application with
 // offline support. See https://aka.ms/blazor-offline-considerations
 
@@ -41,6 +41,11 @@ async function onActivate(event) {
 }
 
 async function onFetch(event) {
+    // version.json은 항상 네트워크에서 가져옴 (업데이트 감지용)
+    if (event.request.url.includes('version.json')) {
+        return fetch(event.request);
+    }
+
     let cachedResponse = null;
     if (event.request.method === 'GET') {
         const shouldServeIndexHtml = event.request.mode === 'navigate'
