@@ -163,7 +163,7 @@
                     <div style="position:absolute;left:0;top:0;height:100%;width:@(UsagePhotoPct.ToString("F2"))%;background:@((_photoBytes+_pdfBytes)>=UsageLimitBytes?"#c03030":"var(--theme-active)");border-radius:99px;transition:width 0.4s;"></div>
                 </div>
                 @* 범례 *@
-                <div style="display:flex; gap:14px; flex-wrap:wrap;">
+                <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:6px;">
                     <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-mid);">
                         <span style="width:10px;height:10px;border-radius:3px;background:var(--theme-active);flex-shrink:0;"></span>
                         사진 @FmtSize(_photoBytes)
@@ -172,16 +172,20 @@
                         <span style="width:10px;height:10px;border-radius:3px;background:var(--text-light);opacity:0.5;flex-shrink:0;"></span>
                         도안 PDF @FmtSize(_pdfBytes)
                     </div>
-                    <div style="font-size:0.75rem; color:var(--text-light); margin-left:auto;">
-                        @if (_photoBytes + _pdfBytes >= UsageLimitBytes)
-                        {
-                            <span style="color:#c03030; font-weight:600;">한도 초과</span>
-                        }
-                        else
-                        {
-                            <span>잔여 @FmtSize(UsageLimitBytes - _photoBytes - _pdfBytes)</span>
-                        }
+                    <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-mid);">
+                        <span style="width:10px;height:10px;border-radius:3px;background:var(--text-light);opacity:0.4;flex-shrink:0;"></span>
+                        기타 @FmtSize(_idbOtherBytes)
                     </div>
+                </div>
+                <div style="text-align:right; font-size:0.75rem; color:var(--text-light);">
+                    @if (_photoBytes + _pdfBytes >= UsageLimitBytes)
+                    {
+                        <span style="color:#c03030; font-weight:600;">한도 초과</span>
+                    }
+                    else
+                    {
+                        <span>잔여 @FmtSize(UsageLimitBytes - _photoBytes - _pdfBytes)</span>
+                    }
                 </div>
             </div>
         }
@@ -201,23 +205,24 @@
                     }
                     else
                     {
-                        <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(_deviceUsedBytes) 사용 / @FmtSize(_deviceQuotaBytes)</span>
+                        <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(_idbPhotoBytes + _idbPdfBytes + _idbOtherBytes) 사용 / @FmtSize(_deviceQuotaBytes)</span>
                     }
                 </div>
                 @if (_deviceUsageLoaded && _deviceQuotaBytes > 0)
                 {
-                    @* 기타 = 전체사용 - 사진 - 도안 (앱 캐시·SW 등 포함) *@
-                    var otherTotal = Math.Max(0, _deviceUsedBytes - _idbPhotoBytes - _idbPdfBytes);
+                    @* 기타 = IDB 텍스트 데이터 (캐시 제외) *@
+                    var otherTotal = _idbOtherBytes;
+                    var idbTotal   = _idbPhotoBytes + _idbPdfBytes + _idbOtherBytes;
                     var photoPct = Math.Min(100.0, _idbPhotoBytes / (double)_deviceQuotaBytes * 100);
                     var pdfPct   = Math.Min(100.0, (_idbPhotoBytes + _idbPdfBytes) / (double)_deviceQuotaBytes * 100);
-                    var allPct   = Math.Min(100.0, _deviceUsedBytes / (double)_deviceQuotaBytes * 100);
+                    var allPct   = Math.Min(100.0, idbTotal / (double)_deviceQuotaBytes * 100);
                     @* 전체 게이지바 — 기타(뒤)/도안(중)/사진(앞) 3단 적층 *@
                     <div style="height:10px; background:var(--border); border-radius:99px; overflow:hidden; margin-bottom:10px; position:relative;">
                         <div style="position:absolute;left:0;top:0;height:100%;width:@(allPct.ToString("F2"))%;background:var(--text-light);border-radius:99px;opacity:0.4;"></div>
                         <div style="position:absolute;left:0;top:0;height:100%;width:@(pdfPct.ToString("F2"))%;background:var(--text-mid);border-radius:99px;opacity:0.6;"></div>
                         <div style="position:absolute;left:0;top:0;height:100%;width:@(photoPct.ToString("F2"))%;background:@(allPct>=90?"#c03030":"var(--theme-active)");border-radius:99px;transition:width 0.4s;"></div>
                     </div>
-                    <div style="display:flex; gap:14px; flex-wrap:wrap; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:6px;">
                         <div style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-mid);">
                             <span style="width:10px;height:10px;border-radius:3px;background:var(--theme-active);flex-shrink:0;"></span>
                             사진 @FmtSize(_idbPhotoBytes)
@@ -230,9 +235,9 @@
                             <span style="width:10px;height:10px;border-radius:3px;background:var(--text-light);opacity:0.4;flex-shrink:0;"></span>
                             기타 @FmtSize(otherTotal)
                         </div>
-                        <div style="font-size:0.75rem; color:var(--text-light); margin-left:auto;">
-                            잔여 @FmtSize(Math.Max(0, _deviceQuotaBytes - _deviceUsedBytes))
-                        </div>
+                    </div>
+                    <div style="text-align:right; font-size:0.75rem; color:var(--text-light); margin-bottom:10px;">
+                        잔여 @FmtSize(Math.Max(0, _deviceQuotaBytes - (_idbPhotoBytes + _idbPdfBytes + _idbOtherBytes)))
                     </div>
                 }
                 <div style="font-size:0.75rem; color:var(--text-light); line-height:1.5;">
@@ -890,6 +895,17 @@
             var (photo, pdf) = await Storage.GetCloudUsageAsync();
             _photoBytes = photo;
             _pdfBytes = pdf;
+            // 로그인 시에도 IDB 텍스트 데이터 크기 측정
+            try
+            {
+                var breakdownJson = await JS.InvokeAsync<string>("knitDB.getUsageBreakdown");
+                if (!string.IsNullOrEmpty(breakdownJson))
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(breakdownJson);
+                    _idbOtherBytes = doc.RootElement.TryGetProperty("otherBytes", out var o) ? o.GetInt64() : 0;
+                }
+            }
+            catch { }
             _usageLoaded = true;
         }
     }
