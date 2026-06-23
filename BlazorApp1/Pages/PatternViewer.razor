@@ -168,6 +168,10 @@
                 <div class="tb-div"></div>
             }
             <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick"><img src="icons/files.svg" style="width:20px;height:20px;" /></span>
+            @if (_pdfLoaded)
+            {
+                <span class="tb-label" style="cursor:pointer;" @onclick="OnDeletePatternClick"><img src="icons/trash.svg" style="width:18px;height:18px;" /></span>
+            }
             <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
         </div>
     </div>
@@ -809,6 +813,21 @@
     </div>
 }
 
+@if (_showDeleteWarning)
+{
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:var(--white);border-radius:20px;padding:28px 24px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
+            <div style="margin-bottom:12px;"><img src="icons/trash.svg" style="width:32px;height:32px;" /></div>
+            <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">도안을 삭제할까요?</div>
+            <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:20px;">삭제하면 필기와 행마커도 모두 사라져요.</div>
+            <div style="display:flex;gap:10px;justify-content:center;">
+                <button class="btn btn-ghost" @onclick="()=>_showDeleteWarning=false">취소</button>
+                <button class="btn btn-danger" @onclick="ConfirmDeletePattern">삭제</button>
+            </div>
+        </div>
+    </div>
+}
+
 @if (_showConfirm)
 {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
@@ -826,6 +845,7 @@
 
 @code {
     bool _showLoadWarning=false;
+    bool _showDeleteWarning=false;
     bool _showConfirm=false; string _confirmMsg=""; Func<Task>? _confirmAction;
     void Confirm(string msg,Func<Task> action){_confirmMsg=msg;_confirmAction=action;_showConfirm=true;}
     async Task ExecuteConfirm(){_showConfirm=false;if(_confirmAction!=null)await _confirmAction();_confirmAction=null;}
@@ -1173,6 +1193,42 @@
 
     // ── PDF ──
     async Task UndoLastPath()=>await JS.InvokeVoidAsync("patternViewer.undo");
+    async Task OnDeletePatternClick()
+    {
+        _showDeleteWarning = true;
+        StateHasChanged();
+    }
+
+    async Task ConfirmDeletePattern()
+    {
+        _showDeleteWarning = false;
+        _rowMarkers.Clear();
+        _detectedRowH = 0;
+        _zoom = 1.0;
+        _currentPage = 1;
+        _pdfLoaded = false;
+        _totalPages = 0;
+        _isImageMode = false;
+        if (_project != null)
+        {
+            _project.ViewerAnnotations = "";
+            _project.ViewerRowMarkers = "";
+            _project.ViewerLastZoom = 0;
+            _project.ViewerLastPage = 1;
+            _project.HasSavedPattern = false;
+            _project.PatternFileName = "";
+            try { await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", ProjectId.ToString()); } catch { }
+            if (!string.IsNullOrEmpty(_project.PatternCloudUrl))
+            {
+                _ = Storage.DeletePdfAsync(ProjectId.ToString());
+                _project.PatternCloudUrl = "";
+            }
+            await SaveProject();
+        }
+        await JS.InvokeVoidAsync("patternViewer.clearAnnotations");
+        StateHasChanged();
+    }
+
     // 도안 불러오기 버튼 클릭 → 이미 있으면 경고, 없으면 바로 파일 선택
     async Task OnLoadPatternClick()
     {
@@ -1301,14 +1357,12 @@
             {
                 var saved = await JS.InvokeAsync<bool>("patternViewer.savePdfToProject",
                     ProjectId.ToString(), e.File.Name);
-                await JS.InvokeVoidAsync("showToast", $"IDB저장: {saved}", "info");
                 if (saved)
                 {
                     _project.HasSavedPattern = true;
                     _project.PatternFileName = e.File.Name;
 
                     // 로그인 상태일 때만 Cloudinary 업로드
-                    await JS.InvokeVoidAsync("showToast", $"로그인상태: {Storage.IsLoggedIn}", "info");
                     if (Storage.IsLoggedIn)
                     {
                         try
@@ -1318,17 +1372,9 @@
                             if (cloudErr == "quota")
                                 await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
                             else if (!string.IsNullOrEmpty(cloudUrl))
-                            {
                                 _project.PatternCloudUrl = cloudUrl;
-                                await JS.InvokeVoidAsync("showToast", $"클라우드 업로드 완료", "info");
-                            }
-                            else
-                                await JS.InvokeVoidAsync("showToast", $"클라우드 업로드 실패: {cloudErr ?? "url없음"}", "error");
                         }
-                        catch (Exception uploadEx)
-                        {
-                            await JS.InvokeVoidAsync("showToast", $"업로드 오류: {uploadEx.Message}", "error");
-                        }
+                        catch { }
                     }
 
                     await SaveProject();

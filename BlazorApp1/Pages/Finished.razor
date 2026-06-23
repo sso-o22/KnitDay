@@ -80,7 +80,8 @@ else
 <CompletedPopup Show="_showDetail" Project="_selectedProject"
     Yarns="_allYarns" Tools="_allTools"
     OnClose="CloseDetail" OnSaved="OnPopupSaved"
-    OnDelete="DeleteFromPopup" OnMoveBack="MoveBackFromPopup" />
+    OnDelete="DeleteFromPopup" OnMoveBack="MoveBackFromPopup"
+    OnDeletePdf="DeletePdfFromFinished" />
 
 
 @code {
@@ -159,5 +160,25 @@ else
         CloseDetail();
         await Storage.DeleteProjectAsync(id);
         await LoadData();
+    }
+
+    async Task DeletePdfFromFinished()
+    {
+        if (_selectedProject == null) return;
+        try
+        {
+            await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", _selectedProject.Id.ToString());
+            if (!string.IsNullOrEmpty(_selectedProject.PatternCloudUrl))
+                _ = Storage.DeletePdfAsync(_selectedProject.Id.ToString());
+            _selectedProject.HasSavedPattern = false;
+            _selectedProject.PatternFileName = "";
+            _selectedProject.PatternCloudUrl = "";
+            await Storage.SaveProjectAsync(_selectedProject);
+            await JS.InvokeVoidAsync("showToast", "도안 파일을 삭제했어요");
+        }
+        catch
+        {
+            await JS.InvokeVoidAsync("showToast", "도안 삭제에 실패했어요", "error");
+        }
     }
 }

@@ -791,6 +791,9 @@ else
         try
         {
             await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", _completedPreview.Id.ToString());
+            // Cloudinary에서도 삭제
+            if (!string.IsNullOrEmpty(_completedPreview.PatternCloudUrl))
+                _ = Storage.DeletePdfAsync(_completedPreview.Id.ToString());
             _completedPreview.HasSavedPattern = false;
             _completedPreview.PatternFileName = "";
             _completedPreview.PatternCloudUrl = "";
@@ -840,6 +843,10 @@ else
 
     void RemovePhoto(Guid photoId)
     {
-        _editingProject?.Photos.RemoveAll(p => p.Id == photoId);
+        if (_editingProject == null) return;
+        var photo = _editingProject.Photos.FirstOrDefault(p => p.Id == photoId);
+        if (photo != null && !string.IsNullOrEmpty(photo.StorageUrl))
+            _ = Storage.DeletePhotoAsync(_editingProject.Id.ToString(), photoId.ToString());
+        _editingProject.Photos.RemoveAll(p => p.Id == photoId);
     }
 }

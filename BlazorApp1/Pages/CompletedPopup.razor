@@ -266,7 +266,7 @@
                                 }
                                 <button class="btn btn-danger btn-sm"
                                         style="position:absolute;top:2px;right:2px;padding:1px 4px;"
-                                        @onclick="() => Project.Photos.Remove(ep)">
+                                        @onclick="() => RemovePhoto(ep)">
                                     <img src="icons/x.svg" class="icon-line" style="width:9px;height:9px;" />
                                 </button>
                             </div>
@@ -591,6 +591,15 @@
     async Task TriggerPopupPhotoInput()
     {
         await JS.InvokeVoidAsync("eval", "document.getElementById('popup-photo-input').click()");
+    }
+
+    void RemovePhoto(ProjectPhoto photo)
+    {
+        if (Project == null || photo == null) return;
+        if (!string.IsNullOrEmpty(photo.StorageUrl))
+            _ = Storage.DeletePhotoAsync(Project.Id.ToString(), photo.Id.ToString());
+        Project.Photos.Remove(photo);
+        StateHasChanged();
     }
 
     void SetPopupThumbnail(Guid photoId)
