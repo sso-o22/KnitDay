@@ -45,6 +45,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./publish/wwwroot
+          cname: knitday.kr
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
