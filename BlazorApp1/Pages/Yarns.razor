@@ -322,14 +322,14 @@ else
                 </div>
             }
 
-            <div style="display:grid; grid-template-columns: 2fr 3fr; gap:16px;">
-                <div class="form-group">
+            <div class="date-row">
+                <div class="form-group" style="margin-bottom:0;">
                     <label class="form-label">구매처</label>
                     <input class="form-control" @bind="_editingYarn.PurchasePlace" placeholder="예: 솜솜뜨개" />
                 </div>
-                <div class="form-group" style="min-width:0; overflow:hidden;">
+                <div class="form-group" style="margin-bottom:0; min-width:0; overflow:hidden;">
                     <label class="form-label">구매일</label>
-                    <input type="date" class="form-control" style="width:100%; box-sizing:border-box; max-width:100%;"
+                    <input type="date" class="form-control"
                            value="@_editingYarn.PurchaseDate?.ToString("yyyy-MM-dd")"
                            @onchange="e => _editingYarn.PurchaseDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                 </div>
