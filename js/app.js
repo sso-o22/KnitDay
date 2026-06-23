@@ -527,17 +527,21 @@ window.unregisterOnlineSync = () => {
 };
 // ── 토스트 알림 ──────────────────────────────────────────
 window.showToast = function(message, type = 'success') {
-    const existing = document.getElementById('kd-toast');
+    const toastId = (type === 'error' || type === 'info') ? 'kd-toast-alert' : 'kd-toast';
+    const existing = document.getElementById(toastId);
     if (existing) existing.remove();
 
+    const isAlert = type === 'error' || type === 'info';
     const toast = document.createElement('div');
-    toast.id = 'kd-toast';
+    toast.id = toastId;
     toast.textContent = message;
     toast.style.cssText = `
         position: fixed;
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);
+        ${isAlert
+            ? 'top: calc(env(safe-area-inset-top, 0px) + 20px); bottom: auto;'
+            : 'bottom: calc(env(safe-area-inset-bottom, 0px) + 80px);'}
         left: 50%;
-        transform: translateX(-50%) translateY(20px);
+        transform: translateX(-50%) translateY(${isAlert ? '-20px' : '20px'});
         max-width: calc(100vw - 40px);
         background: ${type === 'error' ? '#c03030' : type === 'info' ? '#2a6496' : '#666'};
         color: #fff;
@@ -548,7 +552,9 @@ window.showToast = function(message, type = 'success') {
         z-index: 99999;
         opacity: 0;
         transition: opacity 0.2s ease, transform 0.2s ease;
-        white-space: nowrap;
+        white-space: pre-wrap;
+        max-width: calc(100vw - 40px);
+        text-align: center;
         box-shadow: 0 4px 16px rgba(0,0,0,0.18);
         pointer-events: none;
     `;
@@ -561,9 +567,9 @@ window.showToast = function(message, type = 'success') {
 
     setTimeout(() => {
         toast.style.opacity = '0';
-        toast.style.transform = 'translateX(-50%) translateY(8px)';
+        toast.style.transform = `translateX(-50%) translateY(${isAlert ? '-8px' : '8px'})`;
         setTimeout(() => toast.remove(), 300);
-    }, type === 'error' ? 4000 : 1800);
+    }, type === 'error' ? 4000 : type === 'info' ? 3000 : 1800);
 };
 // ── Debounce 유틸 (자동저장용) ───────────────────────────────────
 window._debounceTimers = {};
