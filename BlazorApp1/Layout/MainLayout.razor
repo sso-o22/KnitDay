@@ -118,6 +118,65 @@
     @* 업데이트 알림 토스트 *@
     @if (_showUpdateToast)
     {
+
+    @* 홈화면 추가 안내 팝업 *@
+    @if (_showInstallGuide)
+    {
+        <div style="position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:99999;display:flex;align-items:flex-end;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px);"
+             @onclick="DismissInstallGuide">
+            <div style="background:var(--white);border-radius:20px 20px 0 0;padding:24px 20px 28px;width:100%;max-width:480px;box-shadow:0 -4px 32px rgba(0,0,0,0.18);"
+                 @onclick:stopPropagation="true">
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+                    <img src="images/logo.png" style="width:36px;height:36px;border-radius:10px;flex-shrink:0;" />
+                    <div>
+                        <div style="font-weight:700;font-size:1rem;color:var(--text-dark);">KnitDay를 홈 화면에 추가하세요</div>
+                        <div style="font-size:0.8rem;color:var(--text-mid);margin-top:2px;">앱처럼 빠르고 편하게 사용할 수 있어요</div>
+                    </div>
+                </div>
+                @if (!_isAndroidInstall)
+                {
+                    @* iOS Safari 수동 안내 *@
+                    <div style="background:var(--ivory-dark);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:0.85rem;color:var(--text-mid);line-height:1.7;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                            <span style="font-size:1.1rem;">①</span>
+                            <span>하단 <strong style="color:var(--text-dark);">공유 버튼</strong> <span style="font-size:1rem;">⬆</span> 탭</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px;">
+                            <span style="font-size:1.1rem;">②</span>
+                            <span><strong style="color:var(--text-dark);">"홈 화면에 추가"</strong> 선택</span>
+                        </div>
+                    </div>
+                }
+                <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px;cursor:pointer;" @onclick="ToggleNeverShowInstall">
+                    @{
+                        var chkBorder = _neverShowInstall ? "var(--theme-active)" : "var(--border)";
+                        var chkBg = _neverShowInstall ? "var(--theme-active)" : "transparent";
+                    }
+                    <div style="width:18px;height:18px;border-radius:4px;border:1.5px solid @chkBorder;background:@chkBg;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all 0.15s;">
+                        @if (_neverShowInstall)
+                        {
+                            <img src="icons/check.svg" class="icon-line" style="width:11px;height:11px;filter:invert(1);opacity:1;" />
+                        }
+                    </div>
+                    <span style="font-size:0.82rem;color:var(--text-mid);">다시는 열지 않음</span>
+                </div>
+                @if (_isAndroidInstall)
+                {
+                    <div style="display:flex;gap:10px;">
+                        <button class="btn btn-secondary" style="flex:1;justify-content:center;padding:12px;"
+                                @onclick="DismissInstallGuide">닫기</button>
+                        <button class="btn btn-primary" style="flex:1;justify-content:center;padding:12px;"
+                                @onclick="TriggerAndroidInstall">홈 화면에 추가</button>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn btn-primary" style="width:100%;justify-content:center;padding:12px;"
+                            @onclick="DismissInstallGuide">닫기</button>
+                }
+            </div>
+        </div>
+    }
         <div style="position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 80px);left:50%;transform:translateX(-50%);z-index:99990;
                     background:var(--white);border-radius:14px;padding:10px 16px;
                     box-shadow:0 4px 20px rgba(0,0,0,0.16);display:flex;align-items:center;gap:10px;
@@ -179,6 +238,8 @@
     MigrationProgress? _migration;
     bool _showUpdateToast = false;
     string _newVersion = "";
+    bool _showInstallGuide = false;
+    bool _neverShowInstall = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -329,6 +390,8 @@
             await JS.InvokeVoidAsync("registerOnlineSync", _visibilityRef);
             // 업데이트 버전 체크
             await CheckVersionUpdateAsync();
+            // 홈화면 추가 안내 팝업 체크
+            await CheckInstallGuideAsync();
             StateHasChanged();
         }
     }
@@ -355,6 +418,66 @@
     {
         _migration = p.Total == 0 ? null : p;
         InvokeAsync(StateHasChanged);
+    }
+
+    bool _isAndroidInstall = false; // true면 Android 프롬프트 방식
+
+    async Task CheckInstallGuideAsync()
+    {
+        try
+        {
+            var never = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_install_guide_dismissed");
+            if (never == "1") return;
+
+            // 이미 standalone(홈화면 앱)이면 표시 안 함
+            var isStandalone = await JS.InvokeAsync<bool>("eval",
+                "window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches");
+            if (isStandalone) return;
+
+            // Android Chrome: beforeinstallprompt 이벤트 대기 후 확인
+            var canPrompt = await JS.InvokeAsync<bool>("pwaInstall.canPrompt");
+            if (canPrompt)
+            {
+                _isAndroidInstall = true;
+                _showInstallGuide = true;
+                return;
+            }
+
+            // iOS Safari 수동 안내
+            var isIosSafari = await JS.InvokeAsync<bool>("eval",
+                "(function(){ var ua = navigator.userAgent; return /iP(hone|od|ad)/.test(ua) && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|mercury/.test(ua); })()");
+            if (isIosSafari)
+            {
+                _isAndroidInstall = false;
+                _showInstallGuide = true;
+            }
+        }
+        catch { }
+    }
+
+    async Task DismissInstallGuide()
+    {
+        if (_neverShowInstall)
+            await JS.InvokeVoidAsync("localStorage.setItem", "knitday_install_guide_dismissed", "1");
+        _showInstallGuide = false;
+        StateHasChanged();
+    }
+
+    async Task TriggerAndroidInstall()
+    {
+        try
+        {
+            await JS.InvokeAsync<bool>("pwaInstall.prompt");
+        }
+        catch { }
+        _showInstallGuide = false;
+        StateHasChanged();
+    }
+
+    void ToggleNeverShowInstall()
+    {
+        _neverShowInstall = !_neverShowInstall;
+        StateHasChanged();
     }
 
     async Task CheckVersionUpdateAsync()
