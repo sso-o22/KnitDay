@@ -385,12 +385,23 @@ body {
     /* 아이패드: 날짜 두 칸 가로 배치 */
     .date-row {
         flex-direction: row !important;
-        gap: 16px !important;
+        gap: 12px !important;
     }
     .date-row .form-group {
         flex: 1 1 0 !important;
-        width: auto !important;
-        max-width: calc(50% - 8px) !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: calc(50% - 6px) !important;
+        overflow: hidden !important;
+    }
+    .date-row input[type="date"] {
+        font-size: 13px !important;
+        padding: 0 8px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        -webkit-appearance: none !important;
     }
 }
 
