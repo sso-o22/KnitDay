@@ -863,5 +863,17 @@ window.pwaInstall = {
         const { outcome } = await _installPromptEvent.userChoice;
         _installPromptEvent = null;
         return outcome === 'accepted';
-    }
+    },
+
+    // standalone 모드 여부
+    isStandalone: () => window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches,
+
+    // iOS Safari 여부
+    isIosSafari: () => {
+        const ua = navigator.userAgent;
+        return /iP(hone|od|ad)/.test(ua) && /Safari/.test(ua) && !/CriOS|FxiOS|OPiOS|mercury/.test(ua);
+    },
+
+    // Android 여부
+    isAndroid: () => /Android/.test(navigator.userAgent)
 };
