@@ -663,6 +663,9 @@ body {
         line-height: 1.4 !important;
         padding: 2px 4px !important;
         font-size: 16px !important;
+        transform: scale(0.85) !important;
+        transform-origin: left center !important;
+        width: calc(100% / 0.85) !important;
         border: none !important;
         border-bottom: 1.5px solid var(--border) !important;
         border-radius: 0 !important;
@@ -670,7 +673,6 @@ body {
         outline: none !important;
         box-shadow: none !important;
         color: var(--text-dark);
-        width: 100%;
     }
     .checklist-input:focus {
         border-bottom-color: var(--theme-active) !important;
@@ -847,15 +849,25 @@ body {
     }
 
     /* 모든 input/textarea 에서 iOS 줌 방지 (16px 미만이면 자동 확대) */
-    input:not(.checklist-input), textarea {
+    input:not(.checklist-input):not([type='checkbox']):not([type='date']), textarea {
         font-size: 16px !important;
         max-width: 100%;
         min-width: 0;
         box-sizing: border-box;
     }
+    input[type='date'] {
+        font-size: 14px !important;
+        max-width: 100%;
+        min-width: 0;
+        box-sizing: border-box;
+    }
+    /* checklist-input은 수정 모드 input — iOS 줌 방지 + 작게 보이도록 transform 사용 */
     .checklist-input {
         font-size: 16px !important;
-        max-width: 100%;
+        transform: scale(0.85);
+        transform-origin: left center;
+        width: calc(100% / 0.85) !important;
+        max-width: none !important;
         min-width: 0;
         box-sizing: border-box;
     }
