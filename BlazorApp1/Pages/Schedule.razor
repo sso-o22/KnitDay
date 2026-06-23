@@ -594,6 +594,15 @@ else
             _completedPreview = allProj.FirstOrDefault(p => p.Id == cpid);
             if (_completedPreview != null) { _showCompletedPopup = true; StateHasChanged(); }
         }
+
+        // 위시리스트 시작하기 → 수정 팝업 열기
+        var editId = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_edit_popup");
+        if (!string.IsNullOrEmpty(editId) && Guid.TryParse(editId, out var epid))
+        {
+            await JS.InvokeVoidAsync("localStorage.removeItem", "knitlog_edit_popup");
+            var proj = _projects.FirstOrDefault(p => p.Id == epid);
+            if (proj != null) { await OpenEditModal(proj); StateHasChanged(); }
+        }
     }
 
     async Task SaveSchedulePrefs()

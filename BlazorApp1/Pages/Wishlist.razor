@@ -52,9 +52,9 @@ else
                     <span class="badge badge-wish">위시</span>
                 </div>
 
-                @if (!string.IsNullOrEmpty(proj.PatternName))
+                @if (!string.IsNullOrEmpty(proj.PatternSource))
                 {
-                    <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:6px; display:flex; align-items:center; gap:4px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@proj.PatternName</div>
+                    <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:6px; display:flex; align-items:center; gap:4px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@proj.PatternSource</div>
                 }
                 @if (!string.IsNullOrEmpty(proj.OriginalNeedle) || !string.IsNullOrEmpty(proj.OriginalGauge) || !string.IsNullOrEmpty(proj.OriginalYarn) || !string.IsNullOrEmpty(proj.OriginalYarnAmount) || !string.IsNullOrEmpty(proj.OriginalOther))
                 {
@@ -276,6 +276,7 @@ else
     async Task StartProject(Guid id)
     {
         await Storage.StartProjectAsync(id);
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_edit_popup", id.ToString());
         Nav.NavigateTo("projects");
     }
 
