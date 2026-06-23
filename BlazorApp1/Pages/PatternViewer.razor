@@ -1367,8 +1367,7 @@
                     {
                         try
                         {
-                            var base64Pdf = Convert.ToBase64String(bytes);
-                            var (cloudUrl, cloudErr) = await Storage.UploadPdfAsync(ProjectId.ToString(), base64Pdf);
+                            var (cloudUrl, cloudErr) = await Storage.UploadPdfAsync(ProjectId.ToString(), bytes);
                             if (cloudErr == "quota")
                                 await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
                             else if (cloudErr == "not_logged_in")

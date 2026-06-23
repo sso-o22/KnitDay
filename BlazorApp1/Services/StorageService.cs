@@ -119,7 +119,7 @@ namespace KnitLog.Services
             catch { return (null, "error"); }
         }
 
-        public async Task<(string? url, string? error)> UploadPdfAsync(string projectId, string base64Data)
+        public async Task<(string? url, string? error)> UploadPdfAsync(string projectId, byte[] bytes)
         {
             if (!IsLoggedIn || string.IsNullOrEmpty(Uid)) return (null, "not_logged_in");
             try
@@ -128,9 +128,22 @@ namespace KnitLog.Services
                 if (photoUsed + pdfUsed >= PerUserLimitBytes)
                     return (null, "quota");
                 var publicId = $"{Uid}/pdfs/{projectId}";
-                var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64Data, publicId, "raw");
+                using var streamRef = new DotNetStreamReference(new System.IO.MemoryStream(bytes), leaveOpen: false);
+                var json = await _js.InvokeAsync<string?>("uploadPdfToCloudinary", streamRef, publicId);
                 var url = await ParseCloudinaryResult(json, "pdf");
                 return (url, null);
+            }
+            catch { return (null, "error"); }
+        }
+
+        // 마이그레이션용 base64 오버로드
+        public async Task<(string? url, string? error)> UploadPdfAsync(string projectId, string base64Data)
+        {
+            if (!IsLoggedIn || string.IsNullOrEmpty(Uid)) return (null, "not_logged_in");
+            try
+            {
+                var bytes = Convert.FromBase64String(base64Data);
+                return await UploadPdfAsync(projectId, bytes);
             }
             catch { return (null, "error"); }
         }
