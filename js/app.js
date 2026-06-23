@@ -842,3 +842,24 @@ window.scrollModalToTop = () => {
     const modal = document.querySelector('.modal');
     if (modal) modal.scrollTop = 0;
 };
+// ── PWA 설치 프롬프트 (Android Chrome) ──────────────────────────
+let _installPromptEvent = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    _installPromptEvent = e;
+});
+
+window.pwaInstall = {
+    // 설치 프롬프트 사용 가능 여부
+    canPrompt: () => !!_installPromptEvent,
+
+    // 설치 프롬프트 실행
+    prompt: async () => {
+        if (!_installPromptEvent) return false;
+        _installPromptEvent.prompt();
+        const { outcome } = await _installPromptEvent.userChoice;
+        _installPromptEvent = null;
+        return outcome === 'accepted';
+    }
+};
