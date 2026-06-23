@@ -1307,6 +1307,7 @@
                     _project.PatternFileName = e.File.Name;
 
                     // 로그인 상태일 때만 Cloudinary 업로드
+                    await JS.InvokeVoidAsync("showToast", $"로그인상태: {Storage.IsLoggedIn}", "info");
                     if (Storage.IsLoggedIn)
                     {
                         try
