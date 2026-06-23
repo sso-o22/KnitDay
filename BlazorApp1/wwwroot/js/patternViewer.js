@@ -1,10 +1,14 @@
 window.patternViewer = (() => {
     // ── IndexedDB ────────────────────────────────────────────
-    const IDB_NAME = 'KnitLogPatternDB', IDB_VER = 1, IDB_STORE = 'patterns';
+    const IDB_NAME = 'KnitLogPatternDB', IDB_VER = 2, IDB_STORE = 'patterns';
     function openDB() {
         return new Promise((res, rej) => {
             const req = indexedDB.open(IDB_NAME, IDB_VER);
-            req.onupgradeneeded = e => { if (!e.target.result.objectStoreNames.contains(IDB_STORE)) e.target.result.createObjectStore(IDB_STORE, { keyPath: 'projectId' }); };
+            req.onupgradeneeded = e => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(IDB_STORE))
+                    db.createObjectStore(IDB_STORE, { keyPath: 'projectId' });
+            };
             req.onsuccess = e => res(e.target.result);
             req.onerror   = e => rej(e.target.error);
         });
