@@ -1,4 +1,4 @@
-/* Manifest version: ZOjPwzzI */
+/* Manifest version: OrFezur9 */
 // Caution! Be sure you understand the caveats before publishing an application with
 // offline support. See https://aka.ms/blazor-offline-considerations
 
@@ -12,8 +12,8 @@ const cacheName = `${cacheNamePrefix}${self.assetsManifest.version}`;
 const offlineAssetsInclude = [ /\.dll$/, /\.pdb$/, /\.wasm/, /\.html/, /\.js$/, /\.json$/, /\.css$/, /\.woff$/, /\.png$/, /\.jpe?g$/, /\.gif$/, /\.ico$/, /\.blat$/, /\.dat$/, /\.svg$/ ];
 const offlineAssetsExclude = [ /^service-worker\.js$/ ];
 
-// GitHub Pages 배포 경로 — base href와 일치해야 오프라인 작동
-const base = "/KnitDay/";
+// 커스텀 도메인(knitday.kr) 사용으로 루트 경로
+const base = "/";
 const baseUrl = new URL(base, self.origin);
 const manifestUrlList = self.assetsManifest.assets.map(asset => new URL(asset.url, baseUrl).href);
 
