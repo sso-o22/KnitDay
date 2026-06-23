@@ -386,6 +386,7 @@ body {
     .date-row {
         flex-direction: row !important;
         gap: 12px !important;
+        margin-bottom: 16px !important;
     }
     .date-row .form-group {
         flex: 1 1 0 !important;
@@ -749,6 +750,7 @@ body {
         gap: 8px !important;
         width: 100% !important;
         box-sizing: border-box !important;
+        margin-bottom: 16px !important;
     }
     .date-row .form-group {
         flex: none !important;
