@@ -563,7 +563,7 @@ window.showToast = function(message, type = 'success') {
         toast.style.opacity = '0';
         toast.style.transform = 'translateX(-50%) translateY(8px)';
         setTimeout(() => toast.remove(), 300);
-    }, 1800);
+    }, type === 'error' ? 4000 : 1800);
 };
 // ── Debounce 유틸 (자동저장용) ───────────────────────────────────
 window._debounceTimers = {};
