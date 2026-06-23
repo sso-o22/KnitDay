@@ -1301,6 +1301,7 @@
             {
                 var saved = await JS.InvokeAsync<bool>("patternViewer.savePdfToProject",
                     ProjectId.ToString(), e.File.Name);
+                await JS.InvokeVoidAsync("showToast", $"IDB저장: {saved}", "info");
                 if (saved)
                 {
                     _project.HasSavedPattern = true;
