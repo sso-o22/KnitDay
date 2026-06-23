@@ -434,14 +434,18 @@
                 "window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches");
             if (isStandalone) return;
 
-            // Android Chrome: beforeinstallprompt 이벤트 대기 후 확인
-            var canPrompt = await JS.InvokeAsync<bool>("pwaInstall.canPrompt");
-            if (canPrompt)
+            // Android Chrome: beforeinstallprompt 이벤트 확인
+            try
             {
-                _isAndroidInstall = true;
-                _showInstallGuide = true;
-                return;
+                var canPrompt = await JS.InvokeAsync<bool>("pwaInstall.canPrompt");
+                if (canPrompt)
+                {
+                    _isAndroidInstall = true;
+                    _showInstallGuide = true;
+                    return;
+                }
             }
+            catch { }
 
             // iOS Safari 수동 안내
             var isIosSafari = await JS.InvokeAsync<bool>("eval",
