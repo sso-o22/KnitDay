@@ -1282,6 +1282,9 @@
             _totalPages = pages;
             _pdfLoaded = true;
             _currentPage = 1;
+            // 파일명 먼저 업데이트 → 상단바 즉시 반영
+            if (_project != null)
+                _project.PatternFileName = e.File.Name;
             StateHasChanged();
             await Task.Delay(100);
 
