@@ -1365,17 +1365,24 @@
                     // 로그인 상태일 때만 Cloudinary 업로드
                     if (Storage.IsLoggedIn)
                     {
-                        try
+                        if (bytes.Length > 10 * 1024 * 1024)
                         {
-                            var (cloudUrl, cloudErr) = await Storage.UploadPdfAsync(ProjectId.ToString(), bytes);
-                            if (cloudErr == "quota")
-                                await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
-                            else if (cloudErr == "not_logged_in")
-                                await JS.InvokeVoidAsync("showToast", "로그인 정보를 확인할 수 없어요. 도안이 이 기기에만 저장됩니다.", "error");
-                            else if (!string.IsNullOrEmpty(cloudUrl))
-                                _project.PatternCloudUrl = cloudUrl;
+                            await JS.InvokeVoidAsync("showToast", "도안 파일이 10MB를 초과해 클라우드에 저장되지 않아요. 이 기기에서만 사용할 수 있어요.", "error");
                         }
-                        catch { }
+                        else
+                        {
+                            try
+                            {
+                                var (cloudUrl, cloudErr) = await Storage.UploadPdfAsync(ProjectId.ToString(), bytes);
+                                if (cloudErr == "quota")
+                                    await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
+                                else if (cloudErr == "not_logged_in")
+                                    await JS.InvokeVoidAsync("showToast", "로그인 정보를 확인할 수 없어요. 도안이 이 기기에만 저장됩니다.", "error");
+                                else if (!string.IsNullOrEmpty(cloudUrl))
+                                    _project.PatternCloudUrl = cloudUrl;
+                            }
+                            catch { }
+                        }
                     }
 
                     await SaveProject();
