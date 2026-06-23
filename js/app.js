@@ -844,6 +844,27 @@ window.scrollModalToTop = () => {
     const modal = document.querySelector('.modal');
     if (modal) modal.scrollTop = 0;
 };
+// ── PDF 스트림 직접 Cloudinary 업로드 (큰 파일 대응) ─────────────
+window.uploadPdfToCloudinary = async function(streamRef, publicId) {
+    try {
+        const arrayBuffer = await streamRef.arrayBuffer();
+        const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+        const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/auto/upload`;
+        const fd = new FormData();
+        fd.append('file', blob, 'file.pdf');
+        fd.append('upload_preset', _UPLOAD_PRESET);
+        fd.append('public_id', publicId);
+        const resp = await fetch(url, { method: 'POST', body: fd });
+        if (!resp.ok) { console.error('Cloudinary PDF upload failed', resp.status); return null; }
+        const data = await resp.json();
+        if (!data.secure_url) return null;
+        return JSON.stringify({ url: data.secure_url, bytes: data.bytes ?? 0, resourceType: 'raw' });
+    } catch(e) {
+        console.error('uploadPdfToCloudinary:', e);
+        return null;
+    }
+};
+
 // ── PWA 설치 프롬프트 (Android Chrome) ──────────────────────────
 let _installPromptEvent = null;
 
