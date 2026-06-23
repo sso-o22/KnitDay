@@ -29,6 +29,11 @@ jobs:
           sed -i "s|%%FIREBASE_API_KEY%%|${{ secrets.FIREBASE_API_KEY }}|g" \
             BlazorApp1/wwwroot/js/firebase.js
 
+      - name: Fix base href for custom domain
+        run: |
+          sed -i 's|<base href="/KnitDay/" />|<base href="/" />|g' \
+            BlazorApp1/wwwroot/index.html
+
       - name: Publish
         run: dotnet publish BlazorApp1/BlazorApp1.csproj -c Release -o publish
 
