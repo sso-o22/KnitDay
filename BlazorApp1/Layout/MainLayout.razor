@@ -127,7 +127,7 @@
             <div style="background:var(--white);border-radius:20px 20px 0 0;padding:24px 20px 28px;width:100%;max-width:480px;box-shadow:0 -4px 32px rgba(0,0,0,0.18);"
                  @onclick:stopPropagation="true">
                 <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
-                    <img src="images/logo.png" style="width:36px;height:36px;border-radius:10px;flex-shrink:0;" />
+                    <img src="icons/Knit.svg" class="icon-line" style="width:36px;height:36px;flex-shrink:0;opacity:0.7;" />
                     <div>
                         <div style="font-weight:700;font-size:1rem;color:var(--text-dark);">KnitDay를 홈 화면에 추가하세요</div>
                         <div style="font-size:0.8rem;color:var(--text-mid);margin-top:2px;">앱처럼 빠르고 편하게 사용할 수 있어요</div>
@@ -139,7 +139,7 @@
                     <div style="background:var(--ivory-dark);border-radius:12px;padding:14px 16px;margin-bottom:16px;font-size:0.85rem;color:var(--text-mid);line-height:1.7;">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                             <span style="font-size:1.1rem;">①</span>
-                            <span>하단 <strong style="color:var(--text-dark);">공유 버튼</strong> <span style="font-size:1rem;">⬆</span> 탭</span>
+                            <span>하단 <strong style="color:var(--text-dark);">공유 버튼</strong> <img src="icons/export.svg" class="icon-line" style="width:15px;height:15px;display:inline;vertical-align:middle;opacity:0.7;" /> 클릭</span>
                         </div>
                         <div style="display:flex;align-items:center;gap:8px;">
                             <span style="font-size:1.1rem;">②</span>
@@ -434,15 +434,20 @@
                 "window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches");
             if (isStandalone) return;
 
-            // Android Chrome: beforeinstallprompt 이벤트 확인
+            // Android Chrome만: beforeinstallprompt 이벤트 확인 (PC 제외)
             try
             {
-                var canPrompt = await JS.InvokeAsync<bool>("pwaInstall.canPrompt");
-                if (canPrompt)
+                var isAndroid = await JS.InvokeAsync<bool>("eval",
+                    "/Android/.test(navigator.userAgent)");
+                if (isAndroid)
                 {
-                    _isAndroidInstall = true;
-                    _showInstallGuide = true;
-                    return;
+                    var canPrompt = await JS.InvokeAsync<bool>("pwaInstall.canPrompt");
+                    if (canPrompt)
+                    {
+                        _isAndroidInstall = true;
+                        _showInstallGuide = true;
+                        return;
+                    }
                 }
             }
             catch { }
