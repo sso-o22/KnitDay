@@ -381,6 +381,17 @@ body {
         background: var(--border);
         flex-shrink: 0;
     }
+
+    /* 아이패드: 날짜 두 칸 가로 배치 */
+    .date-row {
+        flex-direction: row !important;
+        gap: 16px !important;
+    }
+    .date-row .form-group {
+        flex: 1 1 0 !important;
+        width: auto !important;
+        max-width: calc(50% - 8px) !important;
+    }
 }
 
 .grid-2 {
@@ -719,19 +730,19 @@ body {
         min-width: 0;
         text-align: center;
     }
-    /* 날짜 두 칸 컨테이너: 아이패드에서도 확실히 나란히 */
+    /* 날짜 두 칸 컨테이너: 모바일은 세로, 아이패드는 가로 */
     .date-row {
         display: flex !important;
-        flex-direction: row !important;
-        gap: 12px !important;
+        flex-direction: column !important;
+        gap: 8px !important;
         width: 100% !important;
         box-sizing: border-box !important;
-        overflow: hidden !important;
     }
     .date-row .form-group {
-        flex: 1 1 0 !important;
+        flex: none !important;
+        width: 100% !important;
         min-width: 0 !important;
-        max-width: calc(50% - 6px) !important;
+        max-width: 100% !important;
         overflow: hidden !important;
     }
     .date-row input[type="date"].form-control {

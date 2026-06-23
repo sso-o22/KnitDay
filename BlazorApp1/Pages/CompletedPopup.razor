@@ -287,14 +287,14 @@
 
                 <!-- 날짜 -->
                 <div class="form-label" style="margin-bottom:6px;">날짜</div>
-                <div class="date-row" style="margin-bottom:16px; gap:24px;">
-                    <div class="form-group" style="flex:1; min-width:0; max-width:48%; margin-bottom:0;">
+                <div class="date-row" style="margin-bottom:16px;">
+                    <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label" style="font-size:0.78rem;">시작일</label>
                         <input type="date" class="form-control"
                                value="@Project.StartDate?.ToString("yyyy-MM-dd")"
                                @onchange="e => Project.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                     </div>
-                    <div class="form-group" style="flex:1; min-width:0; max-width:48%; margin-bottom:0;">
+                    <div class="form-group" style="margin-bottom:0;">
                         <label class="form-label" style="font-size:0.78rem;">완성일</label>
                         <input type="date" class="form-control"
                                value="@Project.EndDate?.ToString("yyyy-MM-dd")"
