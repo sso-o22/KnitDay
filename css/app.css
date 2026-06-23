@@ -769,6 +769,18 @@ body {
 
     .sidebar { display: none; }
 
+    .date-row {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        width: 100%;
+        box-sizing: border-box;
+        margin-bottom: 20px;
+    }
+    .date-row .form-group {
+        margin-bottom: 0;
+    }
+
     .main-content {
         padding: 16px 14px;
         padding-top: calc(16px + env(safe-area-inset-top, 0px));
