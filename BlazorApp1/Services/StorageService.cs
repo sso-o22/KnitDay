@@ -121,12 +121,13 @@ namespace KnitLog.Services
 
         public async Task<(string? url, string? error)> UploadPdfAsync(string projectId, string base64Data)
         {
+            if (!IsLoggedIn || string.IsNullOrEmpty(Uid)) return (null, "not_logged_in");
             try
             {
                 var (photoUsed, pdfUsed) = await GetCloudUsageAsync();
                 if (photoUsed + pdfUsed >= PerUserLimitBytes)
                     return (null, "quota");
-                var publicId = $"{Uid ?? "anon"}/pdfs/{projectId}";
+                var publicId = $"{Uid}/pdfs/{projectId}";
                 var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64Data, publicId, "raw");
                 var url = await ParseCloudinaryResult(json, "pdf");
                 return (url, null);

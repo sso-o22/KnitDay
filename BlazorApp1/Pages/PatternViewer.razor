@@ -1371,6 +1371,8 @@
                             var (cloudUrl, cloudErr) = await Storage.UploadPdfAsync(ProjectId.ToString(), base64Pdf);
                             if (cloudErr == "quota")
                                 await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
+                            else if (cloudErr == "not_logged_in")
+                                await JS.InvokeVoidAsync("showToast", "로그인 정보를 확인할 수 없어요. 도안이 이 기기에만 저장됩니다.", "error");
                             else if (!string.IsNullOrEmpty(cloudUrl))
                                 _project.PatternCloudUrl = cloudUrl;
                         }
