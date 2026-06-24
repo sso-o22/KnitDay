@@ -14,7 +14,7 @@
             <img src="images/logo.png" class="sidebar-logo" alt="KnitLog" />
             @if (_syncStatus == "syncing")
             {
-                <span style="position:absolute;bottom:4px;right:4px;width:8px;height:8px;border-radius:50%;background:var(--theme-active);opacity:0.7;animation:pulse 1s infinite;"></span>
+                <span style="position:absolute;bottom:4px;right:4px;"><img src="icons/cloud-arrow-up.svg" class="icon-line" style="width:14px;height:14px;opacity:0.7;animation:pulse 1s infinite;" /></span>
             }
             else if (_syncStatus == "done")
             {
@@ -193,7 +193,7 @@
     <nav class="bottom-nav">
         @if (_syncStatus == "syncing")
         {
-            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--theme-active);opacity:0.8;animation:pulse 1s infinite;pointer-events:none;"></span>
+            <span class="bottom-nav-sync" style="position:absolute;top:4px;right:8px;pointer-events:none;"><img src="icons/cloud-arrow-up.svg" class="icon-line" style="width:14px;height:14px;opacity:0.8;animation:pulse 1s infinite;" /></span>
         }
         else if (_syncStatus == "done")
         {
