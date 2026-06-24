@@ -90,6 +90,9 @@ else
                             else
                             {
                                 <button class="btn btn-ghost btn-sm"
+                                        style="padding:3px 8px;font-size:0.75rem;color:var(--theme-active);flex-shrink:0;"
+                                        @onclick="() => OpenChangeEmail(u)">변경</button>
+                                <button class="btn btn-ghost btn-sm"
                                         style="padding:3px 8px;font-size:0.75rem;color:#c03030;flex-shrink:0;"
                                         @onclick="() => ConfirmDelete(u)">삭제</button>
                             }
@@ -100,6 +103,33 @@ else
         </div>
 
     </div>
+
+    @* 이메일 변경 팝업 *@
+    @if (_changeEmailUser != null)
+    {
+        <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;"
+             @onclick="CloseChangeEmail">
+            <div style="background:var(--white);border-radius:20px;padding:28px 24px 20px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2);"
+                 @onclick:stopPropagation="true">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:6px;color:var(--text-dark);">계정 이메일 변경</div>
+                <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:16px;word-break:break-all;">현재: @_changeEmailUser.Email</div>
+                <input type="email" placeholder="새 구글 이메일 입력" @bind="_newEmailInput" @bind:event="oninput"
+                       style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;margin-bottom:10px;box-sizing:border-box;" />
+                @if (!string.IsNullOrEmpty(_changeMsg))
+                {
+                    <div style="font-size:0.82rem;color:@(_changeError ? "#c03030" : "var(--theme-active)");margin-bottom:10px;">@_changeMsg</div>
+                }
+                <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:16px;">기존 이메일은 삭제되고 새 이메일로 등록돼요. 데이터는 그대로 유지돼요.</div>
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
+                    <button class="btn btn-ghost" @onclick="CloseChangeEmail" disabled="@_changing">취소</button>
+                    <button class="btn btn-primary" @onclick="ChangeEmail"
+                            disabled="@(_changing || string.IsNullOrWhiteSpace(_newEmailInput) || _newEmailInput.Trim() == _changeEmailUser.Email)">
+                        @(_changing ? "변경 중..." : "변경")
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 
     @* 삭제 확인 팝업 *@
     @if (_confirmDeleteUser != null)
@@ -147,6 +177,11 @@ else
     string? _deletingEmail;
     UserEntry? _confirmDeleteUser;
     bool _hardDelete = false;
+    UserEntry? _changeEmailUser;
+    string _newEmailInput = "";
+    bool _changing = false;
+    string _changeMsg = "";
+    bool _changeError = false;
 
     protected override void OnInitialized()
     {
@@ -212,6 +247,40 @@ else
         }
         catch (Exception ex) { _addMsg = "오류: " + ex.Message; _addError = true; }
         _adding = false;
+        StateHasChanged();
+    }
+
+    void OpenChangeEmail(UserEntry user) { _changeEmailUser = user; _newEmailInput = ""; _changeMsg = ""; _changeError = false; }
+    void CloseChangeEmail() { _changeEmailUser = null; _newEmailInput = ""; _changeMsg = ""; }
+
+    async Task ChangeEmail()
+    {
+        if (_changeEmailUser == null) return;
+        var newEmail = _newEmailInput.Trim().ToLower();
+        if (string.IsNullOrEmpty(newEmail)) return;
+        _changing = true; _changeMsg = ""; StateHasChanged();
+        try
+        {
+            // 새 이메일로 등록 (uid 포함 이전)
+            var data = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                registeredAt = DateTime.UtcNow.ToString("yyyy-MM-dd"),
+                uid = _changeEmailUser.Uid ?? ""
+            });
+            var ok = await JS.InvokeAsync<bool>("firebaseStore.setDocument", $"allowedUsers/{newEmail}", data);
+            if (!ok) { _changeMsg = "새 이메일 등록 실패."; _changeError = true; _changing = false; StateHasChanged(); return; }
+
+            // 기존 이메일 삭제
+            await JS.InvokeAsync<bool>("firebaseStore.deleteDocument", $"allowedUsers/{_changeEmailUser.Email}");
+
+            _changeMsg = $"✓ {_changeEmailUser.Email} → {newEmail} 변경 완료!";
+            _changeError = false;
+            await LoadUsers();
+            _changeEmailUser = null;
+            _newEmailInput = "";
+        }
+        catch (Exception ex) { _changeMsg = $"오류: {ex.Message}"; _changeError = true; }
+        _changing = false;
         StateHasChanged();
     }
 
