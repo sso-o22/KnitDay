@@ -153,9 +153,42 @@
 </div>
 
     <script>
+        // 인앱 브라우저 감지 후 즉시 안내
+        (function() {
+            var ua = navigator.userAgent;
+            var isInApp = /KAKAOTALK|Instagram|FBAN|FBAV|Line|NaverApp/i.test(ua);
+            if (isInApp) {
+                var el = document.getElementById('loading-error');
+                if (el) {
+                    el.style.display = 'block';
+                    el.style.background = '#fff8e1';
+                    el.style.color = '#7a5c00';
+                    el.style.fontSize = '0.85rem';
+                    el.style.lineHeight = '1.7';
+                    el.innerHTML = '⚠️ 카카오톡·인스타그램 내 브라우저에서는<br>앱이 실행되지 않아요.<br><br>' +
+                        '<b>Safari 또는 Chrome으로 열어주세요.</b><br>' +
+                        '<span style="font-size:0.78rem;color:#9a7c00;">우측 상단 ··· 메뉴 → 기본 브라우저로 열기</span>';
+                }
+            }
+        })();
         window.onerror = function(msg, src, line, col, err) {
             var el = document.getElementById('loading-error');
-            if (el) { el.style.display = 'block'; el.textContent = '오류: ' + msg + (src ? ' (' + src.split('/').pop() + ':' + line + ')' : ''); }
+            if (!el) return;
+            var ua = navigator.userAgent;
+            var isInApp = /KAKAOTALK|Instagram|FBAN|FBAV|Line|NaverApp/i.test(ua);
+            if (isInApp || msg === 'Script error.') {
+                el.style.display = 'block';
+                el.style.background = '#fff8e1';
+                el.style.color = '#7a5c00';
+                el.style.fontSize = '0.85rem';
+                el.style.lineHeight = '1.7';
+                el.innerHTML = '⚠️ 카카오톡·인스타그램 내 브라우저에서는<br>앱이 실행되지 않아요.<br><br>' +
+                    '<b>Safari 또는 Chrome으로 열어주세요.</b><br>' +
+                    '<span style="font-size:0.78rem;color:#9a7c00;">우측 상단 ··· 메뉴 → 기본 브라우저로 열기</span>';
+            } else {
+                el.style.display = 'block';
+                el.textContent = '오류: ' + msg + (src ? ' (' + src.split('/').pop() + ':' + line + ')' : '');
+            }
         };
         window.addEventListener('unhandledrejection', function(e) {
             var el = document.getElementById('loading-error');
