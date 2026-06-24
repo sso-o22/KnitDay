@@ -467,6 +467,7 @@
     bool _editing = false;
     bool _showDeleteConfirm = false;
     ProjectPhoto? _lightboxPhoto = null;
+    List<ProjectPhoto> _photoSnapshot = new(); // 수정 모드 진입 시 스냅샷
 
     void OpenPhotoLightbox(ProjectPhoto photo) => _lightboxPhoto = photo;
     List<ProjectPhoto> PopupValidPhotos => Project?.Photos
@@ -514,6 +515,15 @@
 
     async Task ClosePopup()
     {
+        if (_editing && Project != null)
+        {
+            var added = Project.Photos.Except(_photoSnapshot).ToList();
+            foreach (var p in added)
+                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString());
+            Project.Photos.Clear();
+            foreach (var p in _photoSnapshot) Project.Photos.Add(p);
+            _editing = false;
+        }
         if (_deletePdf && OnDeletePdf.HasDelegate)
             await OnDeletePdf.InvokeAsync();
         _deletePdf = false;
@@ -524,11 +534,22 @@
     void OpenEditing()
     {
         LoadMeasures();
+        _photoSnapshot = Project!.Photos.Select(p => p).ToList(); // 스냅샷
         _editing = true;
     }
 
-    void CancelEditing()
+    async Task CancelEditing()
     {
+        if (Project != null)
+        {
+            // 스냅샷 이후 추가된 사진 클라우드에서 삭제
+            var added = Project.Photos.Except(_photoSnapshot).ToList();
+            foreach (var p in added)
+                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString());
+            // 스냅샷으로 복원
+            Project.Photos.Clear();
+            foreach (var p in _photoSnapshot) Project.Photos.Add(p);
+        }
         LoadMeasures();
         _editing = false;
     }
@@ -574,6 +595,13 @@
         if (Project == null) return;
         _saving = true; StateHasChanged();
 
+        // 스냅샷 대비 삭제된 사진 클라우드에서 실제 삭제
+        var removed = _photoSnapshot.Except(Project.Photos).ToList();
+        foreach (var p in removed)
+            if (!string.IsNullOrEmpty(p.StorageUrl))
+                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString());
+        _photoSnapshot = Project.Photos.ToList(); // 스냅샷 갱신
+
         // 치수 저장
         Project.MeasurementsMemo = string.Join("|",
             _measures
@@ -596,8 +624,6 @@
     void RemovePhoto(ProjectPhoto photo)
     {
         if (Project == null || photo == null) return;
-        if (!string.IsNullOrEmpty(photo.StorageUrl))
-            _ = Storage.DeletePhotoAsync(Project.Id.ToString(), photo.Id.ToString());
         Project.Photos.Remove(photo);
         StateHasChanged();
     }
@@ -626,7 +652,7 @@
         files = files.Take(remaining).ToList();
         if (selectedCount > remaining)
         {
-            await JS.InvokeVoidAsync("showToast", $"사진은 최대 {maxPhotos}장까지 추가할 수 있어요. {remaining}장만 추가됩니다.", "error");
+            await JS.InvokeVoidAsync("showToast", $"남은 슬롯이 {remaining}장뿐이에요. {remaining}장만 추가됩니다.", "error");
             await Task.Delay(1500);
         }
         long maxFileSize = 20 * 1024 * 1024; // 20MB
@@ -638,7 +664,7 @@
             files = files.Where(f => f.Size <= maxFileSize).ToList();
             if (!files.Any()) return;
         }
-        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...", "info");
+        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...");
         StateHasChanged();
         foreach (var file in files)
         {

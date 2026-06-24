@@ -79,7 +79,8 @@ namespace KnitLog.Models
                 : 0;
 
         public string Memo { get; set; } = "";
-        public string PhotoBase64 { get; set; } = "";  // 사진 (base64)
+        public string PhotoBase64 { get; set; } = "";      // 사진 (base64, 로컬/fallback)
+        public string PhotoStorageUrl { get; set; } = "";  // 사진 (Cloudinary URL)
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 

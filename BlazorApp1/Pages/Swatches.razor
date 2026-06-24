@@ -201,10 +201,10 @@ else
                 }
 
                 @* 사진 *@
-                @if (!string.IsNullOrEmpty(s.PhotoBase64))
+                @if (!string.IsNullOrEmpty(s.PhotoStorageUrl) || !string.IsNullOrEmpty(s.PhotoBase64))
                 {
                     <div style="margin-top:10px;">
-                        <img src="@s.PhotoBase64" style="width:100%; border-radius:var(--radius-sm); object-fit:cover; max-height:180px;" />
+                        <img src="@(!string.IsNullOrEmpty(s.PhotoStorageUrl) ? s.PhotoStorageUrl : s.PhotoBase64)" style="width:100%; border-radius:var(--radius-sm); object-fit:cover; max-height:180px;" />
                     </div>
                 }
             </div>
@@ -363,10 +363,10 @@ else
 
             <div class="form-group">
                 <label class="form-label">사진</label>
-                @if (!string.IsNullOrEmpty(_editing.PhotoBase64))
+                @if (!string.IsNullOrEmpty(_editing.PhotoStorageUrl) || !string.IsNullOrEmpty(_editing.PhotoBase64))
                 {
                     <div style="position:relative; margin-bottom:8px;">
-                        <img src="@_editing.PhotoBase64" style="width:100%; border-radius:var(--radius-sm); object-fit:cover; max-height:200px;" />
+                        <img src="@(!string.IsNullOrEmpty(_editing.PhotoStorageUrl) ? _editing.PhotoStorageUrl : _editing.PhotoBase64)" style="width:100%; border-radius:var(--radius-sm); object-fit:cover; max-height:200px;" />
                         <button class="btn btn-danger btn-sm" style="position:absolute; top:6px; right:6px;"
                                 @onclick="ClearPhoto">✕</button>
                     </div>
@@ -715,7 +715,7 @@ else
             PreWashWidthCm = s.PreWashWidthCm, PreWashHeightCm = s.PreWashHeightCm,
             PostWashStitches = s.PostWashStitches, PostWashRows = s.PostWashRows,
             PostWashWidthCm = s.PostWashWidthCm, PostWashHeightCm = s.PostWashHeightCm,
-            Memo = s.Memo, PhotoBase64 = s.PhotoBase64, CreatedAt = s.CreatedAt
+            Memo = s.Memo, PhotoBase64 = s.PhotoBase64, PhotoStorageUrl = s.PhotoStorageUrl, CreatedAt = s.CreatedAt
         };
         var presets = new[] { "메리야스", "무늬" };
         _stitchSelect = presets.Contains(s.Stitch) ? s.Stitch : "직접입력";
@@ -748,7 +748,12 @@ else
     }
 
     async Task ResetFilters() { _filterProject = ""; _filterStitch = ""; _filterNeedle = ""; await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fp"); await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fs"); await JS.InvokeVoidAsync("localStorage.removeItem", "sw_fn"); }
-    void ClearPhoto() => _editing.PhotoBase64 = "";
+    void ClearPhoto()
+    {
+        // Cloudinary 삭제는 저장 시 처리 (취소하면 복원되므로 여기선 로컬만)
+        _editing.PhotoBase64 = "";
+        _editing.PhotoStorageUrl = "";
+    }
 
     void OnStitchSelectChanged(ChangeEventArgs e)
     {
@@ -775,15 +780,48 @@ else
     {
         _saving = true; StateHasChanged();
         if (_editing.Id == Guid.Empty) _editing.Id = Guid.NewGuid();
+
+        // 원본 스와치의 StorageUrl 확인 (삭제 여부 판단용)
+        var original = _swatches.FirstOrDefault(s => s.Id == _editing.Id);
+
+        // 사진 처리
+        if (Storage.IsLoggedIn)
+        {
+            // 사진이 지워진 경우 → 클라우드 삭제
+            if (string.IsNullOrEmpty(_editing.PhotoBase64) && string.IsNullOrEmpty(_editing.PhotoStorageUrl)
+                && !string.IsNullOrEmpty(original?.PhotoStorageUrl))
+            {
+                await Storage.DeleteSwatchPhotoAsync(_editing.Id.ToString());
+            }
+            // 새 사진이 Base64로 들어온 경우 → 클라우드 업로드
+            else if (!string.IsNullOrEmpty(_editing.PhotoBase64) && !_editing.PhotoBase64.StartsWith("http"))
+            {
+                // 기존 클라우드 사진 있으면 먼저 삭제
+                if (!string.IsNullOrEmpty(original?.PhotoStorageUrl))
+                    await Storage.DeleteSwatchPhotoAsync(_editing.Id.ToString());
+                var (url, err) = await Storage.UploadSwatchPhotoAsync(_editing.Id.ToString(), _editing.PhotoBase64);
+                if (err == "quota")
+                    await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요.", "error");
+                else if (!string.IsNullOrEmpty(url))
+                {
+                    _editing.PhotoStorageUrl = url;
+                    _editing.PhotoBase64 = ""; // 클라우드에 올렸으니 Base64 제거
+                }
+            }
+        }
+
         await Storage.SaveSwatchAsync(_editing);
         _swatches = await Storage.GetSwatchesAsync();
         _showModal = false;
         _saving = false;
         await JS.InvokeVoidAsync("showToast", "저장됐어요");
-        }
+    }
 
     async Task DeleteSwatch(Guid id)
     {
+        var swatch = _swatches.FirstOrDefault(s => s.Id == id);
+        if (swatch != null && !string.IsNullOrEmpty(swatch.PhotoStorageUrl))
+            await Storage.DeleteSwatchPhotoAsync(id.ToString());
         await Storage.DeleteSwatchAsync(id);
         _swatches = await Storage.GetSwatchesAsync();
     }

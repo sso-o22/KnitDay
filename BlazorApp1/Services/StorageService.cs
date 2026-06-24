@@ -245,6 +245,28 @@ namespace KnitLog.Services
             await DeleteCloudinaryAssetAsync(publicId, "image");
         }
 
+        public async Task<(string? url, string? error)> UploadSwatchPhotoAsync(string swatchId, string base64DataUrl)
+        {
+            try
+            {
+                var (used, _) = await GetCloudUsageAsync();
+                if (used >= PerUserLimitBytes)
+                    return (null, "quota");
+                var publicId = $"{Uid ?? "anon"}/swatches/{swatchId}";
+                var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64DataUrl, publicId, "image");
+                var url = await ParseCloudinaryResult(json, "photo");
+                return (url, null);
+            }
+            catch { return (null, "error"); }
+        }
+
+        public async Task DeleteSwatchPhotoAsync(string swatchId)
+        {
+            if (!IsLoggedIn) return;
+            var publicId = $"{Uid}/swatches/{swatchId}";
+            await DeleteCloudinaryAssetAsync(publicId, "image");
+        }
+
         public async Task DeletePdfAsync(string projectId)
         {
             if (!IsLoggedIn) return;
