@@ -904,3 +904,14 @@ window.pwaInstall = {
     // Android 여부
     isAndroid: () => /Android/.test(navigator.userAgent)
 };
+
+// ── PWA 설치 팝업 강제 표시 ──────────────────────────────────────
+window.dispatchForceInstallGuide = () => {
+    window.dispatchEvent(new CustomEvent('knitday:forceInstallGuide'));
+};
+
+window.registerInstallGuideListener = (dotNetRef) => {
+    window.addEventListener('knitday:forceInstallGuide', async () => {
+        await dotNetRef.invokeMethodAsync('HandleForceShowInstall');
+    });
+};
