@@ -521,7 +521,7 @@
         {
             var added = Project.Photos.Except(_photoSnapshot).ToList();
             foreach (var p in added)
-                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString());
+                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString(), p.FileSizeBytes);
             Project.Photos.Clear();
             foreach (var p in _photoSnapshot) Project.Photos.Add(p);
             _editing = false;
@@ -547,7 +547,7 @@
             // 스냅샷 이후 추가된 사진 클라우드에서 삭제
             var added = Project.Photos.Except(_photoSnapshot).ToList();
             foreach (var p in added)
-                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString());
+                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString(), p.FileSizeBytes);
             // 스냅샷으로 복원
             Project.Photos.Clear();
             foreach (var p in _photoSnapshot) Project.Photos.Add(p);
@@ -601,7 +601,7 @@
         var removed = _photoSnapshot.Except(Project.Photos).ToList();
         foreach (var p in removed)
             if (!string.IsNullOrEmpty(p.StorageUrl))
-                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString());
+                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString(), p.FileSizeBytes);
         _photoSnapshot = Project.Photos.ToList(); // 스냅샷 갱신
 
         // 치수 저장
@@ -611,6 +611,14 @@
                 .Select(m => $"{m.Label}:{m.Before}:{m.After}"));
 
         await Storage.SaveProjectAsync(Project);
+
+        // 도안 삭제 토글 처리
+        if (_deletePdf && OnDeletePdf.HasDelegate)
+        {
+            await OnDeletePdf.InvokeAsync();
+            _deletePdf = false;
+        }
+
         _editing = false;
         _saving = false;
         LoadMeasures();
@@ -682,14 +690,17 @@
                 var photo = new ProjectPhoto { FileName = file.Name, TakenAt = DateTime.Now };
                 if (Storage.IsLoggedIn && Project != null)
                 {
-                    var (url, err) = await Storage.UploadPhotoAsync(Project.Id.ToString(), photo.Id.ToString(), base64);
+                    var (url, err, fileBytes) = await Storage.UploadPhotoAsync(Project.Id.ToString(), photo.Id.ToString(), base64);
                     if (err == "quota")
                     {
                         await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 사진을 삭제하고 다시 시도해 주세요.", "error");
                         return;
                     }
                     if (!string.IsNullOrEmpty(url))
+                    {
                         photo.StorageUrl = url;
+                        photo.FileSizeBytes = fileBytes;
+                    }
                     else
                         photo.Base64Data = base64;
                 }

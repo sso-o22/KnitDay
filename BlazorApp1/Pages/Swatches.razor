@@ -715,7 +715,7 @@ else
             PreWashWidthCm = s.PreWashWidthCm, PreWashHeightCm = s.PreWashHeightCm,
             PostWashStitches = s.PostWashStitches, PostWashRows = s.PostWashRows,
             PostWashWidthCm = s.PostWashWidthCm, PostWashHeightCm = s.PostWashHeightCm,
-            Memo = s.Memo, PhotoBase64 = s.PhotoBase64, PhotoStorageUrl = s.PhotoStorageUrl, CreatedAt = s.CreatedAt
+            Memo = s.Memo, PhotoBase64 = s.PhotoBase64, PhotoStorageUrl = s.PhotoStorageUrl, PhotoFileSizeBytes = s.PhotoFileSizeBytes, CreatedAt = s.CreatedAt
         };
         var presets = new[] { "메리야스", "무늬" };
         _stitchSelect = presets.Contains(s.Stitch) ? s.Stitch : "직접입력";
@@ -791,20 +791,21 @@ else
             if (string.IsNullOrEmpty(_editing.PhotoBase64) && string.IsNullOrEmpty(_editing.PhotoStorageUrl)
                 && !string.IsNullOrEmpty(original?.PhotoStorageUrl))
             {
-                await Storage.DeleteSwatchPhotoAsync(_editing.Id.ToString());
+                await Storage.DeleteSwatchPhotoAsync(_editing.Id.ToString(), original?.PhotoFileSizeBytes ?? 0);
             }
             // 새 사진이 Base64로 들어온 경우 → 클라우드 업로드
             else if (!string.IsNullOrEmpty(_editing.PhotoBase64) && !_editing.PhotoBase64.StartsWith("http"))
             {
                 // 기존 클라우드 사진 있으면 먼저 삭제
                 if (!string.IsNullOrEmpty(original?.PhotoStorageUrl))
-                    await Storage.DeleteSwatchPhotoAsync(_editing.Id.ToString());
-                var (url, err) = await Storage.UploadSwatchPhotoAsync(_editing.Id.ToString(), _editing.PhotoBase64);
+                    await Storage.DeleteSwatchPhotoAsync(_editing.Id.ToString(), original?.PhotoFileSizeBytes ?? 0);
+                var (url, err, fileBytes) = await Storage.UploadSwatchPhotoAsync(_editing.Id.ToString(), _editing.PhotoBase64);
                 if (err == "quota")
                     await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요.", "error");
                 else if (!string.IsNullOrEmpty(url))
                 {
                     _editing.PhotoStorageUrl = url;
+                    _editing.PhotoFileSizeBytes = fileBytes;
                     _editing.PhotoBase64 = ""; // 클라우드에 올렸으니 Base64 제거
                 }
             }
@@ -821,7 +822,7 @@ else
     {
         var swatch = _swatches.FirstOrDefault(s => s.Id == id);
         if (swatch != null && !string.IsNullOrEmpty(swatch.PhotoStorageUrl))
-            await Storage.DeleteSwatchPhotoAsync(id.ToString());
+            await Storage.DeleteSwatchPhotoAsync(id.ToString(), swatch.PhotoFileSizeBytes);
         await Storage.DeleteSwatchAsync(id);
         _swatches = await Storage.GetSwatchesAsync();
     }
