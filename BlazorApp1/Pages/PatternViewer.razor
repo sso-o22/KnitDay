@@ -128,13 +128,44 @@
 
     <!-- ── 상단 오버레이 툴바 ── -->
     <!-- 구조: [나가기 + 타이머 + 마커정보] [가운데: 비어있음] [페이지/줌/도안] -->
+    @* ── 1번 상단바: 뒤로가기+줌 / 페이지수 / PDF+삭제 ── *@
     <div class="top-bar">
-        <!-- 왼쪽: 나가기 + 타이머 + 재생 -->
         <div class="tb-left">
             <button class="tb-btn" @onclick="GoBack"><img src="icons/arrow-fat-left.svg" style="width:18px;height:18px;" /></button>
-            @if (_project is not null)
+            @if (_totalPages > 0)
             {
                 <div class="tb-div"></div>
+                <div class="tb-zoom">
+                    <button class="tb-zoom-btn" @onclick="ZoomOut"><img src="icons/magnifying-glass-minus.svg" style="width:16px;height:16px;" /></button>
+                    <span class="tb-txt" style="min-width:36px;text-align:center;">@((int)(_zoom*100))%</span>
+                    <button class="tb-zoom-btn" @onclick="ZoomIn"><img src="icons/magnifying-glass-plus.svg" style="width:16px;height:16px;" /></button>
+                </div>
+            }
+        </div>
+        <div class="tb-center">
+            @if (_totalPages > 0)
+            {
+                <div class="tb-zoom" style="padding:0 10px;gap:5px;">
+                    <img src="icons/scroll.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
+                    <span class="tb-txt" style="font-variant-numeric:tabular-nums;">@_currentPage / @_totalPages</span>
+                </div>
+            }
+        </div>
+        <div class="tb-right">
+            <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick"><img src="icons/file-pdf.svg" class="icon-invert-dark" style="width:20px;height:20px;" /></span>
+            @if (_pdfLoaded)
+            {
+                <span class="tb-label" style="cursor:pointer;" @onclick="OnDeletePatternClick"><img src="icons/trash.svg" style="width:18px;height:18px;" /></span>
+            }
+            <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
+        </div>
+    </div>
+
+    @* ── 2번 상단바: 타이머(좌) / 행 마커 정보(우) ── *@
+    <div class="top-bar-sub">
+        <div class="tb-left" style="flex:1;">
+            @if (_project is not null)
+            {
                 <span style="opacity:0.4;"><img src="icons/clock.svg" class="icon-invert-dark" style="width:14px;height:14px;" /></span>
                 <span class="tb-txt" style="font-variant-numeric:tabular-nums;letter-spacing:0.3px;">@_timerDisplay</span>
                 @if (_activeSession == null)
@@ -145,83 +176,23 @@
                 {
                     <button class="tb-icon-btn" @onclick="EndSession"><img src="icons/pause.svg" style="width:16px;height:16px;" /></button>
                 }
-                @* 넓은 화면에서만 마커 정보 상단바에 표시 *@
-                @if (_rowMarkers.Any(m => m.IsCurrent))
-                {
-                    <div class="tb-div marker-text-full"></div>
-                    <img src="icons/row-detect.svg" class="icon-invert-dark marker-text-full" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
-                    @if (GetSelectedMarkerIndex() is int idx)
-                    {
-                        <span class="tb-txt marker-text-full" style="font-size:0.78rem;font-weight:400;">행 마커: 현재 페이지 @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개 / 전체 @(_rowMarkers.Count(m => m.IsCurrent))개 · @(idx)번 마커 선택됨</span>
-                    }
-                    else
-                    {
-                        <span class="tb-txt marker-text-full" style="font-size:0.78rem;font-weight:400;">행 마커: 현재 페이지 @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개 / 전체 @(_rowMarkers.Count(m => m.IsCurrent))개</span>
-                    }
-                }
             }
         </div>
-
-        <!-- 가운데: 비어있음 -->
-        <div class="tb-center"></div>
-
-        <!-- 오른쪽: 넓은 화면엔 페이지+줌 포함, 좁은 화면엔 도안버튼+삭제만 -->
         <div class="tb-right">
-            @if (_totalPages > 0)
-            {
-                <div class="tb-zoom marker-text-full" style="padding:0 10px;gap:5px;">
-                    <img src="icons/scroll.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
-                    <span class="tb-txt" style="font-variant-numeric:tabular-nums;">@_currentPage / @_totalPages</span>
-                </div>
-                <div class="tb-div marker-text-full"></div>
-                <div class="tb-zoom marker-text-full">
-                    <button class="tb-zoom-btn" @onclick="ZoomOut"><img src="icons/magnifying-glass-minus.svg" style="width:16px;height:16px;" /></button>
-                    <span class="tb-txt" style="min-width:36px;text-align:center;">@((int)(_zoom*100))%</span>
-                    <button class="tb-zoom-btn" @onclick="ZoomIn"><img src="icons/magnifying-glass-plus.svg" style="width:16px;height:16px;" /></button>
-                </div>
-                <div class="tb-div marker-text-full"></div>
-            }
-            <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick"><img src="icons/file-pdf.svg" class="icon-invert-dark" style="width:20px;height:20px;" /></span>
-            @if (_pdfLoaded)
-            {
-                <span class="tb-label" style="cursor:pointer;" @onclick="OnDeletePatternClick"><img src="icons/trash.svg" style="width:18px;height:18px;" /></span>
-            }
-            <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
-        </div>
-    </div>
-
-    @* 모바일(좁은 화면): 두 번째 툴바 — 마커 정보 + 페이지 + 줌 *@
-    @if (_totalPages > 0 || _rowMarkers.Any(m => m.IsCurrent))
-    {
-        <div class="top-bar-sub marker-text-short" style="display:none;">
             @if (_rowMarkers.Any(m => m.IsCurrent))
             {
                 <img src="icons/row-detect.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
-                @if (GetSelectedMarkerIndex() is int idx2)
+                @if (GetSelectedMarkerIndex() is int idx)
                 {
-                    <span class="tb-txt" style="font-size:0.78rem;font-weight:400;">행 마커: @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage)) / @(_rowMarkers.Count(m => m.IsCurrent)) · @(idx2)번 선택</span>
+                    <span class="tb-txt" style="font-size:0.78rem;font-weight:400;">행 마커: 현재 페이지 @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개 / 전체 @(_rowMarkers.Count(m => m.IsCurrent))개 · @(idx)번 마커 선택됨</span>
                 }
                 else
                 {
-                    <span class="tb-txt" style="font-size:0.78rem;font-weight:400;">행 마커: @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage)) / @(_rowMarkers.Count(m => m.IsCurrent))</span>
+                    <span class="tb-txt" style="font-size:0.78rem;font-weight:400;">행 마커: 현재 페이지 @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개 / 전체 @(_rowMarkers.Count(m => m.IsCurrent))개</span>
                 }
-                @if (_totalPages > 0) { <div class="tb-div"></div> }
-            }
-            @if (_totalPages > 0)
-            {
-                <div class="tb-zoom" style="padding:0 10px;gap:5px;">
-                    <img src="icons/scroll.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
-                    <span class="tb-txt" style="font-variant-numeric:tabular-nums;">@_currentPage / @_totalPages</span>
-                </div>
-                <div class="tb-div"></div>
-                <div class="tb-zoom">
-                    <button class="tb-zoom-btn" @onclick="ZoomOut"><img src="icons/magnifying-glass-minus.svg" style="width:16px;height:16px;" /></button>
-                    <span class="tb-txt" style="min-width:36px;text-align:center;">@((int)(_zoom*100))%</span>
-                    <button class="tb-zoom-btn" @onclick="ZoomIn"><img src="icons/magnifying-glass-plus.svg" style="width:16px;height:16px;" /></button>
-                </div>
             }
         </div>
-    }
+    </div>
 
     <!-- ── 필기 도구 플로팅 위젯 (좌측 상단, 툴바 아래) ── -->
     <div class="draw-wrap">
@@ -507,9 +478,10 @@
         display: flex;
         justify-content: center;
         box-sizing: border-box;
+        padding-top: 106px; /* title(28) + top-bar(42) + top-bar-sub(36) */
     }
     @@media (max-width: 760px) {
-        .pv-scroll { padding-top: 38px; }
+        .pv-scroll { padding-top: 106px; }
         .draw-wrap { top: 118px; }
     }
 
@@ -606,7 +578,7 @@
     /* ── 필기 위젯: 위젯(동그라미) 아래로 패널 펼치기 ── */
     .draw-wrap {
         position: fixed;
-        top: 80px; /* 타이틀바(28px) + 툴바(~38px) + 여백 */
+        top: 116px; /* title(28) + top-bar(42) + top-bar-sub(36) + 10px */
         left: 230px; /* PC: sidebar(220px) + 10px */
         z-index: 300;
         display: flex;
@@ -618,21 +590,20 @@
     @@media (max-width: 1024px) and (min-width: 641px) {
         .draw-wrap { left: 82px; }
     }
-    /* 좁은 화면(모바일 세로 등): 두 번째 툴바 표시, 상단바 일부 숨김 */
     @@media (max-width: 760px) {
         .marker-text-full { display: none !important; }
-        .top-bar-sub { display: flex !important; }
     }
     @@media (min-width: 761px) {
         .marker-text-short { display: none !important; }
-        .top-bar-sub { display: none !important; }
     }
     .top-bar-sub {
-        position: fixed; top: 52px; left: 0; right: 0; z-index: 101;
-        height: 38px; padding: 0 12px;
+        position: absolute; top: 70px; left: 0; right: 0; z-index: 199;
+        height: 36px; padding: 0 10px;
         display: flex; align-items: center; gap: 6px;
-        background: var(--viewer-bg, #f5f5f0);
+        background: rgba(255,255,255,0.88);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         border-bottom: 1px solid rgba(0,0,0,0.08);
+        box-shadow: 0 1px 4px rgba(0,0,0,0.06);
     }
     /* 모바일: sidebar 없음, fixed fullscreen 진장 */
     @@media (max-width: 640px) {
