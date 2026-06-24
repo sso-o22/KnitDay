@@ -667,9 +667,21 @@ else
     }
 
     bool _scrollModalTop = false;
+    bool _modalWasOpen = false;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (_scrollModalTop) { _scrollModalTop = false; await JS.InvokeVoidAsync("scrollModalToTop"); }
+        // 모달이 열려있는 동안 re-render 후 body scroll 잠금 복구
+        if (_showModal)
+        {
+            if (!_modalWasOpen) _modalWasOpen = true;
+            await JS.InvokeVoidAsync("lockBodyScroll");
+        }
+        else if (_modalWasOpen)
+        {
+            _modalWasOpen = false;
+            await JS.InvokeVoidAsync("unlockBodyScroll");
+        }
     }
 
     void OpenAddModal()
@@ -756,6 +768,7 @@ else
         var bytes = ms.ToArray();
         var base64 = Convert.ToBase64String(bytes);
         _editing.PhotoBase64 = $"data:{file.ContentType};base64,{base64}";
+        StateHasChanged();
     }
 
     async Task SaveSwatch()

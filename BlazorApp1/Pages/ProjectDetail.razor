@@ -631,7 +631,7 @@ else
         <div class="card-title" style="display:flex; align-items:center; gap:6px;"><img src="icons/image.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 과정 사진</div>
 
         @* 5칸 슬롯 그리드 *@
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:8px;">
+        <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; margin-bottom:8px;">
             @for (int i = 0; i < 5; i++)
             {
                 var idx = i;
@@ -1468,6 +1468,7 @@ else
         if (_project == null) return;
         const int maxPhotos = 5;
         var files = e.GetMultipleFiles(10).ToList();
+        int selectedCount = files.Count;
         int remaining = maxPhotos - _project.Photos.Count;
         if (remaining <= 0)
         {
@@ -1475,13 +1476,24 @@ else
             return;
         }
         files = files.Take(remaining).ToList();
+        if (selectedCount > remaining)
+            await JS.InvokeVoidAsync("showToast", $"사진은 최대 {maxPhotos}장까지 추가할 수 있어요. {remaining}장만 추가됩니다.", "error");
+        long maxFileSize = 20 * 1024 * 1024; // 20MB
+        var oversized = files.Where(f => f.Size > maxFileSize).ToList();
+        if (oversized.Any())
+        {
+            var names = string.Join(", ", oversized.Select(f => f.Name));
+            await JS.InvokeVoidAsync("showToast", $"20MB를 초과하는 사진은 추가할 수 없어요. ({names})", "error");
+            files = files.Where(f => f.Size <= maxFileSize).ToList();
+            if (!files.Any()) return;
+        }
         await JS.InvokeVoidAsync("showToast", "사진 업로드 중...", "info");
         StateHasChanged();
         foreach (var file in files)
         {
             try
             {
-                using var stream = file.OpenReadStream(20 * 1024 * 1024);
+                using var stream = file.OpenReadStream(maxFileSize);
                 using var ms = new System.IO.MemoryStream();
                 await stream.CopyToAsync(ms);
                 // HEIF/HEIC → JPEG 압축
