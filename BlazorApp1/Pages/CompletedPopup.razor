@@ -265,7 +265,7 @@
                                     </button>
                                 }
                                 <button class="btn btn-danger btn-sm"
-                                        style="position:absolute;top:2px;right:2px;padding:1px 4px;background:rgba(180,30,30,0.92);backdrop-filter:blur(2px);"
+                                        style="position:absolute;top:2px;right:2px;padding:1px 4px;"
                                         @onclick="() => RemovePhoto(ep)">
                                     <img src="icons/x.svg" class="icon-line" style="width:9px;height:9px;" />
                                 </button>
@@ -417,7 +417,7 @@
          @onclick="() => _lightboxPhoto = null">
         <button style="position:fixed;top:env(safe-area-inset-top,0px);right:0;left:0;height:44px;background:transparent;border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;"
                 @onclick="() => _lightboxPhoto = null">
-            <span style="background:rgba(255,255,255,0.2);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+            <span style="background:rgba(0,0,0,0.55);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
                 <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
             </span>
         </button>

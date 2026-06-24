@@ -659,7 +659,7 @@ else
                         }
                         @* 삭제 버튼 *@
                         <button class="btn btn-danger btn-sm"
-                                style="position:absolute;top:3px;right:3px;padding:2px 5px;background:rgba(180,30,30,0.92);backdrop-filter:blur(2px);"
+                                style="position:absolute;top:3px;right:3px;padding:2px 5px;"
                                 @onclick:stopPropagation="true"
                                 @onclick="() => RemovePhoto(photo.Id)">
                             <img src="icons/x.svg" class="icon-line" style="width:10px;height:10px;" />
@@ -818,7 +818,7 @@ else
          style="position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:9999;padding:44px 16px 16px;">
         <button @onclick="() => _showPhoto = false"
                 style="position:fixed;top:env(safe-area-inset-top,0px);right:0;left:0;height:44px;background:transparent;border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;">
-            <span style="background:rgba(255,255,255,0.2);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+            <span style="background:rgba(0,0,0,0.55);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
                 <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
             </span>
         </button>
