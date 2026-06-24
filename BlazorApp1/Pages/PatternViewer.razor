@@ -164,6 +164,20 @@
     @* ── 2번 상단바: 타이머(좌) / 행 마커 정보(우) ── *@
     <div class="top-bar-sub">
         <div class="tb-left" style="flex:1;">
+            @if (_rowMarkers.Any(m => m.IsCurrent))
+            {
+                <img src="icons/row-detect.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
+                @if (GetSelectedMarkerIndex() is int idx)
+                {
+                    <span class="tb-txt" style="font-size:0.78rem;font-weight:400;">행 마커: @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개 / @(_rowMarkers.Count(m => m.IsCurrent))개 · @(idx)번 마커 선택</span>
+                }
+                else
+                {
+                    <span class="tb-txt" style="font-size:0.78rem;font-weight:400;">행 마커: @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개 / @(_rowMarkers.Count(m => m.IsCurrent))개</span>
+                }
+            }
+        </div>
+        <div class="tb-right">
             @if (_project is not null)
             {
                 <span style="opacity:0.4;"><img src="icons/clock.svg" class="icon-invert-dark" style="width:14px;height:14px;" /></span>
@@ -175,20 +189,6 @@
                 else
                 {
                     <button class="tb-icon-btn" @onclick="EndSession"><img src="icons/pause.svg" style="width:16px;height:16px;" /></button>
-                }
-            }
-        </div>
-        <div class="tb-right">
-            @if (_rowMarkers.Any(m => m.IsCurrent))
-            {
-                <img src="icons/row-detect.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
-                @if (GetSelectedMarkerIndex() is int idx)
-                {
-                    <span class="tb-txt" style="font-size:0.78rem;font-weight:400;">행 마커: 현재 페이지 @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개 / 전체 @(_rowMarkers.Count(m => m.IsCurrent))개 · @(idx)번 마커 선택됨</span>
-                }
-                else
-                {
-                    <span class="tb-txt" style="font-size:0.78rem;font-weight:400;">행 마커: 현재 페이지 @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개 / 전체 @(_rowMarkers.Count(m => m.IsCurrent))개</span>
                 }
             }
         </div>
@@ -544,9 +544,14 @@
         border-bottom: 1px solid rgba(0,0,0,0.08);
         flex-wrap: nowrap;
         box-shadow: 0 1px 8px rgba(0,0,0,0.1);
+        overflow: visible;
     }
     .tb-left  { display:flex; align-items:center; gap:5px; flex-shrink:0; }
-    .tb-center { display:flex; align-items:center; gap:5px; flex:1; justify-content:center; }
+    .tb-center {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 5px; pointer-events: none;
+    }
+    .tb-center > * { pointer-events: auto; }
     .tb-right { display:flex; align-items:center; gap:5px; flex-shrink:0; }
     .tb-btn {
         background: rgba(0,0,0,0.07); border: 1px solid rgba(0,0,0,0.12);
@@ -597,7 +602,7 @@
         .marker-text-short { display: none !important; }
     }
     .top-bar-sub {
-        position: absolute; top: 70px; left: 0; right: 0; z-index: 199;
+        position: absolute; top: 66px; left: 0; right: 0; z-index: 199;
         height: 36px; padding: 0 10px;
         display: flex; align-items: center; gap: 6px;
         background: rgba(255,255,255,0.88);
