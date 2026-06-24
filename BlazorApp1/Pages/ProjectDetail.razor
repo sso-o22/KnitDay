@@ -815,13 +815,15 @@ else
 @if (_showPhoto && _selectedPhoto != null)
 {
     <div @onclick="() => _showPhoto = false"
-         style="position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;">
+         style="position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:9999;padding:44px 16px 16px;">
         <button @onclick="() => _showPhoto = false"
-                style="position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10000;">
-            <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
+                style="position:fixed;top:env(safe-area-inset-top,0px);right:0;left:0;height:44px;background:transparent;border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;">
+            <span style="background:rgba(255,255,255,0.2);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+                <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
+            </span>
         </button>
         <img src="@(!string.IsNullOrEmpty(_selectedPhoto.StorageUrl) ? _selectedPhoto.StorageUrl : _selectedPhoto.Base64Data)"
-             style="max-width:95vw;max-height:92vh;object-fit:contain;border-radius:8px;"
+             style="max-width:95vw;max-height:calc(100vh - 60px);object-fit:contain;border-radius:8px;"
              @onclick:stopPropagation="true" />
         @if (!string.IsNullOrEmpty(_selectedPhoto.Caption))
         {
@@ -1555,13 +1557,12 @@ else
     {
         if (_project == null) return;
         var photo = _project.Photos.FirstOrDefault(p => p.Id == id);
-        if (photo != null && !string.IsNullOrEmpty(photo.StorageUrl))
-        {
-            // Storage에서도 삭제 (백그라운드)
-            _ = Storage.DeletePhotoAsync(_project.Id.ToString(), id.ToString());
-        }
         _project.Photos.RemoveAll(p => p.Id == id);
+        _saving = true; StateHasChanged();
+        if (photo != null && !string.IsNullOrEmpty(photo.StorageUrl))
+            await Storage.DeletePhotoAsync(_project.Id.ToString(), id.ToString());
         await Save();
+        _saving = false; StateHasChanged();
     }
 
     void OpenPhoto(ProjectPhoto photo) { _selectedPhoto = photo; _showPhoto = true; }

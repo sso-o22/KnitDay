@@ -413,15 +413,17 @@
 @* 사진 라이트박스 *@
 @if (_lightboxPhoto != null)
 {
-    <div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;"
+    <div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:44px 16px 16px;"
          @onclick="() => _lightboxPhoto = null">
-        <img src="@(!string.IsNullOrEmpty(_lightboxPhoto.StorageUrl) ? _lightboxPhoto.StorageUrl : _lightboxPhoto.Base64Data)"
-             style="max-width:95vw;max-height:92vh;object-fit:contain;border-radius:8px;"
-             @onclick:stopPropagation="true" />
-        <button style="position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;"
+        <button style="position:fixed;top:env(safe-area-inset-top,0px);right:0;left:0;height:44px;background:transparent;border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;"
                 @onclick="() => _lightboxPhoto = null">
-            <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
+            <span style="background:rgba(255,255,255,0.2);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
+                <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
+            </span>
         </button>
+        <img src="@(!string.IsNullOrEmpty(_lightboxPhoto.StorageUrl) ? _lightboxPhoto.StorageUrl : _lightboxPhoto.Base64Data)"
+             style="max-width:95vw;max-height:calc(100vh - 60px);object-fit:contain;border-radius:8px;"
+             @onclick:stopPropagation="true" />
     </div>
 }
 
