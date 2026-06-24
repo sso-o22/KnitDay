@@ -1469,6 +1469,7 @@ else
         const int maxPhotos = 5;
         var files = e.GetMultipleFiles(10).ToList();
         int selectedCount = files.Count;
+        await JS.InvokeVoidAsync("showToast", $"선택된 사진: {selectedCount}장 / 남은 슬롯: {maxPhotos - _project.Photos.Count}장", "info");
         int remaining = maxPhotos - _project.Photos.Count;
         if (remaining <= 0)
         {
@@ -1477,7 +1478,10 @@ else
         }
         files = files.Take(remaining).ToList();
         if (selectedCount > remaining)
+        {
             await JS.InvokeVoidAsync("showToast", $"사진은 최대 {maxPhotos}장까지 추가할 수 있어요. {remaining}장만 추가됩니다.", "error");
+            await Task.Delay(1500);
+        }
         long maxFileSize = 20 * 1024 * 1024; // 20MB
         var oversized = files.Where(f => f.Size > maxFileSize).ToList();
         if (oversized.Any())
