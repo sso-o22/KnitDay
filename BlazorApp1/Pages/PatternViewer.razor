@@ -151,11 +151,11 @@
                     <img src="icons/row-detect.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
                     @if (GetSelectedMarkerIndex() is int idx)
                     {
-                        <span class="tb-txt" style="font-size:0.78rem;">[<b>@(idx)번</b>]&nbsp;@(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))&nbsp;/&nbsp;@(_rowMarkers.Count(m => m.IsCurrent))</span>
+                        <span class="tb-txt" style="font-size:0.78rem;">현재 페이지 @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개 / 전체 @(_rowMarkers.Count(m => m.IsCurrent))개 · @(idx)번 마커 선택됨</span>
                     }
                     else
                     {
-                        <span class="tb-txt" style="font-size:0.78rem;">@(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))&nbsp;/&nbsp;@(_rowMarkers.Count(m => m.IsCurrent))</span>
+                        <span class="tb-txt" style="font-size:0.78rem;">현재 페이지 @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개 / 전체 @(_rowMarkers.Count(m => m.IsCurrent))개</span>
                     }
                 }
             }
@@ -168,7 +168,8 @@
         <div class="tb-right">
             @if (_totalPages > 0)
             {
-                <div class="tb-zoom" style="padding:0 10px;">
+                <div class="tb-zoom" style="padding:0 10px;gap:5px;">
+                    <img src="icons/scroll.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
                     <span class="tb-txt" style="font-variant-numeric:tabular-nums;">@_currentPage / @_totalPages</span>
                 </div>
                 <div class="tb-div"></div>
@@ -179,7 +180,7 @@
                 </div>
                 <div class="tb-div"></div>
             }
-            <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick"><img src="icons/files.svg" style="width:20px;height:20px;" /></span>
+            <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick"><img src="icons/file-pdf.svg" class="icon-invert-dark" style="width:20px;height:20px;" /></span>
             @if (_pdfLoaded)
             {
                 <span class="tb-label" style="cursor:pointer;" @onclick="OnDeletePatternClick"><img src="icons/trash.svg" style="width:18px;height:18px;" /></span>
@@ -801,7 +802,7 @@
 {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:20px;">
         <div style="background:var(--white);border-radius:20px;padding:28px 24px;max-width:320px;width:100%;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.18);" @onclick:stopPropagation="true">
-            <div style="margin-bottom:12px;"><img src="icons/files.svg" style="width:32px;height:32px;" /></div>
+            <div style="margin-bottom:12px;"><img src="icons/file-pdf.svg" class="icon-invert-dark" style="width:32px;height:32px;" /></div>
             <div style="font-size:1rem;font-weight:600;margin-bottom:8px;color:var(--text-dark);">도안을 교체할까요?</div>
             <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:20px;">이미 불러온 도안이 있어요.<br/>새 파일로 교체하면 기존 필기가 사라져요.</div>
             <div style="display:flex;gap:10px;justify-content:center;">
