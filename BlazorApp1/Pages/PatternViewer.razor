@@ -127,9 +127,9 @@
     }
 
     <!-- ── 상단 오버레이 툴바 ── -->
-    <!-- 구조: [나가기 + 타이머] [가운데: 페이지/줌] [도안 불러오기] -->
+    <!-- 구조: [나가기 + 타이머 + 마커정보] [가운데: 비어있음] [페이지/줌/도안] -->
     <div class="top-bar">
-        <!-- 왼쪽: 나가기 + 타이머 -->
+        <!-- 왼쪽: 나가기 + 타이머 + 마커 정보 -->
         <div class="tb-left">
             <button class="tb-btn" @onclick="GoBack"><img src="icons/arrow-fat-left.svg" style="width:18px;height:18px;" /></button>
             @if (_project is not null)
@@ -145,24 +145,24 @@
                 {
                     <button class="tb-icon-btn" @onclick="EndSession"><img src="icons/pause.svg" style="width:16px;height:16px;" /></button>
                 }
+                @if (_rowMarkers.Any(m => m.IsCurrent))
+                {
+                    <div class="tb-div"></div>
+                    <img src="icons/row-detect.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
+                    @if (GetSelectedMarkerIndex() is int idx)
+                    {
+                        <span class="tb-txt" style="font-size:0.78rem;">[<b>@(idx)번</b>]&nbsp;@(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))&nbsp;/&nbsp;@(_rowMarkers.Count(m => m.IsCurrent))</span>
+                    }
+                    else
+                    {
+                        <span class="tb-txt" style="font-size:0.78rem;">@(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))&nbsp;/&nbsp;@(_rowMarkers.Count(m => m.IsCurrent))</span>
+                    }
+                }
             }
         </div>
 
-        <!-- 가운데: 마커 정보 -->
-        <div class="tb-center">
-            @if (_rowMarkers.Any(m => m.IsCurrent))
-            {
-                <img src="icons/row-detect.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
-                @if (GetSelectedMarkerIndex() is int idx)
-                {
-                    <span class="tb-txt" style="font-size:0.78rem;">[<b>@(idx)번</b>]&nbsp;@(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))&nbsp;/&nbsp;@(_rowMarkers.Count(m => m.IsCurrent))</span>
-                }
-                else
-                {
-                    <span class="tb-txt" style="font-size:0.78rem;">@(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))&nbsp;/&nbsp;@(_rowMarkers.Count(m => m.IsCurrent))</span>
-                }
-            }
-        </div>
+        <!-- 가운데: 비어있음 -->
+        <div class="tb-center"></div>
 
         <!-- 오른쪽: 페이지 + 줌 + 도안 불러오기 -->
         <div class="tb-right">
