@@ -1024,8 +1024,8 @@
     async Task ForceShowInstallGuide()
     {
         await JS.InvokeVoidAsync("localStorage.removeItem", "knitday_install_guide_dismissed");
-        await MainLayout.ForceShowInstallGuideAsync();
-        _debugInfo = "팝업 강제 표시 요청 완료.";
+        await JS.InvokeVoidAsync("dispatchForceInstallGuide");
+        _debugInfo = "팝업 강제 표시 요청 완료. (JS 이벤트 발송)";
         StateHasChanged();
     }
 
