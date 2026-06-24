@@ -225,7 +225,9 @@
     // 다크모드/테마 변경 이벤트 (Settings 등 다른 페이지에서 구독)
     public static event Action<bool>? OnDarkChanged;
     public static event Action<string>? OnThemeChanged;
+    public static event Func<Task>? OnForceShowInstall;
     public static void InvokeDarkChanged(bool isDark) => OnDarkChanged?.Invoke(isDark);
+    public static async Task ForceShowInstallGuideAsync() { if (OnForceShowInstall != null) await OnForceShowInstall.Invoke(); }
     int _finished;
     string _todayTime = "0분";
     private PeriodicTimer? _sidebarTimer;
@@ -390,6 +392,7 @@
             // 업데이트 버전 체크
             await CheckVersionUpdateAsync();
             // 홈화면 추가 안내 팝업 체크
+            OnForceShowInstall += HandleForceShowInstall;
             await Task.Delay(800);
             await CheckInstallGuideAsync();
             StateHasChanged();
@@ -421,6 +424,12 @@
     }
 
     bool _isAndroidInstall = false; // true면 Android 프롬프트 방식
+
+    async Task HandleForceShowInstall()
+    {
+        await CheckInstallGuideAsync();
+        await InvokeAsync(StateHasChanged);
+    }
 
     async Task CheckInstallGuideAsync()
     {
@@ -561,6 +570,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        OnForceShowInstall -= HandleForceShowInstall;
         _sidebarTimer?.Dispose();
         _sidebarTimer = null;
         _pollTimer?.Dispose();

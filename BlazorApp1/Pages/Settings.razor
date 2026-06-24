@@ -380,6 +380,23 @@
         </div>
     </div>
 
+    @* 관리자 전용 디버그 *@
+    @if (Auth.CurrentUser?.Uid == "xAz2xO8kulWUgoHnaaxCkzZV2nG2")
+    {
+        <div class="card" style="border:1.5px dashed #f0a0a0;">
+            <div class="card-title" style="margin-bottom:12px;color:#c05050;">🛠 PWA 디버그 (관리자)</div>
+            @if (_debugInfo != null)
+            {
+                <pre style="font-size:0.75rem;color:var(--text-mid);white-space:pre-wrap;word-break:break-all;background:var(--ivory-dark);padding:12px;border-radius:8px;margin-bottom:12px;">@_debugInfo</pre>
+            }
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-ghost btn-sm" @onclick="RunPwaDebug">환경 체크</button>
+                <button class="btn btn-ghost btn-sm" @onclick="ClearInstallDismissed">팝업 차단 해제</button>
+                <button class="btn btn-ghost btn-sm" @onclick="ForceShowInstallGuide">팝업 강제 표시</button>
+            </div>
+        </div>
+    }
+
 </div>
 
 @if (_showImportModal)
@@ -967,6 +984,49 @@
     {
         MainLayout.OnDarkChanged -= OnDarkChangedHandler;
         Auth.OnAuthChanged -= OnAuthChangedHandler;
+    }
+
+    // ── 관리자 PWA 디버그 ────────────────────────────────────────
+    string? _debugInfo;
+
+    async Task RunPwaDebug()
+    {
+        try
+        {
+            var isStandalone = await JS.InvokeAsync<bool>("pwaInstall.isStandalone");
+            var isIosSafari  = await JS.InvokeAsync<bool>("pwaInstall.isIosSafari");
+            var isAndroid    = await JS.InvokeAsync<bool>("pwaInstall.isAndroid");
+            var canPrompt    = await JS.InvokeAsync<bool>("pwaInstall.canPrompt");
+            var dismissed    = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_install_guide_dismissed");
+            var ua           = await JS.InvokeAsync<string>("eval", "navigator.userAgent");
+            _debugInfo =
+                $"isStandalone : {isStandalone}\n" +
+                $"isIosSafari  : {isIosSafari}\n" +
+                $"isAndroid    : {isAndroid}\n" +
+                $"canPrompt    : {canPrompt}\n" +
+                $"dismissed    : {dismissed ?? "null"}\n" +
+                $"UA           : {ua}";
+        }
+        catch (Exception ex)
+        {
+            _debugInfo = $"오류: {ex.Message}";
+        }
+        StateHasChanged();
+    }
+
+    async Task ClearInstallDismissed()
+    {
+        await JS.InvokeVoidAsync("localStorage.removeItem", "knitday_install_guide_dismissed");
+        _debugInfo = "팝업 차단 해제 완료. 환경 체크로 dismissed 값 확인하세요.";
+        StateHasChanged();
+    }
+
+    async Task ForceShowInstallGuide()
+    {
+        await JS.InvokeVoidAsync("localStorage.removeItem", "knitday_install_guide_dismissed");
+        await MainLayout.ForceShowInstallGuideAsync();
+        _debugInfo = "팝업 강제 표시 요청 완료.";
+        StateHasChanged();
     }
 
     async Task SignIn()
