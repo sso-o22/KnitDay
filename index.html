@@ -165,9 +165,8 @@
                     el.style.color = '#7a5c00';
                     el.style.fontSize = '0.85rem';
                     el.style.lineHeight = '1.7';
-                    el.innerHTML = '⚠️ 카카오톡·인스타그램 내 브라우저에서는<br>앱이 실행되지 않아요.<br><br>' +
-                        '<b>Safari 또는 Chrome으로 열어주세요.</b><br>' +
-                        '<span style="font-size:0.78rem;color:#9a7c00;">우측 상단 ··· 메뉴 → 기본 브라우저로 열기</span>';
+                    el.innerHTML = '<img src="/KnitDay/icons/warning.svg" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;opacity:0.75;"> 카카오톡·인스타그램 내 브라우저에서는<br>제대로 동작하지 않아요.<br><br>' +
+                        '<b>Safari 또는 Chrome으로 열어주세요.</b>';
                 }
             }
         })();
@@ -182,9 +181,8 @@
                 el.style.color = '#7a5c00';
                 el.style.fontSize = '0.85rem';
                 el.style.lineHeight = '1.7';
-                el.innerHTML = '⚠️ 카카오톡·인스타그램 내 브라우저에서는<br>앱이 실행되지 않아요.<br><br>' +
-                    '<b>Safari 또는 Chrome으로 열어주세요.</b><br>' +
-                    '<span style="font-size:0.78rem;color:#9a7c00;">우측 상단 ··· 메뉴 → 기본 브라우저로 열기</span>';
+                el.innerHTML = '<img src="/KnitDay/icons/warning.svg" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;opacity:0.75;"> 카카오톡·인스타그램 내 브라우저에서는<br>제대로 동작하지 않아요.<br><br>' +
+                    '<b>Safari 또는 Chrome으로 열어주세요.</b>';
             } else {
                 el.style.display = 'block';
                 el.textContent = '오류: ' + msg + (src ? ' (' + src.split('/').pop() + ':' + line + ')' : '');
