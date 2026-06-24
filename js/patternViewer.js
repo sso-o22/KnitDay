@@ -243,7 +243,8 @@ let basePaths = []; // 저장된 필기 (박제)
             } else {
                 _stroke(anno, pageNum, bx, by, bx + 0.1, by + 0.1);
             }
-            // 직선 스냅: 0.9초 후 직선 모드 전환
+            // 직선 스냅: 0.9초 후 직선 모드 전환 (펜/형광펜만, 지우개 제외)
+            if (_tool !== 'eraser') {
             _snapTimer = setTimeout(() => {
                 if (isDrawing && currentPath && currentPath.points.length >= 1) {
                     _snapTriggered = true;
@@ -253,6 +254,7 @@ let basePaths = []; // 저장된 필기 (박제)
                     if (navigator.vibrate) navigator.vibrate(30);
                 }
             }, 900);
+            }
         }
 
         function onMove(e) {
