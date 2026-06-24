@@ -72,6 +72,13 @@ window.firebaseAuth = {
             }
             // ────────────────────────────────────────────────────────────
 
+            // allowedUsers에 uid 업데이트 (탈퇴/완전삭제 시 활용)
+            try {
+                await setDoc(doc(db, 'allowedUsers', u.email),
+                    { uid: u.uid, lastLoginAt: new Date().toISOString() },
+                    { merge: true });
+            } catch (_) { /* uid 업데이트 실패해도 로그인은 진행 */ }
+
             return { uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL };
         } catch (e) {
             // iOS Safari 등 팝업 차단 시 redirect 방식으로 폴백
@@ -159,7 +166,7 @@ window.firebaseStore = {
             const parts = path.split('/');
             const snap = await getDocs(collection(db, ...parts));
             const items = [];
-            snap.forEach(d => items.push(d.data()));
+            snap.forEach(d => items.push({ id: d.id, ...d.data() }));
             return JSON.stringify(items);
         } catch (e) {
             console.error('getCollection:', path, e);
@@ -211,5 +218,17 @@ window.firebaseStore = {
             console.error('saveCollection:', basePath, e);
             return false;
         }
+    }
+};
+
+// ── 계정 탈퇴 ────────────────────────────────────────────────────
+window.deleteKnitDayAccount = async () => {
+    try {
+        const fn = httpsCallable(functions, 'deleteAccount');
+        const result = await fn({});
+        return JSON.stringify(result.data);
+    } catch (e) {
+        console.error('deleteAccount:', e);
+        return JSON.stringify({ success: false, error: e.message });
     }
 };
