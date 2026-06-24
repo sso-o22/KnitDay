@@ -148,18 +148,30 @@
             }
         </div>
 
-        <!-- 가운데: 페이지수만 -->
+        <!-- 가운데: 마커 정보 -->
         <div class="tb-center">
-            @if (_totalPages > 0)
+            @if (_rowMarkers.Any(m => m.IsCurrent))
             {
-                <span class="tb-txt">@_currentPage / @_totalPages</span>
+                <img src="icons/row-detect.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
+                @if (GetSelectedMarkerIndex() is int idx)
+                {
+                    <span class="tb-txt" style="font-size:0.78rem;">[<b>@(idx)번</b>]&nbsp;@(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))&nbsp;/&nbsp;@(_rowMarkers.Count(m => m.IsCurrent))</span>
+                }
+                else
+                {
+                    <span class="tb-txt" style="font-size:0.78rem;">@(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))&nbsp;/&nbsp;@(_rowMarkers.Count(m => m.IsCurrent))</span>
+                }
             }
         </div>
 
-        <!-- 오른쪽: 줌 + 도안 불러오기 -->
+        <!-- 오른쪽: 페이지 + 줌 + 도안 불러오기 -->
         <div class="tb-right">
             @if (_totalPages > 0)
             {
+                <div class="tb-zoom" style="padding:0 10px;">
+                    <span class="tb-txt" style="font-variant-numeric:tabular-nums;">@_currentPage / @_totalPages</span>
+                </div>
+                <div class="tb-div"></div>
                 <div class="tb-zoom">
                     <button class="tb-zoom-btn" @onclick="ZoomOut"><img src="icons/magnifying-glass-minus.svg" style="width:16px;height:16px;" /></button>
                     <span class="tb-txt" style="min-width:36px;text-align:center;">@((int)(_zoom*100))%</span>
@@ -203,19 +215,6 @@
                 {
                     <div class="dp-sep"></div>
                     @* 마커 개수 + 선택한 마커 순서 표시 *@
-                    @if (_rowMarkers.Any())
-                    {
-                        <div class="dp-val" style="font-size:9px;text-align:center;color:var(--text-light);">
-                            전체 @(_rowMarkers.Count(m => m.IsCurrent))개 · 이 페이지 @(_rowMarkers.Count(m => m.IsCurrent && m.Page == _currentPage))개
-                        </div>
-                        @if (GetSelectedMarkerIndex() is int selectedIndex)
-                        {
-                            <div class="dp-val" style="font-size:9px;text-align:center;color:#2979ff;font-weight:600;margin-top:2px;">
-                                @(selectedIndex)번 마커 선택됨
-                            </div>
-                        }
-                        <div class="dp-sep"></div>
-                    }
                     @* 색상: 행마커 — 마커를 선택했으면 그 마커 색만, 아니면 기본색(다음에 추가할 마커용)을 보여주고 변경 *@
                     <div class="dp-row" style="justify-content:center;gap:4px;">
                         <input type="color" value="@CurrentColorPickerValue()" @oninput="OnRowMarkerColorChange" title="@(_selectedMarkerId != null ? "선택한 행의 색상" : "행 마커 기본 색상")"
@@ -1220,8 +1219,9 @@
             try { await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", ProjectId.ToString()); } catch { }
             if (!string.IsNullOrEmpty(_project.PatternCloudUrl))
             {
-                _ = Storage.DeletePdfAsync(ProjectId.ToString());
+                await Storage.DeletePdfAsync(ProjectId.ToString(), _project.PatternFileSizeBytes);
                 _project.PatternCloudUrl = "";
+                _project.PatternFileSizeBytes = 0;
             }
             await SaveProject();
         }
@@ -1267,9 +1267,9 @@
             // 클라우드 PDF 삭제
             if (!string.IsNullOrEmpty(_project.PatternCloudUrl))
             {
-                _ = Storage.DeletePdfAsync(ProjectId.ToString());
-                await Storage.SubtractCloudUsageAsync("pdf", 0);
+                await Storage.DeletePdfAsync(ProjectId.ToString(), _project.PatternFileSizeBytes);
                 _project.PatternCloudUrl = "";
+                _project.PatternFileSizeBytes = 0;
             }
             await SaveProject();
         }
@@ -1373,13 +1373,16 @@
                         {
                             try
                             {
-                                var (cloudUrl, cloudErr) = await Storage.UploadPdfAsync(ProjectId.ToString(), bytes);
+                                var (cloudUrl, cloudErr, cloudBytes) = await Storage.UploadPdfAsync(ProjectId.ToString(), bytes);
                                 if (cloudErr == "quota")
                                     await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
                                 else if (cloudErr == "not_logged_in")
                                     await JS.InvokeVoidAsync("showToast", "로그인 정보를 확인할 수 없어요. 도안이 이 기기에만 저장됩니다.", "error");
                                 else if (!string.IsNullOrEmpty(cloudUrl))
+                                {
                                     _project.PatternCloudUrl = cloudUrl;
+                                    _project.PatternFileSizeBytes = cloudBytes;
+                                }
                             }
                             catch { }
                         }
