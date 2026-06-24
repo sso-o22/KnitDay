@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "WH/T3gnE",
+  "version": "wo1t8L9K",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-HhGIxssEaA7E+6IXQS+El4ncjvWlqdsOS9uI/OQCY28=",
+      "hash": "sha256-YLAooEOdB2ej5QKENt9+A+ogLteVednsjko9VZ2IrSo=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-002BBRnfYbHdmjNLx56M6YqTJaWBaxV5WsGDhXPUTWE=",
+      "hash": "sha256-pzooWbx/BstkD/RAqooW1025BPeWTmSnWvmBGuUD2Rk=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -922,7 +922,7 @@ self.assetsManifest = {
       "url": "images/logo_color.png"
     },
     {
-      "hash": "sha256-MvEMKkD9NydVU6MIa9Xu435KtCiVebFEuB22avv9MuA=",
+      "hash": "sha256-krbNnfwYUxG5jr1nSaFWqGT1b8cDXEfteYqxikTUGzQ=",
       "url": "index.html"
     },
     {
@@ -2566,7 +2566,7 @@ self.assetsManifest = {
       "url": "sample-data/weather.json"
     },
     {
-      "hash": "sha256-U0y1cSBsRE6hoAizMKDOJPDv2OuqpTwrVnOrxJUWJ5I=",
+      "hash": "sha256-tDpXRKFbVrV3Es6cDPZZ3UUMn++9LACNFmuwJeenYzs=",
       "url": "version.json"
     }
   ]
