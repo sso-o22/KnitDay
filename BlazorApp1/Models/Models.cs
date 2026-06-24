@@ -79,7 +79,9 @@ namespace KnitLog.Models
                 : 0;
 
         public string Memo { get; set; } = "";
-        public string PhotoBase64 { get; set; } = "";  // 사진 (base64)
+        public string PhotoBase64 { get; set; } = "";      // 사진 (base64, 로컬/fallback)
+        public string PhotoStorageUrl { get; set; } = "";  // 사진 (Cloudinary URL)
+        public long PhotoFileSizeBytes { get; set; } = 0;  // 클라우드 파일 크기 (용량 차감용)
         public DateTime CreatedAt { get; set; } = DateTime.Now;
     }
 
@@ -117,6 +119,7 @@ namespace KnitLog.Models
         public string Base64Data { get; set; } = "";  // 레거시 — 로컬 저장
         public string StorageUrl { get; set; } = "";  // Firebase Storage URL
         public string Caption { get; set; } = "";
+        public long FileSizeBytes { get; set; } = 0;  // 클라우드 파일 크기 (용량 차감용)
         public DateTime TakenAt { get; set; } = DateTime.Now;
     }
 
@@ -165,6 +168,7 @@ namespace KnitLog.Models
         public bool HasSavedPattern { get; set; } = false;       // 저장된 PDF 있는지
         public string PatternFileName { get; set; } = "";        // 원본 파일명
         public string PatternCloudUrl { get; set; } = "";      // Cloudinary PDF URL
+        public long PatternFileSizeBytes { get; set; } = 0;    // PDF 클라우드 파일 크기 (용량 차감용)
         public string ViewerAnnotations { get; set; } = "";      // 필기 paths JSON
         public string ViewerRulers { get; set; } = "";           // 도형 rulers JSON
         public string ViewerRowMarkers { get; set; } = "";       // 행 마커 JSON

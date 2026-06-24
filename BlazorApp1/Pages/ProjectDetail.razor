@@ -631,7 +631,7 @@ else
         <div class="card-title" style="display:flex; align-items:center; gap:6px;"><img src="icons/image.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 과정 사진</div>
 
         @* 5칸 슬롯 그리드 *@
-        <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:8px;">
+        <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; margin-bottom:8px;">
             @for (int i = 0; i < 5; i++)
             {
                 var idx = i;
@@ -815,13 +815,15 @@ else
 @if (_showPhoto && _selectedPhoto != null)
 {
     <div @onclick="() => _showPhoto = false"
-         style="position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;">
+         style="position:fixed;inset:0;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;z-index:9999;padding:44px 16px 16px;">
         <button @onclick="() => _showPhoto = false"
-                style="position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:10000;">
-            <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
+                style="position:fixed;top:env(safe-area-inset-top,0px);right:0;left:0;height:44px;background:transparent;border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;">
+            <span style="background:rgba(0,0,0,0.55);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+                <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
+            </span>
         </button>
         <img src="@(!string.IsNullOrEmpty(_selectedPhoto.StorageUrl) ? _selectedPhoto.StorageUrl : _selectedPhoto.Base64Data)"
-             style="max-width:95vw;max-height:92vh;object-fit:contain;border-radius:8px;"
+             style="max-width:95vw;max-height:calc(100vh - 60px);object-fit:contain;border-radius:8px;"
              @onclick:stopPropagation="true" />
         @if (!string.IsNullOrEmpty(_selectedPhoto.Caption))
         {
@@ -1468,6 +1470,7 @@ else
         if (_project == null) return;
         const int maxPhotos = 5;
         var files = e.GetMultipleFiles(10).ToList();
+        int selectedCount = files.Count;
         int remaining = maxPhotos - _project.Photos.Count;
         if (remaining <= 0)
         {
@@ -1475,13 +1478,27 @@ else
             return;
         }
         files = files.Take(remaining).ToList();
-        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...", "info");
+        if (selectedCount > remaining)
+        {
+            await JS.InvokeVoidAsync("showToast", $"남은 슬롯이 {remaining}장뿐이에요. {remaining}장만 추가됩니다.", "error");
+            await Task.Delay(1500);
+        }
+        long maxFileSize = 20 * 1024 * 1024;
+        var oversized = files.Where(f => f.Size > maxFileSize).ToList();
+        if (oversized.Any())
+        {
+            var names = string.Join(", ", oversized.Select(f => f.Name));
+            await JS.InvokeVoidAsync("showToast", $"20MB를 초과하는 사진은 추가할 수 없어요. ({names})", "error");
+            files = files.Where(f => f.Size <= maxFileSize).ToList();
+            if (!files.Any()) return;
+        }
+        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...");
         StateHasChanged();
         foreach (var file in files)
         {
             try
             {
-                using var stream = file.OpenReadStream(20 * 1024 * 1024);
+                using var stream = file.OpenReadStream(maxFileSize);
                 using var ms = new System.IO.MemoryStream();
                 await stream.CopyToAsync(ms);
                 // HEIF/HEIC → JPEG 압축
@@ -1495,14 +1512,17 @@ else
                 // 로그인 상태면 Cloudinary에 업로드
                 if (Storage.IsLoggedIn)
                 {
-                    var (url, err) = await Storage.UploadPhotoAsync(_project.Id.ToString(), photo.Id.ToString(), compressed);
+                    var (url, err, fileBytes) = await Storage.UploadPhotoAsync(_project.Id.ToString(), photo.Id.ToString(), compressed);
                     if (err == "quota")
                     {
                         await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 사진을 삭제하고 다시 시도해 주세요.", "error");
                         return;
                     }
                     if (!string.IsNullOrEmpty(url))
+                    {
                         photo.StorageUrl = url;
+                        photo.FileSizeBytes = fileBytes;
+                    }
                     else
                         photo.Base64Data = compressed; // 업로드 실패 시 로컬 fallback
                 }
@@ -1540,13 +1560,12 @@ else
     {
         if (_project == null) return;
         var photo = _project.Photos.FirstOrDefault(p => p.Id == id);
-        if (photo != null && !string.IsNullOrEmpty(photo.StorageUrl))
-        {
-            // Storage에서도 삭제 (백그라운드)
-            _ = Storage.DeletePhotoAsync(_project.Id.ToString(), id.ToString());
-        }
         _project.Photos.RemoveAll(p => p.Id == id);
+        _saving = true; StateHasChanged();
+        if (photo != null && !string.IsNullOrEmpty(photo.StorageUrl))
+            await Storage.DeletePhotoAsync(_project.Id.ToString(), id.ToString(), photo.FileSizeBytes);
         await Save();
+        _saving = false; StateHasChanged();
     }
 
     void OpenPhoto(ProjectPhoto photo) { _selectedPhoto = photo; _showPhoto = true; }

@@ -27,9 +27,10 @@
     </script>
 
     <link rel="stylesheet" href="css/app.css" />
-    <link rel="icon" href="icons/Knit.svg" type="image/svg+xml" />
+    <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+    <link rel="shortcut icon" href="icon-192.png" />
 
-    <link rel="preload" href="icons/Knit.svg"         as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/Home.svg"        as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/Calendar.svg"   as="image" type="image/svg+xml" />
     <link rel="preload" href="icons/octopus.svg"    as="image" type="image/svg+xml" />
@@ -53,6 +54,12 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="theme-color" content="#ffffff" />
     <meta name="apple-mobile-web-app-title" content="KnitDay" />
+
+    <meta property="og:title" content="KnitDay" />
+    <meta property="og:description" content="나만의 뜨개 프로젝트 매니저" />
+    <meta property="og:image" content="https://knitday.kr/icon-512.png" />
+    <meta property="og:url" content="https://knitday.kr" />
+    <meta property="og:type" content="website" />
 </head>
 <body>
     <div id="rotate-overlay" style="
@@ -147,9 +154,40 @@
 </div>
 
     <script>
+        // 인앱 브라우저 감지 후 즉시 안내
+        (function() {
+            var ua = navigator.userAgent;
+            var isInApp = /KAKAOTALK|Instagram|FBAN|FBAV|Line|NaverApp/i.test(ua);
+            if (isInApp) {
+                var el = document.getElementById('loading-error');
+                if (el) {
+                    el.style.display = 'block';
+                    el.style.background = '#fff8e1';
+                    el.style.color = '#7a5c00';
+                    el.style.fontSize = '0.85rem';
+                    el.style.lineHeight = '1.7';
+                    el.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#9a7c00" viewBox="0 0 256 256" style="vertical-align:middle;margin-right:6px;"><path d="M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM222.93,203.8a8.5,8.5,0,0,1-7.48,4.2H40.55a8.5,8.5,0,0,1-7.48-4.2,7.59,7.59,0,0,1,0-7.72L120.52,44.21a8.75,8.75,0,0,1,15,0l87.45,151.87A7.59,7.59,0,0,1,222.93,203.8ZM120,144V104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,180Z"></path></svg> 카카오톡·인스타그램 내 브라우저에서는<br>제대로 동작하지 않아요.<br><br>' +
+                        '<b>Safari 또는 Chrome으로 열어주세요.</b>';
+                }
+            }
+        })();
         window.onerror = function(msg, src, line, col, err) {
             var el = document.getElementById('loading-error');
-            if (el) { el.style.display = 'block'; el.textContent = '오류: ' + msg + (src ? ' (' + src.split('/').pop() + ':' + line + ')' : ''); }
+            if (!el) return;
+            var ua = navigator.userAgent;
+            var isInApp = /KAKAOTALK|Instagram|FBAN|FBAV|Line|NaverApp/i.test(ua);
+            if (isInApp || msg === 'Script error.') {
+                el.style.display = 'block';
+                el.style.background = '#fff8e1';
+                el.style.color = '#7a5c00';
+                el.style.fontSize = '0.85rem';
+                el.style.lineHeight = '1.7';
+                el.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="#9a7c00" viewBox="0 0 256 256" style="vertical-align:middle;margin-right:6px;"><path d="M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM222.93,203.8a8.5,8.5,0,0,1-7.48,4.2H40.55a8.5,8.5,0,0,1-7.48-4.2,7.59,7.59,0,0,1,0-7.72L120.52,44.21a8.75,8.75,0,0,1,15,0l87.45,151.87A7.59,7.59,0,0,1,222.93,203.8ZM120,144V104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,180Z"></path></svg> 카카오톡·인스타그램 내 브라우저에서는<br>제대로 동작하지 않아요.<br><br>' +
+                    '<b>Safari 또는 Chrome으로 열어주세요.</b>';
+            } else {
+                el.style.display = 'block';
+                el.textContent = '오류: ' + msg + (src ? ' (' + src.split('/').pop() + ':' + line + ')' : '');
+            }
         };
         window.addEventListener('unhandledrejection', function(e) {
             var el = document.getElementById('loading-error');

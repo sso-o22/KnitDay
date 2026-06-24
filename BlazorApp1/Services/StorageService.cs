@@ -104,48 +104,48 @@ namespace KnitLog.Services
         // ── Cloudinary 업로드 ────────────────────────────────
         public const long PerUserLimitBytes = 500L * 1024 * 1024; // 500MB
 
-        public async Task<(string? url, string? error)> UploadPhotoAsync(string projectId, string photoId, string base64DataUrl)
+        public async Task<(string? url, string? error, long bytes)> UploadPhotoAsync(string projectId, string photoId, string base64DataUrl)
         {
             try
             {
                 var (used, _) = await GetCloudUsageAsync();
                 if (used >= PerUserLimitBytes)
-                    return (null, "quota");
+                    return (null, "quota", 0);
                 var publicId = $"{Uid ?? "anon"}/projects/{projectId}/{photoId}";
                 var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64DataUrl, publicId, "image");
-                var url = await ParseCloudinaryResult(json, "photo");
-                return (url, null);
+                var (url, bytes) = await ParseCloudinaryResult(json, "photo");
+                return (url, null, bytes);
             }
-            catch { return (null, "error"); }
+            catch { return (null, "error", 0); }
         }
 
-        public async Task<(string? url, string? error)> UploadPdfAsync(string projectId, byte[] bytes)
+        public async Task<(string? url, string? error, long bytes)> UploadPdfAsync(string projectId, byte[] bytes)
         {
-            if (!IsLoggedIn || string.IsNullOrEmpty(Uid)) return (null, "not_logged_in");
+            if (!IsLoggedIn || string.IsNullOrEmpty(Uid)) return (null, "not_logged_in", 0);
             try
             {
                 var (photoUsed, pdfUsed) = await GetCloudUsageAsync();
                 if (photoUsed + pdfUsed >= PerUserLimitBytes)
-                    return (null, "quota");
+                    return (null, "quota", 0);
                 var publicId = $"{Uid}/pdfs/{projectId}";
                 using var streamRef = new DotNetStreamReference(new System.IO.MemoryStream(bytes), leaveOpen: false);
                 var json = await _js.InvokeAsync<string?>("uploadPdfToCloudinary", streamRef, publicId);
-                var url = await ParseCloudinaryResult(json, "pdf");
-                return (url, null);
+                var (url, fileBytes) = await ParseCloudinaryResult(json, "pdf");
+                return (url, null, fileBytes);
             }
-            catch { return (null, "error"); }
+            catch { return (null, "error", 0); }
         }
 
         // 마이그레이션용 base64 오버로드
-        public async Task<(string? url, string? error)> UploadPdfAsync(string projectId, string base64Data)
+        public async Task<(string? url, string? error, long bytes)> UploadPdfAsync(string projectId, string base64Data)
         {
-            if (!IsLoggedIn || string.IsNullOrEmpty(Uid)) return (null, "not_logged_in");
+            if (!IsLoggedIn || string.IsNullOrEmpty(Uid)) return (null, "not_logged_in", 0);
             try
             {
                 var bytes = Convert.FromBase64String(base64Data);
                 return await UploadPdfAsync(projectId, bytes);
             }
-            catch { return (null, "error"); }
+            catch { return (null, "error", 0); }
         }
 
         // 용량 차감 (앱에서 사진/PDF 삭제 시 호출)
@@ -171,9 +171,9 @@ namespace KnitLog.Services
             catch { }
         }
 
-        private async Task<string?> ParseCloudinaryResult(string? json, string type)
+        private async Task<(string? url, long bytes)> ParseCloudinaryResult(string? json, string type)
         {
-            if (string.IsNullOrEmpty(json)) return null;
+            if (string.IsNullOrEmpty(json)) return (null, 0);
             try
             {
                 using var doc = System.Text.Json.JsonDocument.Parse(json);
@@ -181,9 +181,9 @@ namespace KnitLog.Services
                 var bytes = doc.RootElement.TryGetProperty("bytes", out var b) ? b.GetInt64() : 0;
                 if (!string.IsNullOrEmpty(url) && bytes > 0 && !string.IsNullOrEmpty(Uid))
                     await AddCloudUsageAsync(type, bytes);
-                return url;
+                return (url, bytes);
             }
-            catch { return null; }
+            catch { return (null, 0); }
         }
 
         // ── 용량 사용량 Firestore 누적 ────────────────────────
@@ -238,18 +238,46 @@ namespace KnitLog.Services
         }
 
         // Cloudinary 파일 삭제 — Firebase Cloud Function 경유 (API Secret 보안)
-        public async Task DeletePhotoAsync(string projectId, string photoId)
+        public async Task DeletePhotoAsync(string projectId, string photoId, long fileSizeBytes = 0)
         {
             if (!IsLoggedIn) return;
             var publicId = $"{Uid}/projects/{projectId}/{photoId}";
             await DeleteCloudinaryAssetAsync(publicId, "image");
+            if (fileSizeBytes > 0)
+                await SubtractCloudUsageAsync("photo", fileSizeBytes);
         }
 
-        public async Task DeletePdfAsync(string projectId)
+        public async Task<(string? url, string? error, long bytes)> UploadSwatchPhotoAsync(string swatchId, string base64DataUrl)
+        {
+            try
+            {
+                var (used, _) = await GetCloudUsageAsync();
+                if (used >= PerUserLimitBytes)
+                    return (null, "quota", 0);
+                var publicId = $"{Uid ?? "anon"}/swatches/{swatchId}";
+                var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64DataUrl, publicId, "image");
+                var (url, bytes) = await ParseCloudinaryResult(json, "photo");
+                return (url, null, bytes);
+            }
+            catch { return (null, "error", 0); }
+        }
+
+        public async Task DeleteSwatchPhotoAsync(string swatchId, long fileSizeBytes = 0)
+        {
+            if (!IsLoggedIn) return;
+            var publicId = $"{Uid}/swatches/{swatchId}";
+            await DeleteCloudinaryAssetAsync(publicId, "image");
+            if (fileSizeBytes > 0)
+                await SubtractCloudUsageAsync("photo", fileSizeBytes);
+        }
+
+        public async Task DeletePdfAsync(string projectId, long fileSizeBytes = 0)
         {
             if (!IsLoggedIn) return;
             var publicId = $"{Uid}/pdfs/{projectId}";
             await DeleteCloudinaryAssetAsync(publicId, "raw");
+            if (fileSizeBytes > 0)
+                await SubtractCloudUsageAsync("pdf", fileSizeBytes);
         }
 
         async Task DeleteCloudinaryAssetAsync(string publicId, string resourceType)
@@ -336,7 +364,7 @@ namespace KnitLog.Services
                     {
                         try
                         {
-                            var (u, err) = await UploadPhotoAsync(proj.Id.ToString(), photo.Id.ToString(), photo.Base64Data);
+                            var (u, err, _) = await UploadPhotoAsync(proj.Id.ToString(), photo.Id.ToString(), photo.Base64Data);
                             if (err == "quota") { quotaReached = true; break; }
                             if (!string.IsNullOrEmpty(u)) { url = u; break; }
                         }
@@ -378,9 +406,9 @@ namespace KnitLog.Services
                             var base64Pdf = await _js.InvokeAsync<string?>("patternViewer.getSavedPdfBase64", proj.Id.ToString());
                             if (!string.IsNullOrEmpty(base64Pdf))
                             {
-                                var (u, err) = await UploadPdfAsync(proj.Id.ToString(), base64Pdf);
+                                var (u, err, pdfBytes) = await UploadPdfAsync(proj.Id.ToString(), base64Pdf);
                                 if (err == "quota") { quotaReached = true; break; }
-                                if (!string.IsNullOrEmpty(u)) { cloudUrl = u; break; }
+                                if (!string.IsNullOrEmpty(u)) { cloudUrl = u; proj.PatternFileSizeBytes = pdfBytes; break; }
                             }
                             else break; // PDF 없음 — 재시도 불필요
                         }

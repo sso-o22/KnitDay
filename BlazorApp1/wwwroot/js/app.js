@@ -904,3 +904,20 @@ window.pwaInstall = {
     // Android 여부
     isAndroid: () => /Android/.test(navigator.userAgent)
 };
+
+// ── PWA 설치 팝업 강제 표시 ──────────────────────────────────────
+window._installGuideRef = null;
+
+window.registerInstallGuideListener = (dotNetRef) => {
+    window._installGuideRef = dotNetRef;
+};
+
+window.dispatchForceInstallGuide = async () => {
+    if (window._installGuideRef) {
+        try {
+            await window._installGuideRef.invokeMethodAsync('HandleForceShowInstall');
+        } catch(e) {
+            console.warn('HandleForceShowInstall failed:', e);
+        }
+    }
+};

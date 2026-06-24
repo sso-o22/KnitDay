@@ -241,7 +241,7 @@
 
                 <!-- 사진 추가 (5칸 슬롯) -->
                 <div class="form-label" style="margin-bottom:6px;">사진</div>
-                <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:6px; margin-bottom:6px;">
+                <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; margin-bottom:6px;">
                     @for (int ei = 0; ei < 5; ei++)
                     {
                         var eIdx = ei;
@@ -413,15 +413,17 @@
 @* 사진 라이트박스 *@
 @if (_lightboxPhoto != null)
 {
-    <div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;"
+    <div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:44px 16px 16px;"
          @onclick="() => _lightboxPhoto = null">
-        <img src="@(!string.IsNullOrEmpty(_lightboxPhoto.StorageUrl) ? _lightboxPhoto.StorageUrl : _lightboxPhoto.Base64Data)"
-             style="max-width:95vw;max-height:92vh;object-fit:contain;border-radius:8px;"
-             @onclick:stopPropagation="true" />
-        <button style="position:fixed;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;"
+        <button style="position:fixed;top:env(safe-area-inset-top,0px);right:0;left:0;height:44px;background:transparent;border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;"
                 @onclick="() => _lightboxPhoto = null">
-            <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
+            <span style="background:rgba(0,0,0,0.55);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+                <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
+            </span>
         </button>
+        <img src="@(!string.IsNullOrEmpty(_lightboxPhoto.StorageUrl) ? _lightboxPhoto.StorageUrl : _lightboxPhoto.Base64Data)"
+             style="max-width:95vw;max-height:calc(100vh - 60px);object-fit:contain;border-radius:8px;"
+             @onclick:stopPropagation="true" />
     </div>
 }
 
@@ -467,6 +469,7 @@
     bool _editing = false;
     bool _showDeleteConfirm = false;
     ProjectPhoto? _lightboxPhoto = null;
+    List<ProjectPhoto> _photoSnapshot = new(); // 수정 모드 진입 시 스냅샷
 
     void OpenPhotoLightbox(ProjectPhoto photo) => _lightboxPhoto = photo;
     List<ProjectPhoto> PopupValidPhotos => Project?.Photos
@@ -514,6 +517,15 @@
 
     async Task ClosePopup()
     {
+        if (_editing && Project != null)
+        {
+            var added = Project.Photos.Except(_photoSnapshot).ToList();
+            foreach (var p in added)
+                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString(), p.FileSizeBytes);
+            Project.Photos.Clear();
+            foreach (var p in _photoSnapshot) Project.Photos.Add(p);
+            _editing = false;
+        }
         if (_deletePdf && OnDeletePdf.HasDelegate)
             await OnDeletePdf.InvokeAsync();
         _deletePdf = false;
@@ -524,11 +536,22 @@
     void OpenEditing()
     {
         LoadMeasures();
+        _photoSnapshot = Project!.Photos.Select(p => p).ToList(); // 스냅샷
         _editing = true;
     }
 
-    void CancelEditing()
+    async Task CancelEditing()
     {
+        if (Project != null)
+        {
+            // 스냅샷 이후 추가된 사진 클라우드에서 삭제
+            var added = Project.Photos.Except(_photoSnapshot).ToList();
+            foreach (var p in added)
+                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString(), p.FileSizeBytes);
+            // 스냅샷으로 복원
+            Project.Photos.Clear();
+            foreach (var p in _photoSnapshot) Project.Photos.Add(p);
+        }
         LoadMeasures();
         _editing = false;
     }
@@ -574,6 +597,13 @@
         if (Project == null) return;
         _saving = true; StateHasChanged();
 
+        // 스냅샷 대비 삭제된 사진 클라우드에서 실제 삭제
+        var removed = _photoSnapshot.Except(Project.Photos).ToList();
+        foreach (var p in removed)
+            if (!string.IsNullOrEmpty(p.StorageUrl))
+                await Storage.DeletePhotoAsync(Project.Id.ToString(), p.Id.ToString(), p.FileSizeBytes);
+        _photoSnapshot = Project.Photos.ToList(); // 스냅샷 갱신
+
         // 치수 저장
         Project.MeasurementsMemo = string.Join("|",
             _measures
@@ -581,6 +611,14 @@
                 .Select(m => $"{m.Label}:{m.Before}:{m.After}"));
 
         await Storage.SaveProjectAsync(Project);
+
+        // 도안 삭제 토글 처리
+        if (_deletePdf && OnDeletePdf.HasDelegate)
+        {
+            await OnDeletePdf.InvokeAsync();
+            _deletePdf = false;
+        }
+
         _editing = false;
         _saving = false;
         LoadMeasures();
@@ -596,8 +634,6 @@
     void RemovePhoto(ProjectPhoto photo)
     {
         if (Project == null || photo == null) return;
-        if (!string.IsNullOrEmpty(photo.StorageUrl))
-            _ = Storage.DeletePhotoAsync(Project.Id.ToString(), photo.Id.ToString());
         Project.Photos.Remove(photo);
         StateHasChanged();
     }
@@ -616,6 +652,7 @@
         if (Project == null) return;
         const int maxPhotos = 5;
         var files = e.GetMultipleFiles(10).ToList();
+        int selectedCount = files.Count;
         int remaining = maxPhotos - Project.Photos.Count;
         if (remaining <= 0)
         {
@@ -623,13 +660,27 @@
             return;
         }
         files = files.Take(remaining).ToList();
-        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...", "info");
+        if (selectedCount > remaining)
+        {
+            await JS.InvokeVoidAsync("showToast", $"남은 슬롯이 {remaining}장뿐이에요. {remaining}장만 추가됩니다.", "error");
+            await Task.Delay(1500);
+        }
+        long maxFileSize = 20 * 1024 * 1024; // 20MB
+        var oversized = files.Where(f => f.Size > maxFileSize).ToList();
+        if (oversized.Any())
+        {
+            var names = string.Join(", ", oversized.Select(f => f.Name));
+            await JS.InvokeVoidAsync("showToast", $"20MB를 초과하는 사진은 추가할 수 없어요. ({names})", "error");
+            files = files.Where(f => f.Size <= maxFileSize).ToList();
+            if (!files.Any()) return;
+        }
+        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...");
         StateHasChanged();
         foreach (var file in files)
         {
             try
             {
-                using var stream = file.OpenReadStream(20 * 1024 * 1024);
+                using var stream = file.OpenReadStream(maxFileSize);
                 using var ms = new System.IO.MemoryStream();
                 await stream.CopyToAsync(ms);
                 var rawBase64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
@@ -639,14 +690,17 @@
                 var photo = new ProjectPhoto { FileName = file.Name, TakenAt = DateTime.Now };
                 if (Storage.IsLoggedIn && Project != null)
                 {
-                    var (url, err) = await Storage.UploadPhotoAsync(Project.Id.ToString(), photo.Id.ToString(), base64);
+                    var (url, err, fileBytes) = await Storage.UploadPhotoAsync(Project.Id.ToString(), photo.Id.ToString(), base64);
                     if (err == "quota")
                     {
                         await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 사진을 삭제하고 다시 시도해 주세요.", "error");
                         return;
                     }
                     if (!string.IsNullOrEmpty(url))
+                    {
                         photo.StorageUrl = url;
+                        photo.FileSizeBytes = fileBytes;
+                    }
                     else
                         photo.Base64Data = base64;
                 }
