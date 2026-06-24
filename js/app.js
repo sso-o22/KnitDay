@@ -906,12 +906,18 @@ window.pwaInstall = {
 };
 
 // ── PWA 설치 팝업 강제 표시 ──────────────────────────────────────
-window.dispatchForceInstallGuide = () => {
-    window.dispatchEvent(new CustomEvent('knitday:forceInstallGuide'));
-};
+window._installGuideRef = null;
 
 window.registerInstallGuideListener = (dotNetRef) => {
-    window.addEventListener('knitday:forceInstallGuide', async () => {
-        await dotNetRef.invokeMethodAsync('HandleForceShowInstall');
-    });
+    window._installGuideRef = dotNetRef;
+};
+
+window.dispatchForceInstallGuide = async () => {
+    if (window._installGuideRef) {
+        try {
+            await window._installGuideRef.invokeMethodAsync('HandleForceShowInstall');
+        } catch(e) {
+            console.warn('HandleForceShowInstall failed:', e);
+        }
+    }
 };
