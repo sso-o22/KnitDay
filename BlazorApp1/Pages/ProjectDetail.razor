@@ -739,15 +739,21 @@ else
                     @foreach (var s in _linkedSwatches)
                     {
                         var swYarns = s.YarnIds.Select(id => _yarns.Find(y => y.Id == id)).Where(y => y != null).ToList();
+                        var swTotalPly = swYarns.Sum(y => y!.Ply > 0 ? y.Ply : 1);
+                        var swShowPly = swYarns.Any(y => y!.Ply > 0) || swYarns.Count > 1;
                         <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:12px;">
-                            <div style="font-weight:600; font-size:0.9rem; margin-bottom:6px;">
-                                @(string.IsNullOrEmpty(s.Name) ? "스와치" : s.Name)
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                                <span style="font-weight:600; font-size:0.9rem;">@(string.IsNullOrEmpty(s.Name) ? "스와치" : s.Name)</span>
+                                @if (swShowPly)
+                                {
+                                    <span style="font-size:0.72rem;font-weight:700;color:var(--theme-active);background:var(--theme-pale);border-radius:20px;padding:1px 7px;flex-shrink:0;">@(swTotalPly)합</span>
+                                }
                             </div>
                             @foreach (var sy in swYarns)
                             {
                                 <div style="display:flex; align-items:center; gap:5px; font-size:0.8rem; color:var(--text-mid); margin-bottom:4px;">
                                     <span class="color-dot" style="background:@sy!.ColorCode; width:10px; height:10px;"></span>
-                                    @sy.Brand @sy.Name
+                                    @sy.Brand @sy.Name@(sy.Ply > 0 ? $" {sy.Ply}합" : "")
                                 </div>
                             }
                             <div style="font-size:0.78rem; color:var(--text-mid); display:flex; gap:6px; flex-wrap:wrap;">

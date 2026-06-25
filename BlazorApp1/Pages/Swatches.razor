@@ -91,12 +91,20 @@ else
         @foreach (var s in SortedSwatches)
         {
             var cardYarns = s.YarnIds.Select(id => _yarns.Find(y => y.Id == id)).Where(y => y != null).ToList();
+            var totalPly = cardYarns.Sum(y => y!.Ply > 0 ? y.Ply : 1); // Ply 없으면 1로 계산
+            var showPly = cardYarns.Any(y => y!.Ply > 0) || cardYarns.Count > 1;
             var project = _projects.Find(p => p.Id == s.ProjectId);
             <div class="card swatch-card">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px;">
                     <div style="min-width:0; flex:1;">
-                        <div class="card-title" style="margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                            @(string.IsNullOrEmpty(s.Name) ? "스와치" : s.Name)
+                        <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px;">
+                            <div class="card-title" style="margin-bottom:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                @(string.IsNullOrEmpty(s.Name) ? "스와치" : s.Name)
+                            </div>
+                            @if (showPly)
+                            {
+                                <span style="flex-shrink:0;font-size:0.72rem;font-weight:700;color:var(--theme-active);background:var(--theme-pale);border-radius:20px;padding:1px 7px;">@(totalPly)합</span>
+                            }
                         </div>
                         @if (cardYarns.Any())
                         {
@@ -105,7 +113,7 @@ else
                                 {
                                     <div style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text-mid); overflow:hidden;">
                                         <span class="color-dot" style="background:@cy!.ColorCode; width:10px; height:10px; flex-shrink:0;"></span>
-                                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@cy.Name</span>
+                                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@cy.Name@(cy.Ply > 0 ? $" {cy.Ply}합" : "")</span>
                                     </div>
                                 }
                             </div>
