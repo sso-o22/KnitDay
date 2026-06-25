@@ -857,7 +857,7 @@ window.uploadPdfToCloudinary = async function(streamRef, publicId) {
         const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
         const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/raw/upload`;
         const fd = new FormData();
-        fd.append('file', blob, 'file.pdf');
+        fd.append('file', blob, 'file');  // 확장자 없이 — Cloudinary가 publicId 그대로 저장
         fd.append('upload_preset', _UPLOAD_PRESET);
         fd.append('public_id', publicId);
         const resp = await fetch(url, { method: 'POST', body: fd });

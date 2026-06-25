@@ -275,7 +275,10 @@ namespace KnitLog.Services
         {
             if (!IsLoggedIn) return;
             var publicId = $"{Uid}/pdfs/{projectId}";
+            // 확장자 없이 먼저 시도 (신규 업로드 방식)
+            // 구 업로드(.pdf 붙은 파일)도 함께 시도 — Cloudinary는 없는 파일 삭제 시 "not found" 반환하므로 무해함
             await DeleteCloudinaryAssetAsync(publicId, "raw");
+            await DeleteCloudinaryAssetAsync(publicId + ".pdf", "raw");
             if (fileSizeBytes > 0)
                 await SubtractCloudUsageAsync("pdf", fileSizeBytes);
         }
