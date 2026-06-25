@@ -1095,7 +1095,7 @@
             if (string.IsNullOrEmpty(savedFileName))
             {
                 // IndexedDB에 없으면 Cloudinary URL에서 다운로드해서 복원
-                if (!string.IsNullOrEmpty(_project.PatternCloudUrl))
+                if (!string.IsNullOrEmpty(_project.PatternCloudUrl) && _project.PatternCloudUrl != "local-only")
                 {
                     // image/upload로 잘못 올라간 PDF → raw/upload로 URL 수정
                     var pdfUrl = _project.PatternCloudUrl.Replace("/image/upload/", "/raw/upload/");
@@ -1258,9 +1258,17 @@
             _project.HasSavedPattern = false;
             _project.PatternFileName = "";
             try { await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", ProjectId.ToString()); } catch { }
-            if (!string.IsNullOrEmpty(_project.PatternCloudUrl))
+            // PatternCloudUrl이 비어있어도 마이그레이션으로 Cloudinary에 올라갔을 수 있으므로
+            // _project 인스턴스 갱신 후 URL 확인, 없어도 projectId 기준으로 삭제 시도
+            if (Storage.IsLoggedIn)
             {
-                await Storage.DeletePdfAsync(ProjectId.ToString(), _project.PatternFileSizeBytes);
+                // IDB에서 최신 프로젝트 정보 읽어서 PatternCloudUrl 확인
+                var freshProject = (await Storage.GetProjectsAsync()).FirstOrDefault(p => p.Id == ProjectId);
+                var cloudUrl = freshProject?.PatternCloudUrl ?? _project.PatternCloudUrl;
+                var cloudBytes = freshProject?.PatternFileSizeBytes ?? _project.PatternFileSizeBytes;
+                // local-only는 Cloudinary에 파일 없으므로 삭제 시도 불필요
+                if (cloudUrl != "local-only")
+                    await Storage.DeletePdfAsync(ProjectId.ToString(), cloudBytes);
                 _project.PatternCloudUrl = "";
                 _project.PatternFileSizeBytes = 0;
             }
@@ -1305,10 +1313,12 @@
             _project.PatternFileName = "";
             // 기존 PDF IDB에서 삭제
             try { await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", ProjectId.ToString()); } catch { }
-            // 클라우드 PDF 삭제
-            if (!string.IsNullOrEmpty(_project.PatternCloudUrl))
+            // 클라우드 PDF 삭제 — _project 인스턴스가 마이그레이션 결과를 반영 못할 수 있으므로 IDB에서 최신 정보 읽기
+            if (Storage.IsLoggedIn)
             {
-                await Storage.DeletePdfAsync(ProjectId.ToString(), _project.PatternFileSizeBytes);
+                var freshProject = (await Storage.GetProjectsAsync()).FirstOrDefault(p => p.Id == ProjectId);
+                var cloudBytes = freshProject?.PatternFileSizeBytes ?? _project.PatternFileSizeBytes;
+                await Storage.DeletePdfAsync(ProjectId.ToString(), cloudBytes);
                 _project.PatternCloudUrl = "";
                 _project.PatternFileSizeBytes = 0;
             }

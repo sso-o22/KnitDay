@@ -103,6 +103,9 @@ namespace KnitLog.Services
         // - 한쪽에만 있으면: 그냥 포함
         // ── Cloudinary 업로드 ────────────────────────────────
         public const long PerUserLimitBytes = 500L * 1024 * 1024; // 500MB
+        public const long MaxPdfUploadBytes = 10L * 1024 * 1024;   // 10MB — Cloudinary free 제한
+        // PatternCloudUrl에 세팅하는 특수값: 클라우드 업로드 불가(용량 초과 등) → 재시도 방지
+        public const string PatternCloudUrlLocalOnly = "local-only";
 
         public async Task<(string? url, string? error, long bytes)> UploadPhotoAsync(string projectId, string photoId, string base64DataUrl)
         {
@@ -330,7 +333,7 @@ namespace KnitLog.Services
                 {
                     var projectsForCheck = await GetProjectsAsync();
                     hasPending = projectsForCheck.Any(p =>
-                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) ||
+                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl) && p.PatternCloudUrl != PatternCloudUrlLocalOnly) ||
                         p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
                 }
 
@@ -340,7 +343,7 @@ namespace KnitLog.Services
                     // 마이그레이션 완료 후 미완료 항목이 없을 때만 플래그 기록
                     var projectsAfter = await GetProjectsAsync();
                     bool allDone = !projectsAfter.Any(p =>
-                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) ||
+                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl) && p.PatternCloudUrl != PatternCloudUrlLocalOnly) ||
                         p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
                     if (allDone)
                     {
@@ -478,6 +481,10 @@ namespace KnitLog.Services
                         }
                         else
                         {
+                            // 3회 모두 실패 → local-only 표시해서 이후 재시도 차단
+                            // (10MB 초과, 네트워크 오류 등 — 사용자가 도안 재업로드할 때 처리)
+                            proj.PatternCloudUrl = PatternCloudUrlLocalOnly;
+                            changed = true;
                             progress.Failed++;
                         }
                         OnMigrationProgress?.Invoke(progress);

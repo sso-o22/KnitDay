@@ -328,8 +328,14 @@
         {
             <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:12px;">프리미엄 코드를 입력하면 구글 로그인 및 기기간 동기화 기능을 사용할 수 있어요.</p>
             <div style="display:flex; gap:8px; margin-bottom:10px;">
-                <input type="text" @bind="_premiumCodeInput"
-                       style="flex:1; min-width:0; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:0.88rem; background:var(--white); color:var(--text-dark);" />
+                <input id="premium-code-input" type="text"
+                       placeholder="XXXX-XXXX-XXXX-XXXX"
+                       maxlength="19"
+                       autocomplete="off" autocorrect="off" autocapitalize="characters" spellcheck="false"
+                       value="@_premiumCodeDisplay"
+                       @oninput="OnPremiumCodeInput"
+                       @onkeydown="OnPremiumCodeKeyDown"
+                       style="flex:1; min-width:0; padding:9px 12px; border:1.5px solid var(--border); border-radius:var(--radius-sm); font-size:0.88rem; background:var(--white); color:var(--text-dark); letter-spacing:0.1em; font-family:monospace;" />
                 <button class="btn btn-primary" @onclick="ActivatePremium">확인</button>
             </div>
             @if (!string.IsNullOrEmpty(_premiumMsg))
@@ -546,15 +552,15 @@
                 <img src="icons/clock-counter-clockwise.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />
                 과거 업데이트 이력
             </div>
-            <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
+            <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;">
                 @foreach (var h in _versionInfo.History)
                 {
-                    <div>
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <div style="border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
                             <span style="font-size:0.88rem;font-weight:700;color:var(--text-dark);">v@(h.Version)</span>
                             <span style="font-size:0.75rem;color:var(--text-light);">@h.Date</span>
                         </div>
-                        <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px;">
+                        <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;">
                             @foreach (var item in h.Updates)
                             {
                                 <li style="font-size:0.82rem;color:var(--text-mid);">@item</li>
@@ -724,7 +730,8 @@
         StateHasChanged();
     }
     bool _isPremium = false;
-    string _premiumCodeInput = "";
+    string _premiumCodeInput = "";   // 하이픈 제거한 순수 코드값 (검증용)
+    string _premiumCodeDisplay = ""; // 화면에 표시되는 포맷값 (XXXX-XXXX-XXXX-XXXX)
     string _premiumMsg = "";
     bool _premiumError = false;
 
@@ -1136,14 +1143,18 @@
 
     async Task ActivatePremium()
     {
-        var code = _premiumCodeInput.Trim();
-        if (_validCodes.Contains(code))
+        // 하이픈 제거 후 검증 (표시값 기준으로도 동작하도록)
+        var code = _premiumCodeInput.Replace("-", "").Trim();
+        // _validCodes에는 하이픈 포함 버전도 있으므로 둘 다 체크
+        var codeWithDashes = FormatPremiumCode(code);
+        if (_validCodes.Contains(code) || _validCodes.Contains(codeWithDashes))
         {
             _isPremium = true;
             await JS.InvokeVoidAsync("localStorage.setItem", "knitday_premium", "1");
             _premiumMsg = "프리미엄이 활성화되었어요!";
             _premiumError = false;
             _premiumCodeInput = "";
+            _premiumCodeDisplay = "";
         }
         else
         {
@@ -1151,6 +1162,35 @@
             _premiumError = true;
         }
         StateHasChanged();
+    }
+
+    // 프리미엄 코드 포맷: 영숫자만 추출 후 4자리마다 하이픈 삽입
+    static string FormatPremiumCode(string raw)
+    {
+        var chars = new string(raw.ToUpper().Where(char.IsLetterOrDigit).ToArray());
+        var parts = new List<string>();
+        for (int i = 0; i < chars.Length && parts.Count < 4; i += 4)
+            parts.Add(chars.Substring(i, Math.Min(4, chars.Length - i)));
+        return string.Join("-", parts);
+    }
+
+    void OnPremiumCodeInput(ChangeEventArgs e)
+    {
+        var raw = e.Value?.ToString() ?? "";
+        // 영숫자만 추출
+        var clean = new string(raw.ToUpper().Where(char.IsLetterOrDigit).ToArray());
+        if (clean.Length > 16) clean = clean[..16];
+        _premiumCodeInput = clean;
+        _premiumCodeDisplay = FormatPremiumCode(clean);
+        StateHasChanged();
+        // 커서를 끝으로 이동 (비동기 — 렌더 후 실행)
+        _ = JS.InvokeVoidAsync("eval",
+            "requestAnimationFrame(()=>{var el=document.getElementById('premium-code-input');if(el){var len=el.value.length;el.setSelectionRange(len,len);}})");
+    }
+
+    void OnPremiumCodeKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") _ = ActivatePremium();
     }
 
     async Task DeactivatePremium()
