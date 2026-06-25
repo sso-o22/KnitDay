@@ -80,12 +80,12 @@ else
                                 }
                                 @foreach (var ev in chips)
                                 {
-                                    <div @onclick="() => GoToProject(ev.Id)" @onclick:stopPropagation="true" title="@ev.PatternName"
+                                    <div @onclick="() => GoToProject(ev.Id)" @onclick:stopPropagation="true" title="@ev.Title"
                                          style="font-size:0.65rem; border-radius:4px; padding:1px 5px; margin-bottom:2px;
                                                 white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
                                                 cursor:pointer; display:flex; align-items:center; gap:2px; width:100%; box-sizing:border-box;
                                                 background:@ev.AccentColor; color:@ev.TextColor;">
-                                        <span style="font-size:0.55rem; font-weight:700; opacity:0.85; flex-shrink:0;">@ev.Label</span><span style="overflow:hidden; text-overflow:ellipsis;">@ev.PatternName</span>
+                                        <span style="font-size:0.55rem; font-weight:700; opacity:0.85; flex-shrink:0;">@ev.Label</span><span style="overflow:hidden; text-overflow:ellipsis;">@ev.Title</span>
                                     </div>
                                 }
                                 @if (chipOverflow > 0)
@@ -97,7 +97,7 @@ else
                                     <div style="display:flex; flex-wrap:wrap; gap:2px; margin-top:1px;">
                                         @foreach (var ev in dots.Take(6))
                                         {
-                                            <div @onclick="() => GoToProject(ev.Id)" @onclick:stopPropagation="true" title="@ev.PatternName"
+                                            <div @onclick="() => GoToProject(ev.Id)" @onclick:stopPropagation="true" title="@ev.Title"
                                                  style="width:8px; height:8px; border-radius:50%; cursor:pointer;
                                                         background:@ev.AccentColor; opacity:0.85;">
                                             </div>
@@ -221,7 +221,7 @@ else
                          style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm);
                                 background:var(--ivory-dark); cursor:pointer; min-width:0;">
                         <span style="width:10px; height:10px; border-radius:50%; background:@ev.AccentColor; flex-shrink:0;"></span>
-                        <span style="font-size:0.85rem; font-weight:500; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">@ev.PatternName</span>
+                        <span style="font-size:0.85rem; font-weight:500; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">@ev.Title</span>
                         <span style="font-size:0.72rem; color:var(--text-light); flex-shrink:0;">@labelText</span>
                     </div>
                 }
