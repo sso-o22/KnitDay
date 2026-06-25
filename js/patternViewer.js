@@ -1073,7 +1073,8 @@ let basePaths = []; // 저장된 필기 (박제)
                 if (_hasMoved) {
                     const y = clampY(getCanvasY(ev.clientY));
                     el.style.top = y + 'px';
-                    dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, zoom, true);
+                    // zoom=0 sentinel: Blazor에서 현재 _zoom을 직접 사용 (JS snapshot 사용 안 함)
+                    dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, 0, true);
                 }
                 // 움직이지 않았으면 서버에 아무 것도 보내지 않음 — 곧바로 발생하는 click 이벤트(@onclick=SelectMarker)만 처리됨
             }
@@ -1093,7 +1094,8 @@ let basePaths = []; // 저장된 필기 (박제)
                 if (_hasMoved) {
                     const changedTouch = ev.changedTouches[0];
                     const y = clampY(getCanvasY(changedTouch.clientY));
-                    dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, zoom, true);
+                    // zoom=0 sentinel: Blazor에서 현재 _zoom을 직접 사용 (JS snapshot 사용 안 함)
+                    dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, 0, true);
                 }
                 // 움직이지 않았으면 서버 호출 없이 종료 — 뒤따르는 click 이벤트가 선택을 처리
             }
