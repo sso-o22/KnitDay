@@ -26,15 +26,7 @@
                 {
                     var pageNum = pg;
                     <div class="page-container" id="page-container-@pageNum" style="position:relative;display:inline-block;">
-                        @if (_isImageMode)
-                        {
-                            <img id="pdf-canvas-@pageNum" src="@_imageDataUrl"
-                                 style="display:block;width:@(_imageOrigW * _zoom)px;height:@(_imageOrigH * _zoom)px;" />
-                        }
-                        else
-                        {
-                            <canvas id="pdf-canvas-@pageNum" style="display:block;"></canvas>
-                        }
+                        <canvas id="pdf-canvas-@pageNum" style="display:block;"></canvas>
                         <canvas id="anno-canvas-@pageNum" style="position:absolute;top:0;left:0;z-index:10;cursor:@GetCursor();touch-action:@(_drawMode && _tool != "rowmarker" ? "none" : "auto");pointer-events:@(_drawMode && _tool == "rowmarker" ? "none" : "auto");"
                                 @onclick="e => OnAnnoCanvasClick(e, pageNum)"></canvas>
 
@@ -156,7 +148,7 @@
             {
                 <span class="tb-label" style="cursor:pointer;" @onclick="OnDeletePatternClick"><img src="icons/trash.svg" style="width:18px;height:18px;" /></span>
             }
-            <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf" style="display:none;" />
+            <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf,.pdf" style="display:none;" />
         </div>
     </div>
 
@@ -1248,7 +1240,6 @@
         _currentPage = 1;
         _pdfLoaded = false;
         _totalPages = 0;
-        _isImageMode = false;
         if (_project != null)
         {
             _project.ViewerAnnotations = "";
@@ -1332,55 +1323,24 @@
     {
         try
         {
-            var contentType = e.File.ContentType;
-            var isImage = contentType.StartsWith("image/");
+            var fileName = e.File.Name ?? "";
+            var ext = System.IO.Path.GetExtension(fileName).ToLowerInvariant();
+            var contentType = e.File.ContentType ?? "";
+            // 구글 드라이브 등에서 contentType이 누락/부정확하게 오는 경우 확장자로 보완
+            if (string.IsNullOrEmpty(contentType) || contentType == "application/octet-stream")
+                contentType = ext == ".pdf" ? "application/pdf" : contentType;
+            if (contentType != "application/pdf" && ext != ".pdf")
+            {
+                await JS.InvokeVoidAsync("showToast", "PDF 파일만 열 수 있어요.", "error");
+                return;
+            }
 
             using var stream = e.File.OpenReadStream(100 * 1024 * 1024);
             using var ms = new System.IO.MemoryStream();
             await stream.CopyToAsync(ms);
             var bytes = ms.ToArray();
 
-            // ── 이미지 파일 처리 ──
-            if (isImage)
-            {
-                // 도안 초기화
-                
-                _rowMarkers.Clear();
-                _detectedRowH = 0;
-                _zoom = 1.0;
-                _currentPage = 1;
-
-                var b64 = Convert.ToBase64String(bytes);
-                _imageDataUrl = $"data:{contentType};base64,{b64}";
-                _isImageMode = true;
-                _totalPages = 1;
-                _pdfLoaded = true;
-                StateHasChanged();
-                await Task.Delay(100);
-
-                // 이미지 크기 가져오기
-                var size = await JS.InvokeAsync<double[]>("patternViewer.getImageSize", "pdf-canvas-1");
-                if (size != null && size.Length == 2)
-                {
-                    _imageOrigW = size[0];
-                    _imageOrigH = size[1];
-                    _pageWidth  = _imageOrigW;
-                }
-
-                // anno-canvas 크기 맞추기
-                await JS.InvokeVoidAsync("patternViewer.resizeAnnoCanvas", 1, _imageOrigW * _zoom, _imageOrigH * _zoom);
-
-                if (_project != null)
-                {
-                    _project.HasSavedPattern = true;
-                    _project.PatternFileName = e.File.Name;
-                    await SaveProject();
-                }
-                return;
-            }
-
             // ── PDF 파일 처리 ──
-            _isImageMode = false;
 
             // JS에 byte[] 직접 전달 (Base64 변환 없이 → 메모리 절약)
             using var streamRef = new DotNetStreamReference(new System.IO.MemoryStream(bytes), leaveOpen: false);
@@ -1457,14 +1417,12 @@
     async Task ZoomIn()
     {
         _zoom = Math.Round(_zoom + 0.1, 1);
-        if (_isImageMode) { await JS.InvokeVoidAsync("patternViewer.resizeAnnoCanvas", 1, _imageOrigW * _zoom, _imageOrigH * _zoom); StateHasChanged(); }
-        else await RenderAllPages();
+        await RenderAllPages();
     }
     async Task ZoomOut()
     {
         _zoom = Math.Max(0.1, Math.Round(_zoom - 0.1, 1));
-        if (_isImageMode) { await JS.InvokeVoidAsync("patternViewer.resizeAnnoCanvas", 1, _imageOrigW * _zoom, _imageOrigH * _zoom); StateHasChanged(); }
-        else await RenderAllPages();
+        await RenderAllPages();
     }
     async Task RenderAllPages(){await JS.InvokeVoidAsync("patternViewer.renderAllPages",_zoom);StateHasChanged();}
     [JSInvokable] public void UpdatePageFromJS(int page)
@@ -1658,10 +1616,7 @@
     string GetCursor()=>_tool switch{"select"=>"default","pen"=>"crosshair","eraser"=>"cell","highlighter"=>"crosshair","rowmarker"=>"pointer","rowheightdraw"=>"ns-resize",_=>"crosshair"};
 
     // ── 이미지 모드 ──────────────────────────────────────────────────
-    bool _isImageMode = false;
-    string _imageDataUrl = "";
-    double _imageOrigW = 0;
-    double _imageOrigH = 0;
+
     List<RowMarker> _rowMarkers = new();
     int _rowMarkersBaseCount = 0; // 복원 시점 마커 개수 — 되돌리기는 이 경계를 넘지 못함
     Guid? _selectedMarkerId = null; // 클릭으로 선택한 마커 (삭제/색상/높이조절 대상)
