@@ -119,7 +119,7 @@ window.knitDB = (() => {
                 let pdfBytes = 0;
                 try {
                     const pdfDb = await new Promise((res, rej) => {
-                        const req = indexedDB.open('KnitLogPatternDB', 1);
+                        const req = indexedDB.open('KnitLogPatternDB', 2);
                         req.onsuccess = e => res(e.target.result);
                         req.onerror   = e => rej(e.target.error);
                     });
