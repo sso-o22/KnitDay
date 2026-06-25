@@ -293,12 +293,17 @@ namespace KnitLog.Services
             }
         }
 
+        private bool _isSyncingLogin = false;
         public async Task SyncOnLoginAsync()
         {
             if (!IsLoggedIn) return;
+            // 동시 호출 방지 (OnAuthChanged + OnAppResumed 동시 진입 시 중복 마이그레이션 방지)
+            if (_isSyncingLogin) return;
+            _isSyncingLogin = true;
             IsSyncing = true;
             OnSyncStarted?.Invoke();
-
+            try
+            {
             await MergeCollectionAsync<KnitProject>(KEY_PROJECTS, "projects");
             await MergeCollectionAsync<Yarn>(KEY_YARNS, "yarns");
             await MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools");
@@ -343,15 +348,22 @@ namespace KnitLog.Services
                 }
             }
             catch { }
-
+            }
+            finally
+            {
             IsSyncing = false;
+            _isSyncingLogin = false;
             OnSyncCompleted?.Invoke();
+            }
         }
 
         // ── 로컬(Base64) 사진/도안을 Cloudinary로 마이그레이션 ─────────────
         // 로그인 직후 1회 실행됨. 이미 StorageUrl/PatternCloudUrl이 있는 항목은 건너뜀(중복 업로드 방지).
         public async Task MigrateLocalMediaToCloudAsync()
         {
+            // 이미 실행 중이면 중복 실행 방지
+            if (CurrentMigration?.IsRunning == true) return;
+
             var projects = await GetProjectsAsync();
 
             // 총 작업 수 계산 (업로드 필요한 사진 + PDF)
@@ -430,6 +442,9 @@ namespace KnitLog.Services
                             var base64Pdf = await _js.InvokeAsync<string?>("patternViewer.getSavedPdfBase64", proj.Id.ToString());
                             if (!string.IsNullOrEmpty(base64Pdf))
                             {
+                                // Cloudinary는 같은 publicId로 덮어쓰기 → 기존 usage 먼저 차감 후 새 값 누적
+                                if (proj.PatternFileSizeBytes > 0)
+                                    await SubtractCloudUsageAsync("pdf", proj.PatternFileSizeBytes);
                                 var (u, err, pdfBytes) = await UploadPdfAsync(proj.Id.ToString(), base64Pdf);
                                 if (err == "quota") { quotaReached = true; break; }
                                 if (!string.IsNullOrEmpty(u)) { cloudUrl = u; proj.PatternFileSizeBytes = pdfBytes; break; }

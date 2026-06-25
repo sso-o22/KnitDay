@@ -5,7 +5,7 @@ import {
     indexedDBLocalPersistence, setPersistence
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-    getFirestore, doc, getDoc, setDoc, collection, getDocs, deleteDoc
+    getFirestore, doc, getDoc, getDocFromServer, setDoc, collection, getDocs, deleteDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {
     getFunctions, httpsCallable
@@ -186,7 +186,11 @@ window.firebaseStore = {
 
     async getDocument(path) {
         try {
-            const snap = await getDoc(doc(db, ...path.split('/')));
+            // usage 문서는 항상 서버에서 직접 읽어서 캐시 불일치 방지
+            const isUsage = path.includes('/meta/usage') || path.includes('/meta/knitday_media_migrated');
+            const snap = isUsage
+                ? await getDocFromServer(doc(db, ...path.split('/')))
+                : await getDoc(doc(db, ...path.split('/')));
             return snap.exists() ? JSON.stringify(snap.data()) : null;
         } catch (e) {
             console.error('getDocument:', path, e);

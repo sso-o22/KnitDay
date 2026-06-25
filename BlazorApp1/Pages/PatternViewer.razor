@@ -896,7 +896,7 @@
     string ActiveColor   => _tool == "highlighter" ? _hlColor    : _penColor;
     int    ActiveSize    => _tool == "highlighter" ? _hlSize     : _tool == "eraser" ? _eraserSize : _penSize;
     int    ActiveOpacity => _penOpacity;
-    int _currentPage=1, _totalPages=1;
+    int _currentPage=1, _totalPages=0;
     double _zoom=1.0;
     bool _pdfLoaded=false, _isDrawing=false;
     bool _drawMode=false, _showCounterWidget=true;
