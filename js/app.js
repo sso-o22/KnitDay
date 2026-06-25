@@ -834,31 +834,12 @@ let _savedScrollY = 0;
 
 window.lockBodyScroll = () => {
     _savedScrollY = window.scrollY || document.documentElement.scrollTop;
-    // iPad PWA에서 overflow:hidden이 input 포커스/키보드를 막는 버그 있음
-    // → position:fixed + top으로 스크롤 막기 (키보드 정상 동작)
-    const isIpadPwa = navigator.standalone ||
-        (window.matchMedia('(display-mode: standalone)').matches && /iPad|iPhone/.test(navigator.userAgent));
-    if (isIpadPwa) {
-        document.body.style.position = 'fixed';
-        document.body.style.top = `-${_savedScrollY}px`;
-        document.body.style.left = '0';
-        document.body.style.right = '0';
-    } else {
-        document.body.style.overflow = 'hidden';
-    }
+    document.body.style.overflow = 'hidden';
 };
 
 window.unlockBodyScroll = () => {
-    if (document.body.style.position === 'fixed') {
-        document.body.style.position = '';
-        document.body.style.top = '';
-        document.body.style.left = '';
-        document.body.style.right = '';
-        window.scrollTo(0, _savedScrollY);
-    } else {
-        document.body.style.overflow = '';
-        window.scrollTo(0, _savedScrollY);
-    }
+    document.body.style.overflow = '';
+    window.scrollTo(0, _savedScrollY);
 };
 
 window.scrollModalToTop = () => {

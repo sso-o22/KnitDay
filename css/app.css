@@ -87,10 +87,7 @@
 /* ── 리셋 & 기본 ────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-/* user-scalable=no 제거 대신 CSS로 핀치 줌 방지 (iPad PWA 키보드 버그 우회) */
-html {
-    touch-action: pan-x pan-y;
-}
+
 
 body {
     font-family: 'DM Sans', 'Noto Sans KR', sans-serif;
