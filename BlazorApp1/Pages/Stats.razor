@@ -546,7 +546,7 @@ else
         _recentSessions = _projects
             .SelectMany(p => p.Sessions
                 .Where(s => s.EndTime.HasValue)
-                .Select(s => (s, p.Title)))
+                .Select(s => (s, p.PatternName)))
             .OrderByDescending(x => x.s.StartTime)
             .Take(10)
             .ToList();

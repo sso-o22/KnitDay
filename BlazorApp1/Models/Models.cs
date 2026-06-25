@@ -131,7 +131,9 @@ namespace KnitLog.Models
         public Guid Id { get; set; } = Guid.NewGuid();
         public ProjectStatus Status { get; set; } = ProjectStatus.위시리스트;
         public ProjectCategory Category { get; set; } = ProjectCategory.미분류;
-        public string Title { get; set; } = "";
+        // Title은 PatternName으로 통합 — 구 데이터 역직렬화 호환용 setter만 유지
+        [System.Text.Json.Serialization.JsonIgnore]
+        public string Title { get => PatternName; set { if (!string.IsNullOrWhiteSpace(value) && string.IsNullOrWhiteSpace(PatternName)) PatternName = value; } }
         public string Description { get; set; } = "";
         public string PatternName { get; set; } = "";
         public string PatternSource { get; set; } = "";

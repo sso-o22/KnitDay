@@ -99,7 +99,7 @@ else
                     }
 
                     <div class="flex-between mb-1">
-                        <div class="card-title" style="margin-bottom:0;">@proj.Title</div>
+                        <div class="card-title" style="margin-bottom:0;">@proj.PatternName</div>
                         @if (proj.Status == ProjectStatus.일시중단)
                         {
                             <span class="badge" style="background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0;">일시중단</span>
@@ -164,7 +164,7 @@ else
 
                     <div style="flex:1; min-width:0;">
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
-                            <span style="font-weight:700; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@proj.Title</span>
+                            <span style="font-weight:700; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@proj.PatternName</span>
                             @if (proj.Status == ProjectStatus.일시중단)
                             {
                                 <span class="badge" style="background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0; flex-shrink:0;">일시중단</span>
@@ -548,7 +548,7 @@ else
             {
                 "start"   => p => (object)(p.StartDate ?? DateTime.MaxValue),
                 "updated" => p => (object)p.UpdatedAt,
-                "title"   => p => (object)p.Title,
+                "title"   => p => (object)p.PatternName,
                 _         => p => (object)p.CreatedAt,
             };
 
@@ -724,8 +724,6 @@ else
     {
         _saving = true; StateHasChanged();
         if (_editingProject == null || string.IsNullOrWhiteSpace(_editingProject.PatternName)) return;
-        if (string.IsNullOrWhiteSpace(_editingProject.Title))
-            _editingProject.Title = _editingProject.PatternName;
         if (_editingProject.Id == Guid.Empty)
             _editingProject.Id = Guid.NewGuid();
         await Storage.SaveProjectAsync(_editingProject);

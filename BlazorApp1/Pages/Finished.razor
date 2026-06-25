@@ -55,11 +55,7 @@ else
                 else
                 {
                 }
-                <div class="card-title">@proj.Title</div>
-                @if (!string.IsNullOrEmpty(proj.PatternName))
-                {
-                    <div style="font-size:0.8rem; color:var(--text-mid);">@proj.PatternName</div>
-                }
+                <div class="card-title">@proj.PatternName</div>
                 @if (proj.EndDate.HasValue)
                 {
                     <div style="font-size:0.78rem; color:var(--text-light); margin-top:6px;">
@@ -92,8 +88,8 @@ else
     IEnumerable<KnitProject> SortedProjects => _finSort switch
     {
         "end_asc"   => _projects.OrderBy(p => p.EndDate),
-        "name_asc"  => _projects.OrderBy(p => p.Title),
-        "name_desc" => _projects.OrderByDescending(p => p.Title),
+        "name_asc"  => _projects.OrderBy(p => p.PatternName),
+        "name_desc" => _projects.OrderByDescending(p => p.PatternName),
         _           => _projects.OrderByDescending(p => p.EndDate),
     };
     KnitProject? _selectedProject;

@@ -188,7 +188,7 @@ else
                     @* 상단: 제목 + D-day *@
                     <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:4px;">
                         <div style="display:flex;align-items:center;gap:6px;min-width:0;">
-                            <div class="card-title" style="margin-bottom:0;font-size:1rem;">@proj.Title</div>
+                            <div class="card-title" style="margin-bottom:0;font-size:1rem;">@proj.PatternName</div>
                             @if (proj.Sessions.Any(s => s.IsActive))
                             {
                                 <span style="display:inline-flex;align-items:center;gap:3px;font-size:0.65rem;font-weight:700;color:#c0392b;background:#fef0f0;border:1px solid #f5c0c0;border-radius:20px;padding:2px 7px;flex-shrink:0;white-space:nowrap;">
@@ -212,11 +212,7 @@ else
                         }
                     </div>
 
-                    @* 도안명 *@
-                    @if (!string.IsNullOrEmpty(proj.PatternName))
-                    {
-                        <div style="font-size:0.8rem;color:var(--text-mid);margin-bottom:10px;">@proj.PatternName</div>
-                    }
+
 
                     @* 진행률 바 (시작일~마감일 기반, 둘 다 없으면 숨김) *@
                     @if (proj.StartDate.HasValue && proj.EndDate.HasValue)

@@ -29,7 +29,7 @@ else
         <div style="display:flex; align-items:center; gap:12px;">
             <button class="btn btn-ghost btn-sm" style="display:inline-flex;align-items:center;" @onclick="GoBack"><img src="icons/arrow-fat-left.svg" class="icon-line" style="width:18px;height:18px;" /></button>
             <div>
-                <h1 class="page-title" style="margin-bottom:0;">@_project.Title</h1>
+                <h1 class="page-title" style="margin-bottom:0;">@_project.PatternName</h1>
                 @* <p class="page-subtitle">@_project.PatternName</p> *@
             </div>
         </div>
@@ -1100,7 +1100,7 @@ else
             <div style="margin-bottom:12px;display:flex;justify-content:center;"><img src="icons/clock.svg" class="icon-line" style="width:32px;height:32px;" /></div>
             <div style="font-size:1rem; font-weight:600; margin-bottom:8px; color:var(--text-dark);">다른 프로젝트 타이머가 진행 중이에요</div>
             <div style="font-size:0.88rem; color:var(--text-mid); margin-bottom:20px;">
-                <strong>@_conflictProject.Title</strong> 프로젝트의 타이머를 종료하고<br/>이 프로젝트를 시작할까요?
+                <strong>@_conflictProject.PatternName</strong> 프로젝트의 타이머를 종료하고<br/>이 프로젝트를 시작할까요?
             </div>
             <div style="display:flex; gap:10px; justify-content:center;">
                 <button class="btn btn-ghost" @onclick="() => _showTimerConflict = false">취소</button>

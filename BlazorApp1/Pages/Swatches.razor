@@ -190,7 +190,7 @@ else
                 @if (project != null)
                 {
                     <div style="font-size:0.8rem; color:var(--text-mid); border-top:1px solid var(--border); padding-top:8px; margin-top:4px;">
-                        <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@project.Title</span>
+                        <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />@project.PatternName</span>
                     </div>
                 }
 
@@ -252,7 +252,7 @@ else
                         <option value="">선택 안 함</option>
                         @foreach (var p in _projects)
                         {
-                            <option value="@p.Id">[@p.Status] @p.Title</option>
+                            <option value="@p.Id">[@p.Status] @p.PatternName</option>
                         }
                     </select>
                 </div>

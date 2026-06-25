@@ -306,17 +306,40 @@ namespace KnitLog.Services
             await SyncTodosAsync();
 
             // 로그인 전 비로그인 상태로 쌓인 사진/도안(Base64, 로컬 전용)을 Cloudinary로 옮겨
-            // IDB·Firestore 용량 부담을 줄임 — 계정당 1회만 실행 (매번 폴링 동기화마다 전체 스캔하지 않도록)
+            // IDB·Firestore 용량 부담을 줄임 — 아래 조건 중 하나라도 해당하면 실행:
+            //   1) 마이그레이션 완료 플래그가 없는 경우 (최초 1회)
+            //   2) PatternCloudUrl이 비어있는 HasSavedPattern 항목이 있는 경우 (이전 실패/누락 복구)
             try
             {
-                var alreadyMigrated = await _js.InvokeAsync<string?>(
+                var flagRaw = await _js.InvokeAsync<string?>(
                     "firebaseStore.getDocument", $"users/{Uid}/meta/{KEY_MEDIA_MIGRATED}");
-                if (string.IsNullOrEmpty(alreadyMigrated))
+                // __error__:... 응답은 Firebase 오류 — null로 간주해 마이그레이션 실행
+                var alreadyMigrated = (flagRaw != null && !flagRaw.StartsWith("__error__:")) ? flagRaw : null;
+
+                // 플래그가 찍혀있어도 미완료 항목(PatternCloudUrl 누락)이 있으면 재실행
+                bool hasPending = false;
+                if (!string.IsNullOrEmpty(alreadyMigrated))
+                {
+                    var projectsForCheck = await GetProjectsAsync();
+                    hasPending = projectsForCheck.Any(p =>
+                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) ||
+                        p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
+                }
+
+                if (string.IsNullOrEmpty(alreadyMigrated) || hasPending)
                 {
                     await MigrateLocalMediaToCloudAsync();
-                    await _js.InvokeAsync<bool>(
-                        "firebaseStore.setDocument", $"users/{Uid}/meta/{KEY_MEDIA_MIGRATED}",
-                        JsonSerializer.Serialize(new { done = true, at = DateTime.Now }, _jsonOpts));
+                    // 마이그레이션 완료 후 미완료 항목이 없을 때만 플래그 기록
+                    var projectsAfter = await GetProjectsAsync();
+                    bool allDone = !projectsAfter.Any(p =>
+                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) ||
+                        p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
+                    if (allDone)
+                    {
+                        await _js.InvokeAsync<bool>(
+                            "firebaseStore.setDocument", $"users/{Uid}/meta/{KEY_MEDIA_MIGRATED}",
+                            JsonSerializer.Serialize(new { done = true, at = DateTime.Now }, _jsonOpts));
+                    }
                 }
             }
             catch { }
@@ -386,7 +409,7 @@ namespace KnitLog.Services
                     {
                         progress.Failed++;
                     }
-                    progress.CurrentLabel = $"{proj.Title} 사진";
+                    progress.CurrentLabel = $"{proj.PatternName} 사진";
                     OnMigrationProgress?.Invoke(progress);
                 }
 
@@ -395,7 +418,7 @@ namespace KnitLog.Services
                 // 도안 PDF
                 if (proj.HasSavedPattern && string.IsNullOrEmpty(proj.PatternCloudUrl))
                 {
-                    progress.CurrentLabel = $"{proj.Title} 도안";
+                    progress.CurrentLabel = $"{proj.PatternName} 도안";
                     OnMigrationProgress?.Invoke(progress);
 
                     string? cloudUrl = null;
