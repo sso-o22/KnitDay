@@ -1098,30 +1098,41 @@
                 // IndexedDB에 없으면 Cloudinary URL에서 다운로드해서 복원
                 if (!string.IsNullOrEmpty(_project.PatternCloudUrl))
                 {
+                    // image/upload로 잘못 올라간 PDF → raw/upload로 URL 수정
+                    var pdfUrl = _project.PatternCloudUrl.Replace("/image/upload/", "/raw/upload/");
+                    if (pdfUrl != _project.PatternCloudUrl)
+                    {
+                        _project.PatternCloudUrl = pdfUrl;
+                        await Storage.SaveProjectAsync(_project);
+                    }
                     try
                     {
-                        var pdfBytes = await Http.GetByteArrayAsync(_project.PatternCloudUrl);
+                        var pdfBytes = await Http.GetByteArrayAsync(pdfUrl);
                         using var streamRef = new DotNetStreamReference(new System.IO.MemoryStream(pdfBytes), leaveOpen: false);
                         var pages2 = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", streamRef);
                         if (pages2 > 0)
                         {
-                            // IndexedDB에도 저장
                             await JS.InvokeAsync<bool>("patternViewer.savePdfToProject", ProjectId.ToString(), _project.PatternFileName);
                             _totalPages = pages2;
                             _pdfLoaded = true;
                             _currentPage = _project.ViewerLastPage > 0 ? _project.ViewerLastPage : 1;
                             StateHasChanged();
-                            await Task.Delay(100);
+                            await Task.Delay(300);
                             await JS.InvokeVoidAsync("patternViewer.renderPdf");
                             await Task.Delay(500);
                             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
                                 await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
-
-                            // Cloudinary 재다운로드 경로에서도 행 마커/툴 설정 복원 누락되지 않도록 동일하게 적용
                             await RestoreRowMarkersAndToolSettingsAsync();
                         }
+                        else
+                        {
+                            await JS.InvokeVoidAsync("showToast", $"도안 로드 실패 (pages={pages2})", "error");
+                        }
                     }
-                    catch { }
+                    catch (Exception ex)
+                    {
+                        await JS.InvokeVoidAsync("showToast", $"도안 다운로드 실패: {ex.Message}", "error");
+                    }
                 }
                 return;
             }
