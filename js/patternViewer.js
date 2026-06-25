@@ -1124,11 +1124,43 @@ let basePaths = []; // 저장된 필기 (박제)
                 window.addEventListener('touchend', onTouchEnd);
             }
 
+            // Apple Pencil은 touchstart 대신 pointerdown(type=pen)으로 들어옴
+            // → pointerdown으로도 드래그/선택이 동작하도록 추가 등록
+            function onPointerDown(ev) {
+                if (ev.pointerType !== 'pen' && ev.pointerType !== 'touch') return;
+                if (_isZooming || _isPinching) return;
+                _startClientY = ev.clientY;
+                _hasMoved = false;
+                _dragStarted = false;
+                function onPointerMove(ev2) {
+                    if (!_hasMoved && Math.abs(ev2.clientY - _startClientY) > DRAG_THRESHOLD) {
+                        _hasMoved = true;
+                        if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag', markerId); }
+                    }
+                    if (!_hasMoved) return;
+                    const y = clampY(getCanvasY(ev2.clientY));
+                    el.style.top = y + 'px';
+                }
+                function onPointerUp(ev2) {
+                    window.removeEventListener('pointermove', onPointerMove);
+                    window.removeEventListener('pointerup', onPointerUp);
+                    if (_hasMoved) {
+                        const y = clampY(getCanvasY(ev2.clientY));
+                        el.style.top = y + 'px';
+                        dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, 0, true);
+                    }
+                    // 이동 없음(순수 탭)의 경우 → 뒤따르는 click 이벤트가 SelectMarker 처리
+                }
+                window.addEventListener('pointermove', onPointerMove);
+                window.addEventListener('pointerup', onPointerUp);
+            }
+
             el.addEventListener('mousedown', onMouseDown);
             el.addEventListener('touchstart', onTouchStart, { passive: false });
+            el.addEventListener('pointerdown', onPointerDown);
 
             // 나중에 detachMarkerDrag로 떼어낼 수 있도록 참조 저장
-            el._markerDragHandlers = { onMouseDown, onTouchStart };
+            el._markerDragHandlers = { onMouseDown, onTouchStart, onPointerDown };
         },
 
         // 흔적 남기기 등으로 더 이상 이동 불가능해진 마커의 드래그 리스너를 제거
@@ -1140,6 +1172,7 @@ let basePaths = []; // 저장된 필기 (박제)
             if (h) {
                 el.removeEventListener('mousedown', h.onMouseDown);
                 el.removeEventListener('touchstart', h.onTouchStart);
+                el.removeEventListener('pointerdown', h.onPointerDown);
             }
             el._markerDragAttached = false;
             el._markerDragHandlers = null;
