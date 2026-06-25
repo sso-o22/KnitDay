@@ -681,6 +681,14 @@ namespace KnitLog.Services
             if (!IsLoggedIn) return;
             try
             {
+                // Cloudinary 미업로드 파일(PDF/사진) 먼저 처리
+                var projectsToCheck = await GetProjectsAsync();
+                bool hasPendingMedia = projectsToCheck.Any(p =>
+                    (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl) && p.PatternCloudUrl != PatternCloudUrlLocalOnly) ||
+                    p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
+                if (hasPendingMedia)
+                    await MigrateLocalMediaToCloudAsync();
+
                 await SaveFirebaseAsync("projects", await GetProjectsAsync(), "Id");
                 await SaveFirebaseAsync("yarns",    await GetYarnsAsync(),    "Id");
                 await SaveFirebaseAsync("tools",    await GetToolsAsync(),    "Id");
