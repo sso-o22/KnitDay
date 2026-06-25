@@ -76,7 +76,6 @@
                         {
                             var markerY   = marker.Y * _zoom;
                             var markerH   = Math.Max(marker.RowHeight * _zoom, 4);
-                            var markerW   = marker.PageWidth * _zoom;
                             var alpha     = marker.IsCurrent ? "0.45" : "0.30";
                             var rgb       = HexToRgb(marker.Color);
                             var darkRgb   = DarkenRgb(marker.Color);
@@ -92,7 +91,7 @@
                                 : "";
                             <div @key="marker.Id" id="@markerId" @onclick="() => SelectMarker(marker.Id)" @onclick:stopPropagation="true"
                                  style="position:absolute;left:0;top:@(markerY)px;
-                                        width:@(markerW)px;height:@(markerH)px;
+                                        width:100%;height:@(markerH)px;
                                         background:rgba(@rgb,@alpha);
                                         @boxShadow
                                         @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
@@ -1731,15 +1730,17 @@
             StateHasChanged();
             return;
         }
+        // zoom=0은 JS에서 "현재 Blazor _zoom을 써라"는 sentinel
+        var effectiveZoom = zoom > 0 ? zoom : _zoom;
         var marker = targetId != null ? _rowMarkers.FirstOrDefault(m => m.Id == targetId) : null;
         if (marker != null)
         {
-            var y = finalCssY / zoom;
+            var y = finalCssY / effectiveZoom;
             // 페이지 경계를 넘어가면 마커가 화면 밖으로 사라지므로 0~페이지높이 범위로 고정
             try
             {
                 var pageHCss = await JS.InvokeAsync<double>("patternViewer.getPageHeight", marker.Page);
-                var maxY = Math.Max(0, pageHCss / zoom - marker.RowHeight);
+                var maxY = Math.Max(0, pageHCss / effectiveZoom - marker.RowHeight);
                 y = Math.Clamp(y, 0, maxY);
             }
             catch { y = Math.Max(0, y); }
