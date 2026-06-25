@@ -47,11 +47,13 @@ namespace KnitLog.Models
         public string Name { get; set; } = "";
 
         // 연결
-        // YarnId는 구 데이터 역직렬화 호환용 — 로드 시 YarnIds로 자동 마이그레이션
-        [System.Text.Json.Serialization.JsonIgnore]
+        // YarnId: 구 데이터 역직렬화 호환용
+        // - JsonIgnore(WhenWritingNull): null이면 직렬화 제외 → Firestore에 YarnId 필드 안 씀
+        // - 역직렬화(읽기) 시엔 setter가 YarnIds로 자동 마이그레이션
+        [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
         public Guid? YarnId
         {
-            get => YarnIds.Count > 0 ? YarnIds[0] : null;
+            get => null; // 항상 null 반환 → WhenWritingNull 조건에 의해 직렬화 제외
             set { if (value.HasValue && !YarnIds.Contains(value.Value)) YarnIds.Insert(0, value.Value); }
         }
         public List<Guid> YarnIds { get; set; } = new();
