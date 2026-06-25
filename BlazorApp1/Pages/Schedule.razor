@@ -342,7 +342,7 @@ else
                                 var scSyFirst = s.YarnIds.Select(id => _yarns.Find(y => y.Id == id)).FirstOrDefault(y => y != null);
                                 <option value="@s.Id">
                                     @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
-                                    @(scSyFirst != null ? $" ({scSyFirst.Brand} {scSyFirst.Name}@(s.YarnIds.Count > 1 ? " 외" : ""))" : "")
+                                    @(scSyFirst != null ? SwatchYarnLabel(scSyFirst.Brand, scSyFirst.Name, s.YarnIds.Count) : "")
                                 </option>
                             }
                         </select>
@@ -697,6 +697,9 @@ else
         if (!_editingProject.YarnUsages.Any(u => u.YarnId == yarnId))
             _editingProject.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = 1 });
     }
+
+    string SwatchYarnLabel(string brand, string name, int count)
+        => count > 1 ? $" ({brand} {name} 외)" : $" ({brand} {name})";
 
     void OnScheduleSwatchSelect(ChangeEventArgs e)
     {

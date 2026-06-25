@@ -975,7 +975,7 @@ else
                             var isLinked = s.ProjectId == _project!.Id;
                             <option value="@s.Id" disabled="@isLinked">
                                 @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
-                                @(syFirst != null ? $" ({syFirst.Brand} {syFirst.Name}@(s.YarnIds.Count > 1 ? " 외" : ""))" : "")
+                                @(syFirst != null ? SwatchYarnLabel(syFirst.Brand, syFirst.Name, s.YarnIds.Count) : "")
                             </option>
                         }
                     </select>
@@ -1858,6 +1858,9 @@ else
         _saving = false;
         await JS.InvokeVoidAsync("showToast", "저장됐어요");
         }
+
+    string SwatchYarnLabel(string brand, string name, int count)
+        => count > 1 ? $" ({brand} {name} 외)" : $" ({brand} {name})";
 
     void ToggleSwatchLink(Swatch s)
     {

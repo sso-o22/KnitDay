@@ -265,14 +265,14 @@ else
                 }
                 <div style="margin-top:6px;">
                     <label class="form-label" style="font-size:0.8rem;color:var(--text-light);">또는 직접 입력 (창고에 없는 실)</label>
-                    @foreach (var (dn, di) in (_editing.YarnNameDirects.Any() ? _editing.YarnNameDirects : (string.IsNullOrEmpty(_editing.YarnNameDirect) ? new List<string>() : new List<string>{_editing.YarnNameDirect})).Select((v,i)=>(v,i)).ToList())
+                    @for (int di = 0; di < GetDirectYarnNames().Count; di++)
                     {
                         var idx = di;
                         <div style="display:flex;gap:6px;margin-bottom:4px;">
-                            <input class="form-control" style="flex:1;" value="@dn"
-                                   @onchange="e => { if (_editing.YarnNameDirects.Count == 0 && !string.IsNullOrEmpty(_editing.YarnNameDirect)) { _editing.YarnNameDirects.Add(_editing.YarnNameDirect); _editing.YarnNameDirect = ""; } if (idx < _editing.YarnNameDirects.Count) _editing.YarnNameDirects[idx] = e.Value?.ToString() ?? ""; }"
+                            <input class="form-control" style="flex:1;" value="@GetDirectYarnNames()[idx]"
+                                   @onchange="e => SetDirectYarnName(idx, e.Value?.ToString() ?? string.Empty)"
                                    placeholder="실 이름 직접 입력" />
-                            <button class="btn btn-danger btn-sm" @onclick="() => { if (_editing.YarnNameDirects.Any()) _editing.YarnNameDirects.RemoveAt(idx); else _editing.YarnNameDirect = ""; }"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            <button class="btn btn-danger btn-sm" @onclick="() => RemoveDirectYarnName(idx)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                         </div>
                     }
                     <button class="btn btn-ghost btn-sm" style="font-size:0.8rem;" @onclick="AddDirectYarnName">+ 직접 입력 추가</button>
@@ -737,14 +737,33 @@ else
         StateHasChanged();
     }
 
-    void AddDirectYarnName()
+    List<string> GetDirectYarnNames()
     {
-        if (_editing.YarnNameDirects.Count == 0 && !string.IsNullOrEmpty(_editing.YarnNameDirect))
+        // YarnNameDirects가 비어있고 YarnNameDirect(구 단일 필드)에 값이 있으면 마이그레이션
+        if (!_editing.YarnNameDirects.Any() && !string.IsNullOrEmpty(_editing.YarnNameDirect))
         {
             _editing.YarnNameDirects.Add(_editing.YarnNameDirect);
-            _editing.YarnNameDirect = "";
+            _editing.YarnNameDirect = string.Empty;
         }
-        _editing.YarnNameDirects.Add("");
+        return _editing.YarnNameDirects;
+    }
+
+    void SetDirectYarnName(int idx, string val)
+    {
+        var list = GetDirectYarnNames();
+        if (idx < list.Count) list[idx] = val;
+    }
+
+    void RemoveDirectYarnName(int idx)
+    {
+        var list = GetDirectYarnNames();
+        if (idx < list.Count) list.RemoveAt(idx);
+    }
+
+    void AddDirectYarnName()
+    {
+        GetDirectYarnNames(); // 마이그레이션 트리거
+        _editing.YarnNameDirects.Add(string.Empty);
     }
 
     void OnProjectChanged(ChangeEventArgs e)
