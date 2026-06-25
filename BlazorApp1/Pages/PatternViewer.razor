@@ -19,7 +19,7 @@
 
     <!-- PDF 스크롤 영역 (꽉 차게) -->
     <div id="scroll-container" class="pv-scroll">
-        <div id="pdf-wrapper" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:66px 0 8px;">
+        <div id="pdf-wrapper" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:66px 0 8px;" @onclick="DeselectMarker">
             @if (_pdfLoaded)
             {
                 @for (int pg = 1; pg <= _totalPages; pg++)
@@ -1904,6 +1904,13 @@
     {
         // 같은 마커 다시 클릭하면 선택 해제
         _selectedMarkerId = _selectedMarkerId == markerId ? null : markerId;
+        StateHasChanged();
+    }
+
+    void DeselectMarker()
+    {
+        if (_selectedMarkerId == null) return;
+        _selectedMarkerId = null;
         StateHasChanged();
     }
 
