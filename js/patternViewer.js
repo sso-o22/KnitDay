@@ -778,14 +778,20 @@ let basePaths = []; // 저장된 필기 (박제)
         },
 
         // 마이그레이션용: 저장된 PDF를 base64 문자열로 반환 (없으면 null)
+        // btoa(String.fromCharCode(...)) 한 번에 하면 수MB PDF에서 스택/메모리 초과로 실패하므로
+        // 청크 단위로 나눠서 처리
         async getSavedPdfBase64(projectId) {
             try {
                 const r = await loadPdfFromIDB(projectId);
                 if (!r?.bytes) return null;
                 const bytes = r.bytes instanceof Uint8Array ? r.bytes : new Uint8Array(r.bytes);
-                let bin = ''; for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+                const CHUNK = 8192;
+                let bin = '';
+                for (let i = 0; i < bytes.length; i += CHUNK) {
+                    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + CHUNK));
+                }
                 return btoa(bin);
-            } catch(e) { return null; }
+            } catch(e) { console.error('getSavedPdfBase64:', e); return null; }
         },
 
         async renderSavedPdf(projectId) {
