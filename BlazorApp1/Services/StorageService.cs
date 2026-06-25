@@ -399,6 +399,7 @@ namespace KnitLog.Services
                     OnMigrationProgress?.Invoke(progress);
 
                     string? cloudUrl = null;
+                    bool pdfCountHandled = false;
                     for (int attempt = 1; attempt <= MaxRetry; attempt++)
                     {
                         try
@@ -410,7 +411,14 @@ namespace KnitLog.Services
                                 if (err == "quota") { quotaReached = true; break; }
                                 if (!string.IsNullOrEmpty(u)) { cloudUrl = u; proj.PatternFileSizeBytes = pdfBytes; break; }
                             }
-                            else break; // PDF 없음 — 재시도 불필요
+                            else
+                            {
+                                // IDB에 PDF 없음 — 카운트 처리 후 종료
+                                progress.Failed++;
+                                pdfCountHandled = true;
+                                OnMigrationProgress?.Invoke(progress);
+                                break;
+                            }
                         }
                         catch { }
                         if (attempt < MaxRetry)
@@ -419,17 +427,20 @@ namespace KnitLog.Services
 
                     if (quotaReached) break;
 
-                    if (!string.IsNullOrEmpty(cloudUrl))
+                    if (!pdfCountHandled)
                     {
-                        proj.PatternCloudUrl = cloudUrl;
-                        changed = true;
-                        progress.Done++;
+                        if (!string.IsNullOrEmpty(cloudUrl))
+                        {
+                            proj.PatternCloudUrl = cloudUrl;
+                            changed = true;
+                            progress.Done++;
+                        }
+                        else
+                        {
+                            progress.Failed++;
+                        }
+                        OnMigrationProgress?.Invoke(progress);
                     }
-                    else
-                    {
-                        progress.Failed++;
-                    }
-                    OnMigrationProgress?.Invoke(progress);
                 }
             }
 
