@@ -203,11 +203,19 @@
                     }
                     else if (_deviceQuotaBytes <= 0)
                     {
-                        <span style="font-size:0.75rem; color:var(--text-light);">정보 없음</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:0.75rem; color:var(--text-light);">정보 없음</span>
+                            <button class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:0.72rem;"
+                                    @onclick="RefreshDeviceUsageAsync">↺</button>
+                        </div>
                     }
                     else
                     {
-                        <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(_idbPhotoBytes + _idbPdfBytes + _idbOtherBytes) 사용 / @FmtSize(_deviceQuotaBytes)</span>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <span style="font-size:0.75rem; color:var(--text-light);">@FmtSize(_idbPhotoBytes + _idbPdfBytes + _idbOtherBytes) 사용 / @FmtSize(_deviceQuotaBytes)</span>
+                            <button class="btn btn-ghost btn-sm" style="padding:2px 8px; font-size:0.72rem;"
+                                    @onclick="RefreshDeviceUsageAsync">↺</button>
+                        </div>
                     }
                 </div>
                 @if (_deviceUsageLoaded && _deviceQuotaBytes > 0)
@@ -285,12 +293,17 @@
                 <span style="font-size:0.78rem; color:var(--text-light);">@(_versionInfo.Date)</span>
             </div>
             <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:6px;">이번 업데이트</div>
-            <ul style="margin:0; padding-left:18px; display:flex; flex-direction:column; gap:4px;">
+            <ul style="margin:0 0 12px; padding-left:18px; display:flex; flex-direction:column; gap:4px;">
                 @foreach (var item in _versionInfo.Updates)
                 {
                     <li style="font-size:0.85rem; color:var(--text-dark);">@item</li>
                 }
             </ul>
+            @if (_versionInfo.History.Any())
+            {
+                <button style="background:none;border:none;padding:0;font-size:0.78rem;color:var(--text-light);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;"
+                        @onclick="() => _showHistoryPopup = true">과거 업데이트 이력 보기</button>
+            }
         }
         else
         {
@@ -523,6 +536,40 @@
     </div>
 }
 
+@if (_showHistoryPopup && _versionInfo != null)
+{
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;"
+         @onclick="() => _showHistoryPopup = false">
+        <div style="background:var(--white);border-radius:20px;padding:24px 20px 20px;max-width:360px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.18);max-height:80vh;display:flex;flex-direction:column;"
+             @onclick:stopPropagation="true">
+            <div style="font-size:1rem;font-weight:700;margin-bottom:16px;color:var(--text-dark);display:flex;align-items:center;gap:8px;">
+                <img src="icons/clock-counter-clockwise.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />
+                과거 업데이트 이력
+            </div>
+            <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:16px;">
+                @foreach (var h in _versionInfo.History)
+                {
+                    <div>
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                            <span style="font-size:0.88rem;font-weight:700;color:var(--text-dark);">v@(h.Version)</span>
+                            <span style="font-size:0.75rem;color:var(--text-light);">@h.Date</span>
+                        </div>
+                        <ul style="margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px;">
+                            @foreach (var item in h.Updates)
+                            {
+                                <li style="font-size:0.82rem;color:var(--text-mid);">@item</li>
+                            }
+                        </ul>
+                    </div>
+                }
+            </div>
+            <div style="margin-top:16px;text-align:center;">
+                <button class="btn btn-ghost" @onclick="() => _showHistoryPopup = false">닫기</button>
+            </div>
+        </div>
+    </div>
+}
+
 @if (_showWithdrawConfirm)
 {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;">
@@ -593,9 +640,22 @@
         public string Date { get; set; } = "";
         [System.Text.Json.Serialization.JsonPropertyName("updates")]
         public List<string> Updates { get; set; } = new();
+        [System.Text.Json.Serialization.JsonPropertyName("history")]
+        public List<VersionHistoryEntry> History { get; set; } = new();
+    }
+
+    class VersionHistoryEntry
+    {
+        [System.Text.Json.Serialization.JsonPropertyName("version")]
+        public string Version { get; set; } = "";
+        [System.Text.Json.Serialization.JsonPropertyName("date")]
+        public string Date { get; set; } = "";
+        [System.Text.Json.Serialization.JsonPropertyName("updates")]
+        public List<string> Updates { get; set; } = new();
     }
 
     VersionInfo? _versionInfo;
+    bool _showHistoryPopup = false;
 
     record ThemeOption(string Id, string Name, string DotColor);
 
@@ -689,34 +749,7 @@
             // 저장공간 로드 (로그인 완료 후에는 OnAuthChangedHandler참조)
             await LoadUsageAsync();
             if (!Auth.IsLoggedIn)
-            {
-                try
-                {
-                    var estimateJson = await JS.InvokeAsync<string>("eval",
-                        "(async()=>{if(!navigator.storage||!navigator.storage.estimate)return '{\"quota\":0,\"usage\":0}';const e=await navigator.storage.estimate();return JSON.stringify({quota:e.quota??0,usage:e.usage??0});})()");
-                    if (!string.IsNullOrEmpty(estimateJson))
-                    {
-                        using var doc = System.Text.Json.JsonDocument.Parse(estimateJson);
-                        _deviceQuotaBytes = doc.RootElement.TryGetProperty("quota", out var q) ? q.GetInt64() : 0;
-                        _deviceUsedBytes  = doc.RootElement.TryGetProperty("usage", out var u) ? u.GetInt64() : 0;
-                    }
-                }
-                catch { }
-                // IDB 용량 분류 로드
-                try
-                {
-                    var breakdownJson = await JS.InvokeAsync<string>("knitDB.getUsageBreakdown");
-                    if (!string.IsNullOrEmpty(breakdownJson))
-                    {
-                        using var doc = System.Text.Json.JsonDocument.Parse(breakdownJson);
-                        _idbPhotoBytes = doc.RootElement.TryGetProperty("photoBytes", out var p) ? p.GetInt64() : 0;
-                        _idbPdfBytes   = doc.RootElement.TryGetProperty("pdfBytes",   out var d) ? d.GetInt64() : 0;
-                        _idbOtherBytes = doc.RootElement.TryGetProperty("otherBytes", out var o) ? o.GetInt64() : 0;
-                    }
-                }
-                catch { }
-                _deviceUsageLoaded = true;
-            }
+                await RefreshDeviceUsageAsync();
             _usageLoaded = true;
             StateHasChanged();
             var debug = await JS.InvokeAsync<string?>("localStorage.getItem", "knitlog_debug");
@@ -988,6 +1021,38 @@
         {
             _usageDebugMsg = $"오류: {ex.Message}";
         }
+        StateHasChanged();
+    }
+
+    async Task RefreshDeviceUsageAsync()
+    {
+        _deviceUsageLoaded = false;
+        StateHasChanged();
+        try
+        {
+            var estimateJson = await JS.InvokeAsync<string>("eval",
+                "(async()=>{if(!navigator.storage||!navigator.storage.estimate)return '{\"quota\":0,\"usage\":0}';const e=await navigator.storage.estimate();return JSON.stringify({quota:e.quota??0,usage:e.usage??0});})()");
+            if (!string.IsNullOrEmpty(estimateJson))
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(estimateJson);
+                _deviceQuotaBytes = doc.RootElement.TryGetProperty("quota", out var q) ? q.GetInt64() : 0;
+                _deviceUsedBytes  = doc.RootElement.TryGetProperty("usage", out var u) ? u.GetInt64() : 0;
+            }
+        }
+        catch { }
+        try
+        {
+            var breakdownJson = await JS.InvokeAsync<string>("knitDB.getUsageBreakdown");
+            if (!string.IsNullOrEmpty(breakdownJson))
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(breakdownJson);
+                _idbPhotoBytes = doc.RootElement.TryGetProperty("photoBytes", out var p) ? p.GetInt64() : 0;
+                _idbPdfBytes   = doc.RootElement.TryGetProperty("pdfBytes",   out var d) ? d.GetInt64() : 0;
+                _idbOtherBytes = doc.RootElement.TryGetProperty("otherBytes", out var o) ? o.GetInt64() : 0;
+            }
+        }
+        catch { }
+        _deviceUsageLoaded = true;
         StateHasChanged();
     }
 
