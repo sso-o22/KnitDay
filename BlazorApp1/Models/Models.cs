@@ -47,8 +47,16 @@ namespace KnitLog.Models
         public string Name { get; set; } = "";
 
         // 연결
-        public Guid? YarnId { get; set; }
-        public string YarnNameDirect { get; set; } = "";    // 직접 입력 실 이름
+        // YarnId는 구 데이터 역직렬화 호환용 — 로드 시 YarnIds로 자동 마이그레이션
+        [System.Text.Json.Serialization.JsonIgnore]
+        public Guid? YarnId
+        {
+            get => YarnIds.Count > 0 ? YarnIds[0] : null;
+            set { if (value.HasValue && !YarnIds.Contains(value.Value)) YarnIds.Insert(0, value.Value); }
+        }
+        public List<Guid> YarnIds { get; set; } = new();
+        public string YarnNameDirect { get; set; } = "";    // 직접 입력 실 이름 (단일)
+        public List<string> YarnNameDirects { get; set; } = new(); // 합사 시 여러 실 이름
         public Guid? ProjectId { get; set; }
 
         // 도구

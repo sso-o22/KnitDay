@@ -237,7 +237,7 @@ else
                         </div>
                         <div class="form-group">
                             <label class="form-label" style="font-size:0.78rem;">원작 게이지</label>
-                            <input class="form-control" @bind="_editingProject.OriginalGauge" placeholder="예: 22코 × 30단 / 10cm * 10cm" />
+                            <input class="form-control" @bind="_editingProject.OriginalGauge" placeholder="예: 22코 × 30단 / 10cm" />
                         </div>
                     </div>
                     <div class="form-row">
@@ -339,10 +339,10 @@ else
                             <option value="">+ 스와치 연결</option>
                             @foreach (var s in _allSwatches.Where(s => (s.ProjectId == null || s.ProjectId == Guid.Empty) ))
                             {
-                                var sy = _yarns.Find(y => y.Id == s.YarnId);
+                                var scSyFirst = s.YarnIds.Select(id => _yarns.Find(y => y.Id == id)).FirstOrDefault(y => y != null);
                                 <option value="@s.Id">
                                     @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
-                                    @(sy != null ? $" ({sy.Brand} {sy.Name})" : "")
+                                    @(scSyFirst != null ? $" ({scSyFirst.Brand} {scSyFirst.Name}@(s.YarnIds.Count > 1 ? " 외" : ""))" : "")
                                 </option>
                             }
                         </select>
@@ -351,7 +351,7 @@ else
                             <div style="margin-top:8px;">
                                 @foreach (var s in _allSwatches.Where(s => s.ProjectId == _editingProject!.Id && _editingProject.Id != Guid.Empty))
                                 {
-                                    var sy = _yarns.Find(y => y.Id == s.YarnId);
+                                    var scSyYarns = s.YarnIds.Select(id => _yarns.Find(y => y.Id == id)).Where(y => y != null).ToList();
                                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:8px 12px;
                                                 border-radius:var(--radius-sm); background:var(--ivory-mid); border:1px solid var(--border);">
                                         <div style="flex:1; min-width:0;">
@@ -366,10 +366,10 @@ else
                                                     <span style="font-weight:400; color:var(--text-mid); margin-left:4px;">@(s.NeedleSizeMm)mm</span>
                                                 }
                                             </div>
-                                            @if (sy != null)
+                                            @foreach (var sy in scSyYarns)
                                             {
-                                                <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px; margin-top:3px;">
-                                                    <span class="color-dot" style="background:@sy.ColorCode; width:8px; height:8px;"></span>
+                                                <div style="font-size:0.75rem; color:var(--text-light); display:flex; align-items:center; gap:4px; margin-top:2px;">
+                                                    <span class="color-dot" style="background:@sy!.ColorCode; width:8px; height:8px;"></span>
                                                     @sy.Brand @sy.Name
                                                 </div>
                                             }

@@ -90,7 +90,7 @@ else
     <div class="grid-3">
         @foreach (var s in SortedSwatches)
         {
-            var yarn = _yarns.Find(y => y.Id == s.YarnId);
+            var cardYarns = s.YarnIds.Select(id => _yarns.Find(y => y.Id == id)).Where(y => y != null).ToList();
             var project = _projects.Find(p => p.Id == s.ProjectId);
             <div class="card swatch-card">
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:8px; margin-bottom:10px;">
@@ -98,16 +98,27 @@ else
                         <div class="card-title" style="margin-bottom:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                             @(string.IsNullOrEmpty(s.Name) ? "스와치" : s.Name)
                         </div>
-                        @if (yarn != null)
+                        @if (cardYarns.Any())
                         {
-                            <div style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text-mid); overflow:hidden;">
-                                <span class="color-dot" style="background:@yarn.ColorCode; width:12px; height:12px; flex-shrink:0;"></span>
-                                <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@yarn.Name</span>
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                @foreach (var cy in cardYarns)
+                                {
+                                    <div style="display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--text-mid); overflow:hidden;">
+                                        <span class="color-dot" style="background:@cy!.ColorCode; width:10px; height:10px; flex-shrink:0;"></span>
+                                        <span style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">@cy.Name</span>
+                                    </div>
+                                }
                             </div>
                         }
-                        else if (!string.IsNullOrEmpty(s.YarnNameDirect))
+                        else if (s.YarnNameDirects.Any() || !string.IsNullOrEmpty(s.YarnNameDirect))
                         {
-                            <div style="font-size:0.82rem; color:var(--text-mid); display:flex;align-items:center;gap:4px;overflow:hidden;"><img src="icons/yarn.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" /><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@s.YarnNameDirect</span></div>
+                            var directNames = s.YarnNameDirects.Any() ? s.YarnNameDirects : new List<string>{ s.YarnNameDirect };
+                            <div style="display:flex; flex-direction:column; gap:2px;">
+                                @foreach (var dn in directNames.Where(n => !string.IsNullOrEmpty(n)))
+                                {
+                                    <div style="font-size:0.82rem; color:var(--text-mid); display:flex;align-items:center;gap:4px;overflow:hidden;"><img src="icons/yarn.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" /><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@dn</span></div>
+                                }
+                            </div>
                         }
                     </div>
                     <div style="display:flex; gap:6px; flex-shrink:0;">
@@ -228,20 +239,43 @@ else
                 <input class="form-control" @bind="_editing.Name" placeholder="예: 러스크 메리야스" />
             </div>
 
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                <div class="form-group">
-                    <label class="form-label">사용 실 — 창고에서 선택</label>
-                    <select class="form-control" value="@_editing.YarnId" @onchange="OnYarnChanged">
-                        <option value="">선택 안 함</option>
-                        @foreach (var y in _yarns)
-                        {
-                            <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
-                        }
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">또는 직접 입력</label>
-                    <input class="form-control" @bind="_editing.YarnNameDirect" placeholder="" />
+            <div class="form-group">
+                <label class="form-label">사용 실 (합사 시 여러 개 추가 가능)</label>
+                <select class="form-control" style="margin-bottom:8px;" @onchange="OnYarnChanged">
+                    <option value="">+ 실 추가 (창고에서 선택)</option>
+                    @foreach (var y in _yarns)
+                    {
+                        var alreadyAdded = _editing.YarnIds.Contains(y.Id);
+                        <option value="@y.Id" disabled="@alreadyAdded">
+                            @y.Brand @y.Name (@y.Color)@(alreadyAdded ? " ✓" : "")
+                        </option>
+                    }
+                </select>
+                @foreach (var yid in _editing.YarnIds.ToList())
+                {
+                    var ey = _yarns.Find(y => y.Id == yid);
+                    if (ey != null)
+                    {
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 10px;border-radius:9px;background:#f8f8f8;border:1px solid var(--border);">
+                            <span class="color-dot" style="background:@ey.ColorCode;flex-shrink:0;"></span>
+                            <span style="flex:1;font-size:0.88rem;">@ey.Brand @ey.Name (@ey.Color)</span>
+                            <button class="btn btn-danger btn-sm" @onclick="() => _editing.YarnIds.Remove(yid)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                        </div>
+                    }
+                }
+                <div style="margin-top:6px;">
+                    <label class="form-label" style="font-size:0.8rem;color:var(--text-light);">또는 직접 입력 (창고에 없는 실)</label>
+                    @foreach (var (dn, di) in (_editing.YarnNameDirects.Any() ? _editing.YarnNameDirects : (string.IsNullOrEmpty(_editing.YarnNameDirect) ? new List<string>() : new List<string>{_editing.YarnNameDirect})).Select((v,i)=>(v,i)).ToList())
+                    {
+                        var idx = di;
+                        <div style="display:flex;gap:6px;margin-bottom:4px;">
+                            <input class="form-control" style="flex:1;" value="@dn"
+                                   @onchange="e => { if (_editing.YarnNameDirects.Count == 0 && !string.IsNullOrEmpty(_editing.YarnNameDirect)) { _editing.YarnNameDirects.Add(_editing.YarnNameDirect); _editing.YarnNameDirect = ""; } if (idx < _editing.YarnNameDirects.Count) _editing.YarnNameDirects[idx] = e.Value?.ToString() ?? ""; }"
+                                   placeholder="실 이름 직접 입력" />
+                            <button class="btn btn-danger btn-sm" @onclick="() => { if (_editing.YarnNameDirects.Any()) _editing.YarnNameDirects.RemoveAt(idx); else _editing.YarnNameDirect = ""; }"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                        </div>
+                    }
+                    <button class="btn btn-ghost btn-sm" style="font-size:0.8rem;" @onclick="AddDirectYarnName">+ 직접 입력 추가</button>
                 </div>
             </div>
 
@@ -696,7 +730,21 @@ else
     void OnYarnChanged(ChangeEventArgs e)
     {
         var val = e.Value?.ToString();
-        _editing.YarnId = !string.IsNullOrEmpty(val) ? Guid.Parse(val) : null;
+        if (string.IsNullOrEmpty(val)) return;
+        if (!Guid.TryParse(val, out var yid)) return;
+        if (!_editing.YarnIds.Contains(yid))
+            _editing.YarnIds.Add(yid);
+        StateHasChanged();
+    }
+
+    void AddDirectYarnName()
+    {
+        if (_editing.YarnNameDirects.Count == 0 && !string.IsNullOrEmpty(_editing.YarnNameDirect))
+        {
+            _editing.YarnNameDirects.Add(_editing.YarnNameDirect);
+            _editing.YarnNameDirect = "";
+        }
+        _editing.YarnNameDirects.Add("");
     }
 
     void OnProjectChanged(ChangeEventArgs e)
@@ -709,7 +757,7 @@ else
     {
         _editing = new Swatch
         {
-            Id = s.Id, Name = s.Name, YarnId = s.YarnId, YarnNameDirect = s.YarnNameDirect,
+            Id = s.Id, Name = s.Name, YarnIds = new List<Guid>(s.YarnIds), YarnNameDirect = s.YarnNameDirect, YarnNameDirects = new List<string>(s.YarnNameDirects),
             ProjectId = s.ProjectId, NeedleSizeMm = s.NeedleSizeMm, Stitch = s.Stitch,
             PreWashStitches = s.PreWashStitches, PreWashRows = s.PreWashRows,
             PreWashWidthCm = s.PreWashWidthCm, PreWashHeightCm = s.PreWashHeightCm,
