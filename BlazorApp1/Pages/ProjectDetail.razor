@@ -693,17 +693,19 @@ else
             }
             else
             {
-                <div style="display:flex; flex-wrap:wrap; gap:10px;">
+                <div style="display:flex; flex-direction:column; gap:8px;">
                     @foreach (var usage in _project.YarnUsages)
                     {
                         var yarn = _yarns.Find(y => y.Id == usage.YarnId);
                         if (yarn != null)
                         {
                             bool _isConeD = yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0;
-                            <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 14px; display:flex; align-items:center; gap:10px; min-width:180px;">
+                            <div style="background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px 14px; display:flex; align-items:center; gap:10px;">
                                 <span class="color-dot" style="background:@yarn.ColorCode; width:20px; height:20px; border-radius:50%; flex-shrink:0; border:1px solid rgba(0,0,0,0.08);"></span>
-                                <div>
-                                    <div style="font-size:0.88rem; font-weight:600;">@yarn.Brand @yarn.Name</div>
+                                <div style="flex:1; min-width:0;">
+                                    <div style="font-size:0.88rem; font-weight:600;">
+                                        @yarn.Brand @yarn.Name@(yarn.Ply > 0 ? $" {yarn.Ply}합" : "")
+                                    </div>
                                     <div style="font-size:0.78rem; color:var(--text-mid);">@yarn.Color</div>
                                     @if (usage.BallsUsed > 0)
                                     {
