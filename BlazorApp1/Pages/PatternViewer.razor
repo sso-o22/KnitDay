@@ -1388,7 +1388,7 @@
                             {
                                 var (cloudUrl, cloudErr, cloudBytes) = await Storage.UploadPdfAsync(ProjectId.ToString(), bytes);
                                 if (cloudErr == "quota")
-                                    await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
+                                    await JS.InvokeVoidAsync("showToast", $"저장공간 {FmtLimit(Storage.PerUserLimitBytes)} 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
                                 else if (cloudErr == "not_logged_in")
                                     await JS.InvokeVoidAsync("showToast", "로그인 정보를 확인할 수 없어요. 도안이 이 기기에만 저장됩니다.", "error");
                                 else if (!string.IsNullOrEmpty(cloudUrl))
@@ -1908,6 +1908,8 @@
         _selectedMarkerId = _selectedMarkerId == markerId ? null : markerId;
         StateHasChanged();
     }
+
+    static string FmtLimit(long b) => b >= 1024L*1024*1024 ? $"{b/1024.0/1024/1024:F0}GB" : $"{b/1024.0/1024:F0}MB";
 
     void DeselectMarker()
     {

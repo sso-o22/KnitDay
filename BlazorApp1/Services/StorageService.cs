@@ -102,7 +102,7 @@ namespace KnitLog.Services
         // - 같은 Id: UpdatedAt이 더 최신인 것 우선
         // - 한쪽에만 있으면: 그냥 포함
         // ── Cloudinary 업로드 ────────────────────────────────
-        public const long PerUserLimitBytes = 500L * 1024 * 1024; // 500MB
+        public long PerUserLimitBytes { get; private set; } = 500L * 1024 * 1024; // 기본 500MB — 로그인 시 Firestore quota 문서로 덮어씀
         public const long MaxPdfUploadBytes = 10L * 1024 * 1024;   // 10MB — Cloudinary free 제한
         // PatternCloudUrl에 세팅하는 특수값: 클라우드 업로드 불가(용량 초과 등) → 재시도 방지
         public const string PatternCloudUrlLocalOnly = "local-only";
@@ -310,6 +310,27 @@ namespace KnitLog.Services
             OnSyncStarted?.Invoke();
             try
             {
+            // ── 사용자별 용량 한도 읽기 (없으면 기본 500MB로 문서 생성)
+            try
+            {
+                var quotaRaw = await _js.InvokeAsync<string?>(
+                    "firebaseStore.getDocument", $"users/{Uid}/meta/quota");
+                if (!string.IsNullOrEmpty(quotaRaw) && !quotaRaw.StartsWith("__error__:"))
+                {
+                    // 문서 있음 → limitBytes 읽어서 적용
+                    using var qDoc = System.Text.Json.JsonDocument.Parse(quotaRaw);
+                    if (qDoc.RootElement.TryGetProperty("limitBytes", out var lb) && lb.GetInt64() > 0)
+                        PerUserLimitBytes = lb.GetInt64();
+                }
+                else if (quotaRaw == null) // 문서 없음 → 기본값으로 생성
+                {
+                    await _js.InvokeAsync<bool>(
+                        "firebaseStore.setDocument", $"users/{Uid}/meta/quota",
+                        JsonSerializer.Serialize(new { limitBytes = PerUserLimitBytes, createdAt = DateTime.UtcNow }, _jsonOpts));
+                }
+            }
+            catch { }
+
             await MergeCollectionAsync<KnitProject>(KEY_PROJECTS, "projects");
             await MergeCollectionAsync<Yarn>(KEY_YARNS, "yarns");
             await MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools");

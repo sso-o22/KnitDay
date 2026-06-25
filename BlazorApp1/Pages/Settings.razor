@@ -688,7 +688,7 @@
     long _idbPdfBytes = 0;
     long _idbOtherBytes = 0;
     double DeviceUsagePct => _deviceQuotaBytes > 0 ? Math.Min(100.0, _deviceUsedBytes / (double)_deviceQuotaBytes * 100) : 0;
-    static long UsageLimitBytes => StorageService.PerUserLimitBytes;
+    long UsageLimitBytes => Storage.PerUserLimitBytes;
     double UsagePhotoPct => Math.Min(100.0, _photoBytes / (double)UsageLimitBytes * 100);
     double UsagePdfPct   => Math.Min(100.0, (_photoBytes + _pdfBytes) / (double)UsageLimitBytes * 100);
     static string FmtSize(long b) => b >= 1024*1024*1024 ? $"{b/1024.0/1024/1024:F1} GB"

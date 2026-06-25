@@ -100,7 +100,7 @@
                 }
                 else if (_migration.QuotaReached)
                 {
-                    <span style="color:#c03030;">500MB 한도에 도달했어요</span>
+                    <span style="color:#c03030;">@(Storage.PerUserLimitBytes >= 1024L*1024*1024 ? $"{Storage.PerUserLimitBytes/1024.0/1024/1024:F0}GB" : $"{Storage.PerUserLimitBytes/1024.0/1024:F0}MB") 한도에 도달했어요</span>
                 }
                 else if (_migration.Failed > 0)
                 {
