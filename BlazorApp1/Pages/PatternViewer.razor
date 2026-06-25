@@ -77,7 +77,8 @@
                             // 드래그(이동)는 IsCurrent 마커만 가능. 클릭(선택)은 도구 패널이 열려있고 행마커 도구일 때 항상 가능
                             // (흔적 마커도 선택해서 색 변경/삭제할 수 있어야 하므로 IsCurrent 여부와 무관하게 적용)
                             var isInteractive = _drawMode && _tool == "rowmarker";
-                            var isDraggable   = isInteractive && marker.IsCurrent;
+                            // 드래그는 선택된 IsCurrent 마커만 가능 — 클릭으로 먼저 선택 후 드래그
+                            var isDraggable   = isInteractive && marker.IsCurrent && isSelected;
                             var boxShadow = marker.IsCurrent
                                 ? $"box-shadow:0 -{borderH}px 0 0 rgba({darkRgb},0.8),0 {borderH}px 0 0 rgba({darkRgb},0.8);"
                                 : "";
@@ -87,7 +88,7 @@
                                         background:rgba(@rgb,@alpha);
                                         @boxShadow
                                         @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
-                                        pointer-events:@(isInteractive ? "all" : "none");z-index:@(isSelected ? 17 : (marker.IsCurrent ? 16 : 15));cursor:@(isDraggable ? "ns-resize" : (isInteractive ? "pointer" : "default"));@(marker.IsCurrent ? "touch-action:none;" : "")">
+                                        pointer-events:@(isInteractive ? "all" : "none");z-index:@(isSelected ? 17 : (marker.IsCurrent ? 16 : 15));cursor:@(isDraggable ? "ns-resize" : (isInteractive ? "pointer" : "default"));">
                                 @if (marker.IsCurrent)
                                 {
                                     <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
@@ -1059,9 +1060,10 @@
         // 모든 이동 가능한(IsCurrent) 마커에 각각 JS 드래그 부착 (드래그 중에는 재호출 스킵 — 타이머 재렌더와 충돌 방지)
         // 행 마커 드래그는 툴바가 펼쳐져 있고 행마커 도구가 선택된 상태에서만 부착
         // (그렇지 않으면 도안만 보던 중에도 모르고 마커가 움직여버림)
-        if (_dotNetRef != null && !_isDraggingMarker && _drawMode && _tool == "rowmarker")
+        // 드래그는 선택된 IsCurrent 마커만 — 클릭으로 선택 후 드래그 가능
+        if (_dotNetRef != null && !_isDraggingMarker && _drawMode && _tool == "rowmarker" && _selectedMarkerId != null)
         {
-            foreach (var m in _rowMarkers.Where(m => m.IsCurrent))
+            foreach (var m in _rowMarkers.Where(m => m.IsCurrent && m.Id == _selectedMarkerId))
             {
                 var markerId = $"rowmarker-{m.Id:N}";
                 await JS.InvokeVoidAsync("patternViewer.attachMarkerDrag",

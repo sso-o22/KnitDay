@@ -1085,12 +1085,12 @@ let basePaths = []; // 저장된 필기 (박제)
                 // 움직이지 않았으면 서버에 아무 것도 보내지 않음 — 곧바로 발생하는 click 이벤트(@onclick=SelectMarker)만 처리됨
             }
             function onTouchMove(ev) {
-                ev.preventDefault();
                 if (!_hasMoved && Math.abs(ev.touches[0].clientY - _startClientY) > DRAG_THRESHOLD) {
                     _hasMoved = true;
                     if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag', markerId); }
                 }
                 if (!_hasMoved) return;
+                ev.preventDefault(); // 드래그 확정 후에만 스크롤 억제
                 const y = clampY(getCanvasY(ev.touches[0].clientY));
                 el.style.top = y + 'px';
             }
