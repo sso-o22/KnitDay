@@ -1126,12 +1126,14 @@ let basePaths = []; // 저장된 필기 (박제)
 
             // Apple Pencil은 touchstart 대신 pointerdown(type=pen)으로 들어옴
             // → pointerdown으로도 드래그/선택이 동작하도록 추가 등록
+            let _pencilClickPending = false;
             function onPointerDown(ev) {
                 if (ev.pointerType !== 'pen' && ev.pointerType !== 'touch') return;
                 if (_isZooming || _isPinching) return;
                 _startClientY = ev.clientY;
                 _hasMoved = false;
                 _dragStarted = false;
+                _pencilClickPending = false;
                 function onPointerMove(ev2) {
                     if (!_hasMoved && Math.abs(ev2.clientY - _startClientY) > DRAG_THRESHOLD) {
                         _hasMoved = true;
@@ -1148,8 +1150,11 @@ let basePaths = []; // 저장된 필기 (박제)
                         const y = clampY(getCanvasY(ev2.clientY));
                         el.style.top = y + 'px';
                         dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, 0, true);
+                    } else {
+                        // Pencil pointerup 후 click이 안 오는 경우가 있어서 직접 dispatch
+                        _pencilClickPending = true;
+                        requestAnimationFrame(() => { _pencilClickPending = false; el.dispatchEvent(new MouseEvent('click', { bubbles: false })); });
                     }
-                    // 이동 없음(순수 탭)의 경우 → 뒤따르는 click 이벤트가 SelectMarker 처리
                 }
                 window.addEventListener('pointermove', onPointerMove);
                 window.addEventListener('pointerup', onPointerUp);
