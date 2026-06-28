@@ -857,7 +857,7 @@ window.uploadPdfToCloudinary = async function(streamRef, publicId) {
         const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
         const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/raw/upload`;
         const fd = new FormData();
-        fd.append('file', blob, 'file');  // 확장자 없이 — Cloudinary가 publicId 그대로 저장
+        fd.append('file', blob, 'file');
         fd.append('upload_preset', _UPLOAD_PRESET);
         fd.append('public_id', publicId);
         const resp = await fetch(url, { method: 'POST', body: fd });
@@ -867,6 +867,40 @@ window.uploadPdfToCloudinary = async function(streamRef, publicId) {
         return JSON.stringify({ url: data.secure_url, bytes: data.bytes ?? 0, resourceType: 'raw' });
     } catch(e) {
         console.error('uploadPdfToCloudinary:', e);
+        return null;
+    }
+};
+
+// PDF 업로드 — 브라우저별 자동 선택
+// 삼성 인터넷: DotNetStreamReference.arrayBuffer()가 불안정 → base64 사용
+// 그 외(iOS Safari, Chrome 등): stream 방식 사용
+window.uploadPdfToCloudinarySmart = async function(streamRef, base64, publicId) {
+    const isSamsungInternet = /SamsungBrowser/.test(navigator.userAgent);
+    try {
+        let blob;
+        if (isSamsungInternet) {
+            // 삼성 인터넷: base64 → Blob
+            const binary = atob(base64);
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+            blob = new Blob([bytes], { type: 'application/pdf' });
+        } else {
+            // 그 외: DotNetStreamReference → ArrayBuffer → Blob
+            const arrayBuffer = await streamRef.arrayBuffer();
+            blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+        }
+        const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/raw/upload`;
+        const fd = new FormData();
+        fd.append('file', blob, 'file');
+        fd.append('upload_preset', _UPLOAD_PRESET);
+        fd.append('public_id', publicId);
+        const resp = await fetch(url, { method: 'POST', body: fd });
+        if (!resp.ok) { console.error('Cloudinary PDF upload failed', resp.status, isSamsungInternet ? '(base64)' : '(stream)'); return null; }
+        const data = await resp.json();
+        if (!data.secure_url) return null;
+        return JSON.stringify({ url: data.secure_url, bytes: data.bytes ?? 0, resourceType: 'raw' });
+    } catch(e) {
+        console.error('uploadPdfToCloudinarySmart:', e);
         return null;
     }
 };
