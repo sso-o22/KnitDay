@@ -98,7 +98,7 @@ namespace KnitLog.Services
                 _deleted = true,
                 UpdatedAt = DateTime.UtcNow
             });
-            _ = _js.InvokeAsync<bool>("firebaseStore.setDocument",
+            _ = _js.InvokeAsync<bool>("firebaseStore.setTombstone",
                     $"users/{Uid}/{collectionName}/{id}", tombstone).AsTask()
                    .ContinueWith(_ => { }, TaskContinuationOptions.None);
         }
