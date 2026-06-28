@@ -197,6 +197,14 @@ namespace KnitLog.Models
         public string ViewerGridLineColor { get; set; } = "";    // 감지선 색상
         public string ViewerMarkerMode { get; set; } = "single"; // "single" or "multi"
 
+        // 게이지 계산기 저장값
+        public double CalcOrigStitch  { get; set; } = 0;  // ① 원작 코 게이지
+        public double CalcOrigRow     { get; set; } = 0;  // ① 원작 단 게이지
+        public int    CalcC1PatStitch { get; set; } = 0;  // ① 도안 콧수
+        public int    CalcC1PatRow    { get; set; } = 0;  // ① 도안 단수
+        public int    CalcC2Stitch    { get; set; } = 0;  // ② 도안 콧수
+        public int    CalcC2Row       { get; set; } = 0;  // ② 도안 단수
+
         // 프로젝트 상세 페이지에서 접어둔 카드 목록 (예: "video", "counter", "checklist" 등)
         public List<string> CollapsedCards { get; set; } = new();
     }
