@@ -871,31 +871,27 @@ window.uploadPdfToCloudinary = async function(streamRef, publicId) {
     }
 };
 
-// PDF 업로드 — 브라우저별 자동 선택
-// 삼성 인터넷: DotNetStreamReference.arrayBuffer()가 불안정 → base64 사용
-// 그 외(iOS Safari, Chrome 등): stream 방식 사용
+// PDF 업로드 — base64로 통일 (DotNetStreamReference.arrayBuffer()가 Android Chrome 등에서 불안정)
+// base64 → Uint8Array 변환 시 atob 청크 처리로 대용량 PDF도 안전하게 처리
 window.uploadPdfToCloudinarySmart = async function(streamRef, base64, publicId) {
-    const isSamsungInternet = /SamsungBrowser/.test(navigator.userAgent);
     try {
-        let blob;
-        if (isSamsungInternet) {
-            // 삼성 인터넷: base64 → Blob
-            const binary = atob(base64);
-            const bytes = new Uint8Array(binary.length);
-            for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-            blob = new Blob([bytes], { type: 'application/pdf' });
-        } else {
-            // 그 외: DotNetStreamReference → ArrayBuffer → Blob
-            const arrayBuffer = await streamRef.arrayBuffer();
-            blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+        // base64 → Uint8Array (청크 단위 — 대용량 PDF에서 atob 직접 호출 시 메모리 초과 방지)
+        const CHUNK = 8192;
+        const totalLen = Math.ceil(base64.length * 3 / 4);
+        const bytes = new Uint8Array(totalLen);
+        let offset = 0;
+        for (let i = 0; i < base64.length; i += CHUNK) {
+            const chunk = atob(base64.slice(i, i + CHUNK));
+            for (let j = 0; j < chunk.length; j++) bytes[offset++] = chunk.charCodeAt(j);
         }
+        const blob = new Blob([bytes.slice(0, offset)], { type: 'application/pdf' });
         const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/raw/upload`;
         const fd = new FormData();
         fd.append('file', blob, 'file');
         fd.append('upload_preset', _UPLOAD_PRESET);
         fd.append('public_id', publicId);
         const resp = await fetch(url, { method: 'POST', body: fd });
-        if (!resp.ok) { console.error('Cloudinary PDF upload failed', resp.status, isSamsungInternet ? '(base64)' : '(stream)'); return null; }
+        if (!resp.ok) { console.error('Cloudinary PDF upload failed', resp.status); return null; }
         const data = await resp.json();
         if (!data.secure_url) return null;
         return JSON.stringify({ url: data.secure_url, bytes: data.bytes ?? 0, resourceType: 'raw' });
