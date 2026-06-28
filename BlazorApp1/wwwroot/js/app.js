@@ -875,16 +875,17 @@ window.uploadPdfToCloudinary = async function(streamRef, publicId) {
 // base64 → Uint8Array 변환 시 atob 청크 처리로 대용량 PDF도 안전하게 처리
 window.uploadPdfToCloudinarySmart = async function(streamRef, base64, publicId) {
     try {
-        // base64 → Uint8Array (청크 단위 — 대용량 PDF에서 atob 직접 호출 시 메모리 초과 방지)
+        // base64 → Uint8Array
+        // atob는 한번에 디코딩 (base64를 청크로 자르면 4배수 경계 불일치로 실패)
+        // 디코딩된 binary string을 청크 단위로 Uint8Array에 담아 메모리 초과 방지
+        const binary = atob(base64);
         const CHUNK = 8192;
-        const totalLen = Math.ceil(base64.length * 3 / 4);
-        const bytes = new Uint8Array(totalLen);
-        let offset = 0;
-        for (let i = 0; i < base64.length; i += CHUNK) {
-            const chunk = atob(base64.slice(i, i + CHUNK));
-            for (let j = 0; j < chunk.length; j++) bytes[offset++] = chunk.charCodeAt(j);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += CHUNK) {
+            const end = Math.min(i + CHUNK, binary.length);
+            for (let j = i; j < end; j++) bytes[j] = binary.charCodeAt(j);
         }
-        const blob = new Blob([bytes.slice(0, offset)], { type: 'application/pdf' });
+        const blob = new Blob([bytes], { type: 'application/pdf' });
         const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/raw/upload`;
         const fd = new FormData();
         fd.append('file', blob, 'file');
