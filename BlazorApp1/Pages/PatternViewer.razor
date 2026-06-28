@@ -890,6 +890,7 @@
     int    ActiveSize    => _tool == "highlighter" ? _hlSize     : _tool == "eraser" ? _eraserSize : _penSize;
     int    ActiveOpacity => _penOpacity;
     int _currentPage=1, _totalPages=0;
+    TaskCompletionSource? _renderPdfTcs;
     double _zoom=1.0;
     bool _pdfLoaded=false, _isDrawing=false;
     bool _drawMode=false, _showCounterWidget=true;
@@ -1111,8 +1112,10 @@
                             _currentPage = _project.ViewerLastPage > 0 ? _project.ViewerLastPage : 1;
                             StateHasChanged();
                             await Task.Delay(300);
+                            _renderPdfTcs = new TaskCompletionSource();
                             await JS.InvokeVoidAsync("patternViewer.renderPdf");
-                            await Task.Delay(500);
+                            await Task.WhenAny(_renderPdfTcs.Task, Task.Delay(3000));
+                            _renderPdfTcs = null;
                             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
                                 await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
                             await RestoreRowMarkersAndToolSettingsAsync();
@@ -1139,8 +1142,11 @@
             StateHasChanged();
             await Task.Delay(100);
 
+            _renderPdfTcs = new TaskCompletionSource();
             await JS.InvokeVoidAsync("patternViewer.renderPdf");
-            await Task.Delay(500); // renderPdf 내부 ZoomToFromJS 콜백 완료 대기
+            // renderPdf 완료 콜백 대기 (최대 3초 타임아웃)
+            await Task.WhenAny(_renderPdfTcs.Task, Task.Delay(3000));
+            _renderPdfTcs = null;
 
             // 필기 복원은 렌더 완전히 끝난 후
             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
@@ -1349,17 +1355,17 @@
             _totalPages = pages;
             _pdfLoaded = true;
             _currentPage = 1;
-            // 파일명 먼저 업데이트 → 상단바 즉시 반영
+            // 파일명만 먼저 업데이트 → 상단바 즉시 반영 (HasSavedPattern은 IDB 저장 후 설정)
             if (_project != null)
-            {
                 _project.PatternFileName = e.File.Name;
-                _project.HasSavedPattern = true;
-            }
             StateHasChanged();
             await Task.Delay(100);
 
             // JS 렌더링
+            _renderPdfTcs = new TaskCompletionSource();
             await JS.InvokeVoidAsync("patternViewer.renderPdf");
+            await Task.WhenAny(_renderPdfTcs.Task, Task.Delay(3000));
+            _renderPdfTcs = null;
 
             // IndexedDB에 저장
             if (_project != null)
@@ -1368,6 +1374,7 @@
                     ProjectId.ToString(), e.File.Name);
                 if (saved)
                 {
+                    // IDB 저장 완료 후에만 HasSavedPattern=true — 마이그레이션 레이스 컨디션 방지
                     _project.HasSavedPattern = true;
                     _project.PatternFileName = e.File.Name;
 
@@ -1439,6 +1446,11 @@
         _zoom = zoom;
         StateHasChanged();
         _ = SaveViewerStateAsync(); // 줌 변경 시 자동 저장 (fire-and-forget)
+    }
+
+    [JSInvokable] public void OnRenderPdfComplete()
+    {
+        _renderPdfTcs?.TrySetResult();
     }
 
     // ── 필기 ──

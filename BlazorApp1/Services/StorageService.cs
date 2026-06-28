@@ -484,8 +484,12 @@ namespace KnitLog.Services
                             }
                             else
                             {
-                                // IDB에 PDF 없음 (다른 기기에서 업로드했거나 스토리지 초기화됨)
-                                // → local-only 표시해서 이후 재시도 차단
+                                // IDB에 PDF 없음
+                                // 단, attempt==1이면 방금 업로드 중인 레이스 컨디션일 수 있으므로
+                                // 1회는 건너뛰고 재시도 — 이후에도 없으면 local-only
+                                if (attempt < MaxRetry)
+                                    break; // 재시도 루프로
+                                // 3회 모두 없음 → local-only 표시
                                 proj.PatternCloudUrl = PatternCloudUrlLocalOnly;
                                 changed = true;
                                 progress.Failed++;
