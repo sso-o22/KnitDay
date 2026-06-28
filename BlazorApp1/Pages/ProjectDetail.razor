@@ -821,7 +821,6 @@ else
 <!-- 게이지 계산기 모달 -->
 @if (_showGaugeCalc && _project != null && _gaugeCalcSwatch != null)
 {
-    @{ var gcsg = CalcGaugeSwatch(_gaugeCalcSwatch, true); var gcrg = CalcGaugeSwatch(_gaugeCalcSwatch, false); }
     <div class="modal-backdrop" @onclick="CloseGaugeCalc">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
@@ -848,9 +847,9 @@ else
                     @(string.IsNullOrEmpty(_gaugeCalcSwatch.Name) ? "이 스와치" : _gaugeCalcSwatch.Name)의 게이지
                 </div>
                 <div style="display:flex; gap:16px;">
-                    @if (gcsg > 0) { <span>코: <strong>@gcsg.ToString("F1")</strong> / 10cm</span> }
-                    @if (gcrg > 0) { <span>단: <strong>@gcrg.ToString("F1")</strong> / 10cm</span> }
-                    @if (gcsg == 0 && gcrg == 0)
+                    @if (_gaugeCalcSwatch != null && CalcGaugeSwatch(_gaugeCalcSwatch, true) > 0) { <span>코: <strong>@CalcGaugeSwatch(_gaugeCalcSwatch, true).ToString("F1")</strong> / 10cm</span> }
+                    @if (_gaugeCalcSwatch != null && CalcGaugeSwatch(_gaugeCalcSwatch, false) > 0) { <span>단: <strong>@CalcGaugeSwatch(_gaugeCalcSwatch, false).ToString("F1")</strong> / 10cm</span> }
+                    @if (_gaugeCalcSwatch == null || (CalcGaugeSwatch(_gaugeCalcSwatch, true) == 0 && CalcGaugeSwatch(_gaugeCalcSwatch, false) == 0))
                     {
                         <span style="color:#c0392b;display:inline-flex;align-items:center;gap:4px;"><img src="icons/warning.svg" class="icon-line" style="width:14px;height:14px;" />코수/단수와 가로/세로 길이를 모두 입력해야 게이지를 계산할 수 있어요.</span>
                     }
