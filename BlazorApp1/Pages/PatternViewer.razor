@@ -1142,7 +1142,6 @@
             await JS.InvokeVoidAsync("patternViewer.renderPdf");
             await Task.Delay(500); // renderPdf 내부 ZoomToFromJS 콜백 완료 대기
 
-
             // 필기 복원은 렌더 완전히 끝난 후
             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
                 await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
@@ -1150,10 +1149,7 @@
             await RestoreRowMarkersAndToolSettingsAsync();
 
             if (_currentPage > 1)
-            {
-                await Task.Delay(150); // 렌더 완료 대기
                 await JS.InvokeVoidAsync("patternViewer.scrollToPage", _currentPage);
-            }
         }
         catch (Exception ex)
         {
