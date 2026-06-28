@@ -741,18 +741,28 @@ let basePaths = []; // 저장된 필기 (박제)
         },
 
         scrollToPage(pageNum) {
-            // 엘리먼트가 실제 높이를 가질 때까지 최대 2초 대기 후 스크롤 (갤럭시 등 느린 렌더 대응)
             const scrollEl = getScrollEl();
             if (!scrollEl) return;
             let attempts = 0;
             const tryScroll = () => {
-                const el = document.getElementById('page-container-' + pageNum);
-                if (el && el.offsetHeight > 0) {
-                    scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top - 8;
+                // _pageSizes로 절대 scrollTop 계산 (getBoundingClientRect 레이아웃 타이밍 문제 회피)
+                if (_pageSizes[1]) {
+                    let top = 0;
+                    for (let i = 1; i < pageNum; i++) {
+                        if (_pageSizes[i]) top += Math.floor(_pageSizes[i].h * currentZoom) + 8; // 8 = gap
+                    }
+                    scrollEl.scrollTop = top;
                     currentPageNum = pageNum;
-                } else if (attempts < 20) {
-                    attempts++;
-                    setTimeout(tryScroll, 100);
+                } else {
+                    // _pageSizes 없으면 엘리먼트 기반 폴백
+                    const el = document.getElementById('page-container-' + pageNum);
+                    if (el && el.offsetHeight > 0) {
+                        scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top - 8;
+                        currentPageNum = pageNum;
+                    } else if (attempts < 20) {
+                        attempts++;
+                        setTimeout(tryScroll, 100);
+                    }
                 }
             };
             tryScroll();
