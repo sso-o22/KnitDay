@@ -800,6 +800,15 @@ let basePaths = []; // 저장된 필기 (박제)
             catch(e) { return null; }
         },
 
+        // IDB에서 PDF bytes를 Uint8Array로 반환 (uploadPdfFromIDB에서 사용)
+        async loadPdfBytesFromIDB(projectId) {
+            try {
+                const r = await loadPdfFromIDB(projectId);
+                if (!r?.bytes) return null;
+                return r.bytes instanceof Uint8Array ? r.bytes : new Uint8Array(r.bytes);
+            } catch(e) { console.error('loadPdfBytesFromIDB:', e); return null; }
+        },
+
         // 마이그레이션용: 저장된 PDF를 base64 문자열로 반환 (없으면 null)
         // btoa(String.fromCharCode(...)) 한 번에 하면 수MB PDF에서 스택/메모리 초과로 실패하므로
         // 청크 단위로 나눠서 처리

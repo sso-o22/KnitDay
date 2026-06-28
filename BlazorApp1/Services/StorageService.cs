@@ -137,14 +137,17 @@ namespace KnitLog.Services
                 if (photoUsed + pdfUsed >= PerUserLimitBytes)
                     return (null, "quota", 0);
                 var publicId = $"{Uid}/pdfs/{projectId}";
-                // JS에서 브라우저 감지 후 stream/base64 방식 자동 선택
-                using var streamRef = new DotNetStreamReference(new System.IO.MemoryStream(bytes), leaveOpen: false);
-                var base64 = Convert.ToBase64String(bytes);
-                var json = await _js.InvokeAsync<string?>("uploadPdfToCloudinarySmart", streamRef, base64, publicId);
+                // IDB에서 직접 읽어 업로드 — Blazor↔JS 대용량 인터롭 없이 JS 내부에서 처리
+                // (DotNetStreamReference/base64 전달이 안드로이드에서 불안정한 문제 회피)
+                var json = await _js.InvokeAsync<string?>("uploadPdfFromIDB", projectId, publicId);
                 var (url, fileBytes) = await ParseCloudinaryResult(json, "pdf");
                 return (url, null, fileBytes);
             }
-            catch { return (null, "error", 0); }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"UploadPdfAsync error: {ex.Message}");
+                return (null, "error", 0);
+            }
         }
 
         // 마이그레이션용 base64 오버로드
