@@ -741,10 +741,21 @@ let basePaths = []; // 저장된 필기 (박제)
         },
 
         scrollToPage(pageNum) {
-            const scrollEl = getScrollEl(), el = document.getElementById('page-container-'+pageNum);
-            if (!scrollEl||!el) return;
-            scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top - 8;
-            currentPageNum = pageNum;
+            // 엘리먼트가 실제 높이를 가질 때까지 최대 2초 대기 후 스크롤 (갤럭시 등 느린 렌더 대응)
+            const scrollEl = getScrollEl();
+            if (!scrollEl) return;
+            let attempts = 0;
+            const tryScroll = () => {
+                const el = document.getElementById('page-container-' + pageNum);
+                if (el && el.offsetHeight > 0) {
+                    scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top - 8;
+                    currentPageNum = pageNum;
+                } else if (attempts < 20) {
+                    attempts++;
+                    setTimeout(tryScroll, 100);
+                }
+            };
+            tryScroll();
         },
 
         preventScroll() {},
