@@ -137,8 +137,10 @@ namespace KnitLog.Services
                 if (photoUsed + pdfUsed >= PerUserLimitBytes)
                     return (null, "quota", 0);
                 var publicId = $"{Uid}/pdfs/{projectId}";
+                // JS에서 브라우저 감지 후 stream/base64 방식 자동 선택
                 using var streamRef = new DotNetStreamReference(new System.IO.MemoryStream(bytes), leaveOpen: false);
-                var json = await _js.InvokeAsync<string?>("uploadPdfToCloudinary", streamRef, publicId);
+                var base64 = Convert.ToBase64String(bytes);
+                var json = await _js.InvokeAsync<string?>("uploadPdfToCloudinarySmart", streamRef, base64, publicId);
                 var (url, fileBytes) = await ParseCloudinaryResult(json, "pdf");
                 return (url, null, fileBytes);
             }
