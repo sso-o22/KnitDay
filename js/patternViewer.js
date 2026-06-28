@@ -688,6 +688,8 @@ let basePaths = []; // 저장된 필기 (박제)
             await virtualizeRender(currentZoom);
             setupScrollAndZoom();
             if (dotNetRef) dotNetRef.invokeMethodAsync('ZoomToFromJS', currentZoom);
+            // 렌더 완료 알림 (scrollToPage 타이밍 동기화용)
+            if (dotNetRef) dotNetRef.invokeMethodAsync('OnRenderPdfComplete').catch(() => {});
         },
 
         async renderAllPages(zoom) {
@@ -743,29 +745,29 @@ let basePaths = []; // 저장된 필기 (박제)
         scrollToPage(pageNum) {
             const scrollEl = getScrollEl();
             if (!scrollEl) return;
-            let attempts = 0;
-            const tryScroll = () => {
-                // _pageSizes로 절대 scrollTop 계산 (getBoundingClientRect 레이아웃 타이밍 문제 회피)
+            const doScroll = () => {
                 if (_pageSizes[1]) {
                     let top = 0;
                     for (let i = 1; i < pageNum; i++) {
-                        if (_pageSizes[i]) top += Math.floor(_pageSizes[i].h * currentZoom) + 8; // 8 = gap
+                        if (_pageSizes[i]) top += Math.floor(_pageSizes[i].h * currentZoom) + 8;
                     }
                     scrollEl.scrollTop = top;
                     currentPageNum = pageNum;
+                    // 갤럭시 크롬: 레이아웃 확정 전 scrollTop 리셋 방지 — rAF 후 한번 더
+                    requestAnimationFrame(() => {
+                        if (Math.abs(scrollEl.scrollTop - top) > 10)
+                            scrollEl.scrollTop = top;
+                    });
                 } else {
-                    // _pageSizes 없으면 엘리먼트 기반 폴백
                     const el = document.getElementById('page-container-' + pageNum);
                     if (el && el.offsetHeight > 0) {
                         scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top - 8;
                         currentPageNum = pageNum;
-                    } else if (attempts < 20) {
-                        attempts++;
-                        setTimeout(tryScroll, 100);
                     }
                 }
             };
-            tryScroll();
+            // 레이아웃 페인트 후 실행 보장
+            requestAnimationFrame(doScroll);
         },
 
         preventScroll() {},
