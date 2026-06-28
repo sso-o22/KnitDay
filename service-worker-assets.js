@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "vkHzG+XU",
+  "version": "bqb9CzC3",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-zPI0Wq4tGAgPQLknEOxoe4nZvrt+R00L6kuxE+uXtZw=",
+      "hash": "sha256-/hxSZV3yfzxK9K1R9QfNE9WTLr41NEWRM/wy48VfyYY=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-7G+3FOAucaEIWAUK0NwoVDALJ1/xxYko7b0N1JpS0CU=",
+      "hash": "sha256-5+WXnifIdqnHDHzpZSg2jQGbeaYMNqt6bwpUw20IRlk=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -476,6 +476,10 @@ self.assetsManifest = {
     {
       "hash": "sha256-DhO+gwpAUU0c3xXrnVIhLMd700wikvX2WDGBINqx5eE=",
       "url": "icons/confetti.svg"
+    },
+    {
+      "hash": "sha256-1LY3tjN0yUrjrgO01MYwJoVf+jB++O3M8Lqp4SGOKMc=",
+      "url": "icons/copy.svg"
     },
     {
       "hash": "sha256-qy2DiVpSVFzmxIeWGbfhYcXDpf2Q4TUwe4ywftyNzXw=",
