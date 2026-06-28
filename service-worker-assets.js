@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "OBapCq6m",
+  "version": "R4/3N2ll",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-3B4fpW+/1RXVKqKFefLVYQp6NBpO6h6oynGYmT4xOLU=",
+      "hash": "sha256-bLYJsDYUZTOUTta6QSbY0LVr+pRPGWtMSufjhQ+FgUI=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -70,7 +70,7 @@ self.assetsManifest = {
       "url": "_framework/Microsoft.JSInterop.wasm"
     },
     {
-      "hash": "sha256-pFmzu5fHjZ/7+ia02jFvTODkaRCLe7bwJfuoOHf43UE=",
+      "hash": "sha256-uF2d4UcO01rI04NuQTROqpFpJpigiJJjR4FTO9k5c9k=",
       "url": "_framework/System.Collections.Concurrent.wasm"
     },
     {
@@ -106,7 +106,7 @@ self.assetsManifest = {
       "url": "_framework/System.Diagnostics.DiagnosticSource.wasm"
     },
     {
-      "hash": "sha256-Y2UKpir+UXCG7WY2xHbGRPNS84Ky3ODYtkuvVjHENEk=",
+      "hash": "sha256-5XZKKyifhbTY4/1g643NyWi8g1DHSwnop99hU0TXbWQ=",
       "url": "_framework/System.Linq.wasm"
     },
     {
@@ -130,7 +130,7 @@ self.assetsManifest = {
       "url": "_framework/System.ObjectModel.wasm"
     },
     {
-      "hash": "sha256-2nK7f39afvc5H+ZVBF7isZ1wJKc3ki8Ts5boD8ZmObU=",
+      "hash": "sha256-PhovvRuqrjzoPTvd2eWDGmLM7P+4t1FBroxymP8szvQ=",
       "url": "_framework/System.Private.CoreLib.wasm"
     },
     {
@@ -154,7 +154,7 @@ self.assetsManifest = {
       "url": "_framework/System.Text.Json.wasm"
     },
     {
-      "hash": "sha256-QDY1fw+uRh8SRATrPAVeYk+dujYqfGm5T/c2iNubvj0=",
+      "hash": "sha256-SZ2FVPxeIEjkNGolO1jm6WOJpGDDN9APBaYUJqqhit8=",
       "url": "_framework/System.Text.RegularExpressions.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-jKwprwFj0pMr4OP5hmD3wlgJYiHGKLeDcCxsMd+Sxlg=",
+      "hash": "sha256-VOqTnb/TYyKXKQoNfLlTFudfXycDomh4Ykij0SY+8A8=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -2578,7 +2578,7 @@ self.assetsManifest = {
       "url": "sample-data/weather.json"
     },
     {
-      "hash": "sha256-7zfqzNGhxaLpNT4QoMKscpPpLkFkGrDXUcYrlCxPZCQ=",
+      "hash": "sha256-2ORVvfaK/FJevEdCcSQW8k1kSQdEn0ttk1VnzU5w1uI=",
       "url": "version.json"
     }
   ]
