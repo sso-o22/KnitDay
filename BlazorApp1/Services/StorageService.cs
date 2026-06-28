@@ -680,40 +680,54 @@ namespace KnitLog.Services
             return DateTime.MinValue;
         }
 
-        // 프로젝트 merge 시 Sessions 배열을 Id 기준으로 합침 (winner 기반, loser의 세션만 추가)
+        // 프로젝트 merge 시 Sessions 배열을 Id 기준으로 합침
+        // - 한쪽에만 있는 세션은 무조건 포함
+        // - 양쪽에 같은 Id 세션이 있으면: IsActive(EndTime없음)인 쪽 우선 → 둘다 완료면 더 늦게 끝난 쪽
         private static JsonElement MergeProjectSessions(JsonElement winner, JsonElement loser, JsonSerializerOptions opts)
         {
             try
             {
-                // winner를 딕셔너리로 변환
                 var dict = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(winner.GetRawText(), opts);
                 if (dict == null) return winner;
 
-                // winner Sessions Id set
-                var winnerSessionIds = new HashSet<string>();
+                // 양쪽 세션을 Id 기준 딕셔너리로 수집
+                var sessions = new Dictionary<string, JsonElement>();
+
+                // winner 세션 먼저
                 if (dict.TryGetValue("Sessions", out var winSessions) && winSessions.ValueKind == JsonValueKind.Array)
                     foreach (var s in winSessions.EnumerateArray())
-                        if (s.TryGetProperty("Id", out var sid)) winnerSessionIds.Add(sid.ToString());
+                        if (s.TryGetProperty("Id", out var sid)) sessions[sid.ToString()] = s;
 
-                // loser Sessions에서 winner에 없는 것만 추가
+                // loser 세션: 없으면 추가, 있으면 IsActive 우선 비교
                 if (loser.TryGetProperty("Sessions", out var loserSessions) && loserSessions.ValueKind == JsonValueKind.Array)
                 {
-                    var extra = loserSessions.EnumerateArray()
-                        .Where(s => s.TryGetProperty("Id", out var sid) && !winnerSessionIds.Contains(sid.ToString()))
-                        .Select(s => JsonSerializer.Deserialize<JsonElement>(s.GetRawText(), opts))
-                        .ToList();
-
-                    if (extra.Count > 0)
+                    foreach (var s in loserSessions.EnumerateArray())
                     {
-                        var existing = winSessions.ValueKind == JsonValueKind.Array
-                            ? winSessions.EnumerateArray().Select(s => JsonSerializer.Deserialize<JsonElement>(s.GetRawText(), opts)).ToList()
-                            : new List<JsonElement>();
-                        existing.AddRange(extra);
-                        dict["Sessions"] = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(existing, opts), opts);
-                        return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(dict, opts), opts);
+                        if (!s.TryGetProperty("Id", out var sid)) continue;
+                        var id = sid.ToString();
+                        if (!sessions.ContainsKey(id))
+                        {
+                            // winner에 없는 세션 → 추가
+                            sessions[id] = s;
+                        }
+                        else
+                        {
+                            // 양쪽에 있음 → IsActive(EndTime없음)인 쪽 우선
+                            var existing = sessions[id];
+                            bool existingActive = !existing.TryGetProperty("EndTime", out var et1) || et1.ValueKind == JsonValueKind.Null;
+                            bool incomingActive = !s.TryGetProperty("EndTime", out var et2) || et2.ValueKind == JsonValueKind.Null;
+
+                            if (incomingActive && !existingActive)
+                                sessions[id] = s; // loser가 활성 → loser 우선
+                            else if (!incomingActive && !existingActive)
+                                sessions[id] = existing; // 둘다 활성 → winner 유지
+                            // 둘다 완료면 winner 유지 (UpdatedAt 기준 이미 winner 선택됨)
+                        }
                     }
                 }
-                return winner;
+
+                dict["Sessions"] = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(sessions.Values.ToList(), opts), opts);
+                return JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(dict, opts), opts);
             }
             catch { return winner; }
         }

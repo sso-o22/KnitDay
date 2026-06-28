@@ -270,6 +270,7 @@ else
 
     async Task DeleteProject(Guid id)
     {
+        await JS.InvokeVoidAsync("showToast", "삭제하는 중...", "info");
         await Storage.DeleteProjectAsync(id);
         await LoadData();
     }

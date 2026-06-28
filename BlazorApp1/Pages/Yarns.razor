@@ -162,6 +162,7 @@ else
 
                 <div class="flex gap-1">
                     <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(yarn)" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />수정</button>
+                    <button class="btn btn-secondary btn-sm" @onclick="() => DuplicateYarn(yarn)" style="display:inline-flex;align-items:center;gap:5px;" title="복제"><img src="icons/copy.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />복제</button>
                     <button class="btn btn-danger btn-sm" @onclick='() => Confirm($"\"{yarn.Name}\" 실을 삭제하면 복구할 수 없어요.", async () => await DeleteYarn(yarn.Id))' style="display:inline-flex;align-items:center;"><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
                 </div>
             </div>
@@ -472,6 +473,28 @@ else
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (_scrollModalTop) { _scrollModalTop = false; await JS.InvokeVoidAsync("scrollModalToTop"); }
+    }
+    async Task DuplicateYarn(Yarn source)
+    {
+        _editingYarn = new Yarn
+        {
+            Id = Guid.Empty,
+            Name = source.Name + " (복제)",
+            Brand = source.Brand,
+            Color = source.Color,
+            ColorCode = source.ColorCode,
+            YarnType = source.YarnType,
+            Ply = source.Ply,
+            Material = source.Material,
+            WeightGram = source.WeightGram,
+            LengthMeter = source.LengthMeter,
+            PurchasePlace = source.PurchasePlace,
+            Price = source.Price,
+            Memo = source.Memo,
+        };
+        _showModal = true;
+        _scrollModalTop = true;
+        await JS.InvokeVoidAsync("lockBodyScroll");
     }
     async Task OpenAddModal() { _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 }; _showModal = true; _scrollModalTop = true; await JS.InvokeVoidAsync("lockBodyScroll"); }
     async Task OpenEditModal(Yarn yarn) { _editingYarn = yarn; _showModal = true; _scrollModalTop = true; await JS.InvokeVoidAsync("lockBodyScroll"); }
