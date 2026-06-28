@@ -829,8 +829,6 @@ else
     async Task DeleteProject(Guid id)
     {
         await Storage.DeleteProjectAsync(id);
-        // PDF도 IDB에서 삭제
-        try { await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", id.ToString()); } catch { }
         await LoadData();
     }
 

@@ -215,6 +215,9 @@ window.firebaseStore = {
             for (const item of items) {
                 const id = item[idField] ?? item[idField.toLowerCase()];
                 if (!id) continue;
+                // tombstone(_deleted:true)은 saveCollection으로 덮어쓰지 않음
+                // (TombstoneFirebaseDocBackground가 이미 setDocument로 기록)
+                if (item._deleted === true) continue;
                 await setDoc(doc(db, ...parts, String(id)), item, { merge: true });
             }
             return true;

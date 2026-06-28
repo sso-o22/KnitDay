@@ -90,10 +90,16 @@ namespace KnitLog.Services
             }
         }
 
-        private void DeleteFirebaseDocBackground(string collectionName, string id)
+        private void TombstoneFirebaseDocBackground(string collectionName, string id)
         {
             if (!IsLoggedIn) return;
-            _ = _js.InvokeAsync<bool>("firebaseStore.deleteDocument", $"users/{Uid}/{collectionName}/{id}").AsTask()
+            var tombstone = System.Text.Json.JsonSerializer.Serialize(new
+            {
+                _deleted = true,
+                UpdatedAt = DateTime.UtcNow
+            });
+            _ = _js.InvokeAsync<bool>("firebaseStore.setDocument",
+                    $"users/{Uid}/{collectionName}/{id}", tombstone).AsTask()
                    .ContinueWith(_ => { }, TaskContinuationOptions.None);
         }
 
@@ -354,7 +360,7 @@ namespace KnitLog.Services
                 {
                     var projectsForCheck = await GetProjectsAsync();
                     hasPending = projectsForCheck.Any(p =>
-                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl) && p.PatternCloudUrl != PatternCloudUrlLocalOnly) ||
+                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) ||
                         p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
                 }
 
@@ -364,7 +370,7 @@ namespace KnitLog.Services
                     // 마이그레이션 완료 후 미완료 항목이 없을 때만 플래그 기록
                     var projectsAfter = await GetProjectsAsync();
                     bool allDone = !projectsAfter.Any(p =>
-                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl) && p.PatternCloudUrl != PatternCloudUrlLocalOnly) ||
+                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) ||
                         p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
                     if (allDone)
                     {
@@ -478,7 +484,10 @@ namespace KnitLog.Services
                             }
                             else
                             {
-                                // IDB에 PDF 없음 — 카운트 처리 후 종료
+                                // IDB에 PDF 없음 (다른 기기에서 업로드했거나 스토리지 초기화됨)
+                                // → local-only 표시해서 이후 재시도 차단
+                                proj.PatternCloudUrl = PatternCloudUrlLocalOnly;
+                                changed = true;
                                 progress.Failed++;
                                 pdfCountHandled = true;
                                 OnMigrationProgress?.Invoke(progress);
@@ -597,18 +606,24 @@ namespace KnitLog.Services
             // Id 기준으로 merge
             var merged = new Dictionary<string, JsonElement>();
 
-            // 로컬 먼저 추가
+            // 로컬 먼저 추가 (_deleted tombstone 제외)
             foreach (var item in localList)
             {
                 var id = GetId(item);
-                if (id != null) merged[id] = item;
+                if (id != null && !IsDeleted(item)) merged[id] = item;
             }
 
-            // Cloud에서 더 최신이면 덮어쓰기, 없으면 추가
+            // Cloud 기준으로 merge: tombstone이면 로컬에서도 제거, 최신이면 덮어쓰기
             foreach (var item in cloudList)
             {
                 var id = GetId(item);
                 if (id == null) continue;
+                if (IsDeleted(item))
+                {
+                    // tombstone — 로컬에서도 제거
+                    merged.Remove(id);
+                    continue;
+                }
                 if (!merged.ContainsKey(id))
                 {
                     merged[id] = item;
@@ -620,13 +635,14 @@ namespace KnitLog.Services
                     // 프로젝트 컬렉션: Sessions 배열을 Id 기준으로 union merge
                     if (collectionName == "projects")
                     {
-                        var winner = cloudUpdated > localUpdated ? item : merged[id];
-                        var loser  = cloudUpdated > localUpdated ? merged[id] : item;
+                        // cloud가 더 최신이거나 동일 시각이면 cloud 우선 (수정 동기화 보장)
+                        var winner = cloudUpdated >= localUpdated ? item : merged[id];
+                        var loser  = cloudUpdated >= localUpdated ? merged[id] : item;
                         merged[id] = MergeProjectSessions(winner, loser, _jsonOpts);
                     }
                     else
                     {
-                        if (cloudUpdated > localUpdated) merged[id] = item;
+                        if (cloudUpdated >= localUpdated) merged[id] = item;
                     }
                 }
             }
@@ -647,6 +663,13 @@ namespace KnitLog.Services
             if (el.TryGetProperty("Id", out var id) || el.TryGetProperty("id", out id))
                 return id.ValueKind == JsonValueKind.String ? id.GetString() : id.ToString();
             return null;
+        }
+
+        private static bool IsDeleted(JsonElement el)
+        {
+            if (el.TryGetProperty("_deleted", out var v))
+                return v.ValueKind == JsonValueKind.True;
+            return false;
         }
 
         private static DateTime GetUpdatedAt(JsonElement el)
@@ -705,7 +728,7 @@ namespace KnitLog.Services
                 // Cloudinary 미업로드 파일(PDF/사진) 먼저 처리
                 var projectsToCheck = await GetProjectsAsync();
                 bool hasPendingMedia = projectsToCheck.Any(p =>
-                    (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl) && p.PatternCloudUrl != PatternCloudUrlLocalOnly) ||
+                    (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) ||
                     p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
                 if (hasPendingMedia)
                     await MigrateLocalMediaToCloudAsync();
@@ -796,9 +819,27 @@ namespace KnitLog.Services
         public async Task DeleteProjectAsync(Guid id)
         {
             var list = await GetProjectsAsync();
+            var proj = list.FirstOrDefault(p => p.Id == id);
+
+            // Cloudinary 사진 삭제
+            if (proj != null && IsLoggedIn)
+            {
+                foreach (var photo in proj.Photos)
+                {
+                    if (!string.IsNullOrEmpty(photo.StorageUrl))
+                        await DeletePhotoAsync(id.ToString(), photo.Id.ToString(), photo.FileSizeBytes);
+                }
+                // Cloudinary PDF 삭제
+                if (!string.IsNullOrEmpty(proj.PatternCloudUrl) && proj.PatternCloudUrl != PatternCloudUrlLocalOnly)
+                    await DeletePdfAsync(id.ToString(), proj.PatternFileSizeBytes);
+            }
+
+            // IDB PDF 삭제
+            try { await _js.InvokeAsync<bool>("patternViewer.deleteSavedPdf", id.ToString()); } catch { }
+
             list.RemoveAll(p => p.Id == id);
             await SaveLocalAsync(KEY_PROJECTS, list);
-            DeleteFirebaseDocBackground("projects", id.ToString());
+            TombstoneFirebaseDocBackground("projects", id.ToString());
         }
 
         public async Task CompleteProjectAsync(Guid id)
@@ -861,7 +902,7 @@ namespace KnitLog.Services
             var list = await GetYarnsAsync();
             list.RemoveAll(y => y.Id == id);
             await SaveLocalAsync(KEY_YARNS, list);
-            DeleteFirebaseDocBackground("yarns", id.ToString());
+            TombstoneFirebaseDocBackground("yarns", id.ToString());
         }
 
         // ── 도구 ─────────────────────────────────────────────────────
@@ -880,7 +921,7 @@ namespace KnitLog.Services
             var list = await GetToolsAsync();
             list.RemoveAll(t => t.Id == id);
             await SaveLocalAsync(KEY_TOOLS, list);
-            DeleteFirebaseDocBackground("tools", id.ToString());
+            TombstoneFirebaseDocBackground("tools", id.ToString());
         }
 
         // ── 스와치 ───────────────────────────────────────────────────
@@ -899,7 +940,7 @@ namespace KnitLog.Services
             var list = await GetSwatchesAsync();
             list.RemoveAll(s => s.Id == id);
             await SaveLocalAsync(KEY_SWATCHES, list);
-            DeleteFirebaseDocBackground("swatches", id.ToString());
+            TombstoneFirebaseDocBackground("swatches", id.ToString());
         }
 
         // ── 내보내기 ─────────────────────────────────────────────────
