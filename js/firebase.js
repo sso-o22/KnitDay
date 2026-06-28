@@ -184,6 +184,17 @@ window.firebaseStore = {
         }
     },
 
+    // tombstone 전용: merge 없이 덮어써서 기존 필드 제거 (_deleted:true만 남김)
+    async setTombstone(path, jsonData) {
+        try {
+            await setDoc(doc(db, ...path.split('/')), JSON.parse(jsonData));
+            return true;
+        } catch (e) {
+            console.error('setTombstone:', path, e);
+            return false;
+        }
+    },
+
     async getDocument(path) {
         try {
             // usage 문서는 항상 서버에서 직접 읽어서 캐시 불일치 방지
