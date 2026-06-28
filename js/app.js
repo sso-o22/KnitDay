@@ -873,33 +873,34 @@ window.uploadPdfToCloudinary = async function(streamRef, publicId) {
 
 // PDF 업로드 — base64로 통일 (DotNetStreamReference.arrayBuffer()가 Android Chrome 등에서 불안정)
 // base64 → Uint8Array 변환 시 atob 청크 처리로 대용량 PDF도 안전하게 처리
-window.uploadPdfToCloudinarySmart = async function(streamRef, base64, publicId) {
+// PDF를 IDB에서 직접 읽어 Cloudinary에 업로드
+// Blazor↔JS 대용량 데이터 전달(base64 문자열, DotNetStreamReference) 없이 JS 내부에서 처리
+// → 안드로이드 Chrome/삼성 인터넷에서 인터롭 불안정 문제 회피
+window.uploadPdfFromIDB = async function(projectId, publicId) {
     try {
-        // base64 → Uint8Array
-        // atob는 한번에 디코딩 (base64를 청크로 자르면 4배수 경계 불일치로 실패)
-        // 디코딩된 binary string을 청크 단위로 Uint8Array에 담아 메모리 초과 방지
-        const binary = atob(base64);
-        const CHUNK = 8192;
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i += CHUNK) {
-            const end = Math.min(i + CHUNK, binary.length);
-            for (let j = i; j < end; j++) bytes[j] = binary.charCodeAt(j);
-        }
-        const blob = new Blob([bytes], { type: 'application/pdf' });
+        // IDB에서 PDF bytes 직접 읽기
+        const r = await window.patternViewer.loadPdfBytesFromIDB(projectId);
+        if (!r) { console.error('uploadPdfFromIDB: IDB에 PDF 없음', projectId); return null; }
+        const blob = new Blob([r], { type: 'application/pdf' });
         const url = `https://api.cloudinary.com/v1_1/${_CLOUD_NAME}/raw/upload`;
         const fd = new FormData();
         fd.append('file', blob, 'file');
         fd.append('upload_preset', _UPLOAD_PRESET);
         fd.append('public_id', publicId);
         const resp = await fetch(url, { method: 'POST', body: fd });
-        if (!resp.ok) { console.error('Cloudinary PDF upload failed', resp.status); return null; }
+        if (!resp.ok) { console.error('uploadPdfFromIDB: Cloudinary 실패', resp.status); return null; }
         const data = await resp.json();
         if (!data.secure_url) return null;
         return JSON.stringify({ url: data.secure_url, bytes: data.bytes ?? 0, resourceType: 'raw' });
     } catch(e) {
-        console.error('uploadPdfToCloudinarySmart:', e);
+        console.error('uploadPdfFromIDB:', e);
         return null;
     }
+};
+
+// 구형 호환용 — 이제 uploadPdfFromIDB 사용
+window.uploadPdfToCloudinarySmart = async function(streamRef, base64, publicId) {
+    return null; // 더 이상 사용 안 함
 };
 
 // ── PWA 설치 프롬프트 (Android Chrome) ──────────────────────────
