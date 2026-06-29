@@ -517,7 +517,7 @@ body {
     font-weight: 600;
 }
 
-.badge-progress { background: var(--yellow-light); color: #8a6a08; }
+.badge-progress { background: var(--yellow-light); color: #8a6a08; border: 1px solid #f0d060; }
 .badge-done     { background: var(--mint-light);   color: #267848; }
 .badge-wish     { background: var(--lavender-light); color: #4e3290; }
 .badge-cable    { background: #dff0fb; color: #1a6a8a; }
