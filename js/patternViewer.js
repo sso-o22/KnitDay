@@ -323,7 +323,11 @@ let basePaths = []; // 저장된 필기 (박제)
     // 매번 context 상태 완전 설정 (iOS context 상태 초기화 버그 방지)
     // 전체 경로를 한 번에 그리기 (형광펜 실시간 미리보기용)
     function _drawFullPath(anno, pageNum, path) {
-        if (!path || path.points.length < 2) return;
+        if (!path || path.points.length < 1) return;
+        // 점 1개(콕 클릭)는 짧은 선으로 처리
+        if (path.points.length === 1) {
+            path = { ...path, points: [path.points[0], { x: path.points[0].x + 0.002, y: path.points[0].y + 0.002 }] };
+        }
         const dpr = anno._dpr || 1;
         const origW = getPageOrigW(pageNum);
         const origH = getPageOrigH(pageNum);
