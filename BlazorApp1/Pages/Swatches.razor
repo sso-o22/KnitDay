@@ -22,18 +22,18 @@
         @* 1행: 연결유무 + 구분선 + 정렬 *@
         @* 1열: 연결 필터 + 초기화 버튼 *@
         <div class="filter-sort-bar">
-            <div class="filter-sort-group">
+            <div class="filter-sort-group" style="flex:1;">
                 <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
                 @foreach (var (label, val) in new[]{("전체",""),("연결됨","linked"),("연결 없음","unlinked")})
                 {
                     <button class="btn btn-sm @(_filterProject==val?"btn-primary":"btn-ghost")" style="flex-shrink:0; min-width:60px;"
                             @onclick="() => SetFilterProject(val)">@label</button>
                 }
+                @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
+                {
+                    <button class="btn btn-ghost btn-sm" style="flex-shrink:0;margin-left:auto;" @onclick="ResetFilters">✕</button>
+                }
             </div>
-            @if (_filterProject != "" || _filterStitch != "" || _filterNeedle != "")
-            {
-                <button class="btn btn-ghost btn-sm" style="flex-shrink:0;margin-left:auto;" @onclick="ResetFilters">✕</button>
-            }
         </div>
         @* 2열: 뜨개법 + 바늘 필터 *@
         <div class="filter-sort-bar swatch-filter-bar">
