@@ -34,10 +34,22 @@ else
             <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:6px;">
                 <img src="icons/user-check.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />구매자 등록
             </div>
-            <div style="display:flex;gap:8px;margin-bottom:@(_addMsg != "" ? "10px" : "0");">
+            <div style="display:flex;gap:8px;margin-bottom:10px;">
                 <input type="email" placeholder="구글 이메일 입력" @bind="_emailInput" @bind:event="oninput"
                        @onkeydown="OnKeyDown"
                        style="flex:1;min-width:0;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;background:var(--white);color:var(--text-dark);" />
+            </div>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:@(_addMsg != "" ? "10px" : "0");">
+                <select @bind="_licenseType" style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;background:var(--white);color:var(--text-dark);">
+                    <option value="lifetime">평생 이용권</option>
+                    <option value="1year">1년 이용권</option>
+                    <option value="custom">직접 입력</option>
+                </select>
+                @if (_licenseType == "custom")
+                {
+                    <input type="date" @bind="_customExpiry"
+                           style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;background:var(--white);color:var(--text-dark);" />
+                }
                 <button class="btn btn-primary" @onclick="AddUser" disabled="@(_adding || string.IsNullOrWhiteSpace(_emailInput))">
                     @(_adding ? "등록 중..." : "등록")
                 </button>
@@ -171,6 +183,8 @@ else
     List<UserEntry>? _users;
     bool _loading = false;
     string _emailInput = "";
+    string _licenseType = "lifetime";
+    DateTime _customExpiry = DateTime.Today.AddYears(1);
     bool _adding = false;
     string _addMsg = "";
     bool _addError = false;
@@ -238,13 +252,17 @@ else
                 System.Text.Json.JsonSerializer.Serialize(new
                 {
                     registeredAt = DateTime.UtcNow.ToString("yyyy-MM-dd"),
-                    expiresAt = "lifetime"  // 기본값: 평생이용권 (1년권은 날짜로 변경)
+                    expiresAt = _licenseType == "lifetime" ? "lifetime"
+                              : _licenseType == "1year"    ? DateTime.Today.AddYears(1).ToString("yyyy-MM-dd")
+                              : _customExpiry.ToString("yyyy-MM-dd")
                 }));
             if (ok)
             {
                 _addMsg = $"{email} 등록 완료!";
                 _addError = false;
                 _emailInput = "";
+                _licenseType = "lifetime";
+                _customExpiry = DateTime.Today.AddYears(1);
                 await LoadUsers();
             }
             else { _addMsg = "등록 실패. Firestore 규칙을 확인하세요."; _addError = true; }
