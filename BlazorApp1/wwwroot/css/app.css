@@ -224,6 +224,14 @@ body {
     margin-top: 4px;
 }
 
+/* 카운터 게이지 — 다크/흑백 테마에서 대비 확보 */
+.counter-gauge-stroke { stroke: var(--theme-light); }
+.counter-gauge-bar    { background: var(--theme-light); }
+[data-dark="true"] .counter-gauge-stroke { stroke: rgba(255,255,255,0.7); }
+[data-dark="true"] .counter-gauge-bar    { background: rgba(255,255,255,0.7); }
+[data-theme="mono"] .counter-gauge-stroke { stroke: var(--theme-active); }
+[data-theme="mono"] .counter-gauge-bar    { background: var(--theme-active); }
+
 /* 내보내기 팝업 체크 아이콘 — 배경색(theme-active)에 맞는 대비색 */
 .export-check-icon { filter: invert(1); }  /* 라이트모드: theme-active가 진한 색 → 흰색 아이콘 */
 [data-dark="true"] .export-check-icon { filter: invert(0); }  /* 다크모드: theme-active가 밝은 색 → 검정 아이콘 */

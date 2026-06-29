@@ -218,7 +218,7 @@ else
                                                 var circ = 2 * Math.PI * 36;
                                                 var dash = circ * progress / 100.0;
                                                 <circle cx="44" cy="44" r="36" fill="none"
-                                                        stroke="var(--theme-light)"
+                                                        class="counter-gauge-stroke"
                                                         stroke-width="7" stroke-linecap="round"
                                                         stroke-dasharray="@dash.ToString("F1") @circ.ToString("F1")" />
                                             }
@@ -235,7 +235,7 @@ else
                                 @if (hasTarget)
                                 {
                                     <div style="height:5px; background:var(--border); border-radius:99px; margin-bottom:8px; overflow:hidden;">
-                                        <div style="height:100%; width:@(progress.ToString("F1"))%; background:var(--theme-light); border-radius:99px; transition:width 0.3s;"></div>
+                                        <div class="counter-gauge-bar" style="height:100%; width:@(progress.ToString("F1"))%; border-radius:99px; transition:width 0.3s;"></div>
                                     </div>
                                     <div style="text-align:center; font-size:0.75rem; color:@(isDone ? "var(--theme-active)" : "var(--text-mid)"); margin-bottom:6px;">
                                         @if (isDone) { <span style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/confetti.svg" class="icon-line" style="width:16px;height:16px;flex-shrink:0;" />목표 달성!</span> }
