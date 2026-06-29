@@ -1277,7 +1277,7 @@ else
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
                             <span style="color:var(--text-mid);">@session.StartTime.ToString("yyyy년 M월 d일 HH:mm")</span>
                             <button class="btn btn-danger btn-sm" style="padding:2px 6px;font-size:0.7rem;"
-                                    @onclick='async () => { await CloseSessionsAsync(); Confirm("이 뜨개 기록을 삭제할까요?\n삭제하면 누적 시간에서 해당 시간이 빠져요.", async () => await RemoveSession(session.Id)); }'>
+                                    @onclick='() => Confirm("이 뜨개 기록을 삭제할까요?\n삭제하면 누적 시간에서 해당 시간이 빠져요.", async () => await RemoveSession(session.Id))'>
                                 <img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" />
                             </button>
                         </div>
@@ -1894,7 +1894,7 @@ else
     async Task RemoveSession(Guid id)
     {
         _project?.Sessions.RemoveAll(s => s.Id == id);
-        if (_project?.Sessions.Count == 0) await CloseSessionsAsync();
+        // 세션 팝업은 사용자가 직접 닫도록 유지
         await Save();
     }
 

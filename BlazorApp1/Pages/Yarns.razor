@@ -45,7 +45,7 @@ else
     <div class="filter-sort-bar" style="margin-bottom:16px;">
         <div class="filter-sort-group">
             <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-            @foreach (var (label, val) in new[]{("전체","all"),("사용 중","linked"),("미사용","unlinked"),("부족","low"),("소진","empty")})
+            @foreach (var (label, val) in new[]{("전체","all"),("미사용","unlinked"),("사용 중","linked"),("부족","low"),("소진","empty")})
             {
                 <button class="btn btn-sm @(_filter==val?"btn-primary":"btn-ghost")" style="flex-shrink:0;"
                         @onclick='async ()=>{ _filter=val; await JS.InvokeVoidAsync("localStorage.setItem", "yarn_filter", val); }'>@label</button>
@@ -76,6 +76,10 @@ else
                     <div style="display:flex; align-items:center; gap:8px;">
                         <span class="color-dot" style="background:@yarn.ColorCode;"></span>
                         <div class="card-title" style="margin-bottom:0;">@yarn.Name</div>
+                        @if (_completedYarnIds.Contains(yarn.Id))
+                        {
+                            <span style="font-size:0.7rem;background:var(--ivory-dark);color:var(--text-light);padding:2px 6px;border-radius:99px;white-space:nowrap;flex-shrink:0;">완성작</span>
+                        }
                     </div>
                     @{
                         decimal _used = _usedQty.TryGetValue(yarn.Id, out var _u) ? _u : 0;
@@ -443,6 +447,7 @@ else
     List<KnitProject> _projects = new();
     // yarnId → 총 사용량 (모든 프로젝트 합산)
     Dictionary<Guid, decimal> _usedQty = new();
+    HashSet<Guid> _completedYarnIds = new(); // 완성작에만 연결된 실 ID
 
     protected override async Task OnInitializedAsync()
     {
@@ -463,10 +468,21 @@ else
     void _CalcUsed()
     {
         _usedQty = new();
-        // 완료된 프로젝트 포함 전체 집계
+        var activeYarnIds = new HashSet<Guid>(); // 진행중/일시중단 프로젝트에 쓰인 실
+        var allUsedYarnIds = new HashSet<Guid>(); // 완성작 포함 전체 사용 실
+
         foreach (var p in _projects)
+        {
             foreach (var u in p.YarnUsages)
+            {
                 _usedQty[u.YarnId] = (_usedQty.TryGetValue(u.YarnId, out var v) ? v : 0) + u.BallsUsed;
+                allUsedYarnIds.Add(u.YarnId);
+                if (p.Status != ProjectStatus.완료)
+                    activeYarnIds.Add(u.YarnId);
+            }
+        }
+        // 완성작에만 연결된 실 = 전체 사용 - 진행중 사용
+        _completedYarnIds = new HashSet<Guid>(allUsedYarnIds.Except(activeYarnIds));
     }
 
     bool _scrollModalTop = false;
