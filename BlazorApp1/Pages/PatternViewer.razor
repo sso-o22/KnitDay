@@ -882,8 +882,8 @@
     double _opacityPopoverTop = 250; // 투명도 팝오버 screen top
     double _popoverLeft = 80;        // 팝오버 screen left (draw-wrap 오른쪽)
     // 툴별 독립 설정
-    string _penColor      = "#000000"; int _penSize      = 4;  int _penOpacity   = 100;
-    string _hlColor       = "#ffeb3b"; int _hlSize       = 8;
+    string _penColor      = "#000000"; int _penSize      = 3;  int _penOpacity   = 100;
+    string _hlColor       = "#ffeb3b"; int _hlSize       = 3;
     int    _eraserSize    = 10;
     // 현재 툴 기준 활성 설정 (UI 바인딩용)
     string ActiveColor   => _tool == "highlighter" ? _hlColor    : _penColor;
@@ -1207,10 +1207,10 @@
 
         // 필기 설정 복원 — _tool은 기억해두되 툴바는 닫힌 상태이므로 JS엔 select로 설정
         _penColor       = !string.IsNullOrEmpty(_project.ViewerPenColor)   ? _project.ViewerPenColor  : "#000000";
-        _penSize        = _project.ViewerPenSize    > 0 ? _project.ViewerPenSize    : 4;
+        _penSize        = _project.ViewerPenSize    > 0 ? _project.ViewerPenSize    : 3;
         _penOpacity     = _project.ViewerPenOpacity > 0 ? _project.ViewerPenOpacity : 100;
         _hlColor        = !string.IsNullOrEmpty(_project.ViewerHlColor)    ? _project.ViewerHlColor   : "#ffeb3b";
-        _hlSize         = _project.ViewerHlSize     > 0 ? _project.ViewerHlSize     : 8;
+        _hlSize         = _project.ViewerHlSize     > 0 ? _project.ViewerHlSize     : 3;
         _eraserSize     = _project.ViewerEraserSize > 0 ? _project.ViewerEraserSize : 10;
         _rowMarkerColor = !string.IsNullOrEmpty(_project.ViewerRowMarkerColor) ? _project.ViewerRowMarkerColor : "#ffeb3b";
         // 다중행 기능 제거 → 항상 단일행
