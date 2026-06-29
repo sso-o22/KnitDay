@@ -820,6 +820,7 @@ let basePaths = []; // 저장된 필기 (박제)
         },
 
         triggerFileInput() { document.getElementById('pdf-file-input')?.click(); },
+        triggerPdfLabel() { document.querySelector('label[for="pdf-file-input"]')?.click(); },
 
         getPaths() { return JSON.stringify(paths); },
 
