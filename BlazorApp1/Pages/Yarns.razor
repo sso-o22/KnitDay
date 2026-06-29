@@ -149,7 +149,15 @@ else
                 @if (totalLength > 0)
                 {
                     <div style="font-size:0.8rem; color:var(--sage-dark); font-weight:600; margin-bottom:6px;">
-                        총 보유: @totalLength m
+                        @{ var __usedLen = (_usedQty.TryGetValue(yarn.Id, out var __ul) ? __ul : 0) * yarn.LengthMeter; }
+                        @if (__usedLen > 0)
+                        {
+                            <span>@((totalLength - __usedLen).ToString("G29")) / @(totalLength.ToString("G29")) m</span>
+                        }
+                        else
+                        {
+                            <span>@(totalLength.ToString("G29")) m</span>
+                        }
                     </div>
                 }
 
