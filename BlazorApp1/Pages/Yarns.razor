@@ -90,18 +90,22 @@ else
                     {
                         @if (_used > 0)
                         {
-                            @if (yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0)
-                            {
-                                <span class="badge" style="background:var(--theme-mid);color:var(--text-dark);font-size:0.75rem;">
-                                    @((yarn.WeightGram * _remain).ToString("G29"))g / @((yarn.WeightGram * yarn.Quantity).ToString("G29"))g
-                                </span>
-                            }
-                            else
-                            {
-                                <span class="badge" style="background:var(--theme-mid);color:var(--text-dark);font-size:0.75rem;">
-                                    @(_remain.ToString("G29")) / @(yarn.Quantity.ToString("G29")) @_qtyUnit
-                                </span>
-                            }
+                            <span class="badge @(GetRemainBadge(_remain, yarn.Quantity))" style="font-size:0.75rem;">
+                                @if (yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0)
+                                {
+                                    @((yarn.WeightGram * _remain).ToString("G29"))
+                                    <text>g / </text>
+                                    @((yarn.WeightGram * yarn.Quantity).ToString("G29"))
+                                    <text>g</text>
+                                }
+                                else
+                                {
+                                    @(_remain.ToString("G29"))
+                                    <text> / </text>
+                                    @(yarn.Quantity.ToString("G29"))
+                                    <text> @_qtyUnit</text>
+                                }
+                            </span>
                         }
                         else
                         {
@@ -498,6 +502,13 @@ else
     {
         if (_scrollModalTop) { _scrollModalTop = false; await JS.InvokeVoidAsync("scrollModalToTop"); }
     }
+    string GetRemainBadge(decimal remain, decimal qty)
+    {
+        if (remain <= 0) return "badge-pause";
+        if (qty > 0 && remain / qty < 0.5m) return "badge-progress";
+        return "badge-done";
+    }
+
     async Task DuplicateYarn(Yarn source)
     {
         _editingYarn = new Yarn

@@ -180,9 +180,9 @@ else
             {
                 var isOnHold     = proj.Status == ProjectStatus.일시중단;
                 var statusText   = isOnHold ? "일시중단" : "진행중";
-                var statusBg     = isOnHold ? "#fef0f0" : "var(--theme-pale)";
-                var statusColor  = isOnHold ? "#c0392b" : "var(--theme-active)";
-                var statusBorder = isOnHold ? "1px solid #f5c0c0" : "none";
+                var statusBg     = isOnHold ? "#fef0f0" : "#faf0c8";
+                var statusColor  = isOnHold ? "#c0392b" : "#8a6a08";
+                var statusBorder = isOnHold ? "1px solid #f5c0c0" : "1px solid #f0d060";
 
                 <a href="projects/@proj.Id?from=home" class="card home-proj-card" style="text-decoration:none;display:block;">
                     @* 상단: 제목 + D-day *@
