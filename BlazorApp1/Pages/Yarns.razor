@@ -111,11 +111,11 @@ else
                         {
                             @if (yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0)
                             {
-                                <span class="badge badge-done">@((yarn.WeightGram * yarn.Quantity).ToString("G29"))g</span>
+                                <span class="badge badge-cable">@((yarn.WeightGram * yarn.Quantity).ToString("G29"))g</span>
                             }
                             else
                             {
-                                <span class="badge badge-done">x @(yarn.Quantity.ToString("G29")) @_qtyUnit</span>
+                                <span class="badge badge-cable">x @(yarn.Quantity.ToString("G29")) @_qtyUnit</span>
                             }
                         }
                     }
