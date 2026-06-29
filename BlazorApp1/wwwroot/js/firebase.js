@@ -63,6 +63,12 @@ window.firebaseAuth = {
                         await signOut(auth);
                         return { __denied__: true, email: u.email };
                     }
+                    // 기간 만료 체크 (expiresAt 없으면 평생이용권 → 통과)
+                    const expiresAt = allowDoc.data()?.expiresAt;
+                    if (expiresAt && expiresAt !== 'lifetime' && new Date(expiresAt) < new Date()) {
+                        await signOut(auth);
+                        return { __expired__: true, email: u.email };
+                    }
                 } catch (checkErr) {
                     // Firestore 접근 오류 시 안전하게 거부
                     console.error('allowedUsers check failed:', checkErr);
@@ -108,11 +114,33 @@ window.firebaseAuth = {
     },
 
     onAuthStateChanged(dotNetRef) {
-        onAuthStateChanged(auth, user => {
-            const info = user
-                ? { uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL }
-                : null;
-            dotNetRef.invokeMethodAsync('OnAuthStateChanged', info);
+        onAuthStateChanged(auth, async user => {
+            if (user) {
+                // 이미 로그인된 상태에서도 만료 체크
+                const adminUid = 'xAz2xO8kulWUgoHnaaxCkzZV2nG2';
+                if (user.uid !== adminUid) {
+                    try {
+                        const allowDoc = await getDoc(doc(db, 'allowedUsers', user.email));
+                        if (!allowDoc.exists()) {
+                            await signOut(auth);
+                            dotNetRef.invokeMethodAsync('OnAuthStateChanged', null);
+                            return;
+                        }
+                        const expiresAt = allowDoc.data()?.expiresAt;
+                        if (expiresAt && expiresAt !== 'lifetime' && new Date(expiresAt) < new Date()) {
+                            await signOut(auth);
+                            dotNetRef.invokeMethodAsync('OnAuthExpired', user.email);
+                            return;
+                        }
+                    } catch (e) {
+                        // 네트워크 오류 등 — 일단 통과 (오프라인 대응)
+                    }
+                }
+                const info = { uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL };
+                dotNetRef.invokeMethodAsync('OnAuthStateChanged', info);
+            } else {
+                dotNetRef.invokeMethodAsync('OnAuthStateChanged', null);
+            }
         });
     },
 

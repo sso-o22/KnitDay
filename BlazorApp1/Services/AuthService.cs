@@ -32,6 +32,8 @@ namespace KnitLog.Services
 
         /// <summary>로그인 시도했지만 미등록 계정으로 거부된 경우 해당 이메일, 아니면 null</summary>
         public string? DeniedEmail { get; private set; }
+        /// <summary>이용권 만료로 로그인 거부된 경우 해당 이메일, 아니면 null</summary>
+        public string? ExpiredEmail { get; private set; }
 
         public AuthService(IJSRuntime js) { _js = js; }
 
@@ -84,9 +86,18 @@ namespace KnitLog.Services
             OnAuthChanged?.Invoke();
         }
 
+        [JSInvokable]
+        public void OnAuthExpired(string email)
+        {
+            CurrentUser = null;
+            ExpiredEmail = email;
+            OnAuthChanged?.Invoke();
+        }
+
         public async Task<bool> SignInWithGoogleAsync()
         {
             DeniedEmail = null;
+            ExpiredEmail = null;
             try
             {
                 var result = await _js.InvokeAsync<JsonElement?>("firebaseAuth.signInWithGoogle");
@@ -96,6 +107,13 @@ namespace KnitLog.Services
                 if (result.Value.TryGetProperty("__denied__", out var denied) && denied.GetBoolean())
                 {
                     DeniedEmail = result.Value.TryGetProperty("email", out var em) ? em.GetString() : null;
+                    OnAuthChanged?.Invoke();
+                    return false;
+                }
+                // 이용권 만료 신호 확인
+                if (result.Value.TryGetProperty("__expired__", out var expired) && expired.GetBoolean())
+                {
+                    ExpiredEmail = result.Value.TryGetProperty("email", out var em2) ? em2.GetString() : null;
                     OnAuthChanged?.Invoke();
                     return false;
                 }

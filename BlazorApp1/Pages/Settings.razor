@@ -42,6 +42,13 @@
                     <div style="font-weight:600;">@Auth.CurrentUser?.DisplayName</div>
                     <div style="font-size:0.82rem;color:var(--text-mid);">@Auth.CurrentUser?.Email</div>
                     <div style="font-size:0.75rem;color:var(--text-light);margin-top:2px;display:flex;align-items:center;gap:4px;"><img src="icons/cloud-check.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />Firebase 동기화 중</div>
+                    @if (_licenseLabel != null)
+                    {
+                        <div style="font-size:0.75rem;margin-top:4px;display:flex;align-items:center;gap:4px;color:@(_licenseExpiringSoon ? "#c03030" : "var(--theme-active)");">
+                            <img src="icons/seal-check.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />
+                            @_licenseLabel
+                        </div>
+                    }
                 </div>
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
@@ -610,6 +617,27 @@
     </div>
 }
 
+@if (_showExpiredPopup)
+{
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;"
+         @onclick="CloseExpiredPopup">
+        <div style="background:var(--white);border-radius:20px;padding:28px 24px 20px;max-width:320px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);"
+             @onclick:stopPropagation="true">
+            <div style="margin-bottom:12px;display:flex;justify-content:center;">
+                <img src="icons/clock-counter-clockwise.svg" class="icon-line" style="width:36px;height:36px;" />
+            </div>
+            <div style="font-size:1rem;font-weight:700;margin-bottom:10px;color:var(--text-dark);">이용권이 만료됐어요</div>
+            <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:6px;line-height:1.6;">
+                <b>@_expiredEmail</b> 계정의<br />KnitDay 이용권이 만료됐어요.
+            </div>
+            <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:20px;line-height:1.6;">
+                계속 이용하시려면 스마트스토어에서<br />이용권을 다시 구매해 주세요.
+            </div>
+            <button class="btn btn-primary" @onclick="CloseExpiredPopup">확인</button>
+        </div>
+    </div>
+}
+
 @if (_showDeniedPopup)
 {
     <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;"
@@ -974,6 +1002,12 @@
     {
         if (Auth.IsLoggedIn)
             await LoadUsageAsync();
+        // 이미 로그인된 상태에서 만료된 경우 팝업 표시
+        if (Auth.ExpiredEmail != null && !_showExpiredPopup)
+        {
+            _showExpiredPopup = true;
+            _expiredEmail = Auth.ExpiredEmail;
+        }
         await InvokeAsync(StateHasChanged);
     }
 
@@ -996,7 +1030,42 @@
             }
             catch { }
             _usageLoaded = true;
+
+            // 이용권 만료일 로드
+            await LoadLicenseInfoAsync();
         }
+    }
+
+    async Task LoadLicenseInfoAsync()
+    {
+        try
+        {
+            var email = Auth.CurrentUser?.Email;
+            if (string.IsNullOrEmpty(email)) return;
+            var json = await JS.InvokeAsync<string?>("firebaseStore.getDocument", $"allowedUsers/{email}");
+            if (string.IsNullOrEmpty(json)) return;
+            using var doc = System.Text.Json.JsonDocument.Parse(json);
+            if (!doc.RootElement.TryGetProperty("expiresAt", out var expiresAtEl)) 
+            {
+                _licenseLabel = "평생 이용권";
+                _licenseExpiringSoon = false;
+                return;
+            }
+            var expiresAtStr = expiresAtEl.GetString();
+            if (string.IsNullOrEmpty(expiresAtStr) || expiresAtStr == "lifetime")
+            {
+                _licenseLabel = "평생 이용권";
+                _licenseExpiringSoon = false;
+                return;
+            }
+            if (!DateTime.TryParse(expiresAtStr, out var expiresAt)) return;
+            var daysLeft = (int)(expiresAt.Date - DateTime.Today).TotalDays;
+            _licenseExpiringSoon = daysLeft <= 30;
+            _licenseLabel = daysLeft > 0
+                ? $"이용권 {daysLeft}일 남음 ({expiresAt:yyyy.MM.dd} 만료)"
+                : "이용권이 만료됐어요";
+        }
+        catch { }
     }
 
     string _usageDebugMsg = "";
@@ -1094,6 +1163,11 @@
             _showDeniedPopup = true;
             _deniedEmail = Auth.DeniedEmail;
         }
+        else if (Auth.ExpiredEmail != null)
+        {
+            _showExpiredPopup = true;
+            _expiredEmail = Auth.ExpiredEmail;
+        }
         StateHasChanged();
     }
     async Task SignOut() { await Auth.SignOutAsync(); StateHasChanged(); }
@@ -1140,6 +1214,11 @@
     }
 
     bool _showDeniedPopup = false;
+    string? _licenseLabel;      // 이용권 남은 기간 표시 문자열
+    bool _licenseExpiringSoon;  // 30일 이내 만료 시 빨간색
+    bool _showExpiredPopup = false;
+    string? _expiredEmail;
+    void CloseExpiredPopup() { _showExpiredPopup = false; _expiredEmail = null; }
     string? _deniedEmail;
     void CloseDeniedPopup() { _showDeniedPopup = false; _deniedEmail = null; }
 

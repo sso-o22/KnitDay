@@ -235,7 +235,11 @@ else
         {
             var ok = await JS.InvokeAsync<bool>("firebaseStore.setDocument",
                 $"allowedUsers/{email}",
-                System.Text.Json.JsonSerializer.Serialize(new { registeredAt = DateTime.UtcNow.ToString("yyyy-MM-dd") }));
+                System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    registeredAt = DateTime.UtcNow.ToString("yyyy-MM-dd"),
+                    expiresAt = "lifetime"  // 기본값: 평생이용권 (1년권은 날짜로 변경)
+                }));
             if (ok)
             {
                 _addMsg = $"{email} 등록 완료!";
