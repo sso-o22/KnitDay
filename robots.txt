@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://knitday.kr/sitemap.xml
