@@ -498,8 +498,10 @@ let basePaths = []; // 저장된 필기 (박제)
         for (let i = 1; i <= totalPages; i++) { const el = document.getElementById('page-container-'+i); if (el) _intersectionObserver.observe(el); }
     }
 
+    let _isScrollingTo = false; // scrollToPage 중 onScroll 콜백 차단용
+
     function onScroll() {
-        if (_isPinching || _isZooming) return;
+        if (_isPinching || _isZooming || _isScrollingTo) return;
         const scrollEl = getScrollEl();
         if (!scrollEl) return;
         const mid = scrollEl.getBoundingClientRect().top + scrollEl.clientHeight / 2;
@@ -746,6 +748,7 @@ let basePaths = []; // 저장된 필기 (박제)
             const scrollEl = getScrollEl();
             if (!scrollEl) return;
             const doScroll = () => {
+                _isScrollingTo = true;
                 if (_pageSizes[1]) {
                     let top = 0;
                     for (let i = 1; i < pageNum; i++) {
@@ -753,20 +756,26 @@ let basePaths = []; // 저장된 필기 (박제)
                     }
                     scrollEl.scrollTop = top;
                     currentPageNum = pageNum;
-                    // 갤럭시 크롬: 레이아웃 확정 전 scrollTop 리셋 방지 — rAF 후 한번 더
+                    // rAF 후 scrollTop 확인 및 재설정 + 플래그 해제
                     requestAnimationFrame(() => {
                         if (Math.abs(scrollEl.scrollTop - top) > 10)
                             scrollEl.scrollTop = top;
+                        currentPageNum = pageNum;
+                        if (dotNetRef) dotNetRef.invokeMethodAsync('UpdatePageFromJS', pageNum).catch(() => {});
+                        // 스크롤 안정화 후 플래그 해제
+                        setTimeout(() => { _isScrollingTo = false; }, 300);
                     });
                 } else {
                     const el = document.getElementById('page-container-' + pageNum);
                     if (el && el.offsetHeight > 0) {
                         scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top - 8;
                         currentPageNum = pageNum;
+                        setTimeout(() => { _isScrollingTo = false; }, 300);
+                    } else {
+                        _isScrollingTo = false;
                     }
                 }
             };
-            // 레이아웃 페인트 후 실행 보장
             requestAnimationFrame(doScroll);
         },
 

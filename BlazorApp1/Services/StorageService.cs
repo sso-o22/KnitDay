@@ -137,9 +137,9 @@ namespace KnitLog.Services
                 if (photoUsed + pdfUsed >= PerUserLimitBytes)
                     return (null, "quota", 0);
                 var publicId = $"{Uid}/pdfs/{projectId}";
-                // IDB에서 직접 읽어 업로드 — Blazor↔JS 대용량 인터롭 없이 JS 내부에서 처리
-                // (DotNetStreamReference/base64 전달이 안드로이드에서 불안정한 문제 회피)
-                var json = await _js.InvokeAsync<string?>("uploadPdfFromIDB", projectId, publicId);
+                // byte[] → JS Uint8Array 직접 전달 (Blazor WASM 자동 변환)
+                // DotNetStreamReference/base64 방식보다 안정적 — 안드로이드 포함 모든 브라우저 동작
+                var json = await _js.InvokeAsync<string?>("uploadPdfBytes", bytes, publicId);
                 var (url, fileBytes) = await ParseCloudinaryResult(json, "pdf");
                 return (url, null, fileBytes);
             }
