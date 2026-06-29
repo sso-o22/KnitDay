@@ -98,6 +98,13 @@
                 {
                     <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;">↑ @_migration.CurrentLabel</span>
                 }
+                @if (_migration.IsRunning)
+                {
+                    <div style="font-size:0.73rem;color:var(--text-light);margin-top:6px;line-height:1.5;">
+                        완료될 때까지 다른 앱으로 이동하거나 종료하지 말아 주세요.<br />
+                        사진·도안이 많을수록 시간이 걸려요.
+                    </div>
+                }
                 else if (_migration.QuotaReached)
                 {
                     <span style="color:#c03030;">@(Storage.PerUserLimitBytes >= 1024L*1024*1024 ? $"{Storage.PerUserLimitBytes/1024.0/1024/1024:F0}GB" : $"{Storage.PerUserLimitBytes/1024.0/1024:F0}MB") 한도에 도달했어요</span>
