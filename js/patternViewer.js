@@ -242,9 +242,14 @@ let basePaths = []; // 저장된 필기 (박제)
                 anno._hlCtx = hCtx;  // onMove에서 재사용
             } else {
                 _stroke(anno, pageNum, bx, by, bx + 0.1, by + 0.1);
+                // 형광펜 콕 클릭: onDown에서 바로 점 찍기
+                if (_tool === 'highlighter') {
+                    hCtx.lineTo(bx + 0.5, by + 0.5);
+                    hCtx.stroke();
+                }
             }
-            // 직선 스냅: 0.9초 후 직선 모드 전환 (펜/형광펜만, 지우개 제외)
-            if (_tool !== 'eraser') {
+            // 직선 스냅: 펜 2초, 형광펜 0.9초 후 직선 모드 전환 (지우개 제외)
+            if (_tool === 'pen' || _tool === 'highlighter') {
             _snapTimer = setTimeout(() => {
                 if (isDrawing && currentPath && currentPath.points.length >= 1) {
                     _snapTriggered = true;
@@ -253,7 +258,7 @@ let basePaths = []; // 저장된 필기 (박제)
                     redrawPage(pageNum);
                     if (navigator.vibrate) navigator.vibrate(30);
                 }
-            }, 900);
+            }, _tool === 'highlighter' ? 900 : 2000);
             }
         }
 
