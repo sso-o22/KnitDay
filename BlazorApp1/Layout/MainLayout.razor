@@ -426,6 +426,11 @@
     void OnMigrationProgress(MigrationProgress p)
     {
         _migration = p.Total == 0 ? null : p;
+        // 마이그레이션 중 Wake Lock — 화면 자동 꺼짐 방지
+        if (p.IsRunning)
+            _ = JS.InvokeVoidAsync("acquireWakeLock").AsTask();
+        else
+            _ = JS.InvokeVoidAsync("releaseWakeLock").AsTask();
         InvokeAsync(StateHasChanged);
     }
 
@@ -548,25 +553,10 @@
     [Microsoft.JSInterop.JSInvokable]
     public async Task OnAppHidden()
     {
-        // 백그라운드 진입 / 앱 종료 시: 진행 중인 세션 자동 종료 후 저장
-        try
-        {
-            var projects = await Storage.GetProjectsAsync();
-            bool changed = false;
-            foreach (var p in projects)
-            {
-                var active = p.Sessions.FirstOrDefault(s => s.IsActive);
-                if (active != null)
-                {
-                    active.EndTime = DateTime.Now;
-                    await Storage.SaveProjectAsync(p);
-                    changed = true;
-                }
-            }
-            if (changed)
-                await Storage.PushLocalToFirebaseAsync();
-        }
-        catch { }
+        // 백그라운드 진입 시 데이터 push만 — 세션 자동 종료 제거
+        // (페이지 이동 중 visibilitychange로 세션이 잘못 종료되는 문제 방지)
+        // 오래된 활성 세션(24시간 이상)은 SyncOnLoginAsync에서 정리
+        try { await Storage.PushLocalToFirebaseAsync(); } catch { }
     }
 
     [Microsoft.JSInterop.JSInvokable]

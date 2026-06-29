@@ -342,6 +342,26 @@ namespace KnitLog.Services
             }
             catch { }
 
+            // 24시간 이상 된 활성 세션 자동 종료 (앱 강제 종료 등으로 미종료된 세션 정리)
+            try
+            {
+                var allProjects = await GetProjectsAsync();
+                bool staleFixed = false;
+                foreach (var p in allProjects)
+                {
+                    var stale = p.Sessions.FirstOrDefault(s =>
+                        s.IsActive && (DateTime.Now - s.StartTime).TotalHours > 24);
+                    if (stale != null)
+                    {
+                        stale.EndTime = stale.StartTime.AddHours(24);
+                        await SaveLocalAsync(KEY_PROJECTS, allProjects);
+                        staleFixed = true;
+                    }
+                }
+                if (staleFixed) await PushLocalToFirebaseAsync();
+            }
+            catch { }
+
             await MergeCollectionAsync<KnitProject>(KEY_PROJECTS, "projects");
             await MergeCollectionAsync<Yarn>(KEY_YARNS, "yarns");
             await MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools");
