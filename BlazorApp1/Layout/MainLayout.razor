@@ -325,7 +325,7 @@
     // ── 2분 폴링 타이머 ────────────────────────────────────────────
     void StartPollTimer()
     {
-        _pollTimer = new PeriodicTimer(TimeSpan.FromMinutes(2));
+        _pollTimer = new PeriodicTimer(TimeSpan.FromMinutes(5));
         _ = RunPollTimerAsync();
     }
 
