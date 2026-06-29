@@ -324,9 +324,25 @@ let basePaths = []; // 저장된 필기 (박제)
     // 전체 경로를 한 번에 그리기 (형광펜 실시간 미리보기용)
     function _drawFullPath(anno, pageNum, path) {
         if (!path || path.points.length < 1) return;
-        // 점 1개(콕 클릭)는 짧은 선으로 처리
+        // 점 1개(콕 클릭)는 원(arc)으로 직접 그리기
         if (path.points.length === 1) {
-            path = { ...path, points: [path.points[0], { x: path.points[0].x + 0.002, y: path.points[0].y + 0.002 }] };
+            const dprDot = anno._dpr || 1;
+            const origWDot = getPageOrigW(pageNum);
+            const origHDot = getPageOrigH(pageNum);
+            const dotX = path.points[0].x * origWDot * currentZoom * dprDot;
+            const dotY = path.points[0].y * origHDot * currentZoom * dprDot;
+            const dotCtx = anno.getContext('2d');
+            dotCtx.save();
+            dotCtx.beginPath();
+            const isHL = path.tool === 'highlighter';
+            const radius = isHL ? path.size * 2 * currentZoom * dprDot : path.size * 0.5 * currentZoom * dprDot;
+            dotCtx.arc(dotX, dotY, radius, 0, Math.PI * 2);
+            dotCtx.globalAlpha = isHL ? 0.35 : (path.opacity ?? 1.0);
+            dotCtx.fillStyle = path.color;
+            dotCtx.globalCompositeOperation = isHL ? 'multiply' : 'source-over';
+            dotCtx.fill();
+            dotCtx.restore();
+            return;
         }
         const dpr = anno._dpr || 1;
         const origW = getPageOrigW(pageNum);
@@ -338,8 +354,8 @@ let basePaths = []; // 저장된 필기 (박제)
         ctx.beginPath();
         if (path.tool === 'highlighter') {
             ctx.lineWidth  = path.size * 4 * currentZoom * dpr;
-            ctx.lineCap    = 'square';
-            ctx.lineJoin   = 'miter';
+            ctx.lineCap    = 'round';
+            ctx.lineJoin   = 'round';
             ctx.globalAlpha = 0.35;
             ctx.strokeStyle = path.color;
             ctx.globalCompositeOperation = 'multiply';
@@ -682,7 +698,7 @@ let basePaths = []; // 저장된 필기 (박제)
     return {
         init(ref) { dotNetRef = ref; },
 
-        async loadPdfBytes(streamRef) { return await _loadPdfData(new Uint8Array(await streamRef.arrayBuffer())); },
+        async loadPdfBytes(bytes) { return await _loadPdfData(bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)); },
         async loadPdfBase64(b64) {
             const bin = atob(b64), bytes = new Uint8Array(bin.length);
             for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -763,29 +779,35 @@ let basePaths = []; // 저장된 필기 (박제)
                     for (let i = 1; i < pageNum; i++) {
                         if (_pageSizes[i]) top += Math.floor(_pageSizes[i].h * currentZoom) + 8;
                     }
+                    // 1차 설정
                     scrollEl.scrollTop = top;
                     currentPageNum = pageNum;
-                    // rAF 후 scrollTop 확인 및 재설정 + 플래그 해제
+                    // 2차 rAF: 갤럭시 등 Android에서 레이아웃 확정 후 재설정
                     requestAnimationFrame(() => {
-                        if (Math.abs(scrollEl.scrollTop - top) > 10)
-                            scrollEl.scrollTop = top;
-                        currentPageNum = pageNum;
-                        if (dotNetRef) dotNetRef.invokeMethodAsync('UpdatePageFromJS', pageNum).catch(() => {});
-                        // 스크롤 안정화 후 플래그 해제
-                        setTimeout(() => { _isScrollingTo = false; }, 300);
+                        scrollEl.scrollTop = top;
+                        requestAnimationFrame(() => {
+                            if (Math.abs(scrollEl.scrollTop - top) > 10)
+                                scrollEl.scrollTop = top;
+                            currentPageNum = pageNum;
+                            if (dotNetRef) dotNetRef.invokeMethodAsync('UpdatePageFromJS', pageNum).catch(() => {});
+                            setTimeout(() => { _isScrollingTo = false; }, 400);
+                        });
                     });
                 } else {
                     const el = document.getElementById('page-container-' + pageNum);
                     if (el && el.offsetHeight > 0) {
                         scrollEl.scrollTop += el.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top - 8;
                         currentPageNum = pageNum;
-                        setTimeout(() => { _isScrollingTo = false; }, 300);
+                        requestAnimationFrame(() => {
+                            setTimeout(() => { _isScrollingTo = false; }, 400);
+                        });
                     } else {
                         _isScrollingTo = false;
                     }
                 }
             };
-            requestAnimationFrame(doScroll);
+            // 갤럭시: DOM 안정화를 위해 rAF 한 번 더 지연
+            requestAnimationFrame(() => requestAnimationFrame(doScroll));
         },
 
         preventScroll() {},

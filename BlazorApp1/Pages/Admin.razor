@@ -145,7 +145,7 @@ else
                 {
                     <div style="font-size:0.82rem;color:@(_licenseChangeError ? "#c03030" : "var(--theme-active)");margin-bottom:10px;">@_licenseChangeMsg</div>
                 }
-                <div style="display:flex;gap:8px;">
+                <div style="display:flex;gap:8px;justify-content:flex-end;">
                     <button class="btn btn-ghost" @onclick="CloseChangeLicense" disabled="@_changingLicense">취소</button>
                     <button class="btn btn-primary" @onclick="ChangeLicense" disabled="@_changingLicense">
                         @(_changingLicense ? "변경 중..." : "변경")

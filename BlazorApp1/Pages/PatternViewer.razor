@@ -1106,8 +1106,7 @@
                     try
                     {
                         var pdfBytes = await Http.GetByteArrayAsync(pdfUrl);
-                        using var streamRef = new DotNetStreamReference(new System.IO.MemoryStream(pdfBytes), leaveOpen: false);
-                        var pages2 = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", streamRef);
+                        var pages2 = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", pdfBytes);
                         if (pages2 > 0)
                         {
                             await JS.InvokeAsync<bool>("patternViewer.savePdfToProject", ProjectId.ToString(), _project.PatternFileName);
@@ -1350,9 +1349,8 @@
 
             // ── PDF 파일 처리 ──
 
-            // JS에 byte[] 직접 전달 (Base64 변환 없이 → 메모리 절약)
-            using var streamRef = new DotNetStreamReference(new System.IO.MemoryStream(bytes), leaveOpen: false);
-            var pages = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", streamRef);
+            // JS에 byte[] 직접 전달 (DotNetStreamReference는 Android에서 불안정 → byte[] 사용)
+            var pages = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", bytes);
             if (pages <= 0) return;
 
             // Blazor DOM에 캔버스 생성
