@@ -144,10 +144,18 @@
             }
         </div>
         <div class="tb-right">
-            <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick"><img src="icons/file-pdf.svg" class="icon-invert-dark" style="width:20px;height:20px;" /></span>
             @if (_pdfLoaded)
             {
+                @* PDF 있음: 교체 경고 팝업 먼저 *@
+                <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick"><img src="icons/file-pdf.svg" class="icon-invert-dark" style="width:20px;height:20px;" /></span>
                 <span class="tb-label" style="cursor:pointer;" @onclick="OnDeletePatternClick"><img src="icons/trash.svg" style="width:18px;height:18px;" /></span>
+            }
+            else
+            {
+                @* PDF 없음: label로 직접 클릭 (Android user gesture 보존) *@
+                <label for="pdf-file-input" class="tb-label" style="cursor:pointer;display:flex;align-items:center;">
+                    <img src="icons/file-pdf.svg" class="icon-invert-dark" style="width:20px;height:20px;" />
+                </label>
             }
             <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf,.pdf" style="display:none;" />
         </div>
@@ -1279,15 +1287,9 @@
     // 도안 불러오기 버튼 클릭 → 이미 있으면 경고, 없으면 바로 파일 선택
     async Task OnLoadPatternClick()
     {
-        if (_pdfLoaded)
-        {
-            _showLoadWarning = true;
-            StateHasChanged();
-        }
-        else
-        {
-            await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
-        }
+        // _pdfLoaded=true일 때만 호출됨 (false면 label이 직접 파일 선택)
+        _showLoadWarning = true;
+        StateHasChanged();
     }
 
     async Task ConfirmLoadPattern()
@@ -1323,7 +1325,7 @@
             await SaveProject();
         }
         await JS.InvokeVoidAsync("patternViewer.clearAnnotations");
-        await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
+        await JS.InvokeVoidAsync("patternViewer.triggerPdfLabel");
     }
 
     async Task OnPdfSelected(InputFileChangeEventArgs e)
