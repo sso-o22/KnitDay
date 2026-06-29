@@ -94,6 +94,9 @@ else
                                 {
                                     <div style="font-size:0.7rem;color:var(--text-light);margin-top:2px;">uid: @u.Uid</div>
                                 }
+                                <div style="font-size:0.72rem;margin-top:3px;color:@(u.ExpiresAt == null ? "#c03030" : "var(--theme-active)");">
+                                    🎫 @(u.ExpiresAt == null ? "미설정" : u.ExpiresAt == "lifetime" ? "평생이용권" : $"{u.ExpiresAt} 만료")
+                                </div>
                             </div>
                             @if (_deletingEmail == u.Email)
                             {
@@ -103,7 +106,10 @@ else
                             {
                                 <button class="btn btn-ghost btn-sm"
                                         style="padding:3px 8px;font-size:0.75rem;color:var(--theme-active);flex-shrink:0;"
-                                        @onclick="() => OpenChangeEmail(u)">변경</button>
+                                        @onclick="() => OpenChangeLicense(u)">이용권</button>
+                                <button class="btn btn-ghost btn-sm"
+                                        style="padding:3px 8px;font-size:0.75rem;color:var(--theme-active);flex-shrink:0;"
+                                        @onclick="() => OpenChangeEmail(u)">이메일</button>
                                 <button class="btn btn-ghost btn-sm"
                                         style="padding:3px 8px;font-size:0.75rem;color:#c03030;flex-shrink:0;"
                                         @onclick="() => ConfirmDelete(u)">삭제</button>
@@ -115,6 +121,39 @@ else
         </div>
 
     </div>
+
+    @* 이용권 변경 팝업 *@
+    @if (_changeLicenseUser != null)
+    {
+        <div style="position:fixed;top:0;left:0;right:0;bottom:0;z-index:9999;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;"
+             @onclick="CloseChangeLicense">
+            <div style="background:var(--white);border-radius:20px;padding:28px 24px 20px;max-width:340px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,0.2);"
+                 @onclick:stopPropagation="true">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:6px;color:var(--text-dark);">이용권 변경</div>
+                <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:16px;word-break:break-all;">@_changeLicenseUser.Email</div>
+                <select @bind="_newLicenseType" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;margin-bottom:10px;box-sizing:border-box;background:var(--white);color:var(--text-dark);">
+                    <option value="lifetime">평생 이용권</option>
+                    <option value="1year">1년 이용권 (오늘부터 +1년)</option>
+                    <option value="custom">직접 입력</option>
+                </select>
+                @if (_newLicenseType == "custom")
+                {
+                    <input type="date" @bind="_newLicenseExpiry"
+                           style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;margin-bottom:10px;box-sizing:border-box;" />
+                }
+                @if (!string.IsNullOrEmpty(_licenseChangeMsg))
+                {
+                    <div style="font-size:0.82rem;color:@(_licenseChangeError ? "#c03030" : "var(--theme-active)");margin-bottom:10px;">@_licenseChangeMsg</div>
+                }
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-ghost" @onclick="CloseChangeLicense" disabled="@_changingLicense">취소</button>
+                    <button class="btn btn-primary" @onclick="ChangeLicense" disabled="@_changingLicense">
+                        @(_changingLicense ? "변경 중..." : "변경")
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 
     @* 이메일 변경 팝업 *@
     @if (_changeEmailUser != null)
@@ -178,7 +217,7 @@ else
 @code {
     const string AdminUid = "xAz2xO8kulWUgoHnaaxCkzZV2nG2";
 
-    record UserEntry(string Email, string? Uid);
+    record UserEntry(string Email, string? Uid, string? ExpiresAt = null);
 
     List<UserEntry>? _users;
     bool _loading = false;
@@ -193,6 +232,12 @@ else
     bool _hardDelete = false;
     UserEntry? _changeEmailUser;
     string _newEmailInput = "";
+    UserEntry? _changeLicenseUser;
+    string _newLicenseType = "lifetime";
+    DateTime _newLicenseExpiry = DateTime.Today.AddYears(1);
+    bool _changingLicense = false;
+    string _licenseChangeMsg = "";
+    bool _licenseChangeError = false;
     bool _changing = false;
     string _changeMsg = "";
     bool _changeError = false;
@@ -228,7 +273,8 @@ else
                 _users = doc.RootElement.EnumerateArray()
                     .Select(e => new UserEntry(
                         e.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "",
-                        e.TryGetProperty("uid", out var uid) ? uid.GetString() : null))
+                        e.TryGetProperty("uid", out var uid) ? uid.GetString() : null,
+                        e.TryGetProperty("expiresAt", out var exp) ? exp.GetString() : null))
                     .Where(u => !string.IsNullOrEmpty(u.Email))
                     .OrderBy(u => u.Email)
                     .ToList();
@@ -270,6 +316,38 @@ else
         catch (Exception ex) { _addMsg = "오류: " + ex.Message; _addError = true; }
         _adding = false;
         StateHasChanged();
+    }
+
+    void OpenChangeLicense(UserEntry user)
+    {
+        _changeLicenseUser = user;
+        _newLicenseType = user.ExpiresAt == "lifetime" || user.ExpiresAt == null ? "lifetime" : "custom";
+        _newLicenseExpiry = user.ExpiresAt != null && user.ExpiresAt != "lifetime" && DateTime.TryParse(user.ExpiresAt, out var d) ? d : DateTime.Today.AddYears(1);
+        _licenseChangeMsg = ""; _licenseChangeError = false;
+    }
+    void CloseChangeLicense() { _changeLicenseUser = null; _licenseChangeMsg = ""; }
+
+    async Task ChangeLicense()
+    {
+        if (_changeLicenseUser == null) return;
+        _changingLicense = true; _licenseChangeMsg = ""; StateHasChanged();
+        try
+        {
+            var expiresAt = _newLicenseType == "lifetime" ? "lifetime"
+                          : _newLicenseType == "1year"    ? DateTime.Today.AddYears(1).ToString("yyyy-MM-dd")
+                          : _newLicenseExpiry.ToString("yyyy-MM-dd");
+            var ok = await JS.InvokeAsync<bool>("firebaseStore.setDocument",
+                $"allowedUsers/{_changeLicenseUser.Email}",
+                System.Text.Json.JsonSerializer.Serialize(new { expiresAt }));
+            if (ok)
+            {
+                _licenseChangeMsg = "변경 완료!"; _licenseChangeError = false;
+                await LoadUsers();
+            }
+            else { _licenseChangeMsg = "변경 실패"; _licenseChangeError = true; }
+        }
+        catch (Exception ex) { _licenseChangeMsg = "오류: " + ex.Message; _licenseChangeError = true; }
+        _changingLicense = false; StateHasChanged();
     }
 
     void OpenChangeEmail(UserEntry user) { _changeEmailUser = user; _newEmailInput = ""; _changeMsg = ""; _changeError = false; }
