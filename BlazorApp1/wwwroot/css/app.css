@@ -1294,11 +1294,7 @@ body {
     border-color: var(--theme-active);
 }
 
-[data-dark="true"] .badge-progress { background: var(--yellow-light); color: #8a6a08; }
-[data-dark="true"] .badge-done     { background: var(--mint-light);   color: #267848; }
-[data-dark="true"] .badge-wish     { background: var(--lavender-light); color: #4e3290; }
-[data-dark="true"] .badge-cable    { background: #dff0fb; color: #1a6a8a; }
-[data-dark="true"] .badge-pause    { background: #fef0f0; color: #c0392b; border: 1px solid #f5c0c0; }
+
 
 [data-dark="true"] select.form-control option {
     background: #1e1e1e;
