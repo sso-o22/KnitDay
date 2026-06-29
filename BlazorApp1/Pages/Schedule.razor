@@ -102,11 +102,11 @@ else
                         <div class="card-title" style="margin-bottom:0;">@proj.PatternName</div>
                         @if (proj.Status == ProjectStatus.일시중단)
                         {
-                            <span class="badge" style="background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0;">일시중단</span>
+                            <span class="badge badge-pause">일시중단</span>
                         }
                         else
                         {
-                            <span class="badge" style="background:#fffbe6; color:#b58a00; border:1px solid #f5d97a;">진행중</span>
+                            <span class="badge badge-progress">진행중</span>
                         }
                     </div>
 
@@ -167,7 +167,7 @@ else
                             <span style="font-weight:700; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@proj.PatternName</span>
                             @if (proj.Status == ProjectStatus.일시중단)
                             {
-                                <span class="badge" style="background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0; flex-shrink:0;">일시중단</span>
+                                <span class="badge badge-pause" style="flex-shrink:0;">일시중단</span>
                             }
                         </div>
                         <div style="font-size:0.78rem; color:var(--text-mid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
@@ -237,7 +237,7 @@ else
                         </div>
                         <div class="form-group">
                             <label class="form-label" style="font-size:0.78rem;">원작 게이지</label>
-                            <input class="form-control" @bind="_editingProject.OriginalGauge" placeholder="예: 22코 × 30단 / 10cm * 10cm" />
+                            <input class="form-control" @bind="_editingProject.OriginalGauge" placeholder="예: 22코 × 30단 / 10cm" />
                         </div>
                     </div>
                     <div class="form-row">
