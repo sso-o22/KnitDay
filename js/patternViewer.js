@@ -232,21 +232,21 @@ let basePaths = []; // 저장된 필기 (박제)
                 const dpr = anno._dpr || 1;
                 const hCtx = anno.getContext('2d');
                 hCtx.lineWidth   = _size * 4 * currentZoom * dpr;
-                hCtx.lineCap     = 'square';
-                hCtx.lineJoin    = 'miter';
+                hCtx.lineCap     = 'round';
+                hCtx.lineJoin    = 'round';
                 hCtx.globalAlpha = 0.35;
                 hCtx.strokeStyle = _color;
                 hCtx.globalCompositeOperation = 'multiply';
                 hCtx.beginPath();
                 hCtx.moveTo(bx, by);
+                // 콕 클릭 시 점 찍기 — lineTo로 짧은 선 그어서 바로 표시
+                hCtx.lineTo(bx + 0.5, by + 0.5);
+                hCtx.stroke();
+                hCtx.beginPath();
+                hCtx.moveTo(bx, by);
                 anno._hlCtx = hCtx;  // onMove에서 재사용
             } else {
                 _stroke(anno, pageNum, bx, by, bx + 0.1, by + 0.1);
-                // 형광펜 콕 클릭: onDown에서 바로 점 찍기
-                if (_tool === 'highlighter') {
-                    hCtx.lineTo(bx + 0.5, by + 0.5);
-                    hCtx.stroke();
-                }
             }
             // 직선 스냅: 펜 2초, 형광펜 0.9초 후 직선 모드 전환 (지우개 제외)
             if (_tool === 'pen' || _tool === 'highlighter') {
