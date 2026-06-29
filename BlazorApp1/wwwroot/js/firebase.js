@@ -79,10 +79,15 @@ window.firebaseAuth = {
             // ────────────────────────────────────────────────────────────
 
             // allowedUsers에 uid 업데이트 (탈퇴/완전삭제 시 활용)
+            // expiresAt 없으면 "lifetime"으로 자동 생성 (관리자 포함)
             try {
-                await setDoc(doc(db, 'allowedUsers', u.email),
-                    { uid: u.uid, lastLoginAt: new Date().toISOString() },
-                    { merge: true });
+                const allowRef = doc(db, 'allowedUsers', u.email);
+                const existingDoc = await getDoc(allowRef);
+                const updateData = { uid: u.uid, lastLoginAt: new Date().toISOString() };
+                if (!existingDoc.data()?.expiresAt) {
+                    updateData.expiresAt = 'lifetime';
+                }
+                await setDoc(allowRef, updateData, { merge: true });
             } catch (_) { /* uid 업데이트 실패해도 로그인은 진행 */ }
 
             return { uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL };
