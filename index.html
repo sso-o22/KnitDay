@@ -224,10 +224,19 @@
 
     <script type="module" src="js/firebase.js"></script>
     <script>navigator.serviceWorker.register('service-worker.js');</script>
-
-    <!-- TEMP DEBUG: 갤럭시 모바일 콘솔 디버깅용 — 디버깅 끝나면 이 블록 삭제 -->
-    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-    <script>eruda.init();</script>
-    <!-- TEMP DEBUG END -->
+    <script>
+        // 관리자 전용 디버그 콘솔 토글 (설정 페이지에서 호출)
+        window.knitdayDebug = {
+            enabled: false,
+            toggle() {
+                if (this.enabled) { return; }
+                this.enabled = true;
+                const s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/eruda';
+                document.body.appendChild(s);
+                s.onload = () => { window.eruda.init(); };
+            }
+        };
+    </script>
 </body>
 </html>
