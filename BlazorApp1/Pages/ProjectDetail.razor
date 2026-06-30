@@ -186,7 +186,7 @@ else
                             var hasTarget = counter.Target > 0;
                             var progress  = hasTarget ? Math.Min(100.0, counter.Value * 100.0 / counter.Target) : 0.0;
                             var isDone    = hasTarget && counter.Value >= counter.Target;
-                            <div style="background:var(--white); border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; border:1px solid @(isDone ? "var(--theme-light)" : "var(--theme-mid)");">
+                            <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; border:1px solid var(--border);">
                                 <!-- 라벨 + 연필 + 삭제 -->
                                 <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
                                     @if (_editingCounterId == counter.Id)
