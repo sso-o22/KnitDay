@@ -9,25 +9,7 @@ window.patternViewer = (() => {
                 if (!db.objectStoreNames.contains(IDB_STORE))
                     db.createObjectStore(IDB_STORE, { keyPath: 'projectId' });
             };
-            req.onsuccess = e => {
-                const db = e.target.result;
-                // 다른 코드(app.js 등)가 버전 없이/먼저 열어 onupgradeneeded 없이
-                // 스토어가 누락된 채로 DB가 생성된 과거 케이스 복구
-                if (!db.objectStoreNames.contains(IDB_STORE)) {
-                    const curVer = db.version;
-                    db.close();
-                    const reReq = indexedDB.open(IDB_NAME, curVer + 1);
-                    reReq.onupgradeneeded = ev => {
-                        const db2 = ev.target.result;
-                        if (!db2.objectStoreNames.contains(IDB_STORE))
-                            db2.createObjectStore(IDB_STORE, { keyPath: 'projectId' });
-                    };
-                    reReq.onsuccess = ev => res(ev.target.result);
-                    reReq.onerror   = ev => rej(ev.target.error);
-                    return;
-                }
-                res(db);
-            };
+            req.onsuccess = e => res(e.target.result);
             req.onerror   = e => rej(e.target.error);
         });
     }
@@ -514,6 +496,21 @@ let basePaths = []; // 저장된 필기 (박제)
         _pageHandlers = {};
     }
 
+    // Blazor가 page-container-1 div를 DOM에 그릴 때까지 대기 (최대 2초, 폴링)
+    function waitForPageContainers() {
+        return new Promise(resolve => {
+            const start = Date.now();
+            const check = () => {
+                if (document.getElementById('page-container-1') || Date.now() - start > 2000) {
+                    resolve();
+                } else {
+                    requestAnimationFrame(check);
+                }
+            };
+            check();
+        });
+    }
+
     function syncContainerSizes(zoom) {
         for (let i = 1; i <= totalPages; i++) {
             const orig = _pageSizes[i];
@@ -729,6 +726,9 @@ let basePaths = []; // 저장된 필기 (박제)
             _fitZoom = await calcFitZoom(p1);
             _fitZoomVal = _fitZoom;
             currentZoom = _fitZoom; currentPageNum = 1;
+            // 갤럭시 등 저사양 기기: Blazor가 page-container div들을 아직 못 그렸을 수 있으므로
+            // 첫 페이지 컨테이너가 실제 DOM에 나타날 때까지 대기 (최대 2초)
+            await waitForPageContainers();
             syncContainerSizes(currentZoom);
             await virtualizeRender(currentZoom);
             setupScrollAndZoom();
