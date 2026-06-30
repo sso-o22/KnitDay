@@ -144,18 +144,10 @@
             }
         </div>
         <div class="tb-right">
+            <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick"><img src="icons/file-pdf.svg" class="icon-invert-dark" style="width:20px;height:20px;" /></span>
             @if (_pdfLoaded)
             {
-                @* PDF 있음: 교체 경고 팝업 먼저 *@
-                <span class="tb-label" style="cursor:pointer;" @onclick="OnLoadPatternClick"><img src="icons/file-pdf.svg" class="icon-invert-dark" style="width:20px;height:20px;" /></span>
                 <span class="tb-label" style="cursor:pointer;" @onclick="OnDeletePatternClick"><img src="icons/trash.svg" style="width:18px;height:18px;" /></span>
-            }
-            else
-            {
-                @* PDF 없음: label로 직접 클릭 (Android user gesture 보존) *@
-                <label for="pdf-file-input" class="tb-label" style="cursor:pointer;display:flex;align-items:center;">
-                    <img src="icons/file-pdf.svg" class="icon-invert-dark" style="width:20px;height:20px;" />
-                </label>
             }
             <InputFile id="pdf-file-input" OnChange="OnPdfSelected" accept="application/pdf,.pdf" style="display:none;" />
         </div>
@@ -1155,8 +1147,8 @@
 
             _renderPdfTcs = new TaskCompletionSource();
             await JS.InvokeVoidAsync("patternViewer.renderPdf");
-            // renderPdf 완료 콜백 대기 (최대 3초 타임아웃)
-            await Task.WhenAny(_renderPdfTcs.Task, Task.Delay(3000));
+            // renderPdf 완료 콜백 대기 (최대 6초 타임아웃 — 저사양 Android 기기 고려)
+            await Task.WhenAny(_renderPdfTcs.Task, Task.Delay(6000));
             _renderPdfTcs = null;
 
             // 필기 복원은 렌더 완전히 끝난 후
@@ -1287,9 +1279,15 @@
     // 도안 불러오기 버튼 클릭 → 이미 있으면 경고, 없으면 바로 파일 선택
     async Task OnLoadPatternClick()
     {
-        // _pdfLoaded=true일 때만 호출됨 (false면 label이 직접 파일 선택)
-        _showLoadWarning = true;
-        StateHasChanged();
+        if (_pdfLoaded)
+        {
+            _showLoadWarning = true;
+            StateHasChanged();
+        }
+        else
+        {
+            await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
+        }
     }
 
     async Task ConfirmLoadPattern()
@@ -1325,7 +1323,7 @@
             await SaveProject();
         }
         await JS.InvokeVoidAsync("patternViewer.clearAnnotations");
-        await JS.InvokeVoidAsync("patternViewer.triggerPdfLabel");
+        await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
     }
 
     async Task OnPdfSelected(InputFileChangeEventArgs e)
