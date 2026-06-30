@@ -94,8 +94,8 @@ else
                                 {
                                     <div style="font-size:0.7rem;color:var(--text-light);margin-top:2px;">uid: @u.Uid</div>
                                 }
-                                <div style="font-size:0.72rem;margin-top:3px;color:@(u.ExpiresAt == null ? "#c03030" : "var(--theme-active)");">
-                                    🎫 @(u.ExpiresAt == null ? "미설정" : u.ExpiresAt == "lifetime" ? "평생이용권" : $"{u.ExpiresAt} 만료")
+                                <div style="font-size:0.72rem;margin-top:3px;display:flex;align-items:center;gap:4px;color:@(u.ExpiresAt == null ? "#c03030" : "var(--theme-active)");">
+                                    <img src="icons/ticket.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" /> @(u.ExpiresAt == null ? "미설정" : u.ExpiresAt == "lifetime" ? "평생이용권" : $"{u.ExpiresAt} 만료")
                                 </div>
                             </div>
                             @if (_deletingEmail == u.Email)
@@ -104,15 +104,17 @@ else
                             }
                             else
                             {
-                                <button class="btn btn-ghost btn-sm"
-                                        style="padding:3px 8px;font-size:0.75rem;color:var(--theme-active);flex-shrink:0;"
-                                        @onclick="() => OpenChangeLicense(u)">이용권</button>
-                                <button class="btn btn-ghost btn-sm"
-                                        style="padding:3px 8px;font-size:0.75rem;color:var(--theme-active);flex-shrink:0;"
-                                        @onclick="() => OpenChangeEmail(u)">이메일</button>
-                                <button class="btn btn-ghost btn-sm"
-                                        style="padding:3px 8px;font-size:0.75rem;color:#c03030;flex-shrink:0;"
-                                        @onclick="() => ConfirmDelete(u)">삭제</button>
+                                <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;flex-shrink:0;">
+                                    <button class="btn btn-ghost btn-sm"
+                                            style="padding:3px 8px;font-size:0.75rem;color:var(--theme-active);"
+                                            @onclick="() => OpenChangeLicense(u)">이용권</button>
+                                    <button class="btn btn-ghost btn-sm"
+                                            style="padding:3px 8px;font-size:0.75rem;color:var(--theme-active);"
+                                            @onclick="() => OpenChangeEmail(u)">이메일</button>
+                                    <button class="btn btn-ghost btn-sm"
+                                            style="padding:3px 8px;font-size:0.75rem;color:#c03030;"
+                                            @onclick="() => ConfirmDelete(u)">삭제</button>
+                                </div>
                             }
                         </div>
                     }

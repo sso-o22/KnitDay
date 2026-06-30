@@ -98,8 +98,10 @@ else
                                         @foreach (var ev in dots.Take(6))
                                         {
                                             <div @onclick="() => GoToProject(ev.Id)" @onclick:stopPropagation="true" title="@ev.Title"
-                                                 style="width:8px; height:8px; border-radius:50%; cursor:pointer;
-                                                        background:@ev.AccentColor; opacity:0.85;">
+                                                 style="width:8px; height:8px; border-radius:50%; cursor:pointer; box-sizing:border-box;
+                                                        background:@(ev.HasSession ? ev.AccentColor : "transparent");
+                                                        border:@(ev.HasSession ? "none" : $"1.4px solid {ev.AccentColor}");
+                                                        opacity:0.85;">
                                             </div>
                                         }
                                         @if (dots.Count > 6)
@@ -138,8 +140,8 @@ else
                                             background:@style.AccentColor; border-radius:6px; min-width:4px;"></div>
                             </div>
                             <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:0.72rem; color:var(--text-light);">
-                                <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:var(--theme-active); background:var(--theme-pale); border-radius:3px; padding:0 3px; line-height:1.5;">CO</span>@(proj.StartDate.HasValue ? proj.StartDate.Value.ToString("M/d") : "미정")</span>
-                                <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:#c05070; background:#fef0f3; border-radius:3px; padding:0 3px; line-height:1.5;">FO</span>@(proj.EndDate.HasValue ? proj.EndDate.Value.ToString("M/d") : "미정")</span>
+                                <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:#1a6a8a; background:#eaf6fc; border-radius:3px; padding:0 3px; line-height:1.5;">CO</span>@(proj.StartDate.HasValue ? proj.StartDate.Value.ToString(proj.StartDate.Value.Year == _current.Year ? "M/d" : "yyyy.M/d") : "미정")</span>
+                                <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:#c05070; background:#fef0f3; border-radius:3px; padding:0 3px; line-height:1.5;">FO</span>@(proj.EndDate.HasValue ? proj.EndDate.Value.ToString(proj.EndDate.Value.Year == _current.Year ? "M/d" : "yyyy.M/d") : "미정")</span>
                             </div>
                         </div>
                     }
@@ -216,11 +218,13 @@ else
             <div style="display:flex; flex-direction:column; gap:8px; padding:4px 0;">
                 @foreach (var ev in _dayPopupEvents)
                 {
-                    var labelText = ev.Label switch { "CO" => "시작", "FO" => "완성", "CO·FO" => "시작·완성", _ => "진행중" };
+                    var labelText = ev.Label switch { "CO" => "시작", "FO" => "완성", "CO·FO" => "시작·완성", _ => ev.HasSession ? "오늘뜸" : "진행중" };
                     <div @onclick="() => { CloseDayPopup(); GoToProject(ev.Id); }"
                          style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm);
                                 background:var(--ivory-dark); cursor:pointer; min-width:0;">
-                        <span style="width:10px; height:10px; border-radius:50%; background:@ev.AccentColor; flex-shrink:0;"></span>
+                        <span style="width:10px; height:10px; border-radius:50%; box-sizing:border-box; flex-shrink:0;
+                                      background:@(ev.HasSession ? ev.AccentColor : "transparent");
+                                      border:@(ev.HasSession ? "none" : $"1.6px solid {ev.AccentColor}");"></span>
                         <span style="font-size:0.85rem; font-weight:500; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">@ev.Title</span>
                         <span style="font-size:0.72rem; color:var(--text-light); flex-shrink:0;">@labelText</span>
                     </div>
@@ -319,7 +323,7 @@ else
 
     record ProjectStyle(string PaleBg, string AccentColor, string TextColor);
     record CalendarCell(DateTime Date);
-    record CalendarEvent(Guid Id, string Title, string Label, string PaleBg, string AccentColor, string TextColor);
+    record CalendarEvent(Guid Id, string Title, string Label, string PaleBg, string AccentColor, string TextColor, bool HasSession = true);
 
     // ── 초기화 ────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
@@ -413,14 +417,14 @@ else
             // CO 표시
             if (isStart)
             {
-                result.Add(new CalendarEvent(p.Id, p.PatternName, "CO", "transparent", "#d6eefa", "#1a6a8a"));
+                result.Add(new CalendarEvent(p.Id, p.PatternName, "CO", "transparent", "#eaf6fc", "#1a6a8a"));
                 continue;
             }
 
             // FO 표시 (완료된 프로젝트만)
             if (isEnd)
             {
-                result.Add(new CalendarEvent(p.Id, p.PatternName, "FO", "transparent", "#fad5de", "#a03060"));
+                result.Add(new CalendarEvent(p.Id, p.PatternName, "FO", "transparent", "#fef0f3", "#a03060"));
                 continue;
             }
 
@@ -432,7 +436,10 @@ else
             if (isCompleted)
             {
                 if (p.EndDate.HasValue && date < p.EndDate.Value.Date)
-                    result.Add(new CalendarEvent(p.Id, p.PatternName, "·", s.PaleBg, s.AccentColor, s.TextColor));
+                {
+                    bool hasSession = p.Sessions.Any(sn => sn.StartTime.Date == date);
+                    result.Add(new CalendarEvent(p.Id, p.PatternName, "·", s.PaleBg, s.AccentColor, s.TextColor, hasSession));
+                }
                 continue;
             }
 
@@ -444,7 +451,10 @@ else
 
             bool isActive = IsDateActive(p, date);
             if (isActive)
-                result.Add(new CalendarEvent(p.Id, p.PatternName, "·", s.PaleBg, s.AccentColor, s.TextColor));
+            {
+                bool hasSessionActive = p.Sessions.Any(sn => sn.StartTime.Date == date);
+                result.Add(new CalendarEvent(p.Id, p.PatternName, "·", s.PaleBg, s.AccentColor, s.TextColor, hasSessionActive));
+            }
         }
         return result;
     }
@@ -535,7 +545,7 @@ else
 
     string GetStatusBadgeStyle(ProjectStatus s) => s switch
     {
-        ProjectStatus.완료     => "background:#e6f4ea; color:#267848; border:1px solid #b8e0c8;",
+        ProjectStatus.완료     => "background:#e6f4ea; color:#4a7a5a; border:1px solid #b8e0c8;",
         ProjectStatus.진행중   => "background:#fffbe6; color:#b58a00; border:1px solid #f5d97a;",
         ProjectStatus.일시중단 => "background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0;",
         _                      => "background:#f0f0f0; color:#888;"

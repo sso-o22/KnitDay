@@ -52,11 +52,11 @@
 }
 
 /* ── 테마 정의 ───────────────────────────────────────────── */
-[data-theme="green"]  { --theme-pale:#f0f9ec; --theme-light:#c8e6be; --theme-mid:#d4eccc; --theme-muted:#a8c8a0; --theme-btn:#f0f9ec; --theme-active:#3a7a4a; }
-[data-theme="yellow"] { --theme-pale:#fffde4; --theme-light:#fff3b5; --theme-mid:#e8d870; --theme-muted:#a08828; --theme-btn:#fffde4; --theme-active:#6a4e00; }
-[data-theme="sky"]    { --theme-pale:#eaf7ff; --theme-light:#d3f4ff; --theme-mid:#a8dff5; --theme-muted:#6aaac8; --theme-btn:#eaf7ff; --theme-active:#1a6a8a; }
-[data-theme="pink"]   { --theme-pale:#fff1f1; --theme-light:#ffe7e7; --theme-mid:#f5c0c0; --theme-muted:#c88888; --theme-btn:#fff1f1; --theme-active:#8a3a3a; }
-[data-theme="purple"] { --theme-pale:#f3efff; --theme-light:#e9e1ff; --theme-mid:#c8b8e8; --theme-muted:#8878b8; --theme-btn:#f3efff; --theme-active:#5a3a8a; }
+[data-theme="green"]  { --theme-pale:#f0f9ec; --theme-light:#c8e6be; --theme-mid:#d4eccc; --theme-muted:#a8c8a0; --theme-btn:#f0f9ec; --theme-active:#4a6650; }
+[data-theme="yellow"] { --theme-pale:#fffde4; --theme-light:#fff3b5; --theme-mid:#e8d870; --theme-muted:#a08828; --theme-btn:#fffde4; --theme-active:#7a6030; }
+[data-theme="sky"]    { --theme-pale:#eaf7ff; --theme-light:#d3f4ff; --theme-mid:#a8dff5; --theme-muted:#6aaac8; --theme-btn:#eaf7ff; --theme-active:#3a6070; }
+[data-theme="pink"]   { --theme-pale:#fff1f1; --theme-light:#ffe7e7; --theme-mid:#f5c0c0; --theme-muted:#c88888; --theme-btn:#fff1f1; --theme-active:#7a5050; }
+[data-theme="purple"] { --theme-pale:#f3efff; --theme-light:#e9e1ff; --theme-mid:#c8b8e8; --theme-muted:#8878b8; --theme-btn:#f3efff; --theme-active:#6a5880; }
 [data-theme="mono"]   { --theme-pale:#f5f5f5; --theme-light:#e0e0e0; --theme-mid:#cccccc; --theme-muted:#888888; --theme-btn:#f5f5f5; --theme-active:#333333; }
 
 
@@ -225,12 +225,10 @@ body {
 }
 
 /* 카운터 게이지 — 다크/흑백 테마에서 대비 확보 */
-.counter-gauge-stroke { stroke: var(--theme-light); }
-.counter-gauge-bar    { background: var(--theme-light); }
+.counter-gauge-stroke { stroke: var(--theme-active); }
+.counter-gauge-bar    { background: var(--theme-active); }
 [data-dark="true"] .counter-gauge-stroke { stroke: rgba(255,255,255,0.7); }
 [data-dark="true"] .counter-gauge-bar    { background: rgba(255,255,255,0.7); }
-[data-theme="mono"] .counter-gauge-stroke { stroke: var(--theme-active); }
-[data-theme="mono"] .counter-gauge-bar    { background: var(--theme-active); }
 
 /* 내보내기 팝업 체크 아이콘 — 배경색(theme-active)에 맞는 대비색 */
 .export-check-icon { filter: invert(1); }  /* 라이트모드: theme-active가 진한 색 → 흰색 아이콘 */
