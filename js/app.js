@@ -116,20 +116,28 @@ window.knitDB = (() => {
                 }
 
                 // ── 도안 (KnitLogPatternDB) ──
+                // 버전 번호 없이 열어서 신규 DB 생성/스키마 변경을 절대 트리거하지 않음
+                // (버전 지정 시 patternViewer.js의 openDB()보다 먼저 실행되면
+                //  onupgradeneeded 없이 빈 DB가 생성되어 'patterns' 스토어 누락 → NotFoundError 발생)
                 let pdfBytes = 0;
                 try {
                     const pdfDb = await new Promise((res, rej) => {
-                        const req = indexedDB.open('KnitLogPatternDB', 2);
+                        const req = indexedDB.open('KnitLogPatternDB');
                         req.onsuccess = e => res(e.target.result);
                         req.onerror   = e => rej(e.target.error);
                     });
-                    const pdfRecs = await new Promise((res, rej) => {
-                        const req = pdfDb.transaction('patterns','readonly').objectStore('patterns').getAll();
-                        req.onsuccess = e => res(e.target.result);
-                        req.onerror   = e => rej(e.target.error);
-                    });
-                    for (const rec of pdfRecs) {
-                        if (rec.bytes) pdfBytes += rec.bytes.byteLength ?? rec.bytes.length ?? 0;
+                    if (!pdfDb.objectStoreNames.contains('patterns')) {
+                        pdfDb.close();
+                    } else {
+                        const pdfRecs = await new Promise((res, rej) => {
+                            const req = pdfDb.transaction('patterns','readonly').objectStore('patterns').getAll();
+                            req.onsuccess = e => res(e.target.result);
+                            req.onerror   = e => rej(e.target.error);
+                        });
+                        for (const rec of pdfRecs) {
+                            if (rec.bytes) pdfBytes += rec.bytes.byteLength ?? rec.bytes.length ?? 0;
+                        }
+                        pdfDb.close();
                     }
                 } catch(e) { /* PDF DB 없으면 0 */ }
 
