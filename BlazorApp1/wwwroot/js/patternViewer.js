@@ -9,7 +9,25 @@ window.patternViewer = (() => {
                 if (!db.objectStoreNames.contains(IDB_STORE))
                     db.createObjectStore(IDB_STORE, { keyPath: 'projectId' });
             };
-            req.onsuccess = e => res(e.target.result);
+            req.onsuccess = e => {
+                const db = e.target.result;
+                // 다른 코드(app.js 등)가 버전 없이/먼저 열어 onupgradeneeded 없이
+                // 스토어가 누락된 채로 DB가 생성된 과거 케이스 복구
+                if (!db.objectStoreNames.contains(IDB_STORE)) {
+                    const curVer = db.version;
+                    db.close();
+                    const reReq = indexedDB.open(IDB_NAME, curVer + 1);
+                    reReq.onupgradeneeded = ev => {
+                        const db2 = ev.target.result;
+                        if (!db2.objectStoreNames.contains(IDB_STORE))
+                            db2.createObjectStore(IDB_STORE, { keyPath: 'projectId' });
+                    };
+                    reReq.onsuccess = ev => res(ev.target.result);
+                    reReq.onerror   = ev => rej(ev.target.error);
+                    return;
+                }
+                res(db);
+            };
             req.onerror   = e => rej(e.target.error);
         });
     }
@@ -820,7 +838,6 @@ let basePaths = []; // 저장된 필기 (박제)
         },
 
         triggerFileInput() { document.getElementById('pdf-file-input')?.click(); },
-        triggerPdfLabel() { document.querySelector('label[for="pdf-file-input"]')?.click(); },
 
         getPaths() { return JSON.stringify(paths); },
 
