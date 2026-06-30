@@ -446,9 +446,59 @@ namespace KnitLog.Services
             {
                 if (quotaReached) break;
 
-                // 사진
-                foreach (var photo in proj.Photos)
+                // 멀티기기 race condition 방지: 프로젝트당 1회 Firestore 최신 상태 조회.
+                // 다른 기기에서 방금 사진/도안을 삭제했다면, 이 기기의 로컬(IDB/Base64)에
+                // 남아있는 데이터를 "유실분"으로 오인해 되살리지 않도록 사전 차단.
+                bool freshHasSavedPattern = proj.HasSavedPattern;
+                HashSet<Guid>? freshPhotoIds = null; // null이면 검증 불가(네트워크 오류 등) → 기존 로직대로 진행
+                try
                 {
+                    var freshRaw = await _js.InvokeAsync<string?>(
+                        "firebaseStore.getDocument", $"users/{Uid}/projects/{proj.Id}");
+                    if (!string.IsNullOrEmpty(freshRaw) && !freshRaw.StartsWith("__error__:"))
+                    {
+                        using var freshDoc = System.Text.Json.JsonDocument.Parse(freshRaw);
+                        if (freshDoc.RootElement.TryGetProperty("HasSavedPattern", out var hsp)
+                            || freshDoc.RootElement.TryGetProperty("hasSavedPattern", out hsp))
+                        {
+                            freshHasSavedPattern = hsp.ValueKind == System.Text.Json.JsonValueKind.True;
+                        }
+                        if (freshDoc.RootElement.TryGetProperty("Photos", out var photosEl)
+                            || freshDoc.RootElement.TryGetProperty("photos", out photosEl))
+                        {
+                            freshPhotoIds = new HashSet<Guid>();
+                            foreach (var ph in photosEl.EnumerateArray())
+                            {
+                                if ((ph.TryGetProperty("Id", out var pid) || ph.TryGetProperty("id", out pid))
+                                    && Guid.TryParse(pid.GetString(), out var gid))
+                                    freshPhotoIds.Add(gid);
+                            }
+                        }
+                    }
+                }
+                catch { /* 조회 실패 시 freshPhotoIds=null → 검증 스킵하고 기존 로직대로 진행 */ }
+
+                // 서버 기준 도안이 이미 삭제됐다면 로컬도 동기화하고 PDF 마이그레이션 건너뜀
+                if (proj.HasSavedPattern && !freshHasSavedPattern)
+                {
+                    proj.HasSavedPattern = false;
+                    proj.PatternCloudUrl = "";
+                    proj.PatternFileName = "";
+                    changed = true;
+                    try { await _js.InvokeAsync<bool>("patternViewer.deleteSavedPdf", proj.Id.ToString()); } catch { }
+                }
+
+                // 사진
+                foreach (var photo in proj.Photos.ToList())
+                {
+                    // 서버 기준 이미 삭제된 사진이면 로컬 리스트에서도 제거하고 업로드 건너뜀
+                    if (freshPhotoIds != null && !freshPhotoIds.Contains(photo.Id))
+                    {
+                        proj.Photos.Remove(photo);
+                        changed = true;
+                        continue;
+                    }
+
                     if (string.IsNullOrEmpty(photo.Base64Data) || !string.IsNullOrEmpty(photo.StorageUrl))
                         continue;
 
@@ -485,35 +535,9 @@ namespace KnitLog.Services
 
                 if (quotaReached) break;
 
-                // 도안 PDF
+                // 도안 PDF (race condition 가드는 루프 진입부에서 이미 freshHasSavedPattern으로 처리됨)
                 if (proj.HasSavedPattern && string.IsNullOrEmpty(proj.PatternCloudUrl))
                 {
-                    // 멀티기기 race condition 방지: 업로드 직전 Firestore 최신 상태 재확인.
-                    // 다른 기기에서 방금 도안을 삭제했다면(HasSavedPattern=false로 갱신됨)
-                    // 이 기기의 로컬 IDB에 남은 PDF를 "유실분"으로 오인해 되살리지 않도록 건너뜀.
-                    try
-                    {
-                        var freshRaw = await _js.InvokeAsync<string?>(
-                            "firebaseStore.getDocument", $"users/{Uid}/projects/{proj.Id}");
-                        if (!string.IsNullOrEmpty(freshRaw) && !freshRaw.StartsWith("__error__:"))
-                        {
-                            using var freshDoc = System.Text.Json.JsonDocument.Parse(freshRaw, new System.Text.Json.JsonDocumentOptions());
-                            bool foundHsp = freshDoc.RootElement.TryGetProperty("HasSavedPattern", out var hsp)
-                                || freshDoc.RootElement.TryGetProperty("hasSavedPattern", out hsp);
-                            if (foundHsp && hsp.ValueKind == System.Text.Json.JsonValueKind.False)
-                            {
-                                // 서버 기준 이미 삭제됨 — 로컬도 동기화하고 마이그레이션 건너뜀
-                                proj.HasSavedPattern = false;
-                                proj.PatternCloudUrl = "";
-                                proj.PatternFileName = "";
-                                changed = true;
-                                try { await _js.InvokeAsync<bool>("patternViewer.deleteSavedPdf", proj.Id.ToString()); } catch { }
-                                goto SkipPdfMigration;
-                            }
-                        }
-                    }
-                    catch { /* 확인 실패 시에는 기존 로직대로 진행 (네트워크 오류 등) */ }
-
                     progress.CurrentLabel = $"{proj.PatternName} 도안";
                     OnMigrationProgress?.Invoke(progress);
 
@@ -575,7 +599,6 @@ namespace KnitLog.Services
                         OnMigrationProgress?.Invoke(progress);
                     }
                 }
-                SkipPdfMigration: ;
             }
 
             if (changed)
