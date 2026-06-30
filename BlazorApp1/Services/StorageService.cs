@@ -488,6 +488,32 @@ namespace KnitLog.Services
                 // 도안 PDF
                 if (proj.HasSavedPattern && string.IsNullOrEmpty(proj.PatternCloudUrl))
                 {
+                    // 멀티기기 race condition 방지: 업로드 직전 Firestore 최신 상태 재확인.
+                    // 다른 기기에서 방금 도안을 삭제했다면(HasSavedPattern=false로 갱신됨)
+                    // 이 기기의 로컬 IDB에 남은 PDF를 "유실분"으로 오인해 되살리지 않도록 건너뜀.
+                    try
+                    {
+                        var freshRaw = await _js.InvokeAsync<string?>(
+                            "firebaseStore.getDocument", $"users/{Uid}/projects/{proj.Id}");
+                        if (!string.IsNullOrEmpty(freshRaw) && !freshRaw.StartsWith("__error__:"))
+                        {
+                            using var freshDoc = System.Text.Json.JsonDocument.Parse(freshRaw, new System.Text.Json.JsonDocumentOptions());
+                            bool foundHsp = freshDoc.RootElement.TryGetProperty("HasSavedPattern", out var hsp)
+                                || freshDoc.RootElement.TryGetProperty("hasSavedPattern", out hsp);
+                            if (foundHsp && hsp.ValueKind == System.Text.Json.JsonValueKind.False)
+                            {
+                                // 서버 기준 이미 삭제됨 — 로컬도 동기화하고 마이그레이션 건너뜀
+                                proj.HasSavedPattern = false;
+                                proj.PatternCloudUrl = "";
+                                proj.PatternFileName = "";
+                                changed = true;
+                                try { await _js.InvokeAsync<bool>("patternViewer.deleteSavedPdf", proj.Id.ToString()); } catch { }
+                                goto SkipPdfMigration;
+                            }
+                        }
+                    }
+                    catch { /* 확인 실패 시에는 기존 로직대로 진행 (네트워크 오류 등) */ }
+
                     progress.CurrentLabel = $"{proj.PatternName} 도안";
                     OnMigrationProgress?.Invoke(progress);
 
@@ -549,6 +575,7 @@ namespace KnitLog.Services
                         OnMigrationProgress?.Invoke(progress);
                     }
                 }
+                SkipPdfMigration: ;
             }
 
             if (changed)
