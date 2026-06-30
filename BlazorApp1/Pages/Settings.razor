@@ -75,6 +75,10 @@
                 <a href="admin" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;margin-left:16px;font-size:0.78rem;color:var(--text-light);text-decoration:none;">
                     <img src="icons/key.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />관리자 페이지
                 </a>
+                <button class="btn btn-ghost" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;margin-left:16px;font-size:0.78rem;color:var(--text-light);padding:0;background:none;border:none;cursor:pointer;"
+                        @onclick="ToggleDebugConsole">
+                    <img src="icons/bug.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />디버그 콘솔 켜기
+                </button>
             }
         }
         else
@@ -666,6 +670,12 @@
 </style>
 
 @code {
+    async Task ToggleDebugConsole()
+    {
+        try { await JS.InvokeVoidAsync("knitdayDebug.toggle"); }
+        catch { }
+    }
+
     class VersionInfo
     {
         [System.Text.Json.Serialization.JsonPropertyName("version")]
