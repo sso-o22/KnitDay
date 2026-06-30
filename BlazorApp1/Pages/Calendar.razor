@@ -218,7 +218,7 @@ else
             <div style="display:flex; flex-direction:column; gap:8px; padding:4px 0;">
                 @foreach (var ev in _dayPopupEvents)
                 {
-                    var labelText = ev.Label switch { "CO" => "시작", "FO" => "완성", "CO·FO" => "시작·완성", _ => ev.HasSession ? "뜨개함" : "진행중" };
+                    var labelText = ev.Label switch { "CO" => "시작", "FO" => "완성", "CO·FO" => "시작·완성", _ => ev.HasSession ? "오늘뜸" : "진행중" };
                     <div @onclick="() => { CloseDayPopup(); GoToProject(ev.Id); }"
                          style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm);
                                 background:var(--ivory-dark); cursor:pointer; min-width:0;">
