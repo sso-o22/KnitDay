@@ -1,34 +1,36 @@
 window.patternViewer = (() => {
     // ── IndexedDB ────────────────────────────────────────────
-    const IDB_NAME = 'KnitLogPatternDB', IDB_VER = 2, IDB_STORE = 'patterns';
+    const IDB_NAME = 'KnitLogPatternDB', IDB_STORE = 'patterns';
+    // 버전을 고정값으로 열지 않고, 먼저 버전 없이 열어 현재 상태를 확인한 뒤
+    // 스토어가 없을 때만 버전+1로 업그레이드 — VersionError(요청 버전 < 기존 버전) 방지
     function openDB() {
         return new Promise((res, rej) => {
-            const req = indexedDB.open(IDB_NAME, IDB_VER);
+            const req = indexedDB.open(IDB_NAME);
+            req.onsuccess = e => {
+                const db = e.target.result;
+                if (db.objectStoreNames.contains(IDB_STORE)) {
+                    res(db);
+                    return;
+                }
+                // 스토어 누락 — 현재 버전 기준으로 +1 업그레이드하여 생성
+                const curVer = db.version;
+                db.close();
+                const upReq = indexedDB.open(IDB_NAME, curVer + 1);
+                upReq.onupgradeneeded = ev => {
+                    const db2 = ev.target.result;
+                    if (!db2.objectStoreNames.contains(IDB_STORE))
+                        db2.createObjectStore(IDB_STORE, { keyPath: 'projectId' });
+                };
+                upReq.onsuccess = ev => res(ev.target.result);
+                upReq.onerror   = ev => rej(ev.target.error);
+            };
             req.onupgradeneeded = e => {
+                // DB가 아예 처음 생성되는 경우 (버전 0 → 1)
                 const db = e.target.result;
                 if (!db.objectStoreNames.contains(IDB_STORE))
                     db.createObjectStore(IDB_STORE, { keyPath: 'projectId' });
             };
-            req.onsuccess = e => {
-                const db = e.target.result;
-                // 다른 코드(app.js 등)가 버전 없이/먼저 열어 onupgradeneeded 없이
-                // 스토어가 누락된 채로 DB가 생성된 과거 케이스 복구
-                if (!db.objectStoreNames.contains(IDB_STORE)) {
-                    const curVer = db.version;
-                    db.close();
-                    const reReq = indexedDB.open(IDB_NAME, curVer + 1);
-                    reReq.onupgradeneeded = ev => {
-                        const db2 = ev.target.result;
-                        if (!db2.objectStoreNames.contains(IDB_STORE))
-                            db2.createObjectStore(IDB_STORE, { keyPath: 'projectId' });
-                    };
-                    reReq.onsuccess = ev => res(ev.target.result);
-                    reReq.onerror   = ev => rej(ev.target.error);
-                    return;
-                }
-                res(db);
-            };
-            req.onerror   = e => rej(e.target.error);
+            req.onerror = e => rej(e.target.error);
         });
     }
     async function savePdfToIDB(projectId, bytes, fileName) {
