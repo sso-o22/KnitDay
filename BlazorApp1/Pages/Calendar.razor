@@ -98,8 +98,10 @@ else
                                         @foreach (var ev in dots.Take(6))
                                         {
                                             <div @onclick="() => GoToProject(ev.Id)" @onclick:stopPropagation="true" title="@ev.Title"
-                                                 style="width:8px; height:8px; border-radius:50%; cursor:pointer;
-                                                        background:@ev.AccentColor; opacity:0.85;">
+                                                 style="width:8px; height:8px; border-radius:50%; cursor:pointer; box-sizing:border-box;
+                                                        background:@(ev.HasSession ? ev.AccentColor : "transparent");
+                                                        border:@(ev.HasSession ? "none" : $"1.4px solid {ev.AccentColor}");
+                                                        opacity:0.85;">
                                             </div>
                                         }
                                         @if (dots.Count > 6)
@@ -216,11 +218,13 @@ else
             <div style="display:flex; flex-direction:column; gap:8px; padding:4px 0;">
                 @foreach (var ev in _dayPopupEvents)
                 {
-                    var labelText = ev.Label switch { "CO" => "시작", "FO" => "완성", "CO·FO" => "시작·완성", _ => "진행중" };
+                    var labelText = ev.Label switch { "CO" => "시작", "FO" => "완성", "CO·FO" => "시작·완성", _ => ev.HasSession ? "뜨개함" : "진행중" };
                     <div @onclick="() => { CloseDayPopup(); GoToProject(ev.Id); }"
                          style="display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:var(--radius-sm);
                                 background:var(--ivory-dark); cursor:pointer; min-width:0;">
-                        <span style="width:10px; height:10px; border-radius:50%; background:@ev.AccentColor; flex-shrink:0;"></span>
+                        <span style="width:10px; height:10px; border-radius:50%; box-sizing:border-box; flex-shrink:0;
+                                      background:@(ev.HasSession ? ev.AccentColor : "transparent");
+                                      border:@(ev.HasSession ? "none" : $"1.6px solid {ev.AccentColor}");"></span>
                         <span style="font-size:0.85rem; font-weight:500; color:var(--text-dark); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; min-width:0;">@ev.Title</span>
                         <span style="font-size:0.72rem; color:var(--text-light); flex-shrink:0;">@labelText</span>
                     </div>
@@ -319,7 +323,7 @@ else
 
     record ProjectStyle(string PaleBg, string AccentColor, string TextColor);
     record CalendarCell(DateTime Date);
-    record CalendarEvent(Guid Id, string Title, string Label, string PaleBg, string AccentColor, string TextColor);
+    record CalendarEvent(Guid Id, string Title, string Label, string PaleBg, string AccentColor, string TextColor, bool HasSession = true);
 
     // ── 초기화 ────────────────────────────────────────────────────────
     protected override async Task OnInitializedAsync()
@@ -432,7 +436,10 @@ else
             if (isCompleted)
             {
                 if (p.EndDate.HasValue && date < p.EndDate.Value.Date)
-                    result.Add(new CalendarEvent(p.Id, p.PatternName, "·", s.PaleBg, s.AccentColor, s.TextColor));
+                {
+                    bool hasSession = p.Sessions.Any(sn => sn.StartTime.Date == date);
+                    result.Add(new CalendarEvent(p.Id, p.PatternName, "·", s.PaleBg, s.AccentColor, s.TextColor, hasSession));
+                }
                 continue;
             }
 
@@ -444,7 +451,10 @@ else
 
             bool isActive = IsDateActive(p, date);
             if (isActive)
-                result.Add(new CalendarEvent(p.Id, p.PatternName, "·", s.PaleBg, s.AccentColor, s.TextColor));
+            {
+                bool hasSessionActive = p.Sessions.Any(sn => sn.StartTime.Date == date);
+                result.Add(new CalendarEvent(p.Id, p.PatternName, "·", s.PaleBg, s.AccentColor, s.TextColor, hasSessionActive));
+            }
         }
         return result;
     }
