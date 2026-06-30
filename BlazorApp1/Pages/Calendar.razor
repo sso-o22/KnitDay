@@ -140,8 +140,8 @@ else
                                             background:@style.AccentColor; border-radius:6px; min-width:4px;"></div>
                             </div>
                             <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:0.72rem; color:var(--text-light);">
-                                <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:#1a6a8a; background:#d6eefa; border-radius:3px; padding:0 3px; line-height:1.5;">CO</span>@(proj.StartDate.HasValue ? proj.StartDate.Value.ToString("M/d") : "미정")</span>
-                                <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:#c05070; background:#fef0f3; border-radius:3px; padding:0 3px; line-height:1.5;">FO</span>@(proj.EndDate.HasValue ? proj.EndDate.Value.ToString("M/d") : "미정")</span>
+                                <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:#1a6a8a; background:#eaf6fc; border-radius:3px; padding:0 3px; line-height:1.5;">CO</span>@(proj.StartDate.HasValue ? proj.StartDate.Value.ToString(proj.StartDate.Value.Year == _current.Year ? "M/d" : "yyyy.M/d") : "미정")</span>
+                                <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:#c05070; background:#fef0f3; border-radius:3px; padding:0 3px; line-height:1.5;">FO</span>@(proj.EndDate.HasValue ? proj.EndDate.Value.ToString(proj.EndDate.Value.Year == _current.Year ? "M/d" : "yyyy.M/d") : "미정")</span>
                             </div>
                         </div>
                     }
@@ -417,14 +417,14 @@ else
             // CO 표시
             if (isStart)
             {
-                result.Add(new CalendarEvent(p.Id, p.PatternName, "CO", "transparent", "#d6eefa", "#1a6a8a"));
+                result.Add(new CalendarEvent(p.Id, p.PatternName, "CO", "transparent", "#eaf6fc", "#1a6a8a"));
                 continue;
             }
 
             // FO 표시 (완료된 프로젝트만)
             if (isEnd)
             {
-                result.Add(new CalendarEvent(p.Id, p.PatternName, "FO", "transparent", "#fad5de", "#a03060"));
+                result.Add(new CalendarEvent(p.Id, p.PatternName, "FO", "transparent", "#fef0f3", "#a03060"));
                 continue;
             }
 
