@@ -140,7 +140,7 @@ else
                                             background:@style.AccentColor; border-radius:6px; min-width:4px;"></div>
                             </div>
                             <div style="display:flex; justify-content:space-between; margin-top:5px; font-size:0.72rem; color:var(--text-light);">
-                                <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:var(--theme-active); background:var(--theme-pale); border-radius:3px; padding:0 3px; line-height:1.5;">CO</span>@(proj.StartDate.HasValue ? proj.StartDate.Value.ToString("M/d") : "미정")</span>
+                                <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:#1a6a8a; background:#d6eefa; border-radius:3px; padding:0 3px; line-height:1.5;">CO</span>@(proj.StartDate.HasValue ? proj.StartDate.Value.ToString("M/d") : "미정")</span>
                                 <span style="display:flex; align-items:center; gap:3px;"><span style="font-size:0.6rem; font-weight:700; color:#c05070; background:#fef0f3; border-radius:3px; padding:0 3px; line-height:1.5;">FO</span>@(proj.EndDate.HasValue ? proj.EndDate.Value.ToString("M/d") : "미정")</span>
                             </div>
                         </div>
@@ -545,7 +545,7 @@ else
 
     string GetStatusBadgeStyle(ProjectStatus s) => s switch
     {
-        ProjectStatus.완료     => "background:#e6f4ea; color:#267848; border:1px solid #b8e0c8;",
+        ProjectStatus.완료     => "background:#e6f4ea; color:#4a7a5a; border:1px solid #b8e0c8;",
         ProjectStatus.진행중   => "background:#fffbe6; color:#b58a00; border:1px solid #f5d97a;",
         ProjectStatus.일시중단 => "background:#fef0f0; color:#c0392b; border:1px solid #f5c0c0;",
         _                      => "background:#f0f0f0; color:#888;"
