@@ -433,11 +433,34 @@ let basePaths = []; // 저장된 필기 (박제)
     }
 
     // ── 단일 페이지 렌더 ─────────────────────────────────────
+    let _renderInFlight = {}; // pageNum -> true: 이 페이지에 대한 렌더(재시도 포함)가 진행 중
+                               // IntersectionObserver 콜백과 초기 렌더가 같은 페이지를 동시에 건드리면서
+                               // page.render()가 서로 충돌해 AbortError가 나던 문제 방지용 잠금
+
+    // ── 단일 페이지 렌더 (동시 호출 방지 + 실패 시 최대 2회 재시도) ──
     async function renderOnePage(pageNum, zoom) {
-        if (!pdfDoc) return;
+        if (_renderInFlight[pageNum]) return; // 이미 진행 중이면 중복 호출 무시
+        _renderInFlight[pageNum] = true;
+        try {
+            for (let attempt = 0; attempt <= 2; attempt++) {
+                const ok = await renderOnePageAttempt(pageNum, zoom);
+                if (ok) return;
+                if (attempt < 2 && pdfDoc) {
+                    console.warn('render retry', pageNum, 'attempt', attempt + 1);
+                    await new Promise(r => setTimeout(r, 500 * (attempt + 1)));
+                }
+            }
+        } finally {
+            delete _renderInFlight[pageNum];
+        }
+    }
+
+    // 실제 렌더 1회 시도. 성공(또는 취소) 시 true, 재시도가 필요한 실패면 false 반환
+    async function renderOnePageAttempt(pageNum, zoom) {
+        if (!pdfDoc) return true;
         const pdfCanvas  = getPdfCanvas(pageNum);
         const annoCanvas = getAnnoCanvas(pageNum);
-        if (!pdfCanvas || !annoCanvas) return;
+        if (!pdfCanvas || !annoCanvas) return true;
         if (_renderTasks[pageNum]) { try { _renderTasks[pageNum].cancel(); } catch(_){} _renderTasks[pageNum] = null; }
 
         const page = await pdfDoc.getPage(pageNum);
@@ -483,13 +506,19 @@ let basePaths = []; // 저장된 필기 (박제)
         const task = page.render({ canvasContext: ctx, viewport: page.getViewport({ scale: zoom * renderDpr }) });
         _renderTasks[pageNum] = task;
         try { await task.promise; }
-        catch (err) { if (err?.name !== 'RenderingCancelledException') console.warn('render err', pageNum, err); return; }
+        catch (err) {
+            _renderTasks[pageNum] = null;
+            if (err?.name === 'RenderingCancelledException') return true; // 취소는 실패로 안 침
+            console.warn('render err', pageNum, err);
+            return false;
+        }
         _renderTasks[pageNum] = null;
         // 렌더 완료 후 PDF.js 내부 페이지 리소스(폰트·이미지 캐시) 해제
         try { page.cleanup(); } catch(_) {}
         _renderedPages.add(pageNum);
         redrawPage(pageNum);
         addPageHandlers(pageNum);
+        return true;
     }
 
     function unloadPage(pageNum) {
