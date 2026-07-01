@@ -1293,35 +1293,16 @@
     async Task ConfirmLoadPattern()
     {
         _showLoadWarning = false;
-        // 기존 필기/도형/줌/페이지 초기화
-        
+        // 뷰어 화면 상태만 초기화(임시) — 실제 저장된 도안(로컬 IDB/Cloudinary)은 아직 건드리지 않음.
+        // 실제 교체(덮어쓰기)는 새 PDF 선택이 확정된 뒤 OnPdfSelected에서만 일어나므로,
+        // 파일 선택창에서 취소하거나 업로드가 실패해도 기존 도안이 안전하게 보존됨.
+        // (기존 IDB publicId/Cloudinary publicId 모두 projectId 기준 고정키라 새 저장 시 자동 덮어써짐)
         _rowMarkers.Clear();
         _detectedRowH = 0;
         _zoom = 1.0;
         _currentPage = 1;
         _pdfLoaded = false;
         _totalPages = 0;
-        if (_project != null)
-        {
-            _project.ViewerAnnotations = "";
-            _project.ViewerRowMarkers = "";
-            _project.ViewerLastZoom = 0;
-            _project.ViewerLastPage = 1;
-            _project.HasSavedPattern = false;
-            _project.PatternFileName = "";
-            // 기존 PDF IDB에서 삭제
-            try { await JS.InvokeAsync<bool>("patternViewer.deleteSavedPdf", ProjectId.ToString()); } catch { }
-            // 클라우드 PDF 삭제 — _project 인스턴스가 마이그레이션 결과를 반영 못할 수 있으므로 IDB에서 최신 정보 읽기
-            if (Storage.IsLoggedIn)
-            {
-                var freshProject = (await Storage.GetProjectsAsync()).FirstOrDefault(p => p.Id == ProjectId);
-                var cloudBytes = freshProject?.PatternFileSizeBytes ?? _project.PatternFileSizeBytes;
-                await Storage.DeletePdfAsync(ProjectId.ToString(), cloudBytes);
-                _project.PatternCloudUrl = "";
-                _project.PatternFileSizeBytes = 0;
-            }
-            await SaveProject();
-        }
         await JS.InvokeVoidAsync("patternViewer.clearAnnotations");
         await JS.InvokeVoidAsync("patternViewer.triggerFileInput");
     }
@@ -1379,6 +1360,12 @@
                     // IDB 저장 완료 후에만 HasSavedPattern=true — 마이그레이션 레이스 컨디션 방지
                     _project.HasSavedPattern = true;
                     _project.PatternFileName = e.File.Name;
+                    // 새 도안으로 교체 확정 — 이전 도안의 필기/도형/줌/페이지 초기화
+                    // (파일 선택을 취소한 경우엔 이 지점에 도달하지 않으므로 기존 값이 보존됨)
+                    _project.ViewerAnnotations = "";
+                    _project.ViewerRowMarkers = "";
+                    _project.ViewerLastZoom = 0;
+                    _project.ViewerLastPage = 1;
 
                     // 로그인 상태일 때만 Cloudinary 업로드
                     if (Storage.IsLoggedIn)
@@ -1391,6 +1378,14 @@
                         {
                             try
                             {
+                                // Cloudinary는 같은 publicId로 자동 덮어쓰기되므로 별도 삭제 불필요.
+                                // 용량 집계만 기존 파일 크기를 먼저 차감한 뒤 새 값을 누적.
+                                if (_project.PatternFileSizeBytes > 0
+                                    && !string.IsNullOrEmpty(_project.PatternCloudUrl)
+                                    && _project.PatternCloudUrl != Storage.PatternCloudUrlLocalOnly)
+                                {
+                                    await Storage.SubtractCloudUsageAsync("pdf", _project.PatternFileSizeBytes);
+                                }
                                 var (cloudUrl, cloudErr, cloudBytes) = await Storage.UploadPdfAsync(ProjectId.ToString(), bytes);
                                 if (cloudErr == "quota")
                                     await JS.InvokeVoidAsync("showToast", $"저장공간 {FmtLimit(Storage.PerUserLimitBytes)} 한도를 초과했어요. 도안이 이 기기에만 저장됩니다.", "error");
