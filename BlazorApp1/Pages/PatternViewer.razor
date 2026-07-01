@@ -1387,7 +1387,7 @@
                                 // 용량 집계만 기존 파일 크기를 먼저 차감한 뒤 새 값을 누적.
                                 if (_project.PatternFileSizeBytes > 0
                                     && !string.IsNullOrEmpty(_project.PatternCloudUrl)
-                                    && _project.PatternCloudUrl != Storage.PatternCloudUrlLocalOnly)
+                                    && _project.PatternCloudUrl != StorageService.PatternCloudUrlLocalOnly)
                                 {
                                     await Storage.SubtractCloudUsageAsync("pdf", _project.PatternFileSizeBytes);
                                 }
