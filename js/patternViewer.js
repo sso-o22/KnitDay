@@ -513,8 +513,10 @@ let basePaths = []; // 저장된 필기 (박제)
             return false;
         }
         _renderTasks[pageNum] = null;
-        // 렌더 완료 후 PDF.js 내부 페이지 리소스(폰트·이미지 캐시) 해제
-        try { page.cleanup(); } catch(_) {}
+        // 주의: 여기서 page.cleanup()을 호출하면 안 됨 — 같은 페이지가 나중에 다시 렌더링될 때
+        // (줌 변경, 스크롤로 화면 밖-안 이동 등) PDF.js의 디코딩된 이미지 캐시가 비어있는 상태에서
+        // paint가 실행돼 "Dependent image isn't ready yet" 경고와 함께 이미지가 누락되는 원인이 됨.
+        // 페이지 리소스 해제는 unloadPage()에서 캔버스를 비울 때만 이뤄짐.
         _renderedPages.add(pageNum);
         redrawPage(pageNum);
         addPageHandlers(pageNum);
