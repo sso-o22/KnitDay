@@ -842,7 +842,12 @@ else
         await stream.CopyToAsync(ms);
         var bytes = ms.ToArray();
         var base64 = Convert.ToBase64String(bytes);
-        _editing.PhotoBase64 = $"data:{file.ContentType};base64,{base64}";
+        var rawBase64 = $"data:{file.ContentType};base64,{base64}";
+        // HEIF/HEIC → JPEG 압축 (다른 사진 업로드와 동일한 방식)
+        string compressed;
+        try { compressed = await JS.InvokeAsync<string>("compressImage", rawBase64, 800, 0.75); }
+        catch { compressed = rawBase64; }
+        _editing.PhotoBase64 = compressed;
         StateHasChanged();
     }
 

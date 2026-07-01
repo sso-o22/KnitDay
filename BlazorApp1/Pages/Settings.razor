@@ -49,6 +49,13 @@
                             @_licenseLabel
                         </div>
                     }
+                    @if (_dataDeletionWarning != null)
+                    {
+                        <div style="font-size:0.75rem;margin-top:4px;display:flex;align-items:center;gap:4px;color:#c03030;font-weight:600;">
+                            <img src="icons/cloud-warning.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />
+                            @_dataDeletionWarning
+                        </div>
+                    }
                 </div>
             </div>
             <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:12px;">
@@ -1055,6 +1062,7 @@
             var json = await JS.InvokeAsync<string?>("firebaseStore.getDocument", $"allowedUsers/{email}");
             if (string.IsNullOrEmpty(json)) return;
             using var doc = System.Text.Json.JsonDocument.Parse(json);
+            _dataDeletionWarning = null;
             if (!doc.RootElement.TryGetProperty("expiresAt", out var expiresAtEl)) 
             {
                 _licenseLabel = "평생 이용권";
@@ -1074,6 +1082,26 @@
             _licenseLabel = daysLeft > 0
                 ? $"이용권 {daysLeft}일 남음 ({expiresAt:yyyy.MM.dd} 만료)"
                 : "이용권이 만료됐어요";
+
+            // 만료 후 유예기간(GRACE_PERIOD_DAYS, functions/index.js와 동일한 값으로 유지) 경과 시
+            // 클라우드 데이터가 자동 삭제되므로, 유예기간 중에는 남은 일수를 경고로 표시
+            if (daysLeft <= 0)
+            {
+                var alreadyDeleted = doc.RootElement.TryGetProperty("dataDeletedAt", out var delEl)
+                    && !string.IsNullOrEmpty(delEl.GetString());
+                if (alreadyDeleted)
+                {
+                    _dataDeletionWarning = "클라우드 데이터가 삭제됐어요. 이용권을 다시 구매하면 새로 동기화할 수 있어요.";
+                }
+                else
+                {
+                    var purgeDate = expiresAt.Date.AddDays(GracePeriodDays);
+                    var daysUntilPurge = (int)(purgeDate - DateTime.Today).TotalDays;
+                    _dataDeletionWarning = daysUntilPurge > 0
+                        ? $"{daysUntilPurge}일 후 클라우드 데이터가 삭제됩니다. 이용권을 갱신해 주세요."
+                        : "클라우드 데이터가 곧 삭제될 예정이에요. 서둘러 이용권을 갱신해 주세요.";
+                }
+            }
         }
         catch { }
     }
@@ -1226,6 +1254,9 @@
     bool _showDeniedPopup = false;
     string? _licenseLabel;      // 이용권 남은 기간 표시 문자열
     bool _licenseExpiringSoon;  // 30일 이내 만료 시 빨간색
+    string? _dataDeletionWarning; // 만료 후 유예기간 중 클라우드 데이터 삭제 예정 경고
+    // functions/index.js의 GRACE_PERIOD_DAYS와 반드시 동일한 값으로 유지할 것
+    const int GracePeriodDays = 60;
     bool _showExpiredPopup = false;
     string? _expiredEmail;
     void CloseExpiredPopup() { _showExpiredPopup = false; _expiredEmail = null; }
