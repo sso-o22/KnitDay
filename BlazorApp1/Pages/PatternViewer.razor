@@ -1117,11 +1117,16 @@
                             await Task.Delay(300);
                             _renderPdfTcs = new TaskCompletionSource();
                             await JS.InvokeVoidAsync("patternViewer.renderPdf");
-                            await Task.WhenAny(_renderPdfTcs.Task, Task.Delay(3000));
+                            // renderPdf 완료 콜백 대기 (IDB 경로와 동일하게 6초 — 다운로드까지 거치는 경로라 더 여유 필요)
+                            await Task.WhenAny(_renderPdfTcs.Task, Task.Delay(6000));
                             _renderPdfTcs = null;
                             if (!string.IsNullOrEmpty(_project.ViewerAnnotations))
                                 await JS.InvokeVoidAsync("patternViewer.setPaths", _project.ViewerAnnotations);
                             await RestoreRowMarkersAndToolSettingsAsync();
+                            // IDB 경로에는 있었지만 이 경로엔 빠져있던 페이지 이동 호출 — "N/M" 표시는 되는데
+                            // 실제 화면은 안 움직이던 버그의 원인
+                            if (_currentPage > 1)
+                                await JS.InvokeVoidAsync("patternViewer.scrollToPage", _currentPage);
                         }
                         else
                         {
