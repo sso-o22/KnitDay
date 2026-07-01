@@ -108,7 +108,7 @@ namespace KnitLog.Services
         // - 같은 Id: UpdatedAt이 더 최신인 것 우선
         // - 한쪽에만 있으면: 그냥 포함
         // ── Cloudinary 업로드 ────────────────────────────────
-        public long PerUserLimitBytes { get; private set; } = 500L * 1024 * 1024; // 기본 500MB — 로그인 시 Firestore quota 문서로 덮어씀
+        public long PerUserLimitBytes { get; private set; } = 300L * 1024 * 1024; // 기본 300MB — 로그인 시 Firestore quota 문서로 덮어씀
         public const long MaxPdfUploadBytes = 10L * 1024 * 1024;   // 10MB — Cloudinary free 제한
         // PatternCloudUrl에 세팅하는 특수값: 클라우드 업로드 불가(용량 초과 등) → 재시도 방지
         public const string PatternCloudUrlLocalOnly = "local-only";
@@ -321,7 +321,7 @@ namespace KnitLog.Services
             OnSyncStarted?.Invoke();
             try
             {
-            // ── 사용자별 용량 한도 읽기 (없으면 기본 500MB로 문서 생성)
+            // ── 사용자별 용량 한도 읽기 (없으면 기본 300MB로 문서 생성)
             try
             {
                 var quotaRaw = await _js.InvokeAsync<string?>(
