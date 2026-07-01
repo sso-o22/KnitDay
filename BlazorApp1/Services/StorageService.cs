@@ -113,6 +113,13 @@ namespace KnitLog.Services
         // PatternCloudUrl에 세팅하는 특수값: 클라우드 업로드 불가(용량 초과 등) → 재시도 방지
         public const string PatternCloudUrlLocalOnly = "local-only";
 
+        // 도안 클라우드 업로드가 필요한지 판정. "local-only"는 '어떤 기기에도 없어 영구 포기'가 아니라
+        // '이 마킹을 한 기기에는 없었다'는 뜻일 뿐이므로, 실제 파일을 가진 다른 기기가 재시도할 수 있도록
+        // 빈 값과 동일하게 "재시도 대상"으로 취급한다. (안 그러면 한 기기가 local-only로 마킹한 순간
+        // 실제로 파일을 갖고 있는 다른 기기에서도 영원히 업로드 시도가 안 됨)
+        private static bool NeedsPatternUpload(KnitProject p) =>
+            p.HasSavedPattern && (string.IsNullOrEmpty(p.PatternCloudUrl) || p.PatternCloudUrl == PatternCloudUrlLocalOnly);
+
         public async Task<(string? url, string? error, long bytes)> UploadPhotoAsync(string projectId, string photoId, string base64DataUrl)
         {
             try
@@ -385,7 +392,7 @@ namespace KnitLog.Services
                 {
                     var projectsForCheck = await GetProjectsAsync();
                     hasPending = projectsForCheck.Any(p =>
-                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) ||
+                        NeedsPatternUpload(p) ||
                         p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
                 }
 
@@ -395,7 +402,7 @@ namespace KnitLog.Services
                     // 마이그레이션 완료 후 미완료 항목이 없을 때만 플래그 기록
                     var projectsAfter = await GetProjectsAsync();
                     bool allDone = !projectsAfter.Any(p =>
-                        (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) ||
+                        NeedsPatternUpload(p) ||
                         p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
                     if (allDone)
                     {
@@ -429,7 +436,7 @@ namespace KnitLog.Services
             foreach (var p in projects)
             {
                 total += p.Photos.Count(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl));
-                if (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) total++;
+                if (NeedsPatternUpload(p)) total++;
             }
 
             if (total == 0) return;
@@ -536,7 +543,7 @@ namespace KnitLog.Services
                 if (quotaReached) break;
 
                 // 도안 PDF (race condition 가드는 루프 진입부에서 이미 freshHasSavedPattern으로 처리됨)
-                if (proj.HasSavedPattern && string.IsNullOrEmpty(proj.PatternCloudUrl))
+                if (NeedsPatternUpload(proj))
                 {
                     progress.CurrentLabel = $"{proj.PatternName} 도안";
                     OnMigrationProgress?.Invoke(progress);
@@ -821,7 +828,7 @@ namespace KnitLog.Services
                 // Cloudinary 미업로드 파일(PDF/사진) 먼저 처리
                 var projectsToCheck = await GetProjectsAsync();
                 bool hasPendingMedia = projectsToCheck.Any(p =>
-                    (p.HasSavedPattern && string.IsNullOrEmpty(p.PatternCloudUrl)) ||
+                    NeedsPatternUpload(p) ||
                     p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
                 if (hasPendingMedia)
                     await MigrateLocalMediaToCloudAsync();
