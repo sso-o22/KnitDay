@@ -42,7 +42,9 @@ else
             <div style="display:flex;gap:8px;align-items:center;margin-bottom:@(_addMsg != "" ? "10px" : "0");">
                 <select @bind="_licenseType" style="flex:1;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;background:var(--white);color:var(--text-dark);">
                     <option value="lifetime">평생 이용권</option>
+                    <option value="earlybird_lifetime">얼리버드 평생권</option>
                     <option value="1year">1년 이용권</option>
+                    <option value="6month">6개월 이용권</option>
                     <option value="custom">직접 입력</option>
                 </select>
                 @if (_licenseType == "custom")
@@ -71,6 +73,12 @@ else
                 }
                 <button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:0.75rem;" @onclick="LoadUsers">↺</button>
             </div>
+            @if (_users != null && _users.Any(u => u.LicenseType == "earlybird_lifetime"))
+            {
+                <div style="font-size:0.78rem;color:var(--text-mid);margin:-4px 0 12px;">
+                    얼리버드 평생권 발급: @(_users.Count(u => u.LicenseType == "earlybird_lifetime"))/50명
+                </div>
+            }
 
             @if (_loading)
             {
@@ -95,7 +103,7 @@ else
                                     <div style="font-size:0.7rem;color:var(--text-light);margin-top:2px;">uid: @u.Uid</div>
                                 }
                                 <div style="font-size:0.72rem;margin-top:3px;display:flex;align-items:center;gap:4px;color:@(u.ExpiresAt == null ? "#c03030" : "var(--theme-active)");">
-                                    <img src="icons/ticket.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" /> @(u.ExpiresAt == null ? "미설정" : u.ExpiresAt == "lifetime" ? "평생이용권" : $"{u.ExpiresAt} 만료")
+                                    <img src="icons/ticket.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" /> @LicenseDisplayLabel(u)
                                 </div>
                             </div>
                             @if (_deletingEmail == u.Email)
@@ -135,7 +143,9 @@ else
                 <div style="font-size:0.82rem;color:var(--text-mid);margin-bottom:16px;word-break:break-all;">@_changeLicenseUser.Email</div>
                 <select @bind="_newLicenseType" style="width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.88rem;margin-bottom:10px;box-sizing:border-box;background:var(--white);color:var(--text-dark);">
                     <option value="lifetime">평생 이용권</option>
+                    <option value="earlybird_lifetime">얼리버드 평생권</option>
                     <option value="1year">1년 이용권 (오늘부터 +1년)</option>
+                    <option value="6month">6개월 이용권 (오늘부터 +6개월)</option>
                     <option value="custom">직접 입력</option>
                 </select>
                 @if (_newLicenseType == "custom")
@@ -219,7 +229,7 @@ else
 @code {
     const string AdminUid = "xAz2xO8kulWUgoHnaaxCkzZV2nG2";
 
-    record UserEntry(string Email, string? Uid, string? ExpiresAt = null);
+    record UserEntry(string Email, string? Uid, string? ExpiresAt = null, string? LicenseType = null);
 
     List<UserEntry>? _users;
     bool _loading = false;
@@ -276,7 +286,8 @@ else
                     .Select(e => new UserEntry(
                         e.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "",
                         e.TryGetProperty("uid", out var uid) ? uid.GetString() : null,
-                        e.TryGetProperty("expiresAt", out var exp) ? exp.GetString() : null))
+                        e.TryGetProperty("expiresAt", out var exp) ? exp.GetString() : null,
+                        e.TryGetProperty("licenseType", out var lt) ? lt.GetString() : null))
                     .Where(u => !string.IsNullOrEmpty(u.Email))
                     .OrderBy(u => u.Email)
                     .ToList();
@@ -300,9 +311,11 @@ else
                 System.Text.Json.JsonSerializer.Serialize(new
                 {
                     registeredAt = DateTime.UtcNow.ToString("yyyy-MM-dd"),
-                    expiresAt = _licenseType == "lifetime" ? "lifetime"
+                    expiresAt = _licenseType == "lifetime" || _licenseType == "earlybird_lifetime" ? "lifetime"
                               : _licenseType == "1year"    ? DateTime.Today.AddYears(1).ToString("yyyy-MM-dd")
-                              : _customExpiry.ToString("yyyy-MM-dd")
+                              : _licenseType == "6month"   ? DateTime.Today.AddMonths(6).ToString("yyyy-MM-dd")
+                              : _customExpiry.ToString("yyyy-MM-dd"),
+                    licenseType = _licenseType
                 }));
             if (ok)
             {
@@ -323,11 +336,20 @@ else
     void OpenChangeLicense(UserEntry user)
     {
         _changeLicenseUser = user;
-        _newLicenseType = user.ExpiresAt == "lifetime" || user.ExpiresAt == null ? "lifetime" : "custom";
+        _newLicenseType = !string.IsNullOrEmpty(user.LicenseType) ? user.LicenseType
+                        : user.ExpiresAt == "lifetime" || user.ExpiresAt == null ? "lifetime" : "custom";
         _newLicenseExpiry = user.ExpiresAt != null && user.ExpiresAt != "lifetime" && DateTime.TryParse(user.ExpiresAt, out var d) ? d : DateTime.Today.AddYears(1);
         _licenseChangeMsg = ""; _licenseChangeError = false;
     }
     void CloseChangeLicense() { _changeLicenseUser = null; _licenseChangeMsg = ""; }
+
+    string LicenseDisplayLabel(UserEntry u)
+    {
+        if (u.ExpiresAt == null) return "미설정";
+        if (u.ExpiresAt == "lifetime")
+            return u.LicenseType == "earlybird_lifetime" ? "얼리버드 평생이용권" : "평생이용권";
+        return $"{u.ExpiresAt} 만료";
+    }
 
     async Task ChangeLicense()
     {
@@ -335,12 +357,13 @@ else
         _changingLicense = true; _licenseChangeMsg = ""; StateHasChanged();
         try
         {
-            var expiresAt = _newLicenseType == "lifetime" ? "lifetime"
+            var expiresAt = _newLicenseType == "lifetime" || _newLicenseType == "earlybird_lifetime" ? "lifetime"
                           : _newLicenseType == "1year"    ? DateTime.Today.AddYears(1).ToString("yyyy-MM-dd")
+                          : _newLicenseType == "6month"   ? DateTime.Today.AddMonths(6).ToString("yyyy-MM-dd")
                           : _newLicenseExpiry.ToString("yyyy-MM-dd");
             var ok = await JS.InvokeAsync<bool>("firebaseStore.setDocument",
                 $"allowedUsers/{_changeLicenseUser.Email}",
-                System.Text.Json.JsonSerializer.Serialize(new { expiresAt }));
+                System.Text.Json.JsonSerializer.Serialize(new { expiresAt, licenseType = _newLicenseType }));
             if (ok)
             {
                 _licenseChangeMsg = "변경 완료!"; _licenseChangeError = false;
