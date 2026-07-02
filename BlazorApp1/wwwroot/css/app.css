@@ -523,11 +523,11 @@ body {
     font-weight: 600;
 }
 
-.badge-progress { background: #faf0c8; color: #8a6a08; border: 1px solid #f0d060; }
+.badge-progress { background: #faf0c8; color: #8a6a08; }
 .badge-done     { background: #dff2e8; color: #267848; }
 .badge-wish     { background: #e2d8f5; color: #4e3290; }
 .badge-cable    { background: #dff0fb; color: #1a6a8a; }
-.badge-pause    { background: #fef0f0; color: #c0392b; border: 1px solid #f5c0c0; }
+.badge-pause    { background: #fef0f0; color: #c0392b; }
 
 /* ── 색상 원 ─────────────────────────────────────────── */
 .color-dot {

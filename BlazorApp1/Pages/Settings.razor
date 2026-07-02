@@ -149,7 +149,7 @@
     <div class="card">
         <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;"><img src="icons/floppy-disk.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />데이터</div>
         <p style="font-size:0.85rem; color:var(--text-mid); margin-bottom:8px;">
-            프로젝트, 실 창고, 도구, 스와치 데이터가 저장돼요.
+            프로젝트, 실 창고, 도구함, 스와치 데이터가 저장돼요.
         </p>
 
         @* ── 저장공간 게이지 (로그인: 클라우드 / 비로그인: 기기) ── *@
@@ -389,9 +389,14 @@
         <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:12px;">
             KnitDay는 Google 계정으로만 로그인하며, 개인정보 보호를 중요하게 생각해요.
         </p>
-        <a href="privacy" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--theme-active);text-decoration:none;font-weight:600;">
-            개인정보 처리방침 보기
-        </a>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;">
+            <a href="terms" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--theme-active);text-decoration:none;font-weight:600;">
+                이용약관 보기
+            </a>
+            <a href="privacy" style="display:inline-flex;align-items:center;gap:6px;font-size:0.85rem;color:var(--theme-active);text-decoration:none;font-weight:600;">
+                개인정보 처리방침 보기
+            </a>
+        </div>
     </div>
 
     <!-- 피드백 -->
@@ -466,14 +471,14 @@
                         <img src="icons/floppy-disk.svg" class="icon-line" style="width:22px;height:22px;flex-shrink:0;" />
                         <div>
                             <div style="font-size:0.9rem;font-weight:600;color:var(--text-dark);">전체 내보내기</div>
-                            <div style="font-size:0.75rem;color:var(--text-light);">모든 프로젝트·실·도구·스와치 포함</div>
+                            <div style="font-size:0.75rem;color:var(--text-light);">모든 프로젝트·실·도구함·스와치 포함</div>
                         </div>
                     </button>
                     <button style="display:flex;align-items:center;gap:12px;padding:12px 16px;border:1.5px solid var(--border);border-radius:10px;background:none;cursor:pointer;text-align:left;width:100%;"
                             @onclick="() => { _exportIsSelectMode = false; _exportExcludeProjects = true; _exportSelectedIds.Clear(); _exportStep = 2; }">
                         <img src="icons/yarn.svg" class="icon-line" style="width:22px;height:22px;flex-shrink:0;" />
                         <div>
-                            <div style="font-size:0.9rem;font-weight:600;color:var(--text-dark);">실·도구·스와치만</div>
+                            <div style="font-size:0.9rem;font-weight:600;color:var(--text-dark);">실·도구함·스와치만</div>
                             <div style="font-size:0.75rem;color:var(--text-light);">프로젝트·도안 제외 · 용량 작음</div>
                         </div>
                     </button>
@@ -494,7 +499,7 @@
             {
                 <!-- 2단계: 옵션 (전체 or 선택 공통) -->
                 <div style="font-size:1rem;font-weight:700;margin-bottom:4px;color:var(--text-dark);text-align:center;">
-                    @(_exportIsSelectMode ? $"프로젝트 {_exportSelectedIds.Count}개 선택됨" : _exportExcludeProjects ? "실·도구·스와치만" : "전체 내보내기")
+                    @(_exportIsSelectMode ? $"프로젝트 {_exportSelectedIds.Count}개 선택됨" : _exportExcludeProjects ? "실·도구함·스와치만" : "전체 내보내기")
                 </div>
                 <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:14px;text-align:center;">
                     @(_exportExcludeProjects ? "프로젝트·도안은 포함되지 않아요" : "도안 PDF는 항상 포함돼요")

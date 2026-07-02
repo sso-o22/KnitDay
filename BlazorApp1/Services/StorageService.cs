@@ -138,6 +138,7 @@ namespace KnitLog.Services
         public async Task<(string? url, string? error, long bytes)> UploadPdfAsync(string projectId, byte[] bytes)
         {
             if (!IsLoggedIn || string.IsNullOrEmpty(Uid)) return (null, "not_logged_in", 0);
+            if (bytes.Length > MaxPdfUploadBytes) return (null, "too_large", 0);
             try
             {
                 var (photoUsed, pdfUsed) = await GetCloudUsageAsync();
@@ -566,6 +567,17 @@ namespace KnitLog.Services
                                 }
                                 var (u, err, pdfBytes) = await UploadPdfAsync(proj.Id.ToString(), base64Pdf);
                                 if (err == "quota") { quotaReached = true; break; }
+                                if (err == "too_large")
+                                {
+                                    // 파일 크기는 재시도해도 안 바뀌므로 즉시 종료
+                                    proj.PatternCloudUrl = PatternCloudUrlLocalOnly;
+                                    changed = true;
+                                    progress.Failed++;
+                                    progress.TooLargeCount++;
+                                    pdfCountHandled = true;
+                                    OnMigrationProgress?.Invoke(progress);
+                                    break;
+                                }
                                 if (!string.IsNullOrEmpty(u)) { cloudUrl = u; proj.PatternFileSizeBytes = pdfBytes; break; }
                             }
                             else
@@ -1077,6 +1089,7 @@ namespace KnitLog.Services
         public int Total { get; set; }
         public int Done { get; set; }
         public int Failed { get; set; }
+        public int TooLargeCount { get; set; } // Failed 중 10MB 초과가 원인인 개수 (별도 안내용)
         public bool IsRunning { get; set; }
         public bool QuotaReached { get; set; }
         public string CurrentLabel { get; set; } = "";

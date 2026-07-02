@@ -30,7 +30,7 @@ else
 {
     <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center;">
         <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-        @foreach (var (label, baseVal) in new[]{("완성일","end"),("이름순","name")})
+        @foreach (var (label, baseVal) in new[]{("시작일","start"),("완성일","end"),("이름순","name")})
         {
             var ascVal  = baseVal + "_asc";
             var descVal = baseVal + "_desc";
@@ -87,6 +87,8 @@ else
     string _finSort = "end_desc";
     IEnumerable<KnitProject> SortedProjects => _finSort switch
     {
+        "start_asc"  => _projects.OrderBy(p => p.StartDate),
+        "start_desc" => _projects.OrderByDescending(p => p.StartDate),
         "end_asc"   => _projects.OrderBy(p => p.EndDate),
         "name_asc"  => _projects.OrderBy(p => p.PatternName),
         "name_desc" => _projects.OrderByDescending(p => p.PatternName),

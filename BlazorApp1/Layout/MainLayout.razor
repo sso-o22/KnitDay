@@ -30,7 +30,7 @@
             <li><NavLink href="wishlist" class="nav-item"><span class="nav-icon"><img src="icons/shooting-star.svg" class="icon-line" style="width:20px;height:20px;" /></span><span class="nav-label">위시리스트</span></NavLink></li>
             <li><NavLink href="yarns" class="nav-item"><span class="nav-icon"><img src="icons/yarn.svg" class="icon-line" style="width:20px;height:20px;" /></span><span class="nav-label">실 창고</span></NavLink></li>
             <li><NavLink href="swatches" class="nav-item"><span class="nav-icon"><img src="icons/swatches.svg" class="icon-line" style="width:20px;height:20px;" /></span><span class="nav-label">스와치</span></NavLink></li>
-            <li><NavLink href="tools" class="nav-item"><span class="nav-icon"><img src="icons/toolbox.svg" class="icon-line" style="width:20px;height:20px;" /></span><span class="nav-label">도구</span></NavLink></li>
+            <li><NavLink href="tools" class="nav-item"><span class="nav-icon"><img src="icons/toolbox.svg" class="icon-line" style="width:20px;height:20px;" /></span><span class="nav-label">도구함</span></NavLink></li>
             <li><NavLink href="stats" class="nav-item"><span class="nav-icon"><img src="icons/chart-bar.svg" class="icon-line" style="width:20px;height:20px;" /></span><span class="nav-label">통계</span></NavLink></li>
             <li><NavLink href="settings" class="nav-item"><span class="nav-icon"><img src="icons/gear.svg" class="icon-line" style="width:20px;height:20px;" /></span><span class="nav-label">설정</span></NavLink></li>
         </ul>
@@ -111,7 +111,13 @@
                 }
                 else if (_migration.Failed > 0)
                 {
-                    <span>@(_migration.Failed)개 실패 — 로컬에 보존됨</span>
+                    <span>
+                        @(_migration.Failed)개 실패 — 로컬에 보존됨
+                        @if (_migration.TooLargeCount > 0)
+                        {
+                            <text> (@(_migration.TooLargeCount)개는 도안 파일이 10MB를 초과해 저장 안 됨)</text>
+                        }
+                    </span>
                 }
                 else if (!_migration.IsRunning)
                 {
