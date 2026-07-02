@@ -41,7 +41,7 @@ else
                 @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
             </button>
         }
-        <select class="form-control" style="width:auto;font-size:0.8rem;padding:6px 10px;margin-left:auto;" @bind="_finCategory" @bind:after="SetFinCategory">
+        <select class="form-control" style="width:auto;font-size:0.8rem;padding:6px 10px;margin-left:4px;" @bind="_finCategory" @bind:after="SetFinCategory">
             <option value="all">전체 카테고리</option>
             @foreach (var cat in Enum.GetValues<ProjectCategory>())
             {
