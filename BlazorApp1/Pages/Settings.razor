@@ -76,10 +76,10 @@
                     @_manualSyncMsg
                 </div>
             }
-            <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="SignOut"><img src="icons/sign-out.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />로그아웃</button>
-            @if (Auth.CurrentUser?.Uid == "xAz2xO8kulWUgoHnaaxCkzZV2nG2")
-            {
-                <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:10px;margin-left:16px;">
+            <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;">
+                <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="SignOut"><img src="icons/sign-out.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />로그아웃</button>
+                @if (Auth.CurrentUser?.Uid == "xAz2xO8kulWUgoHnaaxCkzZV2nG2")
+                {
                     <a href="admin" style="display:inline-flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--text-light);text-decoration:none;">
                         <img src="icons/key.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />관리자 페이지
                     </a>
@@ -87,8 +87,8 @@
                             @onclick="ToggleDebugConsole">
                         <img src="icons/bug.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />디버그 콘솔
                     </button>
-                </div>
-            }
+                }
+            </div>
         }
         else
         {
