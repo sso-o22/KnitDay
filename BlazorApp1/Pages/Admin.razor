@@ -361,11 +361,10 @@ else
     {
         if (string.IsNullOrEmpty(u.LastActiveAt) || !DateTime.TryParse(u.LastActiveAt, out var dt))
             return "기록 없음";
+        var local = dt.ToLocalTime();
         var days = (int)(DateTime.UtcNow.Date - dt.Date).TotalDays;
-        if (days <= 0) return "오늘";
-        if (days == 1) return "1일 전";
-        if (days < 30) return $"{days}일 전";
-        return dt.ToLocalTime().ToString("yyyy.MM.dd");
+        var rel = days <= 0 ? "오늘" : days == 1 ? "1일 전" : days < 30 ? $"{days}일 전" : local.ToString("yyyy.MM.dd");
+        return $"{rel} ({local:yyyy.MM.dd HH:mm})";
     }
 
     async Task ChangeLicense()
