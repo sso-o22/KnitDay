@@ -23,12 +23,12 @@ else if (_projects.Count == 0)
 {
     <div class="empty-state">
         <div class="empty-icon"><img src="icons/t-shirt.svg" class="icon-line" style="width:48px;height:48px;" /></div>
-        <p>아직 완성작이 없어요.<br/>문어발에서 작품을 완성하면 여기로 이동해요!</p>
+        <p>아직 완성작이 없어요.<br/>뜨케줄에서 작품을 완성하면 여기로 이동해요!</p>
     </div>
 }
 else
 {
-    <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center;">
+    <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center; flex-wrap:wrap;">
         <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
         @foreach (var (label, baseVal) in new[]{("시작일","start"),("완성일","end"),("이름순","name")})
         {
@@ -41,6 +41,13 @@ else
                 @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
             </button>
         }
+        <select class="form-control" style="width:auto;font-size:0.8rem;padding:6px 10px;margin-left:auto;" @bind="_finCategory" @bind:after="SetFinCategory">
+            <option value="all">전체 카테고리</option>
+            @foreach (var cat in Enum.GetValues<ProjectCategory>())
+            {
+                <option value="@cat.ToString()">@cat</option>
+            }
+        </select>
     </div>
     <div class="grid-3">
         @foreach (var proj in SortedProjects)
@@ -85,14 +92,17 @@ else
     bool _showDetail = false;
     List<KnitProject> _projects = new();
     string _finSort = "end_desc";
+    string _finCategory = "all";
+    IEnumerable<KnitProject> FilteredProjects =>
+        _finCategory == "all" ? _projects : _projects.Where(p => p.Category.ToString() == _finCategory);
     IEnumerable<KnitProject> SortedProjects => _finSort switch
     {
-        "start_asc"  => _projects.OrderBy(p => p.StartDate),
-        "start_desc" => _projects.OrderByDescending(p => p.StartDate),
-        "end_asc"   => _projects.OrderBy(p => p.EndDate),
-        "name_asc"  => _projects.OrderBy(p => p.PatternName),
-        "name_desc" => _projects.OrderByDescending(p => p.PatternName),
-        _           => _projects.OrderByDescending(p => p.EndDate),
+        "start_asc"  => FilteredProjects.OrderBy(p => p.StartDate),
+        "start_desc" => FilteredProjects.OrderByDescending(p => p.StartDate),
+        "end_asc"   => FilteredProjects.OrderBy(p => p.EndDate),
+        "name_asc"  => FilteredProjects.OrderBy(p => p.PatternName),
+        "name_desc" => FilteredProjects.OrderByDescending(p => p.PatternName),
+        _           => FilteredProjects.OrderByDescending(p => p.EndDate),
     };
     KnitProject? _selectedProject;
     List<Yarn> _allYarns = new();
@@ -101,7 +111,8 @@ else
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
-        _finSort  = await JS.InvokeAsync<string?>("localStorage.getItem", "fin_sort") ?? "end_desc";
+        _finSort     = await JS.InvokeAsync<string?>("localStorage.getItem", "fin_sort") ?? "end_desc";
+        _finCategory = await JS.InvokeAsync<string?>("localStorage.getItem", "fin_category") ?? "all";
         _loading = false;
     }
 
@@ -109,6 +120,11 @@ else
     {
         _finSort = val;
         await JS.InvokeVoidAsync("localStorage.setItem", "fin_sort", val);
+    }
+
+    async Task SetFinCategory()
+    {
+        await JS.InvokeVoidAsync("localStorage.setItem", "fin_category", _finCategory);
     }
 
     async Task LoadData()
