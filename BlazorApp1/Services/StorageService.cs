@@ -550,6 +550,7 @@ namespace KnitLog.Services
 
                     string? cloudUrl = null;
                     bool pdfCountHandled = false;
+                    bool usageSubtracted = false; // 재시도마다 중복 차감되지 않도록 1회만 실행 보장
                     for (int attempt = 1; attempt <= MaxRetry; attempt++)
                     {
                         try
@@ -557,27 +558,28 @@ namespace KnitLog.Services
                             var base64Pdf = await _js.InvokeAsync<string?>("patternViewer.getSavedPdfBase64", proj.Id.ToString());
                             if (!string.IsNullOrEmpty(base64Pdf))
                             {
-                                // Cloudinary는 같은 publicId로 덮어쓰기 → 기존 usage 먼저 차감 후 새 값 누적
-                                if (proj.PatternFileSizeBytes > 0)
+                                // Cloudinary는 같은 publicId로 덮어쓰기 → 기존 usage를 딱 한 번만 차감 후 새 값 누적
+                                if (!usageSubtracted && proj.PatternFileSizeBytes > 0)
+                                {
                                     await SubtractCloudUsageAsync("pdf", proj.PatternFileSizeBytes);
+                                    usageSubtracted = true;
+                                }
                                 var (u, err, pdfBytes) = await UploadPdfAsync(proj.Id.ToString(), base64Pdf);
                                 if (err == "quota") { quotaReached = true; break; }
                                 if (!string.IsNullOrEmpty(u)) { cloudUrl = u; proj.PatternFileSizeBytes = pdfBytes; break; }
                             }
                             else
                             {
-                                // IDB에 PDF 없음
-                                // 단, attempt==1이면 방금 업로드 중인 레이스 컨디션일 수 있으므로
-                                // 1회는 건너뛰고 재시도 — 이후에도 없으면 local-only
-                                if (attempt < MaxRetry)
-                                    break; // 재시도 루프로
-                                // 3회 모두 없음 → local-only 표시
-                                proj.PatternCloudUrl = PatternCloudUrlLocalOnly;
-                                changed = true;
-                                progress.Failed++;
-                                pdfCountHandled = true;
-                                OnMigrationProgress?.Invoke(progress);
-                                break;
+                                // IDB에 PDF 없음 — 방금 저장 중인 레이스 컨디션일 수 있으므로
+                                // 마지막 시도(MaxRetry)까지는 자연스럽게 재시도하고, 그때도 없으면 local-only
+                                if (attempt == MaxRetry)
+                                {
+                                    proj.PatternCloudUrl = PatternCloudUrlLocalOnly;
+                                    changed = true;
+                                    progress.Failed++;
+                                    pdfCountHandled = true;
+                                    OnMigrationProgress?.Invoke(progress);
+                                }
                             }
                         }
                         catch { }

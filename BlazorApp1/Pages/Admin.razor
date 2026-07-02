@@ -105,6 +105,9 @@ else
                                 <div style="font-size:0.72rem;margin-top:3px;display:flex;align-items:center;gap:4px;color:@(u.ExpiresAt == null ? "#c03030" : "var(--theme-active)");">
                                     <img src="icons/ticket.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" /> @LicenseDisplayLabel(u)
                                 </div>
+                                <div style="font-size:0.7rem;margin-top:2px;color:var(--text-light);">
+                                    최근 활동: @LastActiveLabel(u)
+                                </div>
                             </div>
                             @if (_deletingEmail == u.Email)
                             {
@@ -229,7 +232,7 @@ else
 @code {
     const string AdminUid = "xAz2xO8kulWUgoHnaaxCkzZV2nG2";
 
-    record UserEntry(string Email, string? Uid, string? ExpiresAt = null, string? LicenseType = null);
+    record UserEntry(string Email, string? Uid, string? ExpiresAt = null, string? LicenseType = null, string? LastActiveAt = null);
 
     List<UserEntry>? _users;
     bool _loading = false;
@@ -287,7 +290,8 @@ else
                         e.TryGetProperty("id", out var id) ? id.GetString() ?? "" : "",
                         e.TryGetProperty("uid", out var uid) ? uid.GetString() : null,
                         e.TryGetProperty("expiresAt", out var exp) ? exp.GetString() : null,
-                        e.TryGetProperty("licenseType", out var lt) ? lt.GetString() : null))
+                        e.TryGetProperty("licenseType", out var lt) ? lt.GetString() : null,
+                        e.TryGetProperty("lastActiveAt", out var la) ? la.GetString() : null))
                     .Where(u => !string.IsNullOrEmpty(u.Email))
                     .OrderBy(u => u.Email)
                     .ToList();
@@ -349,6 +353,19 @@ else
         if (u.ExpiresAt == "lifetime")
             return u.LicenseType == "earlybird_lifetime" ? "얼리버드 평생이용권" : "평생이용권";
         return $"{u.ExpiresAt} 만료";
+    }
+
+    // lastActiveAt: 앱 재실행(세션 복원)만 해도 매번 갱신되는 필드 — 명시적 재로그인 여부와 무관하게
+    // 실제 사용 빈도를 반영함 (lastLoginAt은 재로그인 시에만 갱신되어 과소평가될 수 있음)
+    string LastActiveLabel(UserEntry u)
+    {
+        if (string.IsNullOrEmpty(u.LastActiveAt) || !DateTime.TryParse(u.LastActiveAt, out var dt))
+            return "기록 없음";
+        var days = (int)(DateTime.UtcNow.Date - dt.Date).TotalDays;
+        if (days <= 0) return "오늘";
+        if (days == 1) return "1일 전";
+        if (days < 30) return $"{days}일 전";
+        return dt.ToLocalTime().ToString("yyyy.MM.dd");
     }
 
     async Task ChangeLicense()
