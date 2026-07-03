@@ -541,9 +541,12 @@ else
                                 <div style="width:1px; flex:1; min-height:16px; background:var(--border); margin:3px 0;"></div>
                             }
                         </div>
-                        <div style="padding-bottom:@(isLast ? "0" : "12px"); padding-top:4px;">
-                            <span style="font-size:0.85rem; font-weight:600; color:@iconColor;">@log.Action</span>
-                            <span style="font-size:0.78rem; color:var(--text-light); margin-left:8px;">@log.At.ToString("yyyy. M. d  HH:mm")</span>
+                        <div style="display:flex; align-items:center; justify-content:space-between; flex:1; padding-bottom:@(isLast ? "0" : "12px"); padding-top:4px;">
+                            <div>
+                                <span style="font-size:0.85rem; font-weight:600; color:@iconColor;">@log.Action</span>
+                                <span style="font-size:0.78rem; color:var(--text-light); margin-left:8px;">@log.At.ToString("yyyy. M. d  HH:mm")</span>
+                            </div>
+                            <button class="btn btn-danger btn-sm" style="flex-shrink:0; padding:3px 6px;" @onclick='() => Confirm("이 활동 기록을 삭제할까요?", async () => await RemoveStatusLog(log.Id))'><img src="icons/x.svg" class="icon-line" style="width:11px;height:11px;" /></button>
                         </div>
                     </div>
                 }
@@ -570,13 +573,32 @@ else
                 {
                     var isYoutube = lnk.Url.Contains("youtube.com") || lnk.Url.Contains("youtu.be");
                     <div style="margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
+                        @if (_editingLinkId == lnk.Id)
+                        {
+                            @* 제목 편집 모드 *@
+                            <div style="display:flex; gap:6px; align-items:center; margin-bottom:@(isYoutube ? "6px" : "4px");">
+                                <input class="form-control" style="flex:1; font-size:0.85rem; padding:4px 8px;"
+                                    @bind="_editLinkTitleValue"
+                                    @bind:event="oninput"
+                                    placeholder="제목 입력"
+                                    @onkeydown="@(async e => { if (e.Key == "Enter") await SaveLinkTitle(lnk); else if (e.Key == "Escape") CancelEditLinkTitle(); })" />
+                                <button class="btn btn-sage btn-sm" style="flex-shrink:0; padding:4px 8px;" @onclick="() => SaveLinkTitle(lnk)"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                                <button class="btn btn-secondary btn-sm" style="flex-shrink:0; padding:4px 8px;" @onclick="CancelEditLinkTitle"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            </div>
+                        }
+                        else
+                        {
+                            @* 제목 표시 + 수정 버튼 *@
+                            <div style="display:flex; align-items:center; gap:6px; margin-bottom:@(isYoutube ? "6px" : "4px");">
+                                <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); flex:1; min-width:0; overflow-wrap:break-word;">
+                                    @(!string.IsNullOrEmpty(lnk.Title) ? lnk.Title : TryGetDomain(lnk.Url))
+                                </div>
+                                <button class="btn btn-secondary btn-sm" style="flex-shrink:0; padding:3px 6px;" @onclick="() => StartEditLinkTitle(lnk)"><img src="icons/pencil-simple.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            </div>
+                        }
                         @if (isYoutube)
                         {
-                            @* 유튜브: 제목 + 영상 플레이어 *@
-                            @if (!string.IsNullOrEmpty(lnk.Title))
-                            {
-                                <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:6px;">@lnk.Title</div>
-                            }
+                            @* 유튜브: 영상 플레이어 *@
                             <div style="position:relative; padding-bottom:56.25%; height:0; overflow:hidden; border-radius:var(--radius-sm); margin-bottom:8px;">
                                 <iframe src="@GetEmbedUrl(lnk.Url)"
                                         style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;"
@@ -584,16 +606,6 @@ else
                                         allowfullscreen>
                                 </iframe>
                             </div>
-                        }
-                        else if (!string.IsNullOrEmpty(lnk.Title))
-                        {
-                            @* 일반 링크: 사용자 지정 제목 *@
-                            <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:4px;">@lnk.Title</div>
-                        }
-                        else
-                        {
-                            @* 일반 링크: 제목 없으면 도메인 표시 *@
-                            <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:4px;">@TryGetDomain(lnk.Url)</div>
                         }
                         <div style="display:flex; align-items:flex-start; gap:8px;">
                             <a href="@lnk.Url" target="_blank" style="flex:1; font-size:0.78rem; color:var(--text-mid); display:inline-flex;align-items:flex-start;gap:4px;min-width:0;">
@@ -1485,6 +1497,8 @@ else
     };
     string _newVideoLink = "";
     string _newLinkTitle = "";
+    Guid? _editingLinkId = null;
+    string _editLinkTitleValue = "";
     bool _showPhoto = false;
     bool _addingCounter = false;
     bool _addingCheck = false;
@@ -2061,6 +2075,33 @@ else
     {
         if (_project == null) return;
         _project.Links.RemoveAll(l => l.Id == id);
+        await Save();
+    }
+
+    void StartEditLinkTitle(VideoLink lnk)
+    {
+        _editingLinkId = lnk.Id;
+        _editLinkTitleValue = lnk.Title;
+    }
+
+    void CancelEditLinkTitle()
+    {
+        _editingLinkId = null;
+        _editLinkTitleValue = "";
+    }
+
+    async Task SaveLinkTitle(VideoLink lnk)
+    {
+        lnk.Title = _editLinkTitleValue.Trim();
+        _editingLinkId = null;
+        _editLinkTitleValue = "";
+        await Save();
+    }
+
+    async Task RemoveStatusLog(Guid id)
+    {
+        if (_project == null) return;
+        _project.StatusLogs.RemoveAll(l => l.Id == id);
         await Save();
     }
 
