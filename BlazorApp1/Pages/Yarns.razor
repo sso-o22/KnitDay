@@ -394,21 +394,33 @@ else
                         <option value="">+ 프로젝트 연결</option>
                         @foreach (var proj in _projects.OrderByDescending(p => p.UpdatedAt))
                         {
-                            var alreadyAdded = _editingConnectedProjectIds.Contains(proj.Id);
+                            var alreadyAdded = _editingProjectAmounts.ContainsKey(proj.Id);
                             <option value="@proj.Id" disabled="@alreadyAdded">
                                 @(string.IsNullOrEmpty(proj.PatternName) ? "제목 없음" : proj.PatternName) (@proj.Status)@(alreadyAdded ? " ✓" : "")
                             </option>
                         }
                     </select>
-                    @foreach (var pid in _editingConnectedProjectIds.ToList())
+                    @{
+                        bool editIsCone       = _editingYarn.YarnType == YarnType.콘사;
+                        bool editHasConeWeight = editIsCone && _editingYarn.WeightGram > 0;
+                        string editUnitLabel   = editHasConeWeight ? "g" : editIsCone ? "콘" : "볼";
+                        decimal editTotalQty   = editHasConeWeight ? _editingYarn.WeightGram * _editingYarn.Quantity : _editingYarn.Quantity;
+                    }
+                    @foreach (var pid in _editingProjectAmounts.Keys.ToList())
                     {
                         var ep = _projects.Find(p => p.Id == pid);
                         if (ep != null)
                         {
+                            decimal rawAmt     = _editingProjectAmounts[pid];
+                            decimal displayAmt = editHasConeWeight ? rawAmt * _editingYarn.WeightGram : rawAmt;
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 10px;border-radius:9px;background:#f8f8f8;border:1px solid var(--border);">
                                 <span style="flex:1;font-size:0.88rem;">@(string.IsNullOrEmpty(ep.PatternName) ? "제목 없음" : ep.PatternName)</span>
                                 <span style="font-size:0.72rem;color:var(--text-light);">@ep.Status</span>
-                                <button class="btn btn-danger btn-sm" @onclick="() => _editingConnectedProjectIds.Remove(pid)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                                <input class="form-control" type="number" min="0" style="width:70px;flex-shrink:0;"
+                                       value="@displayAmt.ToString("G29")"
+                                       @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) _editingProjectAmounts[pid] = editHasConeWeight ? n / _editingYarn.WeightGram : n; }" />
+                                <span style="font-size:0.78rem;color:var(--text-light);flex-shrink:0;">@editUnitLabel@(editTotalQty > 0 ? $" / 전체 {editTotalQty.ToString("G29")}{editUnitLabel}" : "")</span>
+                                <button class="btn btn-danger btn-sm" @onclick="() => _editingProjectAmounts.Remove(pid)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                             </div>
                         }
                     }
@@ -468,7 +480,7 @@ else
     string _yarnSort = "created_desc";
     List<Yarn> _yarns = new();
     Yarn? _editingYarn;
-    List<Guid> _editingConnectedProjectIds = new();
+    Dictionary<Guid, decimal> _editingProjectAmounts = new(); // 프로젝트ID → 소요량(원시 BallsUsed 단위)
 
     IEnumerable<Yarn> FilteredYarns
     {
@@ -592,29 +604,30 @@ else
             Price = source.Price,
             Memo = source.Memo,
         };
-        _editingConnectedProjectIds = new();
+        _editingProjectAmounts = new();
         _showModal = true;
         _scrollModalTop = true;
         await JS.InvokeVoidAsync("lockBodyScroll");
     }
-    async Task OpenAddModal() { _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 }; _editingConnectedProjectIds = new(); _showModal = true; _scrollModalTop = true; await JS.InvokeVoidAsync("lockBodyScroll"); }
+    async Task OpenAddModal() { _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 }; _editingProjectAmounts = new(); _showModal = true; _scrollModalTop = true; await JS.InvokeVoidAsync("lockBodyScroll"); }
     async Task OpenEditModal(Yarn yarn)
     {
         _editingYarn = yarn;
-        _editingConnectedProjectIds = GetConnectedProjects(yarn.Id).Select(p => p.Id).ToList();
+        _editingProjectAmounts = GetConnectedProjects(yarn.Id)
+            .ToDictionary(p => p.Id, p => p.YarnUsages.FirstOrDefault(u => u.YarnId == yarn.Id)?.BallsUsed ?? 1);
         _showModal = true;
         _scrollModalTop = true;
         await JS.InvokeVoidAsync("lockBodyScroll");
     }
-    async Task CloseModal() { _showModal = false; _editingYarn = null; _editingConnectedProjectIds = new(); await JS.InvokeVoidAsync("unlockBodyScroll"); }
+    async Task CloseModal() { _showModal = false; _editingYarn = null; _editingProjectAmounts = new(); await JS.InvokeVoidAsync("unlockBodyScroll"); }
 
     void OnProjectChanged(ChangeEventArgs e)
     {
         var val = e.Value?.ToString();
         if (string.IsNullOrEmpty(val)) return;
         if (!Guid.TryParse(val, out var pid)) return;
-        if (!_editingConnectedProjectIds.Contains(pid))
-            _editingConnectedProjectIds.Add(pid);
+        if (!_editingProjectAmounts.ContainsKey(pid))
+            _editingProjectAmounts[pid] = 1;
         StateHasChanged();
     }
 
@@ -625,19 +638,30 @@ else
         if (_editingYarn.Id == Guid.Empty) _editingYarn.Id = Guid.NewGuid();
         await Storage.SaveYarnAsync(_editingYarn);
 
-        // 프로젝트 연결 동기화: 콤보박스에서 선택/해제한 내용을 각 프로젝트의 YarnUsages에 반영
+        // 프로젝트 연결 동기화: 콤보박스에서 선택/해제하고 입력한 수량을 각 프로젝트의 YarnUsages에 반영
         // (저장 버튼을 눌러야 실제로 커밋됨 — 신규 실도 이 시점에 실제 ID가 생기므로 바로 연결 가능)
         var yarnId = _editingYarn.Id;
         foreach (var proj in _projects)
         {
-            var isConnected   = proj.YarnUsages.Any(u => u.YarnId == yarnId);
-            var shouldConnect = _editingConnectedProjectIds.Contains(proj.Id);
-            if (shouldConnect && !isConnected)
+            var existingUsage = proj.YarnUsages.FirstOrDefault(u => u.YarnId == yarnId);
+            var shouldConnect = _editingProjectAmounts.TryGetValue(proj.Id, out var amount);
+            if (shouldConnect)
             {
-                proj.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = 1 });
-                await Storage.SaveProjectAsync(proj);
+                if (existingUsage != null)
+                {
+                    if (existingUsage.BallsUsed != amount)
+                    {
+                        existingUsage.BallsUsed = amount;
+                        await Storage.SaveProjectAsync(proj);
+                    }
+                }
+                else
+                {
+                    proj.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = amount });
+                    await Storage.SaveProjectAsync(proj);
+                }
             }
-            else if (!shouldConnect && isConnected)
+            else if (existingUsage != null)
             {
                 proj.YarnUsages.RemoveAll(u => u.YarnId == yarnId);
                 await Storage.SaveProjectAsync(proj);

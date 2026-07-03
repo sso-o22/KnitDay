@@ -1098,6 +1098,7 @@ else
                     bool hasConeWeight = isCone && yarn?.WeightGram > 0;
                     string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
                     decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
+                    decimal totalQty = yarn == null ? 0 : (hasConeWeight ? yarn.WeightGram * yarn.Quantity : yarn.Quantity);
                     <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
                                 border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
                         @if (yarn != null)
@@ -1108,7 +1109,7 @@ else
                         <input class="form-control" type="number" min="1" style="width:80px;"
                                value="@displayVal"
                                @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), out var n)) usage.BallsUsed = hasConeWeight ? n / yarn!.WeightGram : n; }" />
-                        <span style="font-size:0.82rem; color:var(--text-mid);">@unitLabel</span>
+                        <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel@(totalQty > 0 ? $" / 전체 {totalQty.ToString("G29")}{unitLabel}" : "")</span>
                         <button class="btn btn-danger btn-sm" @onclick="() => _project.YarnUsages.Remove(usage)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                     </div>
                 }
