@@ -699,11 +699,75 @@ else
         <div class="card">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
                 <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/yarn.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 연결된 실</div>
-                <button class="btn btn-ghost btn-sm" @onclick="OpenYarnCalc" style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />소요량 계산기</button>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="btn btn-ghost btn-sm" @onclick="OpenYarnCalc" style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />소요량 계산기</button>
+                    @if (_yarnEditMode)
+                    {
+                        <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitYarnEditMode" disabled="@_saving">@(_saving ? "저장 중..." : "완료")</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterYarnEditMode"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
+                    }
+                </div>
             </div>
-            @if (_project.YarnUsages.Count == 0)
+            @if (_yarnEditMode)
             {
-                <p style="color:var(--text-light); font-size:0.88rem;">연결된 실이 없어요. 수정 버튼에서 실을 추가할 수 있어요.</p>
+                <select class="form-control" style="margin-bottom:8px;" @onchange="OnEditAddYarn">
+                    <option value="">+ 실 추가</option>
+                    @foreach (var y in YarnActive)
+                    {
+                        <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
+                    }
+                    @if (YarnEmpty.Any())
+                    {
+                        <optgroup label="── 소진 ──">
+                            @foreach (var y in YarnEmpty)
+                            {
+                                <option value="@y.Id">@y.Brand @y.Name (@y.Color) [소진]</option>
+                            }
+                        </optgroup>
+                    }
+                </select>
+                @if (_project.YarnUsages.Count == 0)
+                {
+                    <p style="color:var(--text-light); font-size:0.88rem;">위 목록에서 실을 선택해 추가하세요.</p>
+                }
+                else
+                {
+                    @foreach (var usage in _project.YarnUsages)
+                    {
+                        var yarn = _yarns.Find(y => y.Id == usage.YarnId);
+                        bool isCone = yarn?.YarnType == YarnType.콘사;
+                        bool hasConeWeight = isCone && yarn?.WeightGram > 0;
+                        string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
+                        decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
+                        // 다른 프로젝트에서 이미 사용 중인 양을 빼고, 이 프로젝트에서 더 쓸 수 있는 잔여량 계산
+                        decimal usedElsewhere = yarn == null ? 0 : _allProjects.Where(p => p.Id != _project!.Id)
+                                                                                .SelectMany(p => p.YarnUsages)
+                                                                                .Where(u => u.YarnId == yarn.Id)
+                                                                                .Sum(u => u.BallsUsed);
+                        decimal remainRaw = yarn == null ? 0 : yarn.Quantity - usedElsewhere;
+                        decimal remainQty = yarn == null ? 0 : (hasConeWeight ? remainRaw * yarn.WeightGram : remainRaw);
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                    border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
+                            @if (yarn != null)
+                            {
+                                <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
+                                <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
+                            }
+                            <input class="form-control" type="number" min="1" style="width:80px;"
+                                   value='@displayVal.ToString(hasConeWeight ? "0" : "0.##")'
+                                   @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), out var n)) usage.BallsUsed = Math.Round(hasConeWeight ? n / yarn!.WeightGram : n, 6); }" />
+                            <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel (잔여 @(remainQty.ToString(hasConeWeight ? "0" : "0.##"))@unitLabel)</span>
+                            <button class="btn btn-danger btn-sm" @onclick="() => _project.YarnUsages.Remove(usage)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                        </div>
+                    }
+                }
+            }
+            else if (_project.YarnUsages.Count == 0)
+            {
+                <p style="color:var(--text-light); font-size:0.88rem;">연결된 실이 없어요. "수정" 버튼으로 실을 추가할 수 있어요.</p>
             }
             else
             {
@@ -739,21 +803,63 @@ else
         <div class="card">
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;">
                 <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/swatches.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 연결된 스와치</div>
-                @if (_linkedSwatches.Count > 0)
+                <div style="display:flex; align-items:center; gap:8px;">
+                    @if (_linkedSwatches.Count > 0)
+                    {
+                        <button class="btn btn-ghost btn-sm" @onclick="OpenGaugeCalc" style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />계산기</button>
+                    }
+                    @if (_swatchEditMode)
+                    {
+                        <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick="ExitSwatchEditMode" disabled="@_saving">@(_saving ? "저장 중..." : "완료")</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick="EnterSwatchEditMode"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
+                    }
+                </div>
+            </div>
+
+            @if (_swatchEditMode)
+            {
+                @if (!_allSwatches.Any())
                 {
-                    <button class="btn btn-ghost btn-sm" @onclick="OpenGaugeCalc" style="display:inline-flex;align-items:center;gap:4px;"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />계산기</button>
+                    <p style="font-size:0.82rem; color:var(--text-light);">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
                 }
                 else
                 {
-                    <a href="swatches" class="btn btn-ghost btn-sm">스와치 관리</a>
+                    <select class="form-control" @onchange="OnSwatchSelectChange">
+                        <option value="">+ 스와치 연결</option>
+                        @foreach (var s in _allSwatches.Where(s => s.ProjectId == null || s.ProjectId == Guid.Empty || s.ProjectId == _project!.Id))
+                        {
+                            var syFirst = s.YarnIds.Select(id => _yarns.Find(y => y.Id == id)).FirstOrDefault(y => y != null);
+                            var isLinked = s.ProjectId == _project!.Id;
+                            <option value="@s.Id" disabled="@isLinked">
+                                @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
+                                @(syFirst != null ? SwatchYarnLabel(syFirst.Brand, syFirst.Name, s.YarnIds.Count) : "")
+                            </option>
+                        }
+                    </select>
+                    @if (_allSwatches.Any(s => s.ProjectId == _project!.Id))
+                    {
+                        <div style="margin-top:8px;">
+                            @foreach (var s in _allSwatches.Where(s => s.ProjectId == _project!.Id))
+                            {
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:8px 12px;
+                                            border-radius:var(--radius-sm); background:var(--ivory-mid); border:1px solid var(--border);">
+                                    <div style="flex:1; min-width:0; font-size:0.88rem; font-weight:600; color:var(--text-dark);">
+                                        @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
+                                    </div>
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 8px; flex-shrink:0;" @onclick="() => UnlinkSwatch(s)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                                </div>
+                            }
+                        </div>
+                    }
                 }
-            </div>
-
-            @if (_linkedSwatches.Count == 0)
+            }
+            else if (_linkedSwatches.Count == 0)
             {
                 <p style="color:var(--text-light); font-size:0.88rem;">
-                    연결된 스와치가 없어요.
-                    <a href="swatches" style="color:#267848;">스와치 페이지</a>에서 이 프로젝트를 선택해 연결할 수 있어요.
+                    연결된 스와치가 없어요. "수정" 버튼으로 연결할 수 있어요.
                 </p>
             }
             else
@@ -1161,10 +1267,16 @@ else
                         <input class="form-control" @bind="_project.OriginalSize" placeholder="예: M, 95, Free" />
                     </div>
                     <div class="form-group">
-                        <label class="form-label" style="font-size:0.78rem;">소요량 (g)</label>
-                        <input class="form-control" type="number" step="1"
-                               value="@(_project.OriginalYarnAmountG == 0 ? "" : _project.OriginalYarnAmountG.ToString())"
-                               @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _project.OriginalYarnAmountG = v; else _project.OriginalYarnAmountG = 0; }" placeholder="예: 400" />
+                        <label class="form-label" style="font-size:0.78rem;">소요량</label>
+                        <div style="display:flex; gap:6px;">
+                            <input class="form-control" type="number" step="1" style="flex:1; min-width:0;"
+                                   value="@(_project.OriginalYarnAmountG == 0 ? "" : _project.OriginalYarnAmountG.ToString())"
+                                   @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _project.OriginalYarnAmountG = v; else _project.OriginalYarnAmountG = 0; }" placeholder="예: 400" />
+                            <select class="form-control" style="width:64px; flex-shrink:0;" @bind="_project.OriginalYarnAmountUnit">
+                                <option value="g">g</option>
+                                <option value="m">m</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
@@ -1577,9 +1689,17 @@ else
         {
             if (_project.OriginalYarnWeightG > 0) _ycOrigWeight = _project.OriginalYarnWeightG;
             if (_project.OriginalYarnLengthM > 0) _ycOrigLength = _project.OriginalYarnLengthM;
-            if (_project.OriginalYarnAmountG > 0) _ycOrigTotalG = _project.OriginalYarnAmountG;
-            if (_ycOrigWeight > 0 && _ycOrigLength > 0 && _ycOrigTotalG > 0)
-                _ycTotalMeters = Math.Round(_ycOrigTotalG / _ycOrigWeight * _ycOrigLength);
+            if (_project.OriginalYarnAmountUnit == "m")
+            {
+                // 소요량이 m 단위로 저장돼있으면 g당/m당 환산 없이 바로 총 필요 길이로 사용
+                if (_project.OriginalYarnAmountG > 0) _ycTotalMeters = _project.OriginalYarnAmountG;
+            }
+            else
+            {
+                if (_project.OriginalYarnAmountG > 0) _ycOrigTotalG = _project.OriginalYarnAmountG;
+                if (_ycOrigWeight > 0 && _ycOrigLength > 0 && _ycOrigTotalG > 0)
+                    _ycTotalMeters = Math.Round(_ycOrigTotalG / _ycOrigWeight * _ycOrigLength);
+            }
         }
         _showYarnCalc = true;
     }
@@ -2296,6 +2416,28 @@ else
         var yarnId = Guid.Parse(val);
         if (!_project.YarnUsages.Any(u => u.YarnId == yarnId))
             _project.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = 1 });
+    }
+
+    // ── 상세 페이지 "연결된 실" 카드 인라인 수정 ──
+    bool _yarnEditMode = false;
+    void EnterYarnEditMode() => _yarnEditMode = true;
+    async Task ExitYarnEditMode()
+    {
+        _yarnEditMode = false;
+        if (_project != null)
+            await Storage.SaveProjectAsync(_project);
+    }
+
+    // ── 상세 페이지 "연결된 스와치" 카드 인라인 수정 ──
+    bool _swatchEditMode = false;
+    void EnterSwatchEditMode() => _swatchEditMode = true;
+    async Task ExitSwatchEditMode()
+    {
+        _swatchEditMode = false;
+        foreach (var s in _allSwatches)
+            await Storage.SaveSwatchAsync(s);
+        if (_project != null)
+            _linkedSwatches = _allSwatches.Where(s => s.ProjectId == _project.Id).ToList();
     }
 
     async Task SaveEdit()

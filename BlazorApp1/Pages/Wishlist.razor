@@ -60,7 +60,7 @@ else
                         @if (!string.IsNullOrEmpty(proj.OriginalYarn))   { <span>실: @proj.OriginalYarn@(proj.OriginalYarnWeightG > 0 && proj.OriginalYarnLengthM > 0 ? $" ({proj.OriginalYarnWeightG.ToString("0")}g/{proj.OriginalYarnLengthM.ToString("0")}m)" : "")</span> }
                         @if (proj.OriginalYarnAmountG > 0 || !string.IsNullOrEmpty(proj.OriginalSize))
                         {
-                            <span>소요량: @(!string.IsNullOrEmpty(proj.OriginalSize) ? proj.OriginalSize + " " : "")@(proj.OriginalYarnAmountG > 0 ? $"{proj.OriginalYarnAmountG.ToString("0")}g" : "")</span>
+                            <span>소요량: @(!string.IsNullOrEmpty(proj.OriginalSize) ? proj.OriginalSize + " " : "")@(proj.OriginalYarnAmountG > 0 ? $"{proj.OriginalYarnAmountG.ToString("0")}{proj.OriginalYarnAmountUnit}" : "")</span>
                         }
                         else if (!string.IsNullOrEmpty(proj.OriginalYarnAmount))
                         {
@@ -148,10 +148,16 @@ else
                         <input class="form-control" @bind="_editingProject.OriginalSize" placeholder="예: M, 95, Free" />
                     </div>
                     <div class="form-group">
-                        <label class="form-label" style="font-size:0.78rem;">소요량 (g)</label>
-                        <input class="form-control" type="number" step="1"
-                               value="@(_editingProject.OriginalYarnAmountG == 0 ? "" : _editingProject.OriginalYarnAmountG.ToString())"
-                               @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _editingProject.OriginalYarnAmountG = v; else _editingProject.OriginalYarnAmountG = 0; }" placeholder="예: 400" />
+                        <label class="form-label" style="font-size:0.78rem;">소요량</label>
+                        <div style="display:flex; gap:6px;">
+                            <input class="form-control" type="number" step="1" style="flex:1; min-width:0;"
+                                   value="@(_editingProject.OriginalYarnAmountG == 0 ? "" : _editingProject.OriginalYarnAmountG.ToString())"
+                                   @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _editingProject.OriginalYarnAmountG = v; else _editingProject.OriginalYarnAmountG = 0; }" placeholder="예: 400" />
+                            <select class="form-control" style="width:64px; flex-shrink:0;" @bind="_editingProject.OriginalYarnAmountUnit">
+                                <option value="g">g</option>
+                                <option value="m">m</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
@@ -441,9 +447,17 @@ else
         _ycSubYarnId = null; _ycSubWeight = 100; _ycSubLength = 0;
         if (proj.OriginalYarnWeightG > 0) _ycOrigWeight = proj.OriginalYarnWeightG;
         if (proj.OriginalYarnLengthM > 0) _ycOrigLength = proj.OriginalYarnLengthM;
-        if (proj.OriginalYarnAmountG > 0) _ycOrigTotalG = proj.OriginalYarnAmountG;
-        if (_ycOrigWeight > 0 && _ycOrigLength > 0 && _ycOrigTotalG > 0)
-            _ycTotalMeters = Math.Round(_ycOrigTotalG / _ycOrigWeight * _ycOrigLength);
+        if (proj.OriginalYarnAmountUnit == "m")
+        {
+            // 소요량이 m 단위로 저장돼있으면 g당/m당 환산 없이 바로 총 필요 길이로 사용
+            if (proj.OriginalYarnAmountG > 0) _ycTotalMeters = proj.OriginalYarnAmountG;
+        }
+        else
+        {
+            if (proj.OriginalYarnAmountG > 0) _ycOrigTotalG = proj.OriginalYarnAmountG;
+            if (_ycOrigWeight > 0 && _ycOrigLength > 0 && _ycOrigTotalG > 0)
+                _ycTotalMeters = Math.Round(_ycOrigTotalG / _ycOrigWeight * _ycOrigLength);
+        }
         _showYarnCalc = true;
     }
 

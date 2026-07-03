@@ -170,7 +170,8 @@ namespace KnitLog.Models
         public double OriginalYarnLengthM { get; set; }     // 원작실 m당 (소요량 계산기 자동입력용)
         public string OriginalSize    { get; set; } = "";   // 원작 사이즈 (예: M, 95, Free)
         public string OriginalYarnAmount { get; set; } = ""; // 소요량 (구버전 자유입력, 하위호환용)
-        public double OriginalYarnAmountG { get; set; }     // 소요량(g) — 구조화된 숫자 (소요량 계산기 자동입력용)
+        public double OriginalYarnAmountG { get; set; }     // 소요량 — 구조화된 숫자 (단위는 OriginalYarnAmountUnit 참조)
+        public string OriginalYarnAmountUnit { get; set; } = "g"; // 소요량 단위: "g" 또는 "m"
         public string OriginalOther   { get; set; } = "";   // 기타 부자재 (단추, 지퍼 등)
         public string ColorCode { get; set; } = "";   // 캘린더 표시 색상 (hex, 예: #f2b8c6)
 

@@ -265,10 +265,16 @@ else
                             <input class="form-control" @bind="_editingProject.OriginalSize" placeholder="예: M, 95, Free" />
                         </div>
                         <div class="form-group">
-                            <label class="form-label" style="font-size:0.78rem;">소요량 (g)</label>
-                            <input class="form-control" type="number" step="1"
-                                   value="@(_editingProject.OriginalYarnAmountG == 0 ? "" : _editingProject.OriginalYarnAmountG.ToString())"
-                                   @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _editingProject.OriginalYarnAmountG = v; else _editingProject.OriginalYarnAmountG = 0; }" placeholder="예: 400" />
+                            <label class="form-label" style="font-size:0.78rem;">소요량</label>
+                            <div style="display:flex; gap:6px;">
+                                <input class="form-control" type="number" step="1" style="flex:1; min-width:0;"
+                                       value="@(_editingProject.OriginalYarnAmountG == 0 ? "" : _editingProject.OriginalYarnAmountG.ToString())"
+                                       @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _editingProject.OriginalYarnAmountG = v; else _editingProject.OriginalYarnAmountG = 0; }" placeholder="예: 400" />
+                                <select class="form-control" style="width:64px; flex-shrink:0;" @bind="_editingProject.OriginalYarnAmountUnit">
+                                    <option value="g">g</option>
+                                    <option value="m">m</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
