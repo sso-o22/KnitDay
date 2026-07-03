@@ -163,16 +163,16 @@
                                         {
                                             @if (yarn.WeightGram > 0)
                                             {
-                                                <span style="color:var(--text-light); font-size:0.8rem;">@((usage.BallsUsed * yarn.WeightGram).ToString("G29")) g</span>
+                                                <span style="color:var(--text-light); font-size:0.8rem;">@((usage.BallsUsed * yarn.WeightGram).ToString("0")) g</span>
                                             }
                                             else
                                             {
-                                                <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed.ToString("G29") 콘</span>
+                                                <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed.ToString("0.##") 콘</span>
                                             }
                                         }
                                         else
                                         {
-                                            <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed.ToString("G29") 볼</span>
+                                            <span style="color:var(--text-light); font-size:0.8rem;">@usage.BallsUsed.ToString("0.##") 볼</span>
                                         }
                                     }
                                 </div>

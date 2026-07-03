@@ -94,16 +94,16 @@ else
                             <span class="badge @(GetRemainBadge(_remain, yarn.Quantity))" style="font-size:0.75rem;">
                                 @if (yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0)
                                 {
-                                    @((yarn.WeightGram * _remain).ToString("G29"))
+                                    @((yarn.WeightGram * _remain).ToString("0"))
                                     <text>g / </text>
-                                    @((yarn.WeightGram * yarn.Quantity).ToString("G29"))
+                                    @((yarn.WeightGram * yarn.Quantity).ToString("0"))
                                     <text>g</text>
                                 }
                                 else
                                 {
-                                    @(_remain.ToString("G29"))
+                                    @(_remain.ToString("0.##"))
                                     <text> / </text>
-                                    @(yarn.Quantity.ToString("G29"))
+                                    @(yarn.Quantity.ToString("0.##"))
                                     <text> @_qtyUnit</text>
                                 }
                             </span>
@@ -112,11 +112,11 @@ else
                         {
                             @if (yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0)
                             {
-                                <span class="badge badge-cable">@((yarn.WeightGram * yarn.Quantity).ToString("G29"))g</span>
+                                <span class="badge badge-cable">@((yarn.WeightGram * yarn.Quantity).ToString("0"))g</span>
                             }
                             else
                             {
-                                <span class="badge badge-cable">x @(yarn.Quantity.ToString("G29")) @_qtyUnit</span>
+                                <span class="badge badge-cable">x @(yarn.Quantity.ToString("0.##")) @_qtyUnit</span>
                             }
                         }
                     }
@@ -157,11 +157,11 @@ else
                         @{ var __usedLen = (_usedQty.TryGetValue(yarn.Id, out var __ul) ? __ul : 0) * yarn.LengthMeter; }
                         @if (__usedLen > 0)
                         {
-                            <span>보유 길이: @((totalLength - __usedLen).ToString("G29")) / @(totalLength.ToString("G29")) m</span>
+                            <span>보유 길이: @((totalLength - __usedLen).ToString("0.##")) / @(totalLength.ToString("0.##")) m</span>
                         }
                         else
                         {
-                            <span>보유 길이: @(totalLength.ToString("G29")) m</span>
+                            <span>보유 길이: @(totalLength.ToString("0.##")) m</span>
                         }
                     </div>
                 }
@@ -193,11 +193,11 @@ else
                                 {
                                     @if (yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0)
                                     {
-                                        <text> · @((usage.BallsUsed * yarn.WeightGram).ToString("G29"))g</text>
+                                        <text> · @((usage.BallsUsed * yarn.WeightGram).ToString("0"))g</text>
                                     }
                                     else
                                     {
-                                        <text> · @(usage.BallsUsed.ToString("G29")) @_qtyUnit</text>
+                                        <text> · @(usage.BallsUsed.ToString("0.##")) @_qtyUnit</text>
                                     }
                                 }
                             </span>
@@ -423,9 +423,9 @@ else
                                 <span style="flex:1;font-size:0.88rem;">@(string.IsNullOrEmpty(ep.PatternName) ? "제목 없음" : ep.PatternName)</span>
                                 <span style="font-size:0.72rem;color:var(--text-light);">@ep.Status</span>
                                 <input class="form-control" type="number" min="0" style="width:70px;flex-shrink:0;"
-                                       value="@displayAmt.ToString("G29")"
-                                       @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) _editingProjectAmounts[pid] = editHasConeWeight ? n / _editingYarn.WeightGram : n; }" />
-                                <span style="font-size:0.78rem;color:var(--text-light);flex-shrink:0;">@editUnitLabel (잔여 @(editRemainQty.ToString("G29"))@editUnitLabel)</span>
+                                       value='@displayAmt.ToString(editHasConeWeight ? "0" : "0.##")'
+                                       @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) _editingProjectAmounts[pid] = Math.Round(editHasConeWeight ? n / _editingYarn.WeightGram : n, 6); }" />
+                                <span style="font-size:0.78rem;color:var(--text-light);flex-shrink:0;">@editUnitLabel (잔여 @(editRemainQty.ToString(editHasConeWeight ? "0" : "0.##"))@editUnitLabel)</span>
                                 <button class="btn btn-danger btn-sm" @onclick="() => _editingProjectAmounts.Remove(pid)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                             </div>
                         }

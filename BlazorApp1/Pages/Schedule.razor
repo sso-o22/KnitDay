@@ -325,9 +325,9 @@ else
                                 <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
                             }
                             <input class="form-control" type="number" min="1" style="width:80px;"
-                                   value="@displayVal.ToString("G29")"
-                                   @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) usage.BallsUsed = hasConeWeight ? n / yarn!.WeightGram : n; }" />
-                            <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel (잔여 @(remainQty.ToString("G29"))@unitLabel)</span>
+                                   value='@displayVal.ToString(hasConeWeight ? "0" : "0.##")'
+                                   @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) usage.BallsUsed = Math.Round(hasConeWeight ? n / yarn!.WeightGram : n, 6); }" />
+                            <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel (잔여 @(remainQty.ToString(hasConeWeight ? "0" : "0.##"))@unitLabel)</span>
                             <button class="btn btn-danger btn-sm" @onclick="() => _editingProject.YarnUsages.Remove(usage)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                         </div>
                     }
