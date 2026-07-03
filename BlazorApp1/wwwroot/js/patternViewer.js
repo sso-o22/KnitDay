@@ -183,6 +183,18 @@ let basePaths = []; // 저장된 필기 (박제)
             if (!p.points.length) return;
             const isHighlighter = p.tool === 'highlighter';
             ctx.save();
+            // 점 1개(콕 클릭)는 moveTo만으로는 stroke()가 아무것도 그리지 않으므로 원(arc)으로 직접 그리기
+            if (p.points.length === 1) {
+                const radius = isHighlighter ? p.size * 2 * currentZoom * dpr : p.size * 0.5 * currentZoom * dpr;
+                ctx.beginPath();
+                ctx.arc(p.points[0].x * scaleX, p.points[0].y * scaleY, radius, 0, Math.PI * 2);
+                ctx.globalAlpha = isHighlighter ? 0.35 : (p.opacity ?? 1.0);
+                ctx.fillStyle = p.isEraser ? 'rgba(0,0,0,1)' : p.color;
+                ctx.globalCompositeOperation = isHighlighter ? 'multiply' : (p.isEraser ? 'destination-out' : 'source-over');
+                ctx.fill();
+                ctx.restore();
+                return;
+            }
             ctx.beginPath();
             if (isHighlighter) {
                 ctx.lineWidth = p.size * 4 * currentZoom * dpr;
