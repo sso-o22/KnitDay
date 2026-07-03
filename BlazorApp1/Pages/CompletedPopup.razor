@@ -824,6 +824,10 @@
 
         await Storage.SaveProjectAsync(Project);
 
+        // 스와치 연결 변경사항 저장
+        foreach (var s in AllSwatches)
+            await Storage.SaveSwatchAsync(s);
+
         // 도안 삭제 토글 처리
         if (_deletePdf && OnDeletePdf.HasDelegate)
         {
@@ -836,6 +840,23 @@
         LoadMeasures();
         await JS.InvokeVoidAsync("showToast", "저장됐어요");
         await OnSaved.InvokeAsync();
+    }
+
+    void OnPopupSwatchSelectChange(ChangeEventArgs e)
+    {
+        if (Project == null) return;
+        var val = e.Value?.ToString();
+        if (string.IsNullOrEmpty(val)) return;
+        if (!Guid.TryParse(val, out var swatchId)) return;
+        var swatch = AllSwatches.FirstOrDefault(s => s.Id == swatchId);
+        if (swatch == null || swatch.ProjectId == Project.Id) return;
+        // 기존 연결 해제 없이 추가 연결 (다중 연결)
+        swatch.ProjectId = Project.Id;
+    }
+
+    void UnlinkPopupSwatch(Swatch s)
+    {
+        s.ProjectId = null;
     }
 
     async Task TriggerPopupPhotoInput()
