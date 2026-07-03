@@ -13,7 +13,7 @@
         <h1 class="page-title"><img src="icons/t-shirt.svg" class="icon-line" style="width:36px;height:36px;" />완성작</h1>
         <p class="page-subtitle">지금까지 완성한 작품들</p>
     </div>
-    <button class="btn btn-primary" @onclick="OpenAddCompleted" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />완성작 등록</button>
+    <button class="btn btn-primary" @onclick="OpenAddCompleted" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />완성작 추가</button>
 </div>
 
 @if (_loading)
@@ -25,7 +25,7 @@ else if (_projects.Count == 0)
     <div class="empty-state">
         <div class="empty-icon"><img src="icons/t-shirt.svg" class="icon-line" style="width:48px;height:48px;" /></div>
         <p>아직 완성작이 없어요.<br/>뜨케줄에서 작품을 완성하면 여기로 이동하거나, 직접 등록할 수 있어요!</p>
-        <button class="btn btn-primary" @onclick="OpenAddCompleted" style="margin-top:12px; display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />완성작 등록</button>
+        <button class="btn btn-primary" @onclick="OpenAddCompleted" style="margin-top:12px; display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />완성작 추가</button>
     </div>
 }
 else
