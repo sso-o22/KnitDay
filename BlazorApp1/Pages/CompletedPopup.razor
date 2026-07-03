@@ -239,20 +239,111 @@
             {
                 <!-- 수정 모드 -->
 
-                <!-- 작품명 + 카테고리 -->
-                <div class="form-row" style="margin-bottom:16px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">작품명</label>
-                        <input class="form-control" @bind="Project.PatternName" placeholder="예: 마시멜로 후드 집업" />
+                <!-- 작품명 -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label">작품명</label>
+                    <input class="form-control" @bind="Project.PatternName" placeholder="예: 마시멜로 후드 집업" />
+                </div>
+
+                <!-- 도안 출처 -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label">도안 출처</label>
+                    <input class="form-control" @bind="Project.PatternSource" placeholder="작가명, 책 이름, URL 등" />
+                </div>
+
+                <!-- 도안 메모 -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label">도안 메모</label>
+                    <textarea class="form-control" rows="2" @bind="Project.PatternMemo" placeholder="사이즈, 수정 사항 등"></textarea>
+                </div>
+
+                <!-- 카테고리 + 색상 -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label">카테고리</label>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
+                        @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
+                        {
+                            <button type="button"
+                                    class="btn btn-sm @(Project.Category == cat ? "btn-sage" : "btn-ghost")"
+                                    @onclick="() => Project.Category = (Project.Category == cat ? ProjectCategory.미분류 : cat)">
+                                @cat
+                            </button>
+                        }
+                    </div>
+                    <label class="form-label" style="margin-top:8px; display:block;">캘린더 색상</label>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        @foreach (var hex in _popupColorOptions)
+                        {
+                            bool sel = Project.ColorCode == hex;
+                            <div @onclick="() => Project.ColorCode = hex"
+                                 style="width:28px; height:28px; border-radius:50%; background:@hex; cursor:pointer;
+                                        border:@(sel ? "3px solid #333" : "2px solid transparent");
+                                        box-shadow:@(sel ? "0 0 0 2px #fff inset" : "none");
+                                        transform:@(sel ? "scale(1.2)" : "scale(1)");">
+                            </div>
+                        }
+                        <input type="color"
+                               value="@(string.IsNullOrEmpty(Project.ColorCode) ? "#b8e0c8" : Project.ColorCode)"
+                               @onchange="e => Project.ColorCode = e.Value?.ToString() ?? string.Empty"
+                               style="width:28px; height:28px; border-radius:50%; border:2px solid var(--border); padding:0; cursor:pointer; overflow:hidden;"
+                               title="직접 색상 선택" />
+                    </div>
+                </div>
+
+                <!-- 도안 정보 -->
+                <div class="form-label" style="margin-top:16px; margin-bottom:8px;">도안 정보</div>
+                <div style="padding:10px 12px; background:var(--ivory-dark); border-radius:var(--radius-sm); margin-bottom:16px;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" style="font-size:0.78rem;">원작 바늘</label>
+                            <input class="form-control" @bind="Project.OriginalNeedle" placeholder="예: 4mm 대바늘" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" style="font-size:0.78rem;">원작 게이지</label>
+                            <input class="form-control" @bind="Project.OriginalGauge" placeholder="예: 22코 × 30단 / 10cm" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" style="font-size:0.78rem;">원작 실</label>
+                            <input class="form-control" @bind="Project.OriginalYarn" placeholder="예: 솜솜뜨개 러스크 2합" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" style="font-size:0.78rem;">원작실 규격 (소요량 계산기용)</label>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <input class="form-control" type="number" step="1" style="flex:1; min-width:0;"
+                                       value="@(Project.OriginalYarnWeightG == 0 ? "" : Project.OriginalYarnWeightG.ToString())"
+                                       @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) Project.OriginalYarnWeightG = v; else Project.OriginalYarnWeightG = 0; }" placeholder="g" />
+                                <span style="font-size:0.78rem; color:var(--text-light); flex-shrink:0;">g /</span>
+                                <input class="form-control" type="number" step="1" style="flex:1; min-width:0;"
+                                       value="@(Project.OriginalYarnLengthM == 0 ? "" : Project.OriginalYarnLengthM.ToString())"
+                                       @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) Project.OriginalYarnLengthM = v; else Project.OriginalYarnLengthM = 0; }" placeholder="m" />
+                                <span style="font-size:0.78rem; color:var(--text-light); flex-shrink:0;">m</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" style="font-size:0.78rem;">사이즈</label>
+                            <input class="form-control" @bind="Project.OriginalSize" placeholder="예: M, 95, Free" />
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" style="font-size:0.78rem;">소요량</label>
+                            <div style="display:flex; gap:6px;">
+                                <input class="form-control" type="number" step="1" style="flex:1; min-width:0;"
+                                       value="@(Project.OriginalYarnAmountG == 0 ? "" : Project.OriginalYarnAmountG.ToString())"
+                                       @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) Project.OriginalYarnAmountG = v; else Project.OriginalYarnAmountG = 0; }" placeholder="예: 400" />
+                                <select class="form-control" style="width:64px; flex-shrink:0;" @bind="Project.OriginalYarnAmountUnit">
+                                    <option value="g">g</option>
+                                    <option value="m">m</option>
+                                    <option value="볼">볼</option>
+                                </select>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label">카테고리</label>
-                        <select class="form-control" @bind="Project.Category">
-                            @foreach (var cat in Enum.GetValues<ProjectCategory>())
-                            {
-                                <option value="@cat">@cat</option>
-                            }
-                        </select>
+                        <label class="form-label" style="font-size:0.78rem;">기타 부자재</label>
+                        <input class="form-control" @bind="Project.OriginalOther" placeholder="예: 단추 7개, 20cm 지퍼" />
                     </div>
                 </div>
 
@@ -403,17 +494,19 @@
 
                 <!-- 사용 바늘 -->
                 <div class="form-label" style="margin-top:16px; margin-bottom:6px;">사용 바늘</div>
-                @if (Tools.Any())
-                {
-                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
-                        @foreach (var tool in Tools)
-                        {
-                            var isOn = Project.ToolIds.Contains(tool.Id);
-                            <button class="btn btn-sm @(isOn ? "btn-primary" : "btn-ghost")" @onclick="() => TogglePopupTool(tool.Id)">@tool.NeedleType @tool.SizeDisplay</button>
-                        }
-                    </div>
-                }
-                <input class="form-control" style="margin-bottom:16px;" @bind="Project.NeedleNote" placeholder="바늘 관련 메모 (예: 4mm 대바늘, 세트 없음)" />
+                <div style="display:flex; gap:8px; margin-bottom:8px;">
+                    <button type="button" class="btn btn-sm @(Project.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
+                            @onclick='() => Project.NeedleType = (Project.NeedleType == NeedleType.대바늘 ? (NeedleType?)null : NeedleType.대바늘)'>대바늘</button>
+                    <button type="button" class="btn btn-sm @(Project.NeedleType == NeedleType.코바늘 ? "btn-sage" : "btn-ghost")"
+                            @onclick='() => Project.NeedleType = (Project.NeedleType == NeedleType.코바늘 ? (NeedleType?)null : NeedleType.코바늘)'>코바늘</button>
+                </div>
+                <input class="form-control" style="margin-bottom:16px;" @bind="Project.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
+
+                <!-- 메모 -->
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label">메모</label>
+                    <textarea class="form-control" rows="2" @bind="Project.Memo" placeholder="기타 메모"></textarea>
+                </div>
 
             }
 
@@ -427,7 +520,7 @@
                 <div>
                     @if (OnMoveBack.HasDelegate)
                     {
-                        <button class="btn btn-ghost btn-sm" style="color:var(--text-light); display:inline-flex;align-items:center;gap:4px;"
+                        <button class="btn btn-ghost" style="color:var(--text-light); display:inline-flex;align-items:center;gap:4px;"
                                 @onclick="OnMoveBack" disabled="@_saving">
                             <img src="icons/arrow-u-up-left.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />
                             문어발로 복귀
@@ -439,21 +532,21 @@
                 <div style="display:flex; gap:8px; align-items:center;">
                     @if (ReadOnly)
                     {
-                        <button class="btn btn-ghost btn-sm" @onclick="ClosePopup">닫기</button>
-                        <button class="btn btn-primary btn-sm" @onclick='() => Nav.NavigateTo("finished")'>완성작 목록 →</button>
+                        <button class="btn btn-ghost" @onclick="ClosePopup">닫기</button>
+                        <button class="btn btn-primary" @onclick='() => Nav.NavigateTo("finished")'>완성작 목록 →</button>
                     }
                     else if (!_editing)
                     {
                         @if (OnDelete.HasDelegate)
                         {
-                            <button class="btn btn-danger btn-sm" @onclick="() => _showDeleteConfirm = true" disabled="@_saving">삭제</button>
+                            <button class="btn btn-danger" @onclick="() => _showDeleteConfirm = true" disabled="@_saving">삭제</button>
                         }
-                        <button class="btn btn-secondary btn-sm" @onclick="OpenEditing">수정</button>
+                        <button class="btn btn-secondary" @onclick="OpenEditing">수정</button>
                     }
                     else
                     {
-                        <button class="btn btn-ghost btn-sm" @onclick="CancelEditing" disabled="@_saving">취소</button>
-                        <button class="btn btn-primary btn-sm" @onclick="SaveAll" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
+                        <button class="btn btn-ghost" @onclick="CancelEditing" disabled="@_saving">취소</button>
+                        <button class="btn btn-primary" @onclick="SaveAll" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
                     }
                 </div>
             </div>
@@ -536,6 +629,11 @@
 @code {
     bool _saving = false;
     bool _editing = false;
+    static readonly string[] _popupColorOptions = new[]
+    {
+        "#f2b8c6", "#f7e4a0", "#b8e0c8", "#c8b8e8", "#b8d8f0",
+        "#ffb74d", "#a5d6a7", "#ef9a9a", "#90caf9", "#ce93d8"
+    };
     bool _showDeleteConfirm = false;
     ProjectPhoto? _lightboxPhoto = null;
     List<ProjectPhoto> _photoSnapshot = new(); // 수정 모드 진입 시 스냅샷
@@ -726,15 +824,6 @@
         if (!Guid.TryParse(val, out var yarnId)) return;
         if (!Project.YarnUsages.Any(u => u.YarnId == yarnId))
             Project.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = 1 });
-    }
-
-    void TogglePopupTool(Guid toolId)
-    {
-        if (Project == null) return;
-        if (Project.ToolIds.Contains(toolId))
-            Project.ToolIds.Remove(toolId);
-        else
-            Project.ToolIds.Add(toolId);
     }
 
     void SetPopupThumbnail(Guid photoId)

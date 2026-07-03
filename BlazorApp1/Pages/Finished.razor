@@ -148,7 +148,9 @@ else
 
     void OpenDetail(KnitProject proj)
     {
-        _selectedProject = proj;
+        // 취소 시 원본이 오염되지 않도록 JSON 딥카피해서 편집 (저장 버튼을 눌러야만 실제 반영됨)
+        var json = System.Text.Json.JsonSerializer.Serialize(proj);
+        _selectedProject = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
         _addingCompleted = false;
         _showDetail = true;
     }

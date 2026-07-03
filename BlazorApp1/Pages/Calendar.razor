@@ -569,7 +569,9 @@ else
         var proj = _allProjects.FirstOrDefault(p => p.Id == id);
         if (proj?.Status == ProjectStatus.완료)
         {
-            _finishedPopupProject = proj;
+            // 취소 시 원본이 오염되지 않도록 JSON 딥카피해서 편집
+            var json = System.Text.Json.JsonSerializer.Serialize(proj);
+            _finishedPopupProject = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
             _showFinishedPopup = true;
         }
         else

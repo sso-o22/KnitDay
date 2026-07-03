@@ -794,7 +794,9 @@ else
         // 1. 팝업 즉시 띄우기 (사용자에게 빠르게 반응)
         proj.Status = KnitLog.Models.ProjectStatus.완료;
         if (!proj.EndDate.HasValue) proj.EndDate = DateTime.Today;
-        _completedPreview = proj;
+        // 팝업에서 취소 시 원본이 오염되지 않도록 딥카피해서 넘김
+        var json = System.Text.Json.JsonSerializer.Serialize(proj);
+        _completedPreview = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
         _showCompletedPopup = true;
         StateHasChanged();
 
