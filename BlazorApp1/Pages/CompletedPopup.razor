@@ -61,6 +61,23 @@
                     </div>
                 }
 
+                <!-- 도안 -->
+                @if (!string.IsNullOrEmpty(Project.PatternName))
+                {
+                    <div style="margin-bottom:12px;">
+                        <div class="form-label" style="margin-bottom:4px; display:flex;align-items:center;gap:5px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />도안</div>
+                        <div style="font-size:0.92rem;">@Project.PatternName</div>
+                        @if (!string.IsNullOrEmpty(Project.PatternSource))
+                        {
+                            <div style="font-size:0.82rem; color:var(--text-mid);">출처: @Project.PatternSource</div>
+                        }
+                        @if (!string.IsNullOrEmpty(Project.PatternMemo))
+                        {
+                            <div style="font-size:0.82rem; color:var(--text-mid); margin-top:2px; white-space:pre-wrap;">@Project.PatternMemo</div>
+                        }
+                    </div>
+                }
+
                 <!-- 날짜/시간 바 -->
                 <div style="margin-bottom:14px; padding:12px; background:var(--ivory-dark); border-radius:var(--radius-sm);">
                     <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center;">
@@ -109,6 +126,33 @@
                     </div>
                 </div>
 
+                <!-- 완성 치수 -->
+                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                    <div class="form-label" style="margin-bottom:8px;"><img src="icons/ruler.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;display:inline;vertical-align:middle;margin-right:4px;" />완성 치수</div>
+                    @if (_measures.Any(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
+                    {
+                        <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem;">
+                            <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:var(--ivory-dark); border-bottom:0.5px solid var(--border);">
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전</div>
+                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후</div>
+                            </div>
+                            @foreach (var m in _measures.Where(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
+                            {
+                                <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
+                                    <div style="padding:6px 10px;">@m.Label</div>
+                                    <div style="padding:6px 10px; border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.Before) ? "-" : m.Before + "cm")</div>
+                                    <div style="padding:6px 10px; border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.After) ? "-" : m.After + "cm")</div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <p style="font-size:0.82rem; color:var(--text-light);">치수 정보가 없어요.</p>
+                    }
+                </div>
+
                 <!-- 도안 파일 삭제 (문어발 완료 시 읽기 모드에서 표시) -->
                 @if (Project.HasSavedPattern && ShowDeletePdfInViewMode && !ReadOnly)
                 {
@@ -120,23 +164,6 @@
                         <button class="dark-toggle-btn @(_deletePdf ? "on" : "")" @onclick="() => { _deletePdf = !_deletePdf; StateHasChanged(); }">
                             <div class="dark-toggle-thumb"></div>
                         </button>
-                    </div>
-                }
-
-                <!-- 도안 정보 -->
-                @if (!string.IsNullOrEmpty(Project.PatternName))
-                {
-                    <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                        <div class="form-label" style="margin-bottom:4px; display:flex;align-items:center;gap:5px;"><img src="icons/book-open-text.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />도안</div>
-                        <div style="font-size:0.92rem;">@Project.PatternName</div>
-                        @if (!string.IsNullOrEmpty(Project.PatternSource))
-                        {
-                            <div style="font-size:0.82rem; color:var(--text-mid);">출처: @Project.PatternSource</div>
-                        }
-                        @if (!string.IsNullOrEmpty(Project.PatternMemo))
-                        {
-                            <div style="font-size:0.82rem; color:var(--text-mid); margin-top:2px; white-space:pre-wrap;">@Project.PatternMemo</div>
-                        }
                     </div>
                 }
 
@@ -199,33 +226,6 @@
                     </div>
                 }
 
-                <!-- 완성 치수 -->
-                <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
-                    <div class="form-label" style="margin-bottom:8px;"><img src="icons/ruler.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;display:inline;vertical-align:middle;margin-right:4px;" />완성 치수</div>
-                    @if (_measures.Any(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
-                    {
-                        <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem;">
-                            <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:var(--ivory-dark); border-bottom:0.5px solid var(--border);">
-                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
-                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전</div>
-                                <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후</div>
-                            </div>
-                            @foreach (var m in _measures.Where(m => !string.IsNullOrEmpty(m.Before) || !string.IsNullOrEmpty(m.After)))
-                            {
-                                <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
-                                    <div style="padding:6px 10px;">@m.Label</div>
-                                    <div style="padding:6px 10px; border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.Before) ? "-" : m.Before + "cm")</div>
-                                    <div style="padding:6px 10px; border-left:0.5px solid var(--border);">@(string.IsNullOrEmpty(m.After) ? "-" : m.After + "cm")</div>
-                                </div>
-                            }
-                        </div>
-                    }
-                    else
-                    {
-                        <p style="font-size:0.82rem; color:var(--text-light);">치수 정보가 없어요.</p>
-                    }
-                </div>
-
                 <!-- 메모 -->
                 @if (!string.IsNullOrEmpty(Project.Memo))
                 {
@@ -239,9 +239,55 @@
             {
                 <!-- 수정 모드 -->
 
-                <!-- 작품명 -->
+                <!-- 사진 추가 (5칸 슬롯) -->
+                <div class="form-label" style="margin-bottom:6px;">사진</div>
+                <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; margin-bottom:6px;">
+                    @for (int ei = 0; ei < 5; ei++)
+                    {
+                        var eIdx = ei;
+                        @if (eIdx < PopupValidPhotos.Count)
+                        {
+                            var ep = PopupValidPhotos[eIdx];
+                            <div style="position:relative; aspect-ratio:1; overflow:hidden; border-radius:var(--radius-sm);">
+                                <img src="@(!string.IsNullOrEmpty(ep.StorageUrl) ? ep.StorageUrl : ep.Base64Data)"
+                                     style="width:100%; height:100%; object-fit:cover;"
+                                     class="@(eIdx==0 ? "photo-slot-thumb photo-slot-active" : "photo-slot-thumb")"
+                                     alt="사진" />
+                                @if (eIdx == 0)
+                                {
+                                    <span style="position:absolute;top:2px;left:2px;background:var(--theme-active);border-radius:3px;padding:1px 4px;font-size:0.55rem;color:var(--white);font-weight:700;line-height:1.4;">대표</span>
+                                }
+                                @if (eIdx > 0)
+                                {
+                                    <button style="position:absolute;top:2px;left:2px;background:rgba(0,0,0,0.45);border:none;border-radius:3px;padding:2px 4px;cursor:pointer;display:flex;align-items:center;"
+                                            @onclick="() => SetPopupThumbnail(ep.Id)">
+                                        <img src="icons/shooting-star.svg" class="icon-line" style="width:10px;height:10px;filter:invert(1);opacity:0.9;" />
+                                    </button>
+                                }
+                                <button class="btn btn-danger btn-sm"
+                                        style="position:absolute;top:2px;right:2px;padding:1px 4px;"
+                                        @onclick="() => RemovePhoto(ep)">
+                                    <img src="icons/x.svg" class="icon-line" style="width:9px;height:9px;" />
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <label style="aspect-ratio:1; border:1.5px dashed var(--border); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--ivory-dark); position:relative; overflow:hidden;">
+                                <img src="icons/plus.svg" class="icon-line" style="width:18px;height:18px;opacity:0.4;" />
+                                <InputFile OnChange="OnPhotoSelected"
+                                           accept="image/jpeg,image/png,image/heic,image/heif,image/webp"
+                                           multiple
+                                           style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
+                            </label>
+                        }
+                    }
+                </div>
+                <p style="font-size:0.72rem; color:var(--text-light); margin-bottom:16px;">슬롯 눌러 추가 · 별 눌러 대표사진 · 최대 5장 · 자동 압축</p>
+
+                <!-- 도안명 -->
                 <div class="form-group" style="margin-bottom:16px;">
-                    <label class="form-label">작품명</label>
+                    <label class="form-label">도안명</label>
                     <input class="form-control" @bind="Project.PatternName" placeholder="예: 마시멜로 후드 집업" />
                 </div>
 
@@ -257,38 +303,66 @@
                     <textarea class="form-control" rows="2" @bind="Project.PatternMemo" placeholder="사이즈, 수정 사항 등"></textarea>
                 </div>
 
-                <!-- 카테고리 + 색상 -->
-                <div class="form-group" style="margin-bottom:16px;">
-                    <label class="form-label">카테고리</label>
-                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
-                        @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
-                        {
-                            <button type="button"
-                                    class="btn btn-sm @(Project.Category == cat ? "btn-sage" : "btn-ghost")"
-                                    @onclick="() => Project.Category = (Project.Category == cat ? ProjectCategory.미분류 : cat)">
-                                @cat
-                            </button>
-                        }
+                <!-- 날짜 -->
+                <div class="form-label" style="margin-bottom:6px;">날짜</div>
+                <div class="date-row" style="margin-bottom:24px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">시작일</label>
+                        <input type="date" class="form-control"
+                               value="@Project.StartDate?.ToString("yyyy-MM-dd")"
+                               @onchange="e => Project.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                     </div>
-                    <label class="form-label" style="margin-top:8px; display:block;">캘린더 색상</label>
-                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                        @foreach (var hex in _popupColorOptions)
-                        {
-                            bool sel = Project.ColorCode == hex;
-                            <div @onclick="() => Project.ColorCode = hex"
-                                 style="width:28px; height:28px; border-radius:50%; background:@hex; cursor:pointer;
-                                        border:@(sel ? "3px solid #333" : "2px solid transparent");
-                                        box-shadow:@(sel ? "0 0 0 2px #fff inset" : "none");
-                                        transform:@(sel ? "scale(1.2)" : "scale(1)");">
-                            </div>
-                        }
-                        <input type="color"
-                               value="@(string.IsNullOrEmpty(Project.ColorCode) ? "#b8e0c8" : Project.ColorCode)"
-                               @onchange="e => Project.ColorCode = e.Value?.ToString() ?? string.Empty"
-                               style="width:28px; height:28px; border-radius:50%; border:2px solid var(--border); padding:0; cursor:pointer; overflow:hidden;"
-                               title="직접 색상 선택" />
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">완성일</label>
+                        <input type="date" class="form-control"
+                               value="@Project.EndDate?.ToString("yyyy-MM-dd")"
+                               @onchange="e => Project.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
                     </div>
                 </div>
+
+                <!-- 완성 치수 -->
+                <div class="form-label" style="margin-bottom:6px;">완성 치수</div>
+                <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem; margin-bottom:6px;">
+                    <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:var(--ivory-dark); border-bottom:0.5px solid var(--border);">
+                        <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
+                        <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전 (cm)</div>
+                        <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후 (cm)</div>
+                    </div>
+                    @foreach (var m in _measures)
+                    {
+                        <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
+                            <div style="padding:4px 6px; display:flex; align-items:center; gap:4px;">
+                                @if (m.IsCustom)
+                                {
+                                    <input class="form-control" style="border:none; padding:3px 6px; font-size:0.82rem; width:100%;" @bind="m.Label" placeholder="항목명" />
+                                    <button class="btn btn-danger btn-sm" style="padding:1px 5px; font-size:0.7rem;" @onclick="() => _measures.Remove(m)">✕</button>
+                                }
+                                else { <span style="padding:3px 4px;">@m.Label</span> }
+                            </div>
+                            <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
+                                <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;" @bind="m.Before" placeholder="-" />
+                            </div>
+                            <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
+                                <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;" @bind="m.After" placeholder="-" />
+                            </div>
+                        </div>
+                    }
+                </div>
+                <button class="btn btn-ghost btn-sm" style="color:var(--text-dark); margin-bottom:16px;" @onclick="() => _measures.Add(new MeasureItem { IsCustom = true })">+ 항목 추가</button>
+
+                <!-- 도안 파일 삭제 (수정 모드, ShowDeletePdfInViewMode가 아닐 때) -->
+                @if (Project.HasSavedPattern && !ShowDeletePdfInViewMode)
+                {
+                    <div style="margin-bottom:16px; padding:10px 14px; background:var(--theme-pale); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:10px;">
+                        <div>
+                            <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:2px;">도안 파일 삭제</div>
+                            <div style="font-size:0.78rem; color:var(--text-mid);">완성 후 도안이 필요 없다면 기기 공간을 확보할 수 있어요</div>
+                        </div>
+                        <button class="dark-toggle-btn @(_deletePdf ? "on" : "")" @onclick="() => { _deletePdf = !_deletePdf; StateHasChanged(); }">
+                            <div class="dark-toggle-thumb"></div>
+                        </button>
+                    </div>
+                }
 
                 <!-- 도안 정보 -->
                 <div class="form-label" style="margin-top:16px; margin-bottom:8px;">도안 정보</div>
@@ -347,113 +421,6 @@
                     </div>
                 </div>
 
-                <!-- 사진 추가 (5칸 슬롯) -->
-                <div class="form-label" style="margin-bottom:6px;">사진</div>
-                <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; margin-bottom:6px;">
-                    @for (int ei = 0; ei < 5; ei++)
-                    {
-                        var eIdx = ei;
-                        @if (eIdx < PopupValidPhotos.Count)
-                        {
-                            var ep = PopupValidPhotos[eIdx];
-                            <div style="position:relative; aspect-ratio:1; overflow:hidden; border-radius:var(--radius-sm);">
-                                <img src="@(!string.IsNullOrEmpty(ep.StorageUrl) ? ep.StorageUrl : ep.Base64Data)"
-                                     style="width:100%; height:100%; object-fit:cover;"
-                                     class="@(eIdx==0 ? "photo-slot-thumb photo-slot-active" : "photo-slot-thumb")"
-                                     alt="사진" />
-                                @if (eIdx == 0)
-                                {
-                                    <span style="position:absolute;top:2px;left:2px;background:var(--theme-active);border-radius:3px;padding:1px 4px;font-size:0.55rem;color:var(--white);font-weight:700;line-height:1.4;">대표</span>
-                                }
-                                @if (eIdx > 0)
-                                {
-                                    <button style="position:absolute;top:2px;left:2px;background:rgba(0,0,0,0.45);border:none;border-radius:3px;padding:2px 4px;cursor:pointer;display:flex;align-items:center;"
-                                            @onclick="() => SetPopupThumbnail(ep.Id)">
-                                        <img src="icons/shooting-star.svg" class="icon-line" style="width:10px;height:10px;filter:invert(1);opacity:0.9;" />
-                                    </button>
-                                }
-                                <button class="btn btn-danger btn-sm"
-                                        style="position:absolute;top:2px;right:2px;padding:1px 4px;"
-                                        @onclick="() => RemovePhoto(ep)">
-                                    <img src="icons/x.svg" class="icon-line" style="width:9px;height:9px;" />
-                                </button>
-                            </div>
-                        }
-                        else
-                        {
-                            <label style="aspect-ratio:1; border:1.5px dashed var(--border); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; cursor:pointer; background:var(--ivory-dark); position:relative; overflow:hidden;">
-                                <img src="icons/plus.svg" class="icon-line" style="width:18px;height:18px;opacity:0.4;" />
-                                <InputFile OnChange="OnPhotoSelected"
-                                           accept="image/jpeg,image/png,image/heic,image/heif,image/webp"
-                                           multiple
-                                           style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
-                            </label>
-                        }
-                    }
-                </div>
-                <p style="font-size:0.72rem; color:var(--text-light); margin-bottom:16px;">슬롯 눌러 추가 · 별 눌러 대표사진 · 최대 5장 · 자동 압축</p>
-
-                <!-- 날짜 -->
-                <div class="form-label" style="margin-bottom:6px;">날짜</div>
-                <div class="date-row" style="margin-bottom:24px;">
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label" style="font-size:0.78rem;">시작일</label>
-                        <input type="date" class="form-control"
-                               value="@Project.StartDate?.ToString("yyyy-MM-dd")"
-                               @onchange="e => Project.StartDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
-                    </div>
-                    <div class="form-group" style="margin-bottom:0;">
-                        <label class="form-label" style="font-size:0.78rem;">완성일</label>
-                        <input type="date" class="form-control"
-                               value="@Project.EndDate?.ToString("yyyy-MM-dd")"
-                               @onchange="e => Project.EndDate = string.IsNullOrEmpty(e.Value?.ToString()) ? null : DateTime.Parse(e.Value.ToString()!)" />
-                    </div>
-                </div>
-
-                <!-- 도안 파일 삭제 (수정 모드, ShowDeletePdfInViewMode가 아닐 때) -->
-                @if (Project.HasSavedPattern && !ShowDeletePdfInViewMode)
-                {
-                    <div style="margin-bottom:16px; padding:10px 14px; background:var(--theme-pale); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:space-between; gap:10px;">
-                        <div>
-                            <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:2px;">도안 파일 삭제</div>
-                            <div style="font-size:0.78rem; color:var(--text-mid);">완성 후 도안이 필요 없다면 기기 공간을 확보할 수 있어요</div>
-                        </div>
-                        <button class="dark-toggle-btn @(_deletePdf ? "on" : "")" @onclick="() => { _deletePdf = !_deletePdf; StateHasChanged(); }">
-                            <div class="dark-toggle-thumb"></div>
-                        </button>
-                    </div>
-                }
-
-                <!-- 완성 치수 -->
-                <div class="form-label" style="margin-bottom:6px;">완성 치수</div>
-                <div style="border:0.5px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; font-size:0.82rem; margin-bottom:6px;">
-                    <div style="display:grid; grid-template-columns:120px 1fr 1fr; background:var(--ivory-dark); border-bottom:0.5px solid var(--border);">
-                        <div style="padding:6px 10px; color:var(--text-mid); font-weight:500;">항목</div>
-                        <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 전 (cm)</div>
-                        <div style="padding:6px 10px; color:var(--text-mid); font-weight:500; border-left:0.5px solid var(--border);">세탁 후 (cm)</div>
-                    </div>
-                    @foreach (var m in _measures)
-                    {
-                        <div style="display:grid; grid-template-columns:120px 1fr 1fr; border-top:0.5px solid var(--border);">
-                            <div style="padding:4px 6px; display:flex; align-items:center; gap:4px;">
-                                @if (m.IsCustom)
-                                {
-                                    <input class="form-control" style="border:none; padding:3px 6px; font-size:0.82rem; width:100%;" @bind="m.Label" placeholder="항목명" />
-                                    <button class="btn btn-danger btn-sm" style="padding:1px 5px; font-size:0.7rem;" @onclick="() => _measures.Remove(m)">✕</button>
-                                }
-                                else { <span style="padding:3px 4px;">@m.Label</span> }
-                            </div>
-                            <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
-                                <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;" @bind="m.Before" placeholder="-" />
-                            </div>
-                            <div style="border-left:0.5px solid var(--border); padding:2px 6px;">
-                                <input class="form-control" style="border:none; padding:4px 6px; font-size:0.82rem;" @bind="m.After" placeholder="-" />
-                            </div>
-                        </div>
-                    }
-                </div>
-                <button class="btn btn-ghost btn-sm" style="color:var(--text-dark); margin-bottom:16px;" @onclick="() => _measures.Add(new MeasureItem { IsCustom = true })">+ 항목 추가</button>
-
                 <!-- 사용 실 -->
                 <div class="form-label" style="margin-bottom:6px;">사용 실</div>
                 @if (Yarns.Any())
@@ -501,6 +468,72 @@
                             @onclick='() => Project.NeedleType = (Project.NeedleType == NeedleType.코바늘 ? (NeedleType?)null : NeedleType.코바늘)'>코바늘</button>
                 </div>
                 <input class="form-control" style="margin-bottom:16px;" @bind="Project.NeedleNote" placeholder="예: 4mm 대바늘 80cm줄, 3.5mm 코바늘" />
+
+                <!-- 스와치 -->
+                <div class="form-label" style="margin-top:16px; margin-bottom:6px;">스와치</div>
+                @if (!AllSwatches.Any())
+                {
+                    <p style="font-size:0.82rem; color:var(--text-light); margin-bottom:16px;">스와치 페이지에서 먼저 스와치를 만들어주세요.</p>
+                }
+                else
+                {
+                    <select class="form-control" style="margin-bottom:8px;" @onchange="OnPopupSwatchSelectChange">
+                        <option value="">+ 스와치 연결</option>
+                        @foreach (var s in AllSwatches.Where(s => s.ProjectId == null || s.ProjectId == Guid.Empty || s.ProjectId == Project.Id))
+                        {
+                            var isLinked = s.ProjectId == Project.Id;
+                            <option value="@s.Id" disabled="@isLinked">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</option>
+                        }
+                    </select>
+                    @if (AllSwatches.Any(s => s.ProjectId == Project.Id))
+                    {
+                        <div style="margin-bottom:16px;">
+                            @foreach (var s in AllSwatches.Where(s => s.ProjectId == Project.Id))
+                            {
+                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:8px 12px;
+                                            border-radius:var(--radius-sm); background:var(--ivory-mid); border:1px solid var(--border);">
+                                    <div style="flex:1; min-width:0; font-size:0.88rem; font-weight:600; color:var(--text-dark);">
+                                        @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
+                                    </div>
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 8px; flex-shrink:0;" @onclick="() => UnlinkPopupSwatch(s)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+
+                <!-- 카테고리 + 색상 -->
+                <div class="form-group" style="margin-bottom:16px;">
+                    <label class="form-label">카테고리</label>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
+                        @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
+                        {
+                            <button type="button"
+                                    class="btn btn-sm @(Project.Category == cat ? "btn-sage" : "btn-ghost")"
+                                    @onclick="() => Project.Category = (Project.Category == cat ? ProjectCategory.미분류 : cat)">
+                                @cat
+                            </button>
+                        }
+                    </div>
+                    <label class="form-label" style="margin-top:8px; display:block;">캘린더 색상</label>
+                    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                        @foreach (var hex in _popupColorOptions)
+                        {
+                            bool sel = Project.ColorCode == hex;
+                            <div @onclick="() => Project.ColorCode = hex"
+                                 style="width:28px; height:28px; border-radius:50%; background:@hex; cursor:pointer;
+                                        border:@(sel ? "3px solid #333" : "2px solid transparent");
+                                        box-shadow:@(sel ? "0 0 0 2px #fff inset" : "none");
+                                        transform:@(sel ? "scale(1.2)" : "scale(1)");">
+                            </div>
+                        }
+                        <input type="color"
+                               value="@(string.IsNullOrEmpty(Project.ColorCode) ? "#b8e0c8" : Project.ColorCode)"
+                               @onchange="e => Project.ColorCode = e.Value?.ToString() ?? string.Empty"
+                               style="width:28px; height:28px; border-radius:50%; border:2px solid var(--border); padding:0; cursor:pointer; overflow:hidden;"
+                               title="직접 색상 선택" />
+                    </div>
+                </div>
 
                 <!-- 메모 -->
                 <div class="form-group" style="margin-bottom:0;">
@@ -647,6 +680,7 @@
     [Parameter] public KnitProject? Project { get; set; }
     [Parameter] public List<Yarn> Yarns { get; set; } = new();
     [Parameter] public List<KnitTool> Tools { get; set; } = new();
+    [Parameter] public List<Swatch> AllSwatches { get; set; } = new();
     [Parameter] public bool ReadOnly { get; set; } = false;
     [Parameter] public bool ShowDeletePdfInViewMode { get; set; } = false; // 읽기 모드에서도 도안 삭제 토글 표시 (문어발 완료 시)
     [Parameter] public bool StartInEditMode { get; set; } = false; // 완성작 신규 등록처럼, 처음부터 수정 모드로 열어야 할 때
@@ -768,7 +802,7 @@
         if (Project == null) return;
         if (string.IsNullOrWhiteSpace(Project.PatternName))
         {
-            await JS.InvokeVoidAsync("showToast", "작품명을 입력해주세요.", "error");
+            await JS.InvokeVoidAsync("showToast", "도안명을 입력해주세요.", "error");
             return;
         }
         _saving = true; StateHasChanged();

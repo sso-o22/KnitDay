@@ -93,12 +93,13 @@ else
 @if (_showModal && _editingProject != null)
 {
     <div class="modal-backdrop">
-        <div class="modal" @onclick:stopPropagation="true">
+        <div class="modal modal-fixed" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingProject.Id == Guid.Empty ? "위시 추가" : "위시 수정")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
             </div>
 
+            <div class="modal-body">
 
             <div class="form-row">
                 <div class="form-group">
@@ -170,6 +171,8 @@ else
                 <label class="form-label">메모</label>
                 <textarea class="form-control" rows="3" @bind="_editingProject.WishMemo"
                           placeholder="뜨고 싶은 이유, 사용할 실 아이디어 등 자유롭게!"></textarea>
+            </div>
+
             </div>
 
             <div class="modal-footer">
