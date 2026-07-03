@@ -415,7 +415,9 @@ else
 
     void OpenEditModal(KnitTool tool)
     {
-        _editingTool = tool;
+        // 취소 시 원본이 오염되지 않도록 JSON 딥카피해서 편집 (저장 버튼을 눌러야만 실제 반영됨)
+        var json = System.Text.Json.JsonSerializer.Serialize(tool);
+        _editingTool = System.Text.Json.JsonSerializer.Deserialize<KnitTool>(json)!;
         _newSetSize = 0;
         _showModal = true;
         _scrollModalTop = true;

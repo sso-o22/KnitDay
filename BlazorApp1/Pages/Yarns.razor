@@ -618,7 +618,9 @@ else
     async Task OpenAddModal() { _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 }; _editingProjectAmounts = new(); _showModal = true; _scrollModalTop = true; await JS.InvokeVoidAsync("lockBodyScroll"); }
     async Task OpenEditModal(Yarn yarn)
     {
-        _editingYarn = yarn;
+        // 취소 시 원본이 오염되지 않도록 JSON 딥카피해서 편집 (저장 버튼을 눌러야만 실제 반영됨)
+        var json = System.Text.Json.JsonSerializer.Serialize(yarn);
+        _editingYarn = System.Text.Json.JsonSerializer.Deserialize<Yarn>(json)!;
         _editingProjectAmounts = GetConnectedProjects(yarn.Id)
             .ToDictionary(p => p.Id, p => p.YarnUsages.FirstOrDefault(u => u.YarnId == yarn.Id)?.BallsUsed ?? 1);
         _showModal = true;

@@ -379,7 +379,14 @@ else
         if (_scrollModalTop) { _scrollModalTop = false; await JS.InvokeVoidAsync("scrollModalToTop"); }
     }
 
-    void OpenEditModal(KnitProject proj) { _editingProject = proj; _showModal = true; _scrollModalTop = true; _ = JS.InvokeVoidAsync("lockBodyScroll"); }
+    void OpenEditModal(KnitProject proj)
+    {
+        // 취소 시 원본이 오염되지 않도록 JSON 딥카피해서 편집 (저장 버튼을 눌러야만 실제 반영됨)
+        var json = System.Text.Json.JsonSerializer.Serialize(proj);
+        _editingProject = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
+        _showModal = true; _scrollModalTop = true;
+        _ = JS.InvokeVoidAsync("lockBodyScroll");
+    }
     void CloseModal() { _showModal = false; _editingProject = null; _ = JS.InvokeVoidAsync("unlockBodyScroll"); }
 
     async Task SaveProject()
