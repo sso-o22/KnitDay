@@ -404,7 +404,6 @@ else
                         bool editIsCone       = _editingYarn.YarnType == YarnType.콘사;
                         bool editHasConeWeight = editIsCone && _editingYarn.WeightGram > 0;
                         string editUnitLabel   = editHasConeWeight ? "g" : editIsCone ? "콘" : "볼";
-                        decimal editTotalQty   = editHasConeWeight ? _editingYarn.WeightGram * _editingYarn.Quantity : _editingYarn.Quantity;
                     }
                     @foreach (var pid in _editingProjectAmounts.Keys.ToList())
                     {
@@ -413,13 +412,20 @@ else
                         {
                             decimal rawAmt     = _editingProjectAmounts[pid];
                             decimal displayAmt = editHasConeWeight ? rawAmt * _editingYarn.WeightGram : rawAmt;
+                            // 이 프로젝트 자신의 사용량은 빼고, 다른 프로젝트에서 이미 쓴 양만 반영해 잔여량 계산
+                            decimal editUsedElsewhere = _projects.Where(p => p.Id != pid)
+                                                                  .SelectMany(p => p.YarnUsages)
+                                                                  .Where(u => u.YarnId == _editingYarn.Id)
+                                                                  .Sum(u => u.BallsUsed);
+                            decimal editRemainRaw = _editingYarn.Quantity - editUsedElsewhere;
+                            decimal editRemainQty = editHasConeWeight ? editRemainRaw * _editingYarn.WeightGram : editRemainRaw;
                             <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;padding:6px 10px;border-radius:9px;background:#f8f8f8;border:1px solid var(--border);">
                                 <span style="flex:1;font-size:0.88rem;">@(string.IsNullOrEmpty(ep.PatternName) ? "제목 없음" : ep.PatternName)</span>
                                 <span style="font-size:0.72rem;color:var(--text-light);">@ep.Status</span>
                                 <input class="form-control" type="number" min="0" style="width:70px;flex-shrink:0;"
                                        value="@displayAmt.ToString("G29")"
                                        @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) _editingProjectAmounts[pid] = editHasConeWeight ? n / _editingYarn.WeightGram : n; }" />
-                                <span style="font-size:0.78rem;color:var(--text-light);flex-shrink:0;">@editUnitLabel@(editTotalQty > 0 ? $" / 전체 {editTotalQty.ToString("G29")}{editUnitLabel}" : "")</span>
+                                <span style="font-size:0.78rem;color:var(--text-light);flex-shrink:0;">@editUnitLabel (잔여 @(editRemainQty.ToString("G29"))@editUnitLabel)</span>
                                 <button class="btn btn-danger btn-sm" @onclick="() => _editingProjectAmounts.Remove(pid)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                             </div>
                         }

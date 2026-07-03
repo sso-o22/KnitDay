@@ -310,7 +310,13 @@ else
                         bool hasConeWeight = isCone && yarn?.WeightGram > 0;
                         string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
                         decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
-                        decimal totalQty = yarn == null ? 0 : (hasConeWeight ? yarn.WeightGram * yarn.Quantity : yarn.Quantity);
+                        // 다른 프로젝트에서 이미 사용 중인 양을 빼고, 이 프로젝트에서 더 쓸 수 있는 잔여량 계산
+                        decimal usedElsewhere = yarn == null ? 0 : _projects.Where(p => p.Id != _editingProject!.Id)
+                                                                             .SelectMany(p => p.YarnUsages)
+                                                                             .Where(u => u.YarnId == yarn.Id)
+                                                                             .Sum(u => u.BallsUsed);
+                        decimal remainRaw = yarn == null ? 0 : yarn.Quantity - usedElsewhere;
+                        decimal remainQty = yarn == null ? 0 : (hasConeWeight ? remainRaw * yarn.WeightGram : remainRaw);
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
                                     border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
                             @if (yarn != null)
@@ -321,7 +327,7 @@ else
                             <input class="form-control" type="number" min="1" style="width:80px;"
                                    value="@displayVal.ToString("G29")"
                                    @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) usage.BallsUsed = hasConeWeight ? n / yarn!.WeightGram : n; }" />
-                            <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel@(totalQty > 0 ? $" / 전체 {totalQty.ToString("G29")}{unitLabel}" : "")</span>
+                            <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel (잔여 @(remainQty.ToString("G29"))@unitLabel)</span>
                             <button class="btn btn-danger btn-sm" @onclick="() => _editingProject.YarnUsages.Remove(usage)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                         </div>
                     }
