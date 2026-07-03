@@ -13,6 +13,7 @@
         <h1 class="page-title"><img src="icons/t-shirt.svg" class="icon-line" style="width:36px;height:36px;" />완성작</h1>
         <p class="page-subtitle">지금까지 완성한 작품들</p>
     </div>
+    <button class="btn btn-primary" @onclick="OpenAddCompleted" style="display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />완성작 등록</button>
 </div>
 
 @if (_loading)
@@ -23,7 +24,8 @@ else if (_projects.Count == 0)
 {
     <div class="empty-state">
         <div class="empty-icon"><img src="icons/t-shirt.svg" class="icon-line" style="width:48px;height:48px;" /></div>
-        <p>아직 완성작이 없어요.<br/>뜨케줄에서 작품을 완성하면 여기로 이동해요!</p>
+        <p>아직 완성작이 없어요.<br/>뜨케줄에서 작품을 완성하면 여기로 이동하거나, 직접 등록할 수 있어요!</p>
+        <button class="btn btn-primary" @onclick="OpenAddCompleted" style="margin-top:12px; display:inline-flex;align-items:center;gap:5px;"><img src="icons/plus.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />완성작 등록</button>
     </div>
 }
 else
@@ -82,6 +84,7 @@ else
 <!-- 상세 팝업 (CompletedPopup 컴포넌트) -->
 <CompletedPopup Show="_showDetail" Project="_selectedProject"
     Yarns="_allYarns" Tools="_allTools"
+    StartInEditMode="_addingCompleted"
     OnClose="CloseDetail" OnSaved="OnPopupSaved"
     OnDelete="DeleteFromPopup" OnMoveBack="MoveBackFromPopup"
     OnDeletePdf="DeletePdfFromFinished" />
@@ -105,6 +108,7 @@ else
         _           => FilteredProjects.OrderByDescending(p => p.EndDate),
     };
     KnitProject? _selectedProject;
+    bool _addingCompleted = false;
     List<Yarn> _allYarns = new();
     List<KnitTool> _allTools = new();
 
@@ -140,6 +144,22 @@ else
     void OpenDetail(KnitProject proj)
     {
         _selectedProject = proj;
+        _addingCompleted = false;
+        _showDetail = true;
+    }
+
+    void OpenAddCompleted()
+    {
+        // 프로젝트 과정 없이, 완성작만 바로 등록 (CompletedPopup을 새 항목 등록용으로 재사용)
+        // ID를 미리 발급해둬야 편집 중 업로드하는 사진이 올바른 폴더로 저장됨
+        _selectedProject = new KnitProject
+        {
+            Id = Guid.NewGuid(),
+            Status = ProjectStatus.완료,
+            StartDate = DateTime.Today,
+            EndDate = DateTime.Today,
+        };
+        _addingCompleted = true;
         _showDetail = true;
     }
 
@@ -147,6 +167,7 @@ else
     {
         _showDetail = false;
         _selectedProject = null;
+        _addingCompleted = false;
     }
 
     async Task OnPopupSaved()
@@ -155,6 +176,7 @@ else
         // 선택된 프로젝트 갱신
         if (_selectedProject != null)
             _selectedProject = _projects.FirstOrDefault(p => p.Id == _selectedProject.Id) ?? _selectedProject;
+        _addingCompleted = false; // 저장 후엔 StartInEditMode를 계속 유지할 필요 없음 (재렌더 시 다시 수정모드로 강제되는 것 방지)
     }
 
     async Task MoveBackFromPopup()

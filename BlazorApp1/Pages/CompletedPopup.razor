@@ -482,6 +482,7 @@
     [Parameter] public List<KnitTool> Tools { get; set; } = new();
     [Parameter] public bool ReadOnly { get; set; } = false;
     [Parameter] public bool ShowDeletePdfInViewMode { get; set; } = false; // 읽기 모드에서도 도안 삭제 토글 표시 (문어발 완료 시)
+    [Parameter] public bool StartInEditMode { get; set; } = false; // 완성작 신규 등록처럼, 처음부터 수정 모드로 열어야 할 때
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
     [Parameter] public EventCallback OnDelete { get; set; }
@@ -504,7 +505,10 @@
     {
         if (Show && Project != null)
         {
-            _editing = false;
+            // 완성작 신규 등록처럼 볼 내용이 없는 경우, 부모가 StartInEditMode로 바로 수정 모드 지정
+            _editing = StartInEditMode;
+            if (_editing)
+                _photoSnapshot = Project.Photos.Select(p => p).ToList();
             _deletePdf = false;
             LoadMeasures();
             await JS.InvokeVoidAsync("eval", "document.body.style.overflow='hidden'");
@@ -596,6 +600,8 @@
     {
         if (Project == null) return;
         _saving = true; StateHasChanged();
+
+        if (Project.Id == Guid.Empty) Project.Id = Guid.NewGuid();
 
         // 스냅샷 대비 삭제된 사진 클라우드에서 실제 삭제
         var removed = _photoSnapshot.Except(Project.Photos).ToList();
