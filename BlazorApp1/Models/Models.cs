@@ -166,7 +166,11 @@ namespace KnitLog.Models
         public string OriginalNeedle  { get; set; } = "";   // 권장 바늘 (예: 4mm 대바늘)
         public string OriginalGauge   { get; set; } = "";   // 권장 게이지 (예: 22코 × 30단)
         public string OriginalYarn    { get; set; } = "";   // 권장 실 정보 (예: 솜솜뜨개 러스크 2합)
-        public string OriginalYarnAmount { get; set; } = ""; // 소요량 (예: 400g / 3볼)
+        public double OriginalYarnWeightG { get; set; }     // 원작실 g당 (소요량 계산기 자동입력용)
+        public double OriginalYarnLengthM { get; set; }     // 원작실 m당 (소요량 계산기 자동입력용)
+        public string OriginalSize    { get; set; } = "";   // 원작 사이즈 (예: M, 95, Free)
+        public string OriginalYarnAmount { get; set; } = ""; // 소요량 (구버전 자유입력, 하위호환용)
+        public double OriginalYarnAmountG { get; set; }     // 소요량(g) — 구조화된 숫자 (소요량 계산기 자동입력용)
         public string OriginalOther   { get; set; } = "";   // 기타 부자재 (단추, 지퍼 등)
         public string ColorCode { get; set; } = "";   // 캘린더 표시 색상 (hex, 예: #f2b8c6)
 

@@ -52,13 +52,20 @@ else
                     <span class="badge badge-wish">위시</span>
                 </div>
 
-                @if (!string.IsNullOrEmpty(proj.OriginalNeedle) || !string.IsNullOrEmpty(proj.OriginalGauge) || !string.IsNullOrEmpty(proj.OriginalYarn) || !string.IsNullOrEmpty(proj.OriginalYarnAmount) || !string.IsNullOrEmpty(proj.OriginalOther))
+                @if (!string.IsNullOrEmpty(proj.OriginalNeedle) || !string.IsNullOrEmpty(proj.OriginalGauge) || !string.IsNullOrEmpty(proj.OriginalYarn) || !string.IsNullOrEmpty(proj.OriginalYarnAmount) || proj.OriginalYarnAmountG > 0 || !string.IsNullOrEmpty(proj.OriginalSize) || !string.IsNullOrEmpty(proj.OriginalOther))
                 {
                     <div style="font-size:0.78rem; color:var(--text-mid); margin-bottom:8px; display:flex; flex-direction:column; gap:2px;">
                         @if (!string.IsNullOrEmpty(proj.OriginalNeedle)) { <span>바늘: @proj.OriginalNeedle</span> }
                         @if (!string.IsNullOrEmpty(proj.OriginalGauge))  { <span>게이지: @proj.OriginalGauge</span> }
-                        @if (!string.IsNullOrEmpty(proj.OriginalYarn))   { <span>실: @proj.OriginalYarn</span> }
-                        @if (!string.IsNullOrEmpty(proj.OriginalYarnAmount)) { <span>소요량: @proj.OriginalYarnAmount</span> }
+                        @if (!string.IsNullOrEmpty(proj.OriginalYarn))   { <span>실: @proj.OriginalYarn@(proj.OriginalYarnWeightG > 0 && proj.OriginalYarnLengthM > 0 ? $" ({proj.OriginalYarnWeightG.ToString("0")}g/{proj.OriginalYarnLengthM.ToString("0")}m)" : "")</span> }
+                        @if (proj.OriginalYarnAmountG > 0 || !string.IsNullOrEmpty(proj.OriginalSize))
+                        {
+                            <span>소요량: @(!string.IsNullOrEmpty(proj.OriginalSize) ? proj.OriginalSize + " " : "")@(proj.OriginalYarnAmountG > 0 ? $"{proj.OriginalYarnAmountG.ToString("0")}g" : "")</span>
+                        }
+                        else if (!string.IsNullOrEmpty(proj.OriginalYarnAmount))
+                        {
+                            <span>소요량: @proj.OriginalYarnAmount</span>
+                        }
                         @if (!string.IsNullOrEmpty(proj.OriginalOther))  { <span>부자재: @proj.OriginalOther</span> }
                     </div>
                 }
@@ -73,6 +80,7 @@ else
 
                 <div class="flex gap-1" style="flex-wrap:wrap;">
                     <button class="btn btn-sm btn-primary" @onclick="() => StartProject(proj.Id)">시작하기</button>
+                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenYarnCalc(proj)" style="display:inline-flex;align-items:center;" title="소요량 계산기"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
                     <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)" style="display:inline-flex;align-items:center;"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
                     <button class="btn btn-danger btn-sm" @onclick='() => Confirm("위시리스트에서 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))' style="display:inline-flex;align-items:center;"><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
                 </div>
@@ -121,8 +129,29 @@ else
                         <input class="form-control" @bind="_editingProject.OriginalYarn" placeholder="예: 솜솜뜨개 러스크 2합" />
                     </div>
                     <div class="form-group">
-                        <label class="form-label" style="font-size:0.78rem;">소요량</label>
-                        <input class="form-control" @bind="_editingProject.OriginalYarnAmount" placeholder="예: M사이즈 400g" />
+                        <label class="form-label" style="font-size:0.78rem;">원작실 규격 (소요량 계산기용)</label>
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <input class="form-control" type="number" step="1" style="flex:1; min-width:0;"
+                                   value="@(_editingProject.OriginalYarnWeightG == 0 ? "" : _editingProject.OriginalYarnWeightG.ToString())"
+                                   @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _editingProject.OriginalYarnWeightG = v; else _editingProject.OriginalYarnWeightG = 0; }" placeholder="g" />
+                            <span style="font-size:0.78rem; color:var(--text-light); flex-shrink:0;">g /</span>
+                            <input class="form-control" type="number" step="1" style="flex:1; min-width:0;"
+                                   value="@(_editingProject.OriginalYarnLengthM == 0 ? "" : _editingProject.OriginalYarnLengthM.ToString())"
+                                   @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _editingProject.OriginalYarnLengthM = v; else _editingProject.OriginalYarnLengthM = 0; }" placeholder="m" />
+                            <span style="font-size:0.78rem; color:var(--text-light); flex-shrink:0;">m</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label" style="font-size:0.78rem;">사이즈</label>
+                        <input class="form-control" @bind="_editingProject.OriginalSize" placeholder="예: M, 95, Free" />
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" style="font-size:0.78rem;">소요량 (g)</label>
+                        <input class="form-control" type="number" step="1"
+                               value="@(_editingProject.OriginalYarnAmountG == 0 ? "" : _editingProject.OriginalYarnAmountG.ToString())"
+                               @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _editingProject.OriginalYarnAmountG = v; else _editingProject.OriginalYarnAmountG = 0; }" placeholder="예: 400" />
                     </div>
                 </div>
                 <div class="form-group" style="margin-bottom:0;">
@@ -139,6 +168,111 @@ else
             <div class="modal-footer">
                 <button class="btn btn-ghost" @onclick="CloseModal">취소</button>
                 <button class="btn btn-primary" @onclick="SaveProject" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- 실 소요량 계산기 모달 -->
+@if (_showYarnCalc && _ycProject != null)
+{
+    <div class="modal-backdrop" @onclick="CloseYarnCalc">
+        <div class="modal" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h2 class="modal-title">실 소요량 계산기</h2>
+                <button class="btn btn-ghost btn-sm" @onclick="CloseYarnCalc">✕</button>
+            </div>
+            <p style="font-size:0.78rem; color:var(--text-mid); margin-bottom:14px;">원작실 기준 소요량을, 내가 쓰려는 실의 규격에 맞춰 몇 g(또는 몇 볼/콘)이 필요한지 계산해요.</p>
+
+            <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:14px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:8px;">① 원작실 정보 (참고용)</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">원작 g당</label>
+                        <input class="form-control" type="number" step="1"
+                               value="@(_ycOrigWeight == 0 ? "" : _ycOrigWeight.ToString())"
+                               @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _ycOrigWeight = v; else _ycOrigWeight = 0; }" placeholder="예: 100" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">원작 m당</label>
+                        <input class="form-control" type="number" step="1"
+                               value="@(_ycOrigLength == 0 ? "" : _ycOrigLength.ToString())"
+                               @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _ycOrigLength = v; else _ycOrigLength = 0; }" placeholder="예: 220" />
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top:10px; margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.78rem;">원작 총 소요g (도안에 g으로 적혀있을 때)</label>
+                    <input class="form-control" type="number" step="1"
+                           value="@(_ycOrigTotalG == 0 ? "" : _ycOrigTotalG.ToString())"
+                           @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _ycOrigTotalG = v; else _ycOrigTotalG = 0; }" placeholder="예: 650" />
+                </div>
+                @if (_ycOrigWeight > 0 && _ycOrigLength > 0 && _ycOrigTotalG > 0)
+                {
+                    <div style="margin-top:10px; font-size:0.8rem; color:var(--text-mid); display:flex; align-items:center; justify-content:space-between; gap:8px;">
+                        <span>→ 총 약 <strong>@((_ycOrigTotalG / _ycOrigWeight * _ycOrigLength).ToString("0"))m</strong> 필요</span>
+                        <button type="button" class="btn btn-sage btn-sm" @onclick="ApplyYarnCalcOrigMeters">이 값으로 적용</button>
+                    </div>
+                }
+            </div>
+
+            <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:14px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:8px;">② 총 필요 길이</div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label class="form-label" style="font-size:0.78rem;">총 필요 길이 (m)</label>
+                    <input class="form-control" type="number" step="1"
+                           value="@(_ycTotalMeters == 0 ? "" : _ycTotalMeters.ToString())"
+                           @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _ycTotalMeters = v; else _ycTotalMeters = 0; }" placeholder="예: 1450 (직접 입력 또는 ①에서 적용)" />
+                </div>
+            </div>
+
+            <div style="background:var(--ivory-mid); border-radius:var(--radius-sm); padding:14px; margin-bottom:16px;">
+                <div style="font-size:0.88rem; font-weight:600; color:var(--theme-active); margin-bottom:8px;">③ 내가 쓰려는 실</div>
+                <div class="form-group" style="margin-bottom:10px;">
+                    <label class="form-label" style="font-size:0.78rem;">실 창고에서 선택 (선택 사항)</label>
+                    <select class="form-control" @onchange="OnYarnCalcSubYarnChanged">
+                        <option value="">직접 입력</option>
+                        @foreach (var y in _yarns)
+                        {
+                            <option value="@y.Id" selected="@(_ycSubYarnId == y.Id)">@y.Brand @y.Name (@y.Color)</option>
+                        }
+                    </select>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">g당</label>
+                        <input class="form-control" type="number" step="1"
+                               value="@(_ycSubWeight == 0 ? "" : _ycSubWeight.ToString())"
+                               @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _ycSubWeight = v; else _ycSubWeight = 0; }" placeholder="예: 100" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label" style="font-size:0.78rem;">m당</label>
+                        <input class="form-control" type="number" step="1"
+                               value="@(_ycSubLength == 0 ? "" : _ycSubLength.ToString())"
+                               @onchange="e => { if (double.TryParse(e.Value?.ToString(), out var v)) _ycSubLength = v; else _ycSubLength = 0; }" placeholder="예: 250" />
+                    </div>
+                </div>
+                @if (YarnCalcResult != null)
+                {
+                    <div style="display:flex; gap:8px; margin-top:14px;">
+                        <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                            <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">필요 스킨 수</div>
+                            <div style="font-size:1.3rem; font-weight:700; color:#4e3290;">@YarnCalcResult.Value.skeins.ToString("0.##") 개</div>
+                        </div>
+                        <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
+                            <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">필요량</div>
+                            <div style="font-size:1.3rem; font-weight:700; color:#1a5276;">@YarnCalcResult.Value.totalG.ToString("0") g</div>
+                        </div>
+                    </div>
+                    <p style="font-size:0.72rem; color:var(--text-light); margin-top:8px;">※ 계산된 값 그대로예요. 실제 구매 단위(보통 100g 단위)에 맞춰 얼마나 올려 살지는 직접 판단해주세요.</p>
+                }
+                else
+                {
+                    <p style="font-size:0.78rem; color:var(--text-light); margin-top:12px;">②의 총 필요 길이와, 내가 쓰려는 실의 g당/m당을 모두 입력하면 결과가 나와요.</p>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-ghost" @onclick="CloseYarnCalc">닫기</button>
             </div>
         </div>
     </div>
@@ -194,11 +328,13 @@ else
     };
     bool _showModal = false;
     List<KnitProject> _projects = new();
+    List<Yarn> _yarns = new();
     KnitProject? _editingProject;
 
     protected override async Task OnInitializedAsync()
     {
         await LoadData();
+        _yarns = await Storage.GetYarnsAsync();
         _wishSort = await JS.InvokeAsync<string?>("localStorage.getItem", "wish_sort") ?? "created_desc";
         _loading = false;
     }
@@ -273,5 +409,66 @@ else
         await JS.InvokeVoidAsync("showToast", "삭제하는 중...", "info");
         await Storage.DeleteProjectAsync(id);
         await LoadData();
+    }
+
+    // ── 실 소요량 계산기 (원작실 대비 내가 쓰려는 실의 필요량 계산 — 프로젝트에 저장하지 않는 임시 계산기) ──
+    bool _showYarnCalc = false;
+    KnitProject? _ycProject;
+    double _ycOrigWeight = 100;   // 원작실 g당
+    double _ycOrigLength = 0;     // 원작실 m당
+    double _ycOrigTotalG = 0;     // 원작 총 소요g (선택 입력)
+    double _ycTotalMeters = 0;    // 총 필요 길이(m)
+    Guid? _ycSubYarnId = null;    // 대체실(실창고에서 선택 시)
+    double _ycSubWeight = 100;    // 대체실 g당
+    double _ycSubLength = 0;      // 대체실 m당
+
+    (double skeins, double totalG)? YarnCalcResult
+    {
+        get
+        {
+            if (_ycTotalMeters <= 0 || _ycSubLength <= 0 || _ycSubWeight <= 0) return null;
+            var skeins = _ycTotalMeters / _ycSubLength;
+            var totalG = skeins * _ycSubWeight;
+            return (skeins, totalG);
+        }
+    }
+
+    void OpenYarnCalc(KnitProject proj)
+    {
+        _ycProject = proj;
+        // 초기화 후, 위시 항목에 저장된 원작실 정보가 있으면 자동 입력
+        _ycOrigWeight = 100; _ycOrigLength = 0; _ycOrigTotalG = 0; _ycTotalMeters = 0;
+        _ycSubYarnId = null; _ycSubWeight = 100; _ycSubLength = 0;
+        if (proj.OriginalYarnWeightG > 0) _ycOrigWeight = proj.OriginalYarnWeightG;
+        if (proj.OriginalYarnLengthM > 0) _ycOrigLength = proj.OriginalYarnLengthM;
+        if (proj.OriginalYarnAmountG > 0) _ycOrigTotalG = proj.OriginalYarnAmountG;
+        if (_ycOrigWeight > 0 && _ycOrigLength > 0 && _ycOrigTotalG > 0)
+            _ycTotalMeters = Math.Round(_ycOrigTotalG / _ycOrigWeight * _ycOrigLength);
+        _showYarnCalc = true;
+    }
+
+    void CloseYarnCalc() { _showYarnCalc = false; _ycProject = null; }
+
+    void ApplyYarnCalcOrigMeters()
+    {
+        if (_ycOrigWeight > 0 && _ycOrigLength > 0 && _ycOrigTotalG > 0)
+            _ycTotalMeters = Math.Round(_ycOrigTotalG / _ycOrigWeight * _ycOrigLength);
+    }
+
+    void OnYarnCalcSubYarnChanged(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString();
+        if (string.IsNullOrEmpty(val) || !Guid.TryParse(val, out var yid))
+        {
+            _ycSubYarnId = null;
+            return;
+        }
+        _ycSubYarnId = yid;
+        var y = _yarns.Find(x => x.Id == yid);
+        if (y != null)
+        {
+            _ycSubWeight = y.WeightGram;
+            _ycSubLength = y.LengthMeter;
+        }
     }
 }
