@@ -1051,13 +1051,14 @@ else
                     <div style="display:flex; gap:8px; margin-top:14px;">
                         <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
                             <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">필요 스킨 수</div>
-                            <div style="font-size:1.3rem; font-weight:700; color:#4e3290;">@YarnCalcResult.Value.skeins.ToString("0") 개</div>
+                            <div style="font-size:1.3rem; font-weight:700; color:#4e3290;">@YarnCalcResult.Value.skeins.ToString("0.##") 개</div>
                         </div>
                         <div style="flex:1; background:var(--ivory-dark); border-radius:var(--radius-sm); padding:10px; text-align:center;">
-                            <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">최종 필요량</div>
+                            <div style="font-size:0.72rem; color:var(--text-light); margin-bottom:4px;">필요량</div>
                             <div style="font-size:1.3rem; font-weight:700; color:#1a5276;">@YarnCalcResult.Value.totalG.ToString("0") g</div>
                         </div>
                     </div>
+                    <p style="font-size:0.72rem; color:var(--text-light); margin-top:8px;">※ 계산된 값 그대로예요. 실제 구매 단위(보통 100g 단위)에 맞춰 얼마나 올려 살지는 직접 판단해주세요.</p>
                 }
                 else
                 {
@@ -1537,12 +1538,12 @@ else
     double _ycSubWeight = 100;    // 대체실 g당
     double _ycSubLength = 0;      // 대체실 m당
 
-    (int skeins, double totalG)? YarnCalcResult
+    (double skeins, double totalG)? YarnCalcResult
     {
         get
         {
             if (_ycTotalMeters <= 0 || _ycSubLength <= 0 || _ycSubWeight <= 0) return null;
-            var skeins = (int)Math.Ceiling(_ycTotalMeters / _ycSubLength);
+            var skeins = _ycTotalMeters / _ycSubLength;
             var totalG = skeins * _ycSubWeight;
             return (skeins, totalG);
         }
