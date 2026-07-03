@@ -18,7 +18,7 @@
             <!-- 헤더 -->
             <div style="display:flex; align-items:center; justify-content:space-between;
                         padding:20px 20px 14px; flex-shrink:0; border-bottom:1px solid var(--border);">
-                <h2 style="font-family:'DM Sans','Noto Sans KR',sans-serif; font-size:1.15rem; font-weight:700; color:var(--black); margin:0;">@Project.PatternName</h2>
+                <h2 style="font-family:'DM Sans','Noto Sans KR',sans-serif; font-size:1.15rem; font-weight:700; color:var(--black); margin:0;">@(string.IsNullOrEmpty(Project.PatternName) ? "완성작 등록" : Project.PatternName)</h2>
                 <button style="display:flex; align-items:center; justify-content:center;
                                width:32px; height:32px; border-radius:8px;
                                border:1px solid var(--border); background:none;
@@ -239,6 +239,23 @@
             {
                 <!-- 수정 모드 -->
 
+                <!-- 작품명 + 카테고리 -->
+                <div class="form-row" style="margin-bottom:16px;">
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">작품명</label>
+                        <input class="form-control" @bind="Project.PatternName" placeholder="예: 마시멜로 후드 집업" />
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label class="form-label">카테고리</label>
+                        <select class="form-control" @bind="Project.Category">
+                            @foreach (var cat in Enum.GetValues<ProjectCategory>())
+                            {
+                                <option value="@cat">@cat</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
                 <!-- 사진 추가 (5칸 슬롯) -->
                 <div class="form-label" style="margin-bottom:6px;">사진</div>
                 <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:6px; margin-bottom:6px;">
@@ -345,6 +362,58 @@
                     }
                 </div>
                 <button class="btn btn-ghost btn-sm" style="color:var(--text-dark); margin-bottom:16px;" @onclick="() => _measures.Add(new MeasureItem { IsCustom = true })">+ 항목 추가</button>
+
+                <!-- 사용 실 -->
+                <div class="form-label" style="margin-bottom:6px;">사용 실</div>
+                @if (Yarns.Any())
+                {
+                    <select class="form-control" style="margin-bottom:8px;" @onchange="OnPopupAddYarn">
+                        <option value="">+ 실 추가</option>
+                        @foreach (var y in Yarns)
+                        {
+                            <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
+                        }
+                    </select>
+                    @foreach (var usage in Project.YarnUsages.ToList())
+                    {
+                        var yarn = Yarns.Find(y => y.Id == usage.YarnId);
+                        bool isCone = yarn?.YarnType == YarnType.콘사;
+                        bool hasConeWeight = isCone && yarn?.WeightGram > 0;
+                        string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
+                        decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                    border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
+                            @if (yarn != null)
+                            {
+                                <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
+                                <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
+                            }
+                            <input class="form-control" type="number" min="1" style="width:80px;"
+                                   value='@displayVal.ToString(hasConeWeight ? "0" : "0.##")'
+                                   @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), out var n)) usage.BallsUsed = Math.Round(hasConeWeight ? n / yarn!.WeightGram : n, 6); }" />
+                            <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel</span>
+                            <button class="btn btn-danger btn-sm" @onclick="() => Project.YarnUsages.Remove(usage)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p style="font-size:0.82rem; color:var(--text-light); margin-bottom:16px;">실 창고에 등록된 실이 없어요.</p>
+                }
+
+                <!-- 사용 바늘 -->
+                <div class="form-label" style="margin-top:16px; margin-bottom:6px;">사용 바늘</div>
+                @if (Tools.Any())
+                {
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px;">
+                        @foreach (var tool in Tools)
+                        {
+                            var isOn = Project.ToolIds.Contains(tool.Id);
+                            <button class="btn btn-sm @(isOn ? "btn-primary" : "btn-ghost")" @onclick="() => TogglePopupTool(tool.Id)">@tool.NeedleType @tool.SizeDisplay</button>
+                        }
+                    </div>
+                }
+                <input class="form-control" style="margin-bottom:16px;" @bind="Project.NeedleNote" placeholder="바늘 관련 메모 (예: 4mm 대바늘, 세트 없음)" />
 
             }
 
@@ -599,6 +668,11 @@
     async Task SaveAll()
     {
         if (Project == null) return;
+        if (string.IsNullOrWhiteSpace(Project.PatternName))
+        {
+            await JS.InvokeVoidAsync("showToast", "작품명을 입력해주세요.", "error");
+            return;
+        }
         _saving = true; StateHasChanged();
 
         if (Project.Id == Guid.Empty) Project.Id = Guid.NewGuid();
@@ -642,6 +716,25 @@
         if (Project == null || photo == null) return;
         Project.Photos.Remove(photo);
         StateHasChanged();
+    }
+
+    void OnPopupAddYarn(ChangeEventArgs e)
+    {
+        if (Project == null) return;
+        var val = e.Value?.ToString();
+        if (string.IsNullOrEmpty(val)) return;
+        if (!Guid.TryParse(val, out var yarnId)) return;
+        if (!Project.YarnUsages.Any(u => u.YarnId == yarnId))
+            Project.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = 1 });
+    }
+
+    void TogglePopupTool(Guid toolId)
+    {
+        if (Project == null) return;
+        if (Project.ToolIds.Contains(toolId))
+            Project.ToolIds.Remove(toolId);
+        else
+            Project.ToolIds.Add(toolId);
     }
 
     void SetPopupThumbnail(Guid photoId)
