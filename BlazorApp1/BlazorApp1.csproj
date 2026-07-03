@@ -21,4 +21,16 @@
                    PublishedContent="wwwroot\service-worker.published.js" />
   </ItemGroup>
 
+  <!-- 서비스워커 캐시 갱신 강제: service-worker.js 내용이 빌드마다 바뀌지 않으면
+       브라우저가 새 서비스워커를 설치하지 않아 배포해도 반영이 안 됨.
+       publish 직후 파일 끝에 빌드 타임스탬프 주석을 추가해 매번 바이트가 달라지도록 함. -->
+  <Target Name="StampServiceWorkerVersion" AfterTargets="Publish">
+    <ItemGroup>
+      <_ServiceWorkerPublishFile Include="$(PublishDir)wwwroot\service-worker.js" />
+    </ItemGroup>
+    <WriteLinesToFile File="@(_ServiceWorkerPublishFile)"
+                       Lines="// build-stamp: $([System.DateTime]::UtcNow.ToString(&quot;yyyyMMddHHmmss&quot;))"
+                       Overwrite="false" />
+  </Target>
+
 </Project>

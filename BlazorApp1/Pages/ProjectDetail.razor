@@ -561,7 +561,17 @@ else
             <div class="card-title" style="margin-bottom:0; display:flex; align-items:center; gap:6px;"><img src="icons/link-simple.svg" class="icon-line" style="width:20px;height:20px; flex-shrink:0;" /> 참고 링크</div>
             @if (_project.Links.Count > 0)
             {
-                <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("video") ? "▶" : "▼")</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    @if (_linkEditMode)
+                    {
+                        <button class="btn btn-primary btn-sm" style="font-size:0.72rem; padding:2px 8px;" @onclick:stopPropagation="true" @onclick="ExitLinkEditMode" disabled="@_saving">@(_saving ? "저장 중..." : "완료")</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn-ghost btn-sm" style="font-size:0.72rem; padding:2px 6px;" @onclick:stopPropagation="true" @onclick="EnterLinkEditMode"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;" /> 수정</button>
+                    }
+                    <span style="font-size:0.85rem; color:var(--text-light);">@(IsCollapsed("video") ? "▶" : "▼")</span>
+                </div>
             }
         </div>
         @if (!IsCollapsed("video") || _project.Links.Count == 0)
@@ -573,28 +583,17 @@ else
                 {
                     var isYoutube = lnk.Url.Contains("youtube.com") || lnk.Url.Contains("youtu.be");
                     <div style="margin-bottom:16px; border-bottom:1px solid var(--border); padding-bottom:12px;">
-                        @if (_editingLinkId == lnk.Id)
+                        @if (_linkEditMode)
                         {
-                            @* 제목 편집 모드 *@
-                            <div style="display:flex; gap:6px; align-items:center; margin-bottom:@(isYoutube ? "6px" : "4px");">
-                                <input class="form-control" style="flex:1; font-size:0.85rem; padding:4px 8px;"
-                                    @bind="_editLinkTitleValue"
-                                    @bind:event="oninput"
-                                    placeholder="제목 입력"
-                                    @onkeydown="@(async e => { if (e.Key == "Enter") await SaveLinkTitle(lnk); else if (e.Key == "Escape") CancelEditLinkTitle(); })" />
-                                <button class="btn btn-sage btn-sm" style="flex-shrink:0; padding:4px 8px;" @onclick="() => SaveLinkTitle(lnk)"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;" /></button>
-                                <button class="btn btn-secondary btn-sm" style="flex-shrink:0; padding:4px 8px;" @onclick="CancelEditLinkTitle"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
-                            </div>
+                            @* 전체 수정 모드: 언더라인 입력 (체크리스트와 동일 스타일) *@
+                            <input class="form-control checklist-input" style="margin-bottom:@(isYoutube ? "6px" : "4px");"
+                                   value="@lnk.Title"
+                                   placeholder="제목 입력 (선택)"
+                                   @onchange="e => { lnk.Title = e.Value?.ToString() ?? lnk.Title; }" />
                         }
-                        else
+                        else if (!string.IsNullOrEmpty(lnk.Title))
                         {
-                            @* 제목 표시 + 수정 버튼 *@
-                            <div style="display:flex; align-items:center; gap:6px; margin-bottom:@(isYoutube ? "6px" : "4px");">
-                                <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); flex:1; min-width:0; overflow-wrap:break-word;">
-                                    @(!string.IsNullOrEmpty(lnk.Title) ? lnk.Title : TryGetDomain(lnk.Url))
-                                </div>
-                                <button class="btn btn-secondary btn-sm" style="flex-shrink:0; padding:3px 6px;" @onclick="() => StartEditLinkTitle(lnk)"><img src="icons/pencil-simple.svg" class="icon-line" style="width:12px;height:12px;" /></button>
-                            </div>
+                            <div style="font-size:0.85rem; font-weight:600; color:var(--text-dark); margin-bottom:@(isYoutube ? "6px" : "4px");">@lnk.Title</div>
                         }
                         @if (isYoutube)
                         {
@@ -1497,8 +1496,7 @@ else
     };
     string _newVideoLink = "";
     string _newLinkTitle = "";
-    Guid? _editingLinkId = null;
-    string _editLinkTitleValue = "";
+    bool _linkEditMode = false;
     bool _showPhoto = false;
     bool _addingCounter = false;
     bool _addingCheck = false;
@@ -2078,23 +2076,11 @@ else
         await Save();
     }
 
-    void StartEditLinkTitle(VideoLink lnk)
-    {
-        _editingLinkId = lnk.Id;
-        _editLinkTitleValue = lnk.Title;
-    }
+    void EnterLinkEditMode() { _linkEditMode = true; }
 
-    void CancelEditLinkTitle()
+    async Task ExitLinkEditMode()
     {
-        _editingLinkId = null;
-        _editLinkTitleValue = "";
-    }
-
-    async Task SaveLinkTitle(VideoLink lnk)
-    {
-        lnk.Title = _editLinkTitleValue.Trim();
-        _editingLinkId = null;
-        _editLinkTitleValue = "";
+        _linkEditMode = false;
         await Save();
     }
 
