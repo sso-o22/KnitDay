@@ -185,9 +185,21 @@ else
                     <div style="display:flex; flex-wrap:wrap; gap:4px; margin-bottom:10px;">
                         @foreach (var cp in connectedProjects)
                         {
+                            var usage = cp.YarnUsages.FirstOrDefault(u => u.YarnId == yarn.Id);
                             <span style="font-size:0.72rem; background:var(--ivory-dark); color:var(--text-mid); padding:2px 8px; border-radius:99px; cursor:pointer; white-space:nowrap;"
                                   @onclick='() => Nav.NavigateTo($"/projects/{cp.Id}")'>
                                 @(string.IsNullOrEmpty(cp.PatternName) ? "제목 없음" : cp.PatternName)
+                                @if (usage != null && usage.BallsUsed > 0)
+                                {
+                                    @if (yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0)
+                                    {
+                                        <text> · @((usage.BallsUsed * yarn.WeightGram).ToString("G29"))g</text>
+                                    }
+                                    else
+                                    {
+                                        <text> · @(usage.BallsUsed.ToString("G29")) @_qtyUnit</text>
+                                    }
+                                }
                             </span>
                         }
                     </div>
