@@ -514,35 +514,6 @@ body {
     border-top: 1px solid var(--border);
 }
 
-/* ── 헤더/푸터 고정 + 본문만 스크롤되는 모달 (완성작 팝업과 동일한 방식) ── */
-.modal-fixed {
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    padding: 0;
-    max-height: 90vh;
-}
-.modal-fixed .modal-header {
-    flex-shrink: 0;
-    margin-bottom: 0;
-    padding: 20px 28px 14px;
-    border-bottom: 1px solid var(--border);
-}
-.modal-fixed .modal-body {
-    overflow-y: auto;
-    overflow-x: hidden;
-    flex: 1;
-    padding: 16px 28px;
-    word-break: break-word;
-    overflow-wrap: break-word;
-}
-.modal-fixed .modal-footer {
-    flex-shrink: 0;
-    margin-top: 0;
-    padding: 14px 28px;
-    border-top: 1px solid var(--border);
-}
-
 /* ── 배지 ────────────────────────────────────────────── */
 .badge {
     display: inline-block;
