@@ -202,13 +202,12 @@ else
 @if (_showModal)
 {
     <div class="modal-backdrop">
-        <div class="modal modal-fixed" @onclick:stopPropagation="true">
+        <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">@(_editingProject?.Id == Guid.Empty ? "새 프로젝트" : "프로젝트 수정")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
             </div>
 
-            <div class="modal-body">
             @if (_editingProject != null)
             {
                 @* ── 도안명 / 출처 ── *@
@@ -486,7 +485,6 @@ else
                     <textarea class="form-control" rows="2" @bind="_editingProject.Memo" placeholder="기타 메모"></textarea>
                 </div>
             }
-            </div>
 
             <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
                 @if (_editingProject?.Id != Guid.Empty)

@@ -1206,13 +1206,11 @@ else
 @if (_showEditModal && _project != null)
 {
     <div class="modal-backdrop">
-        <div class="modal modal-fixed" @onclick:stopPropagation="true">
+        <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h2 class="modal-title">프로젝트 수정</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseEditModal"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
             </div>
-
-            <div class="modal-body">
 
             @* ── 도안명 / 출처 ── *@
             <div class="form-row">
@@ -1486,8 +1484,6 @@ else
             <div class="form-group" style="margin-top:12px;">
                 <label class="form-label">메모</label>
                 <textarea class="form-control" rows="2" @bind="_project.Memo" placeholder="기타 메모"></textarea>
-            </div>
-
             </div>
 
             <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center; gap:8px;">
