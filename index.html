@@ -133,8 +133,16 @@
             updateOverlay();
             window.addEventListener('resize', updateOverlay);
             window.addEventListener('orientationchange', function() {
-                setTimeout(updateOverlay, 100);
+                // iOS Safari는 orientationchange 발생 시점에 innerWidth/innerHeight가
+                // 아직 회전 전 값을 갖고 있는 경우가 있어, 한 번만 지연 체크하면
+                // "회전 직후엔 반대 방향으로 안내"되는 문제가 생김. 여러 시점에 재확인.
+                setTimeout(updateOverlay, 50);
+                setTimeout(updateOverlay, 200);
+                setTimeout(updateOverlay, 500);
             });
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', updateOverlay);
+            }
         })();
     </script>
 
