@@ -112,11 +112,15 @@ namespace KnitLog.Services
         public const long MaxPdfUploadBytes = 10L * 1024 * 1024;   // 10MB — Cloudinary free 제한
         // PatternCloudUrl에 세팅하는 특수값: 클라우드 업로드 불가(용량 초과 등) → 재시도 방지
         public const string PatternCloudUrlLocalOnly = "local-only";
+        // 10MB 초과로 영구적으로 업로드 불가능한 경우 전용 값. local-only와 분리한 이유는 아래 참고.
+        public const string PatternCloudUrlTooLarge = "too-large";
 
         // 도안 클라우드 업로드가 필요한지 판정. "local-only"는 '어떤 기기에도 없어 영구 포기'가 아니라
         // '이 마킹을 한 기기에는 없었다'는 뜻일 뿐이므로, 실제 파일을 가진 다른 기기가 재시도할 수 있도록
         // 빈 값과 동일하게 "재시도 대상"으로 취급한다. (안 그러면 한 기기가 local-only로 마킹한 순간
         // 실제로 파일을 갖고 있는 다른 기기에서도 영원히 업로드 시도가 안 됨)
+        // 반면 "too-large"는 파일 크기 자체의 한계라 어느 기기에서 재시도해도 결과가 똑같으므로,
+        // 재시도 대상에서 제외해야 앱 실행할 때마다 계속 마이그레이션을 재시도하는 문제가 없음.
         private static bool NeedsPatternUpload(KnitProject p) =>
             p.HasSavedPattern && (string.IsNullOrEmpty(p.PatternCloudUrl) || p.PatternCloudUrl == PatternCloudUrlLocalOnly);
 
@@ -569,8 +573,9 @@ namespace KnitLog.Services
                                 if (err == "quota") { quotaReached = true; break; }
                                 if (err == "too_large")
                                 {
-                                    // 파일 크기는 재시도해도 안 바뀌므로 즉시 종료
-                                    proj.PatternCloudUrl = PatternCloudUrlLocalOnly;
+                                    // 파일 크기는 재시도해도 안 바뀌므로 즉시 종료 — local-only와 달리
+                                    // 영구적으로 재시도하지 않도록 별도 값으로 마킹
+                                    proj.PatternCloudUrl = PatternCloudUrlTooLarge;
                                     changed = true;
                                     progress.Failed++;
                                     progress.TooLargeCount++;
@@ -944,7 +949,7 @@ namespace KnitLog.Services
                         await DeletePhotoAsync(id.ToString(), photo.Id.ToString(), photo.FileSizeBytes);
                 }
                 // Cloudinary PDF 삭제
-                if (!string.IsNullOrEmpty(proj.PatternCloudUrl) && proj.PatternCloudUrl != PatternCloudUrlLocalOnly)
+                if (!string.IsNullOrEmpty(proj.PatternCloudUrl) && proj.PatternCloudUrl != PatternCloudUrlLocalOnly && proj.PatternCloudUrl != PatternCloudUrlTooLarge)
                     await DeletePdfAsync(id.ToString(), proj.PatternFileSizeBytes);
             }
 
