@@ -350,8 +350,8 @@ else
                         {
                             @if (_addingCheck)
                             {
-                                <div style="display:flex; gap:6px; margin-top:12px;">
-                                    <input class="form-control" style="flex:1; min-width:0;" @bind="_newCheckText" placeholder="예: 1~10단 완료" />
+                                <div style="display:flex; align-items:center; gap:6px; margin-top:12px;">
+                                    <input class="checklist-input" style="flex:1; min-width:0; width:auto; font-size:0.88rem;" @bind="_newCheckText" placeholder="예: 1~10단 완료" />
                                     <button class="btn btn-primary btn-sm" style="padding:2px 6px; flex-shrink:0;" @onclick="AddCheckItem"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                     <button class="btn btn-ghost btn-sm" style="padding:2px 6px; flex-shrink:0;" @onclick="CancelAddCheck"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                 </div>
