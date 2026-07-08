@@ -335,9 +335,11 @@ else
                                        style="width:16px; height:16px; accent-color:var(--theme-active); cursor:pointer; flex-shrink:0;" />
                                 @if (_checklistEditMode)
                                 {
-                                    <input class="form-control checklist-input" style="flex:1; min-width:0; width:auto !important; transform:none !important; font-size:0.88rem; padding:4px 8px;"
-                                           value="@item.Text"
-                                           @onchange="e => { item.Text = e.Value?.ToString() ?? item.Text; }" />
+                                    <div style="flex:1; min-width:0; overflow:hidden;">
+                                        <input class="form-control checklist-input" style="padding:4px 8px;"
+                                               value="@item.Text"
+                                               @onchange="e => { item.Text = e.Value?.ToString() ?? item.Text; }" />
+                                    </div>
                                     <button class="btn btn-danger btn-sm" style="padding:1px 4px; flex-shrink:0;" disabled="@IsPaused"
                                             @onclick='() => Confirm($"\"{captured.Text}\" 항목을 삭제할까요?", async () => await RemoveCheckItem(captured.Id))'><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                 }
@@ -353,7 +355,9 @@ else
                             @if (_addingCheck)
                             {
                                 <div style="display:flex; align-items:center; gap:6px; margin-top:12px;">
-                                    <input class="checklist-input" style="flex:1; min-width:0; width:auto !important; transform:none !important; font-size:0.88rem;" @bind="_newCheckText" placeholder="예: 1~10단 완료" />
+                                    <div style="flex:1; min-width:0; overflow:hidden;">
+                                        <input class="checklist-input" @bind="_newCheckText" placeholder="예: 1~10단 완료" />
+                                    </div>
                                     <button class="btn btn-primary btn-sm" style="padding:2px 6px; flex-shrink:0;" @onclick="AddCheckItem"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                 </div>
                             }

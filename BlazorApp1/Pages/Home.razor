@@ -140,9 +140,11 @@ else
                        style="width:14px; height:14px; accent-color:var(--theme-active); cursor:pointer; flex-shrink:0;" />
                 @if (_todoEditMode)
                 {
-                    <input class="checklist-input" style="flex:1; min-width:0; width:auto !important; transform:none !important;"
-                           value="@item.Text"
-                           @onchange="e => { item.Text = e.Value?.ToString() ?? item.Text; }" />
+                    <div style="flex:1; min-width:0; overflow:hidden;">
+                        <input class="checklist-input"
+                               value="@item.Text"
+                               @onchange="e => { item.Text = e.Value?.ToString() ?? item.Text; }" />
+                    </div>
                     <button class="btn btn-danger btn-sm" style="padding:1px 4px; display:inline-flex;align-items:center;"
                             @onclick="async () => { _todoItems.Remove(captured); await SaveTodos(); }"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                 }
@@ -159,8 +161,9 @@ else
         @if (_addingTodo)
         {
             <div style="display:flex; align-items:center; gap:4px; margin-top:6px;">
-                <input class="checklist-input" style="flex:1; min-width:0; width:auto !important; transform:none !important; font-size:0.78rem;"
-                       @bind="_newTodoText" placeholder="할 일 입력" />
+                <div style="flex:1; min-width:0; overflow:hidden;">
+                    <input class="checklist-input" @bind="_newTodoText" placeholder="할 일 입력" />
+                </div>
                 <button class="btn btn-primary btn-sm" style="padding:2px 6px;" @onclick="AddTodo"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;" /></button>
             </div>
         }
