@@ -1545,10 +1545,10 @@ else
                                 <div>
                                     <label style="font-size:0.72rem;color:var(--text-light);display:block;margin-bottom:2px;">시작 시각</label>
                                     <div style="display:flex; gap:6px;">
-                                        <input type="date" class="form-control" style="flex:1; min-width:0;"
+                                        <input type="date" class="form-control" style="flex:1; min-width:0; font-size:0.8rem; padding:6px 8px;"
                                                value="@_editSessionStart.ToString("yyyy-MM-dd")"
                                                @onchange="e => { if (DateTime.TryParse(e.Value?.ToString(), out var d)) _editSessionStart = d.Date + _editSessionStart.TimeOfDay; }" />
-                                        <input type="time" class="form-control" style="flex:1; min-width:0;"
+                                        <input type="time" class="form-control" style="flex:1; min-width:0; font-size:0.8rem; padding:6px 8px;"
                                                value="@_editSessionStart.ToString("HH:mm")"
                                                @onchange="e => { if (TimeSpan.TryParse(e.Value?.ToString(), out var t)) _editSessionStart = _editSessionStart.Date + t; }" />
                                     </div>
@@ -1556,10 +1556,10 @@ else
                                 <div>
                                     <label style="font-size:0.72rem;color:var(--text-light);display:block;margin-bottom:2px;">종료 시각</label>
                                     <div style="display:flex; gap:6px;">
-                                        <input type="date" class="form-control" style="flex:1; min-width:0;"
+                                        <input type="date" class="form-control" style="flex:1; min-width:0; font-size:0.8rem; padding:6px 8px;"
                                                value="@_editSessionEnd.ToString("yyyy-MM-dd")"
                                                @onchange="e => { if (DateTime.TryParse(e.Value?.ToString(), out var d)) _editSessionEnd = d.Date + _editSessionEnd.TimeOfDay; }" />
-                                        <input type="time" class="form-control" style="flex:1; min-width:0;"
+                                        <input type="time" class="form-control" style="flex:1; min-width:0; font-size:0.8rem; padding:6px 8px;"
                                                value="@_editSessionEnd.ToString("HH:mm")"
                                                @onchange="e => { if (TimeSpan.TryParse(e.Value?.ToString(), out var t)) _editSessionEnd = _editSessionEnd.Date + t; }" />
                                     </div>

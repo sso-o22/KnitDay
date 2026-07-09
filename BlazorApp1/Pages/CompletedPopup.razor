@@ -608,9 +608,9 @@
 @* 사진 라이트박스 *@
 @if (_lightboxPhoto != null)
 {
-    <div style="position:fixed;top:0;right:0;bottom:0;left:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:44px 16px 16px;transform:translateZ(0);"
+    <div style="position:fixed;top:env(safe-area-inset-top,0px);right:0;bottom:0;left:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:16px;"
          @onclick="CloseLightbox">
-        <button style="position:fixed;top:env(safe-area-inset-top,0px);right:0;left:0;height:44px;background:transparent;border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;"
+        <button style="position:absolute;top:0;right:0;left:0;height:44px;background:transparent;border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;"
                 @onclick="CloseLightbox">
             <span style="background:rgba(0,0,0,0.65);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
                 <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
@@ -673,27 +673,7 @@
 
     void OpenPhotoLightbox(ProjectPhoto photo) => _lightboxPhoto = photo;
 
-    async Task CloseLightbox()
-    {
-        _lightboxPhoto = null;
-        // Blazor가 실제로 라이트박스 DOM을 제거할 시간을 준 뒤에 리페인트를 강제해야
-        // 의미가 있음 (바로 이어서 호출하면 아직 옛 DOM이 남아있는 상태에서 실행돼버림)
-        StateHasChanged();
-        await Task.Delay(30);
-        await JS.InvokeVoidAsync("eval", @"
-            (function() {
-                var el = document.querySelector('.completed-popup-inner');
-                if (!el) return;
-                // iOS Safari에서 중첩된 position:fixed 오버레이가 사라진 뒤
-                // 바깥쪽 fixed 요소가 제대로 다시 그려지지 않고 잔상이 남는 버그 방지용 —
-                // 요소를 잠깐 숨겼다가(레이아웃에서 제거) 다시 보이게 해서 강제로 리페인트시킴
-                var prevDisplay = el.style.display;
-                el.style.display = 'none';
-                void el.offsetHeight;
-                el.style.display = prevDisplay;
-            })();
-        ");
-    }
+    void CloseLightbox() => _lightboxPhoto = null;
 
     List<ProjectPhoto> PopupValidPhotos => Project?.Photos
         .Where(p => !string.IsNullOrEmpty(p.Base64Data) || !string.IsNullOrEmpty(p.StorageUrl))
