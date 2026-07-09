@@ -608,7 +608,7 @@
 @* 사진 라이트박스 *@
 @if (_lightboxPhoto != null)
 {
-    <div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:44px 16px 16px;"
+    <div style="position:fixed;top:0;right:0;bottom:0;left:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:44px 16px 16px;transform:translateZ(0);"
          @onclick="CloseLightbox">
         <button style="position:fixed;top:env(safe-area-inset-top,0px);right:0;left:0;height:44px;background:transparent;border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;"
                 @onclick="CloseLightbox">
