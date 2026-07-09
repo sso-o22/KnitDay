@@ -676,6 +676,10 @@
     async Task CloseLightbox()
     {
         _lightboxPhoto = null;
+        // Blazor가 실제로 라이트박스 DOM을 제거할 시간을 준 뒤에 리페인트를 강제해야
+        // 의미가 있음 (바로 이어서 호출하면 아직 옛 DOM이 남아있는 상태에서 실행돼버림)
+        StateHasChanged();
+        await Task.Delay(30);
         await JS.InvokeVoidAsync("eval", @"
             (function() {
                 var el = document.querySelector('.completed-popup-inner');
