@@ -1539,17 +1539,49 @@ else
                 @foreach (var session in _project.Sessions.OrderByDescending(s => s.StartTime))
                 {
                     <div style="background:var(--ivory);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);font-size:0.85rem;">
-                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                            <span style="color:var(--text-mid);">@session.StartTime.ToString("yyyy년 M월 d일 HH:mm")</span>
-                            <button class="btn btn-danger btn-sm" style="padding:2px 6px;font-size:0.7rem;"
-                                    @onclick='() => Confirm("이 뜨개 기록을 삭제할까요?\n삭제하면 누적 시간에서 해당 시간이 빠져요.", async () => await RemoveSession(session.Id))'>
-                                <img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" />
-                            </button>
-                        </div>
-                        <div style="font-weight:600;color:var(--sage-dark);">@FormatDuration(session)</div>
-                        @if (!string.IsNullOrEmpty(session.Memo))
+                        @if (_editingSessionId == session.Id)
                         {
-                            <div style="font-size:0.75rem;color:var(--text-mid);margin-top:3px;">@session.Memo</div>
+                            <div style="display:flex; flex-direction:column; gap:8px;">
+                                <div>
+                                    <label style="font-size:0.72rem;color:var(--text-light);display:block;margin-bottom:2px;">시작 시각</label>
+                                    <input type="datetime-local" class="form-control" style="font-size:0.85rem;padding:6px 8px;"
+                                           value="@_editSessionStart.ToString("yyyy-MM-ddTHH:mm")"
+                                           @onchange="e => { if (DateTime.TryParse(e.Value?.ToString(), out var d)) _editSessionStart = d; }" />
+                                </div>
+                                <div>
+                                    <label style="font-size:0.72rem;color:var(--text-light);display:block;margin-bottom:2px;">종료 시각</label>
+                                    <input type="datetime-local" class="form-control" style="font-size:0.85rem;padding:6px 8px;"
+                                           value="@_editSessionEnd.ToString("yyyy-MM-ddTHH:mm")"
+                                           @onchange="e => { if (DateTime.TryParse(e.Value?.ToString(), out var d)) _editSessionEnd = d; }" />
+                                </div>
+                                <div style="display:flex; gap:6px; justify-content:flex-end;">
+                                    <button class="btn btn-ghost btn-sm" @onclick="CancelEditSession">취소</button>
+                                    <button class="btn btn-primary btn-sm" @onclick="() => SaveEditSession(session)">저장</button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                                <span style="color:var(--text-mid);">@session.StartTime.ToString("yyyy년 M월 d일 HH:mm")</span>
+                                <div style="display:flex; gap:4px; flex-shrink:0;">
+                                    @if (!session.IsActive)
+                                    {
+                                        <button class="btn btn-secondary btn-sm" style="padding:2px 6px;font-size:0.7rem;" @onclick="() => StartEditSession(session)">
+                                            <img src="icons/pencil.svg" class="icon-line" style="width:12px;height:12px;" />
+                                        </button>
+                                    }
+                                    <button class="btn btn-danger btn-sm" style="padding:2px 6px;font-size:0.7rem;"
+                                            @onclick='() => Confirm("이 뜨개 기록을 삭제할까요?\n삭제하면 누적 시간에서 해당 시간이 빠져요.", async () => await RemoveSession(session.Id))'>
+                                        <img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" />
+                                    </button>
+                                </div>
+                            </div>
+                            <div style="font-weight:600;color:var(--sage-dark);">@FormatDuration(session)</div>
+                            @if (!string.IsNullOrEmpty(session.Memo))
+                            {
+                                <div style="font-size:0.75rem;color:var(--text-mid);margin-top:3px;">@session.Memo</div>
+                            }
                         }
                     </div>
                 }
@@ -1766,6 +1798,31 @@ else
 
     bool _showConfirm = false;
     bool _showAllSessions = false;
+    Guid? _editingSessionId = null;
+    DateTime _editSessionStart;
+    DateTime _editSessionEnd;
+
+    void StartEditSession(KnitSession s)
+    {
+        _editingSessionId = s.Id;
+        _editSessionStart = s.StartTime;
+        _editSessionEnd = s.EndTime ?? DateTime.Now;
+    }
+
+    void CancelEditSession() => _editingSessionId = null;
+
+    async Task SaveEditSession(KnitSession s)
+    {
+        if (_editSessionEnd < _editSessionStart)
+        {
+            await JS.InvokeVoidAsync("showToast", "종료 시각이 시작 시각보다 빠를 수 없어요.", "error");
+            return;
+        }
+        s.StartTime = _editSessionStart;
+        s.EndTime = _editSessionEnd;
+        _editingSessionId = null;
+        await Save();
+    }
     string _confirmMsg = "";
     Func<Task>? _confirmAction;
 

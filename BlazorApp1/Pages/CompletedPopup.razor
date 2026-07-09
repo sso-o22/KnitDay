@@ -609,10 +609,10 @@
 @if (_lightboxPhoto != null)
 {
     <div style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.92);display:flex;align-items:center;justify-content:center;padding:44px 16px 16px;"
-         @onclick="() => _lightboxPhoto = null">
+         @onclick="CloseLightbox">
         <button style="position:fixed;top:env(safe-area-inset-top,0px);right:0;left:0;height:44px;background:transparent;border:none;cursor:pointer;z-index:10000;display:flex;align-items:center;justify-content:flex-end;padding-right:16px;"
-                @onclick="() => _lightboxPhoto = null">
-            <span style="background:rgba(0,0,0,0.55);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);">
+                @onclick="CloseLightbox">
+            <span style="background:rgba(0,0,0,0.65);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;">
                 <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
             </span>
         </button>
@@ -672,6 +672,15 @@
     List<ProjectPhoto> _photoSnapshot = new(); // 수정 모드 진입 시 스냅샷
 
     void OpenPhotoLightbox(ProjectPhoto photo) => _lightboxPhoto = photo;
+
+    async Task CloseLightbox()
+    {
+        _lightboxPhoto = null;
+        // iOS Safari에서 position:fixed 오버레이가 사라진 뒤 화면 일부가 안 지워지고 남는
+        // 렌더링 잔상 버그 방지용 — 아주 살짝 스크롤을 건드려 강제로 리페인트를 유도함
+        await JS.InvokeVoidAsync("eval", "window.scrollTo(window.scrollX, window.scrollY + 1); window.scrollTo(window.scrollX, window.scrollY - 1);");
+    }
+
     List<ProjectPhoto> PopupValidPhotos => Project?.Photos
         .Where(p => !string.IsNullOrEmpty(p.Base64Data) || !string.IsNullOrEmpty(p.StorageUrl))
         .ToList() ?? new();
