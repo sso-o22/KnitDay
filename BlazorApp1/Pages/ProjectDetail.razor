@@ -1542,17 +1542,21 @@ else
                         @if (_editingSessionId == session.Id)
                         {
                             <div style="display:flex; flex-direction:column; gap:8px;">
-                                <div>
+                                <div style="max-width:100%; overflow:hidden;">
                                     <label style="font-size:0.72rem;color:var(--text-light);display:block;margin-bottom:2px;">시작 시각</label>
-                                    <input type="datetime-local" class="form-control" style="font-size:0.85rem;padding:6px 8px;"
-                                           value="@_editSessionStart.ToString("yyyy-MM-ddTHH:mm")"
-                                           @onchange="e => { if (DateTime.TryParse(e.Value?.ToString(), out var d)) _editSessionStart = d; }" />
+                                    <div style="max-width:100%; overflow-x:auto;">
+                                        <input type="datetime-local" class="form-control" style="font-size:0.85rem;padding:6px 8px;box-sizing:border-box;"
+                                               value="@_editSessionStart.ToString("yyyy-MM-ddTHH:mm")"
+                                               @onchange="e => { if (DateTime.TryParse(e.Value?.ToString(), out var d)) _editSessionStart = d; }" />
+                                    </div>
                                 </div>
-                                <div>
+                                <div style="max-width:100%; overflow:hidden;">
                                     <label style="font-size:0.72rem;color:var(--text-light);display:block;margin-bottom:2px;">종료 시각</label>
-                                    <input type="datetime-local" class="form-control" style="font-size:0.85rem;padding:6px 8px;"
-                                           value="@_editSessionEnd.ToString("yyyy-MM-ddTHH:mm")"
-                                           @onchange="e => { if (DateTime.TryParse(e.Value?.ToString(), out var d)) _editSessionEnd = d; }" />
+                                    <div style="max-width:100%; overflow-x:auto;">
+                                        <input type="datetime-local" class="form-control" style="font-size:0.85rem;padding:6px 8px;box-sizing:border-box;"
+                                               value="@_editSessionEnd.ToString("yyyy-MM-ddTHH:mm")"
+                                               @onchange="e => { if (DateTime.TryParse(e.Value?.ToString(), out var d)) _editSessionEnd = d; }" />
+                                    </div>
                                 </div>
                                 <div style="display:flex; gap:6px; justify-content:flex-end;">
                                     <button class="btn btn-ghost btn-sm" @onclick="CancelEditSession">취소</button>
