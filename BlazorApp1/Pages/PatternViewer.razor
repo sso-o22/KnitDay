@@ -1732,6 +1732,17 @@
     // ✓ 적용: 두 선 높이 확정 → 선택했던 마커의 위치/높이를 갱신 (새 마커를 만들지 않음)
     async Task ConfirmHeightAndApply()
     {
+        // 마우스는 touchmove보다 훨씬 자주 발생할 수 있어서, 드래그 중 매번 보내던
+        // SetRowLineAY/BY 호출이 밀려 C# 쪽 값이 최종 위치보다 뒤처져 있을 수 있음.
+        // "적용" 시점엔 화면에 실제로 그려진 최종 위치를 DOM에서 직접 다시 읽어와 확정함.
+        try
+        {
+            var pos = await JS.InvokeAsync<RowLinePos>("patternViewer.getRowLinePositions", _rowDrawPage);
+            _rowLineAY = pos.a;
+            _rowLineBY = pos.b;
+        }
+        catch { /* 읽기 실패 시 기존 값(마지막으로 전달받은 위치) 그대로 사용 */ }
+
         var rowHCss = Math.Abs(_rowLineAY - _rowLineBY);
         if (rowHCss < 4) return;
 
@@ -1754,6 +1765,8 @@
 
         StateHasChanged();
     }
+
+    record RowLinePos(double a, double b);
 
     Task OnAnnoCanvasClick(MouseEventArgs e, int pageNum)
     {
