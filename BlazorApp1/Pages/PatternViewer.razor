@@ -1741,13 +1741,25 @@
             _rowLineAY = pos.a;
             _rowLineBY = pos.b;
         }
-        catch { /* 읽기 실패 시 기존 값(마지막으로 전달받은 위치) 그대로 사용 */ }
+        catch (Exception ex)
+        {
+            // 진단용: 원인을 조용히 숨기지 않고 화면에 그대로 보여줌
+            await JS.InvokeVoidAsync("showToast", $"[진단] getRowLinePositions 실패: {ex.Message}", "error");
+        }
 
         var rowHCss = Math.Abs(_rowLineAY - _rowLineBY);
-        if (rowHCss < 4) return;
+        if (rowHCss < 4)
+        {
+            await JS.InvokeVoidAsync("showToast", $"[진단] 높이가 너무 작아 취소됨 (rowHCss={rowHCss:F1})", "error");
+            return;
+        }
 
         var marker = _rowMarkers.FirstOrDefault(m => m.Id == _selectedMarkerId);
-        if (marker == null) { _tool = "rowmarker"; StateHasChanged(); return; }
+        if (marker == null)
+        {
+            await JS.InvokeVoidAsync("showToast", $"[진단] 선택된 마커를 못 찾음 (selectedId={_selectedMarkerId})", "error");
+            _tool = "rowmarker"; StateHasChanged(); return;
+        }
 
         _detectedRowH = rowHCss / _zoom; // zoom=1 기준 저장 — 이후 "마커 추가" 시 기본 높이로 참조
         var topCssY   = Math.Min(_rowLineAY, _rowLineBY);
@@ -1769,6 +1781,8 @@
         // diff가 변경을 놓칠 수 있어, 최종 픽셀 위치를 JS로 한 번 더 확실히 박아넣음
         var markerElId = $"rowmarker-{marker.Id:N}";
         _ = JS.InvokeVoidAsync("patternViewer.forceMarkerPosition", markerElId, startY * _zoom, _detectedRowH * _zoom);
+
+        await JS.InvokeVoidAsync("showToast", $"[진단] 적용됨: Y={startY:F1} H={_detectedRowH:F1} zoom={_zoom:F2}", "info");
     }
 
     record RowLinePos(double a, double b);
