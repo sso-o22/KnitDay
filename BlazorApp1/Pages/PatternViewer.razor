@@ -1667,6 +1667,7 @@
         _rowLineBY = (marker.Y + marker.RowHeight) * _zoom;
         _ = JS.InvokeVoidAsync("patternViewer.initRowLines", _rowDrawPage,
                                DotNetObjectReference.Create(this));
+        _ = JS.InvokeVoidAsync("showToast", $"[진단] 높이조절 진입: selectedId={_selectedMarkerId} inst={GetHashCode()}", "info");
         StateHasChanged();
     }
 
@@ -1757,7 +1758,7 @@
         var marker = _rowMarkers.FirstOrDefault(m => m.Id == _selectedMarkerId);
         if (marker == null)
         {
-            await JS.InvokeVoidAsync("showToast", $"[진단] 선택된 마커를 못 찾음 (selectedId={_selectedMarkerId})", "error");
+            await JS.InvokeVoidAsync("showToast", $"[진단] 선택된 마커를 못 찾음 (selectedId={_selectedMarkerId} inst={GetHashCode()})", "error");
             _tool = "rowmarker"; StateHasChanged(); return;
         }
 
@@ -1782,7 +1783,7 @@
         var markerElId = $"rowmarker-{marker.Id:N}";
         _ = JS.InvokeVoidAsync("patternViewer.forceMarkerPosition", markerElId, startY * _zoom, _detectedRowH * _zoom);
 
-        await JS.InvokeVoidAsync("showToast", $"[진단] 적용됨: Y={startY:F1} H={_detectedRowH:F1} zoom={_zoom:F2}", "info");
+        await JS.InvokeVoidAsync("showToast", $"[진단] 적용됨: Y={startY:F1} H={_detectedRowH:F1} zoom={_zoom:F2} inst={GetHashCode()}", "info");
     }
 
     record RowLinePos(double a, double b);
