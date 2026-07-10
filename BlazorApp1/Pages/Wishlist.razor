@@ -483,16 +483,27 @@ else
                 _ycTotalMeters = Math.Round(_ycOrigTotalG / _ycOrigWeight * _ycOrigLength);
         }
 
-        // 이미 연결된 실이 있으면 "내가 쓰려는 실"에 자동 선택
-        var firstUsage = proj.YarnUsages.FirstOrDefault();
-        if (firstUsage != null)
+        // 계산기에서 이전에 선택해서 저장해둔 실이 있으면 그걸 우선 자동 선택
+        var savedY = proj.WishCalcSubYarnId != null ? _yarns.Find(x => x.Id == proj.WishCalcSubYarnId) : null;
+        if (savedY != null)
         {
-            var y = _yarns.Find(x => x.Id == firstUsage.YarnId);
-            if (y != null)
+            _ycSubYarnId = savedY.Id;
+            _ycSubWeight = savedY.WeightGram;
+            _ycSubLength = savedY.LengthMeter;
+        }
+        else
+        {
+            // 저장된 선택이 없으면, 이미 연결된 실이 있을 때 "내가 쓰려는 실"에 자동 선택
+            var firstUsage = proj.YarnUsages.FirstOrDefault();
+            if (firstUsage != null)
             {
-                _ycSubYarnId = y.Id;
-                _ycSubWeight = y.WeightGram;
-                _ycSubLength = y.LengthMeter;
+                var y = _yarns.Find(x => x.Id == firstUsage.YarnId);
+                if (y != null)
+                {
+                    _ycSubYarnId = y.Id;
+                    _ycSubWeight = y.WeightGram;
+                    _ycSubLength = y.LengthMeter;
+                }
             }
         }
         _showYarnCalc = true;
@@ -506,20 +517,29 @@ else
             _ycTotalMeters = Math.Round(_ycOrigTotalG / _ycOrigWeight * _ycOrigLength);
     }
 
-    void OnYarnCalcSubYarnChanged(ChangeEventArgs e)
+    async Task OnYarnCalcSubYarnChanged(ChangeEventArgs e)
     {
         var val = e.Value?.ToString();
         if (string.IsNullOrEmpty(val) || !Guid.TryParse(val, out var yid))
         {
             _ycSubYarnId = null;
-            return;
         }
-        _ycSubYarnId = yid;
-        var y = _yarns.Find(x => x.Id == yid);
-        if (y != null)
+        else
         {
-            _ycSubWeight = y.WeightGram;
-            _ycSubLength = y.LengthMeter;
+            _ycSubYarnId = yid;
+            var y = _yarns.Find(x => x.Id == yid);
+            if (y != null)
+            {
+                _ycSubWeight = y.WeightGram;
+                _ycSubLength = y.LengthMeter;
+            }
+        }
+
+        // 선택한 실을 다음에 열 때도 자동으로 뜨도록 프로젝트에 저장
+        if (_ycProject != null)
+        {
+            _ycProject.WishCalcSubYarnId = _ycSubYarnId;
+            await Storage.SaveProjectAsync(_ycProject);
         }
     }
 }

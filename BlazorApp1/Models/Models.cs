@@ -202,6 +202,9 @@ namespace KnitLog.Models
         public string ViewerGridLineColor { get; set; } = "";    // 감지선 색상
         public string ViewerMarkerMode { get; set; } = "single"; // "single" or "multi"
 
+        // 위시리스트 실 소요량 계산기 — 마지막으로 선택한 "내가 쓰려는 실" (자동 저장)
+        public Guid? WishCalcSubYarnId { get; set; } = null;
+
         // 게이지 계산기 저장값
         public double CalcOrigStitch  { get; set; } = 0;  // ① 원작 코 게이지
         public double CalcOrigRow     { get; set; } = 0;  // ① 원작 단 게이지
