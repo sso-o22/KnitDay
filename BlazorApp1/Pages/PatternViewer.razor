@@ -1764,6 +1764,11 @@
         _ = SaveRowMarkersAsync();
 
         StateHasChanged();
+
+        // 마커 요소가 JS(attachMarkerDrag)로 직접 위치 조작된 이력이 있으면 Blazor의
+        // diff가 변경을 놓칠 수 있어, 최종 픽셀 위치를 JS로 한 번 더 확실히 박아넣음
+        var markerElId = $"rowmarker-{marker.Id:N}";
+        _ = JS.InvokeVoidAsync("patternViewer.forceMarkerPosition", markerElId, startY * _zoom, _detectedRowH * _zoom);
     }
 
     record RowLinePos(double a, double b);

@@ -1203,6 +1203,16 @@ let basePaths = []; // 저장된 필기 (박제)
             };
         },
 
+        // "적용" 직후, 마커 요소의 실제 화면 top/height를 강제로 다시 박아넣음.
+        // attachMarkerDrag가 이 같은 요소의 top을 JS로 직접 바꾼 이력이 있으면,
+        // Blazor가 새로 계산한 값이 우연히 예전과 같아 보여 diff를 건너뛸 가능성을 방지.
+        forceMarkerPosition(markerId, topPx, heightPx) {
+            const el = document.getElementById(markerId);
+            if (!el) return;
+            el.style.top = topPx + 'px';
+            el.style.height = heightPx + 'px';
+        },
+
         // 단일행 마커 드래그: JS가 직접 top 업데이트, 종료시만 Blazor 호출
         attachMarkerDrag(markerId, pageNum, zoom, dotNetRef) {
             const el = document.getElementById(markerId);
