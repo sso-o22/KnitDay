@@ -1190,6 +1190,19 @@ let basePaths = []; // 저장된 필기 (박제)
             }, 50);
         },
 
+        // 마우스는 touchmove보다 훨씬 빈번하게 발생할 수 있어서, 드래그 중 매번 쏘는
+        // invokeMethodAsync(SetRowLineAY/BY) 호출이 밀리면 C# 쪽 값이 최종 위치보다
+        // 뒤처질 수 있음 — "적용" 시점엔 이 값 대신 DOM에 실제로 그려진 최종 위치를
+        // 직접 읽어서 쓰는 게 확실함
+        getRowLinePositions(pageNum) {
+            const a = document.getElementById('rowdraw-line-a-' + pageNum);
+            const b = document.getElementById('rowdraw-line-b-' + pageNum);
+            return {
+                a: a ? parseFloat(a.style.top) || 0 : 0,
+                b: b ? parseFloat(b.style.top) || 0 : 0
+            };
+        },
+
         // 단일행 마커 드래그: JS가 직접 top 업데이트, 종료시만 Blazor 호출
         attachMarkerDrag(markerId, pageNum, zoom, dotNetRef) {
             const el = document.getElementById(markerId);
