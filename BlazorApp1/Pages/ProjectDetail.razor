@@ -2391,6 +2391,10 @@ else
         if (_project == null) return;
         var id = _project.Id;
         await Storage.CompleteProjectAsync(id);
+        // 페이지 이동(Dispose) 시 세션 저장용으로 _project를 다시 저장하는데,
+        // 이때 로컬 _project.Status가 예전 상태 그대로면 방금 완료 처리한 게 덮어써짐 → 로컬 상태도 함께 갱신
+        _project.Status = ProjectStatus.완료;
+        _project.EndDate ??= DateTime.Today;
         // localStorage로 신호 → 문어발 화면에서 팝업 띄움
         await JS.InvokeVoidAsync("localStorage.setItem", "knitlog_completed_popup", id.ToString());
         Nav.NavigateTo("projects");
