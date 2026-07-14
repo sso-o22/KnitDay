@@ -29,22 +29,6 @@ else if (_projects.Count == 0)
 }
 else
 {
-    <div class="filter-sort-bar" style="margin-bottom:8px;">
-        <div class="filter-sort-group">
-            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-            @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("출처순","source")})
-            {
-                var ascVal  = baseVal + "_asc";
-                var descVal = baseVal + "_desc";
-                var isActive = _wishSort == ascVal || _wishSort == descVal;
-                var isAsc   = _wishSort == ascVal;
-                <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
-                        @onclick="async () => await SetWishSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
-                    @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
-                </button>
-            }
-        </div>
-    </div>
     <div class="filter-sort-bar" style="margin-bottom:16px;">
         <div class="filter-sort-group swatch-needle-wrapper">
             <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
@@ -60,6 +44,21 @@ else
                 <option value="대바늘">대바늘</option>
                 <option value="코바늘">코바늘</option>
             </select>
+        </div>
+        <div class="filter-sort-divider"></div>
+        <div class="filter-sort-group">
+            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+            @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("출처순","source")})
+            {
+                var ascVal  = baseVal + "_asc";
+                var descVal = baseVal + "_desc";
+                var isActive = _wishSort == ascVal || _wishSort == descVal;
+                var isAsc   = _wishSort == ascVal;
+                <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
+                        @onclick="async () => await SetWishSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
+                    @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
+                </button>
+            }
         </div>
     </div>
     <div class="grid-3">

@@ -607,7 +607,7 @@ body {
     margin-bottom: 24px;
 }
 
-@media (min-width: 641px) {
+@media (min-width: 901px) {
     .stats-grid {
         grid-template-columns: repeat(3, 1fr);
         gap: 16px;
@@ -622,22 +622,8 @@ body {
 
 /* ── 반응형 ──────────────────────────────────────────── */
 
-/* 태블릿 (641px ~ 900px): 사이드바를 좁게 */
-@media (max-width: 900px) and (min-width: 641px) {
-    .sidebar { width: 72px; }
-    .brand-name, .nav-label, .sidebar-footer, .theme-picker-label { display: none; }
-    .theme-picker { padding: 12px 8px; }
-    .theme-dots { justify-content: center; }
-    .sidebar-brand { justify-content: center; padding: 16px 0; }
-    .sidebar-logo { width: 70px; }
-    .nav-list li { margin: 2px 8px; }
-    .nav-item { justify-content: center; padding: 12px 8px; }
-    .nav-icon { width: auto; }
-    .main-content { padding: 24px 20px; }
-}
-
-/* 태블릿+PC (641px 이상) — 아이패드 10 가로(1180px) 포함 */
-@media (min-width: 641px) {
+/* 태블릿+PC (901px 이상) — 아이패드 10 가로(1180px) 포함 */
+@media (min-width: 901px) {
     /* 태블릿: 정렬을 분류 행에 합치기 */
     .schedule-sort-inline { display: flex !important; }
     .schedule-sort-row { display: none !important; }
@@ -774,8 +760,8 @@ body {
     }
 }
 
-/* 모바일 (640px 이하): 사이드바 숨기고 하단 탭바 표시 */
-@media (max-width: 640px) {
+/* 모바일 (900px 이하): 사이드바 숨기고 하단 탭바 표시 */
+@media (max-width: 900px) {
     .app-shell {
         flex-direction: column;
     }
