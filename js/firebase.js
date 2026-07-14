@@ -290,3 +290,15 @@ window.deleteKnitDayAccount = async () => {
         return JSON.stringify({ success: false, error: e.message });
     }
 };
+
+// ── 클라우드 데이터만 삭제 (계정/로그인은 유지, 로컬은 그대로) ─────────
+window.deleteKnitDayCloudDataOnly = async () => {
+    try {
+        const fn = httpsCallable(functions, 'deleteCloudDataOnly');
+        const result = await fn({});
+        return JSON.stringify(result.data);
+    } catch (e) {
+        console.error('deleteCloudDataOnly:', e);
+        return JSON.stringify({ success: false, error: e.message });
+    }
+};
