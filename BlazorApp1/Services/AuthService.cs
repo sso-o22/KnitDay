@@ -34,6 +34,10 @@ namespace KnitLog.Services
         public string? DeniedEmail { get; private set; }
         /// <summary>이용권 만료로 로그인 거부된 경우 해당 이메일, 아니면 null</summary>
         public string? ExpiredEmail { get; private set; }
+        /// <summary>만료된 이용권의 만료일 (유예기간 계산용), 아니면 null</summary>
+        public DateTime? ExpiredAt { get; private set; }
+        /// <summary>유예기간이 지나 클라우드 데이터가 이미 삭제됐는지 여부</summary>
+        public bool ExpiredDataAlreadyDeleted { get; private set; }
 
         public AuthService(IJSRuntime js) { _js = js; }
 
@@ -87,10 +91,12 @@ namespace KnitLog.Services
         }
 
         [JSInvokable]
-        public void OnAuthExpired(string email)
+        public void OnAuthExpired(string email, string? expiresAt = null, string? dataDeletedAt = null)
         {
             CurrentUser = null;
             ExpiredEmail = email;
+            ExpiredAt = DateTime.TryParse(expiresAt, out var d) ? d : null;
+            ExpiredDataAlreadyDeleted = !string.IsNullOrEmpty(dataDeletedAt);
             OnAuthChanged?.Invoke();
         }
 
@@ -98,6 +104,8 @@ namespace KnitLog.Services
         {
             DeniedEmail = null;
             ExpiredEmail = null;
+            ExpiredAt = null;
+            ExpiredDataAlreadyDeleted = false;
             try
             {
                 var result = await _js.InvokeAsync<JsonElement?>("firebaseAuth.signInWithGoogle");
@@ -114,6 +122,10 @@ namespace KnitLog.Services
                 if (result.Value.TryGetProperty("__expired__", out var expired) && expired.GetBoolean())
                 {
                     ExpiredEmail = result.Value.TryGetProperty("email", out var em2) ? em2.GetString() : null;
+                    var expiresAtStr = result.Value.TryGetProperty("expiresAt", out var eaEl) ? eaEl.GetString() : null;
+                    ExpiredAt = DateTime.TryParse(expiresAtStr, out var d2) ? d2 : null;
+                    ExpiredDataAlreadyDeleted = result.Value.TryGetProperty("dataDeletedAt", out var ddEl)
+                        && ddEl.ValueKind == JsonValueKind.String && !string.IsNullOrEmpty(ddEl.GetString());
                     OnAuthChanged?.Invoke();
                     return false;
                 }

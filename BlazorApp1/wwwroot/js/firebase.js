@@ -67,7 +67,7 @@ window.firebaseAuth = {
                     const expiresAt = allowDoc.data()?.expiresAt;
                     if (expiresAt && expiresAt !== 'lifetime' && new Date(expiresAt) < new Date()) {
                         await signOut(auth);
-                        return { __expired__: true, email: u.email };
+                        return { __expired__: true, email: u.email, expiresAt, dataDeletedAt: allowDoc.data()?.dataDeletedAt || null };
                     }
                 } catch (checkErr) {
                     // Firestore 접근 오류 시 안전하게 거부
@@ -133,8 +133,9 @@ window.firebaseAuth = {
                         }
                         const expiresAt = allowDoc.data()?.expiresAt;
                         if (expiresAt && expiresAt !== 'lifetime' && new Date(expiresAt) < new Date()) {
+                            const dataDeletedAt = allowDoc.data()?.dataDeletedAt || null;
                             await signOut(auth);
-                            dotNetRef.invokeMethodAsync('OnAuthExpired', user.email);
+                            dotNetRef.invokeMethodAsync('OnAuthExpired', user.email, expiresAt, dataDeletedAt);
                             return;
                         }
                         // 앱을 재실행/세션 복원만 해도(재로그인 없이) 여기로 옴 —

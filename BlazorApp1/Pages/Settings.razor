@@ -95,6 +95,13 @@
             <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:12px;">
                 구글 계정으로 로그인하면 여러 기기에서 데이터를 동기화할 수 있어요.
             </p>
+            @if (_cachedGraceMessage != null)
+            {
+                <div style="font-size:0.8rem;color:#c03030;font-weight:600;background:#fef0f0;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:12px;line-height:1.6;display:flex;align-items:flex-start;gap:6px;">
+                    <img src="icons/cloud-warning.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;margin-top:2px;" />
+                    <span>@_cachedGraceMessage</span>
+                </div>
+            }
             <button class="btn btn-primary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="SignIn"><img src="icons/key.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />구글 로그인</button>
         }
     </div>
@@ -648,6 +655,13 @@
             <div style="font-size:0.85rem;color:var(--text-mid);margin-bottom:6px;line-height:1.6;">
                 <b>@_expiredEmail</b> 계정의<br />KnitDay 이용권이 만료됐어요.
             </div>
+            @{ var graceMsg = ExpiredGraceMessage(); }
+            @if (graceMsg != null)
+            {
+                <div style="font-size:0.8rem;color:#c03030;font-weight:600;margin-bottom:6px;line-height:1.6;">
+                    @graceMsg
+                </div>
+            }
             <div style="font-size:0.78rem;color:var(--text-light);margin-bottom:20px;line-height:1.6;">
                 계속 이용하시려면 스마트스토어에서<br />이용권을 다시 구매해 주세요.
             </div>
@@ -818,6 +832,7 @@
             _debugMode = debug == "1";
             var premium = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_premium");
             _isPremium = premium == "1";
+            await LoadCachedExpiryBannerAsync();
             try
             {
                 _versionInfo = await Http.GetFromJsonAsync<VersionInfo>("version.json");
@@ -825,6 +840,37 @@
             catch { }
             StateHasChanged();
         }
+    }
+
+    // 로그인 여부와 무관하게, 지난번 로그인 때 캐시해둔 만료일로 삭제 예정일을 계산
+    // (만료 후엔 로그인 자체가 막히므로, 로그인 시도 없이도 여기서 보여줌)
+    string? _cachedGraceMessage;
+    async Task LoadCachedExpiryBannerAsync()
+    {
+        try
+        {
+            var cachedExpiresAt = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_cached_expires_at");
+            if (string.IsNullOrEmpty(cachedExpiresAt) || !DateTime.TryParse(cachedExpiresAt, out var expiresAt))
+            {
+                _cachedGraceMessage = null;
+                return;
+            }
+            var daysLeft = (int)(expiresAt.Date - DateTime.Today).TotalDays;
+            if (daysLeft > 0) { _cachedGraceMessage = null; return; } // 아직 만료 전
+
+            var cachedDeletedAt = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_cached_data_deleted_at");
+            if (!string.IsNullOrEmpty(cachedDeletedAt))
+            {
+                _cachedGraceMessage = "유예기간이 지나 클라우드 데이터가 삭제됐어요. 이용권을 다시 구매하면 새로 동기화할 수 있어요.";
+                return;
+            }
+            var purgeDate = expiresAt.Date.AddDays(GracePeriodDays);
+            var daysUntilPurge = (int)(purgeDate - DateTime.Today).TotalDays;
+            _cachedGraceMessage = daysUntilPurge > 0
+                ? $"클라우드 데이터 삭제 예정일: {purgeDate:yyyy.MM.dd} ({daysUntilPurge}일 남음). 그 안에 이용권을 갱신하면 그대로 복원돼요."
+                : "클라우드 데이터가 곧 삭제될 예정이에요. 서둘러 이용권을 갱신해 주세요.";
+        }
+        catch { }
     }
 
     async Task SetTheme(string themeId)
@@ -1031,6 +1077,12 @@
         {
             _showExpiredPopup = true;
             _expiredEmail = Auth.ExpiredEmail;
+            if (Auth.ExpiredAt != null)
+            {
+                await JS.InvokeVoidAsync("localStorage.setItem", "knitday_cached_expires_at", Auth.ExpiredAt.Value.ToString("yyyy-MM-dd"));
+                await JS.InvokeVoidAsync("localStorage.setItem", "knitday_cached_data_deleted_at", Auth.ExpiredDataAlreadyDeleted ? "1" : "");
+            }
+            await LoadCachedExpiryBannerAsync();
         }
         await InvokeAsync(StateHasChanged);
     }
@@ -1074,6 +1126,7 @@
             {
                 _licenseLabel = "평생 이용권";
                 _licenseExpiringSoon = false;
+                await JS.InvokeVoidAsync("localStorage.removeItem", "knitday_cached_expires_at");
                 return;
             }
             var expiresAtStr = expiresAtEl.GetString();
@@ -1081,9 +1134,17 @@
             {
                 _licenseLabel = "평생 이용권";
                 _licenseExpiringSoon = false;
+                await JS.InvokeVoidAsync("localStorage.removeItem", "knitday_cached_expires_at");
                 return;
             }
             if (!DateTime.TryParse(expiresAtStr, out var expiresAt)) return;
+
+            // 로그인 상태일 때마다 만료일/삭제 여부를 로컬에 캐시 — 나중에 만료되어
+            // 로그인이 막혀도(=여기 다시 못 들어와도) 캐시된 값으로 삭제 예정일을 보여줄 수 있게
+            var dataDeletedAtStr = doc.RootElement.TryGetProperty("dataDeletedAt", out var cacheDelEl) ? cacheDelEl.GetString() : null;
+            await JS.InvokeVoidAsync("localStorage.setItem", "knitday_cached_expires_at", expiresAtStr);
+            await JS.InvokeVoidAsync("localStorage.setItem", "knitday_cached_data_deleted_at", dataDeletedAtStr ?? "");
+
             var daysLeft = (int)(expiresAt.Date - DateTime.Today).TotalDays;
             _licenseExpiringSoon = daysLeft <= 30;
             _licenseLabel = daysLeft > 0
@@ -1212,6 +1273,13 @@
         {
             _showExpiredPopup = true;
             _expiredEmail = Auth.ExpiredEmail;
+            // 로그인 시도로 새로 알게 된 만료 정보도 캐시해서, 다음부터는 시도 없이도 배너로 보이게
+            if (Auth.ExpiredAt != null)
+            {
+                await JS.InvokeVoidAsync("localStorage.setItem", "knitday_cached_expires_at", Auth.ExpiredAt.Value.ToString("yyyy-MM-dd"));
+                await JS.InvokeVoidAsync("localStorage.setItem", "knitday_cached_data_deleted_at", Auth.ExpiredDataAlreadyDeleted ? "1" : "");
+            }
+            await LoadCachedExpiryBannerAsync();
         }
         StateHasChanged();
     }
@@ -1267,6 +1335,20 @@
     bool _showExpiredPopup = false;
     string? _expiredEmail;
     void CloseExpiredPopup() { _showExpiredPopup = false; _expiredEmail = null; }
+
+    // 로그인이 막힌 상태(만료됨)에서도 유예기간 안내를 보여주기 위해
+    // Auth 서비스가 로그아웃 직전에 붙잡아둔 정보를 사용
+    string? ExpiredGraceMessage()
+    {
+        if (Auth.ExpiredDataAlreadyDeleted)
+            return "유예기간이 지나 클라우드 데이터가 삭제됐어요. 이용권을 다시 구매하면 새로 동기화할 수 있어요.";
+        if (Auth.ExpiredAt == null) return null;
+        var purgeDate = Auth.ExpiredAt.Value.Date.AddDays(GracePeriodDays);
+        var daysUntilPurge = (int)(purgeDate - DateTime.Today).TotalDays;
+        return daysUntilPurge > 0
+            ? $"{daysUntilPurge}일 후 클라우드 데이터가 삭제됩니다. 그 안에 이용권을 갱신하면 그대로 복원돼요."
+            : "클라우드 데이터가 곧 삭제될 예정이에요. 서둘러 이용권을 갱신해 주세요.";
+    }
     string? _deniedEmail;
     void CloseDeniedPopup() { _showDeniedPopup = false; _deniedEmail = null; }
 
