@@ -29,19 +29,38 @@ else if (_projects.Count == 0)
 }
 else
 {
-    <div style="display:flex; gap:6px; margin-bottom:16px; align-items:center;">
-        <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-        @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("출처순","source")})
-        {
-            var ascVal  = baseVal + "_asc";
-            var descVal = baseVal + "_desc";
-            var isActive = _wishSort == ascVal || _wishSort == descVal;
-            var isAsc   = _wishSort == ascVal;
-            <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")"
-                    @onclick="async () => await SetWishSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
-                @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
-            </button>
-        }
+    <div class="filter-sort-bar swatch-filter-bar" style="margin-bottom:16px;">
+        <div class="filter-sort-group">
+            <img src="icons/arrows-down-up.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+            @foreach (var (label, baseVal) in new[]{("등록일","created"),("이름순","name"),("출처순","source")})
+            {
+                var ascVal  = baseVal + "_asc";
+                var descVal = baseVal + "_desc";
+                var isActive = _wishSort == ascVal || _wishSort == descVal;
+                var isAsc   = _wishSort == ascVal;
+                <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
+                        @onclick="async () => await SetWishSort(isActive ? (isAsc ? descVal : ascVal) : descVal)">
+                    @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
+                </button>
+            }
+        </div>
+        <div class="filter-sort-divider"></div>
+        <div class="filter-sort-group swatch-needle-wrapper">
+            <select class="form-control swatch-needle-select" style="flex-shrink:0;" @bind="_wishCategory" @bind:after="SetWishCategory">
+                <option value="all">전체 카테고리</option>
+                @foreach (var cat in Enum.GetValues<ProjectCategory>())
+                {
+                    <option value="@cat.ToString()">@cat</option>
+                }
+            </select>
+        </div>
+        <div class="filter-sort-group swatch-needle-wrapper">
+            <select class="form-control swatch-needle-select" style="flex-shrink:0;" @bind="_wishNeedle" @bind:after="SetWishNeedle">
+                <option value="all">바늘 전체</option>
+                <option value="대바늘">대바늘</option>
+                <option value="코바늘">코바늘</option>
+            </select>
+        </div>
     </div>
     <div class="grid-3">
         @foreach (var proj in SortedWishes)
@@ -49,7 +68,13 @@ else
             <div class="card">
                 <div class="flex-between mb-1">
                     <div class="card-title" style="margin-bottom:0;">@proj.PatternName</div>
-                    <span class="badge badge-wish">위시</span>
+                    <div style="display:flex; gap:4px; flex-shrink:0;">
+                        @if (proj.NeedleType.HasValue)
+                        {
+                            <span class="badge badge-cable">@proj.NeedleType</span>
+                        }
+                        <span class="badge badge-wish">@proj.Category</span>
+                    </div>
                 </div>
 
                 @if (!string.IsNullOrEmpty(proj.OriginalNeedle) || !string.IsNullOrEmpty(proj.OriginalGauge) || !string.IsNullOrEmpty(proj.OriginalYarn) || !string.IsNullOrEmpty(proj.OriginalYarnAmount) || proj.OriginalYarnAmountG > 0 || !string.IsNullOrEmpty(proj.OriginalSize) || !string.IsNullOrEmpty(proj.OriginalOther))
@@ -107,6 +132,30 @@ else
                 <div class="form-group">
                     <label class="form-label">도안 출처</label>
                     <input class="form-control" @bind="_editingProject.PatternSource" placeholder="작가명, 책 이름 등" />
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">카테고리</label>
+                <div class="flex gap-1" style="flex-wrap:wrap;">
+                    @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
+                    {
+                        <button type="button"
+                                class="btn btn-sm @(_editingProject.Category == cat ? "btn-sage" : "btn-ghost")"
+                                @onclick="() => _editingProject.Category = (_editingProject.Category == cat ? ProjectCategory.미분류 : cat)">
+                            @cat
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">바늘 종류</label>
+                <div class="flex gap-1" style="flex-wrap:wrap;">
+                    <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.대바늘 ? "btn-sage" : "btn-ghost")"
+                            @onclick='() => _editingProject.NeedleType = (_editingProject.NeedleType == NeedleType.대바늘 ? (NeedleType?)null : NeedleType.대바늘)'>대바늘</button>
+                    <button type="button" class="btn btn-sm @(_editingProject.NeedleType == NeedleType.코바늘 ? "btn-sage" : "btn-ghost")"
+                            @onclick='() => _editingProject.NeedleType = (_editingProject.NeedleType == NeedleType.코바늘 ? (NeedleType?)null : NeedleType.코바늘)'>코바늘</button>
                 </div>
             </div>
 
@@ -323,14 +372,19 @@ else
 
     bool _loading = true;
     string _wishSort = "created_desc";
+    string _wishCategory = "all";
+    string _wishNeedle = "all";
+    IEnumerable<KnitProject> FilteredWishes => _projects
+        .Where(p => _wishCategory == "all" || p.Category.ToString() == _wishCategory)
+        .Where(p => _wishNeedle == "all" || p.NeedleType?.ToString() == _wishNeedle);
     IEnumerable<KnitProject> SortedWishes => _wishSort switch
     {
-        "name_asc"      => _projects.OrderBy(p => p.PatternName),
-        "name_desc"     => _projects.OrderByDescending(p => p.PatternName),
-        "created_asc"   => _projects.OrderBy(p => p.CreatedAt),
-        "source_asc"    => _projects.OrderBy(p => p.PatternSource).ThenBy(p => p.PatternName),
-        "source_desc"   => _projects.OrderByDescending(p => p.PatternSource).ThenBy(p => p.PatternName),
-        _               => _projects.OrderByDescending(p => p.CreatedAt),
+        "name_asc"      => FilteredWishes.OrderBy(p => p.PatternName),
+        "name_desc"     => FilteredWishes.OrderByDescending(p => p.PatternName),
+        "created_asc"   => FilteredWishes.OrderBy(p => p.CreatedAt),
+        "source_asc"    => FilteredWishes.OrderBy(p => p.PatternSource).ThenBy(p => p.PatternName),
+        "source_desc"   => FilteredWishes.OrderByDescending(p => p.PatternSource).ThenBy(p => p.PatternName),
+        _               => FilteredWishes.OrderByDescending(p => p.CreatedAt),
     };
     bool _showModal = false;
     List<KnitProject> _projects = new();
@@ -342,6 +396,8 @@ else
         await LoadData();
         _yarns = await Storage.GetYarnsAsync();
         _wishSort = await JS.InvokeAsync<string?>("localStorage.getItem", "wish_sort") ?? "created_desc";
+        _wishCategory = await JS.InvokeAsync<string?>("localStorage.getItem", "wish_category") ?? "all";
+        _wishNeedle = await JS.InvokeAsync<string?>("localStorage.getItem", "wish_needle") ?? "all";
         _loading = false;
     }
 
@@ -349,6 +405,16 @@ else
     {
         _wishSort = val;
         await JS.InvokeVoidAsync("localStorage.setItem", "wish_sort", val);
+    }
+
+    async Task SetWishCategory()
+    {
+        await JS.InvokeVoidAsync("localStorage.setItem", "wish_category", _wishCategory);
+    }
+
+    async Task SetWishNeedle()
+    {
+        await JS.InvokeVoidAsync("localStorage.setItem", "wish_needle", _wishNeedle);
     }
 
     async Task LoadData()
