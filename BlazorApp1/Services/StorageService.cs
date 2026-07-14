@@ -817,16 +817,16 @@ namespace KnitLog.Services
                         }
                         else
                         {
-                            // 양쪽에 있음 → IsActive(EndTime없음)인 쪽 우선
+                            // 양쪽에 있음 → "종료 기록(EndTime 있음)"이 항상 우선.
+                            // 활성 상태를 무조건 우선시하면, 이미 멈춘 세션이 다른 기기의
+                            // 오래된 로컬 데이터 때문에 되살아나는 문제가 생김.
                             var existing = sessions[id];
                             bool existingActive = !existing.TryGetProperty("EndTime", out var et1) || et1.ValueKind == JsonValueKind.Null;
                             bool incomingActive = !s.TryGetProperty("EndTime", out var et2) || et2.ValueKind == JsonValueKind.Null;
 
-                            if (incomingActive && !existingActive)
-                                sessions[id] = s; // loser가 활성 → loser 우선
-                            else if (!incomingActive && !existingActive)
-                                sessions[id] = existing; // 둘다 활성 → winner 유지
-                            // 둘다 완료면 winner 유지 (UpdatedAt 기준 이미 winner 선택됨)
+                            if (existingActive && !incomingActive)
+                                sessions[id] = s; // winner는 아직 활성인데 loser에 명시적 종료 기록이 있음 → 종료 기록 우선
+                            // 그 외(둘 다 종료 / 둘 다 활성 / winner가 이미 종료)는 winner 유지
                         }
                     }
                 }

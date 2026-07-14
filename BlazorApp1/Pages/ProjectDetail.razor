@@ -186,7 +186,7 @@ else
                             var hasTarget = counter.Target > 0;
                             var progress  = hasTarget ? Math.Min(100.0, counter.Value * 100.0 / counter.Target) : 0.0;
                             var isDone    = hasTarget && counter.Value >= counter.Target;
-                            <div style="background:#f8f8f8; border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; border:1px solid var(--border);">
+                            <div @key="counter.Id" style="background:#f8f8f8; border-radius:var(--radius-sm); padding:14px; margin-bottom:12px; border:1px solid var(--border);">
                                 <!-- 라벨 + 연필 + 삭제 -->
                                 <div style="display:flex; align-items:center; gap:6px; margin-bottom:10px;">
                                     @if (_editingCounterId == counter.Id)
@@ -1877,10 +1877,18 @@ else
     string CardIcon(string id, bool hasItems) => !hasItems ? "" : _collapsedCards.Contains(id) ? "▶" : "▼";
     string CardCursor(bool hasItems) => hasItems ? "pointer" : "default";
     string FormatDuration(KnitSession s) { var e = s.EndTime ?? DateTime.Now; var t = (int)(e - s.StartTime).TotalSeconds; var h = t/3600; var m = (t%3600)/60; var sc = t%60; return h > 0 ? $"{h}:{m:D2}:{sc:D2}" : $"00:{m:D2}:{sc:D2}"; }
+    bool _togglingCard = false;
     async Task ToggleCard(string id)
     {
-        if (!_collapsedCards.Add(id)) _collapsedCards.Remove(id);
-        await SaveCollapsedCards();
+        // 느리거나 오프라인인 기기에서 저장이 끝나기 전에 다시 탭하면 중복 실행될 수 있어 막아둠
+        if (_togglingCard) return;
+        _togglingCard = true;
+        try
+        {
+            if (!_collapsedCards.Add(id)) _collapsedCards.Remove(id);
+            await SaveCollapsedCards();
+        }
+        finally { _togglingCard = false; }
     }
 
     async Task SaveCollapsedCards()
