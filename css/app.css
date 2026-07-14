@@ -969,6 +969,9 @@ body {
 
     /* 스와치 바늘 콤보박스: 모바일에서 버튼과 높이 맞춤 + auto margin 해제 */
     .swatch-needle-select {
+        width: auto !important;
+        min-width: 110px !important;
+        flex-shrink: 0 !important;
         height: 34px !important;
         min-height: 34px !important;
         max-height: 34px !important;
