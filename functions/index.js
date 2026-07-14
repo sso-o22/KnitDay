@@ -139,6 +139,57 @@ exports.deleteAccount = onCall(
     }
 );
 
+/**
+ * 클라우드 데이터만 삭제 (계정/로그인은 유지) Cloud Function
+ * - Cloudinary {uid}/ 폴더 전체 삭제
+ * - Firestore users/{uid} 컬렉션 삭제
+ * - allowedUsers/{email} 문서, Firebase Auth 계정은 그대로 유지 (탈퇴가 아님)
+ * - 이 기기에 남아있는 로컬 데이터는 건드리지 않음 — 프론트엔드에서 로그아웃까지만 처리
+ *   (그대로 로그인 상태를 유지하면 로컬→클라우드 자동 동기화 때문에 방금 지운 데이터가
+ *    다시 올라갈 수 있어서, 삭제 직후에는 반드시 로그아웃해야 함 — 프론트엔드 책임)
+ * 본인 계정만 호출 가능 (관리자 대리 삭제 없음 — 필요하면 deleteAccount 사용)
+ */
+exports.deleteCloudDataOnly = onCall(
+    async (request) => {
+        if (!request.auth) {
+            throw new HttpsError("unauthenticated", "로그인이 필요합니다.");
+        }
+
+        const uid = request.auth.uid;
+
+        const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+        const apiKey    = process.env.CLOUDINARY_API_KEY;
+        const apiSecret = process.env.CLOUDINARY_API_SECRET;
+        const db        = getFirestore();
+
+        const errors = [];
+
+        // ── 1. Cloudinary {uid}/ 폴더 전체 삭제 (사진 + PDF) ──────
+        if (cloudName && apiKey && apiSecret) {
+            const prefix = `${uid}/`;
+            for (const resourceType of ["image", "raw"]) {
+                try {
+                    await deleteCloudinaryByPrefix(cloudName, apiKey, apiSecret, prefix, resourceType);
+                } catch (e) {
+                    errors.push(`Cloudinary(${resourceType}): ${e.message}`);
+                }
+            }
+        }
+
+        // ── 2. Firestore users/{uid} 하위 문서 전체 삭제 ──────────
+        try {
+            const userRef = db.collection("users").doc(uid);
+            await deleteFirestoreRecursive(db, userRef);
+        } catch (e) {
+            errors.push(`Firestore users: ${e.message}`);
+        }
+
+        // allowedUsers/{email}, Firebase Auth 계정은 의도적으로 건드리지 않음
+        return { success: errors.length === 0, errors };
+    }
+);
+
+
 // Firestore 문서 + 하위 컬렉션 재귀 삭제
 async function deleteFirestoreRecursive(db, docRef) {
     const collections = await docRef.listCollections();
