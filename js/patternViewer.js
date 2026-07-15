@@ -488,9 +488,15 @@ let basePaths = []; // 저장된 필기 (박제)
         _pageSizes[pageNum] = { w: cssW / zoom, h: cssH / zoom };
         // syncContainerSizes()는 로드/줌 변경 시 한 번만 돌고 이후 페이지별 렌더 완료 시점엔
         // 다시 불리지 않아서, 위에서 고친 값이 컨테이너 div 크기엔 반영이 안 될 수 있음 →
-        // 이 페이지 컨테이너만 지금 바로 실제 크기로 맞춰줌 (재진입 시 잘림 현상의 원인)
+        // 이 페이지 컨테이너만 지금 바로 실제 크기로 맞춰줌 (재진입 시 잘림 현상의 원인).
+        // 단, 실제로 값이 어긋나 있을 때만 건드림 — 매 렌더마다 무조건 다시 쓰면
+        // 줌 중 여러 페이지가 연속으로 렌더될 때마다 스크롤 레이아웃이 흔들려 화면이
+        // 깜빡이거나 새로고침되는 것처럼 보이는 부작용이 생김
         const container = document.getElementById('page-container-' + pageNum);
-        if (container) { container.style.width = cssW + 'px'; container.style.height = cssH + 'px'; }
+        if (container && (container.style.width !== cssW + 'px' || container.style.height !== cssH + 'px')) {
+            container.style.width = cssW + 'px';
+            container.style.height = cssH + 'px';
+        }
 
         // 모바일 OOM 방지: canvas buffer 픽셀 수 상한 (16MP, 기존 32MP에서 절반)
         const MAX_BUF_PX = 16 * 1024 * 1024;
