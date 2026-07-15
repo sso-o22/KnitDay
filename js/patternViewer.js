@@ -482,6 +482,11 @@ let basePaths = []; // 저장된 필기 (박제)
         const cssW = Math.floor(vp.width);
         const cssH = Math.floor(vp.height);
 
+        // 페이지마다 너비/높이가 다른(혼합 사이즈) PDF 대응 — 초기화 시 1페이지 크기로
+        // 임시 채워둔 값을, 실제로 이 페이지를 렌더링해서 알게 된 진짜 크기로 갱신.
+        // 이걸 안 하면 1페이지와 폭이 다른 페이지에서 행 마커 좌표 계산이 전부 어긋남.
+        _pageSizes[pageNum] = { w: cssW / zoom, h: cssH / zoom };
+
         // 모바일 OOM 방지: canvas buffer 픽셀 수 상한 (16MP, 기존 32MP에서 절반)
         const MAX_BUF_PX = 16 * 1024 * 1024;
         const rawBufW = Math.floor(cssW * dpr);
