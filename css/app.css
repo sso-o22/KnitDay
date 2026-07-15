@@ -94,6 +94,10 @@ body {
     background: var(--ivory);
     color: var(--text-dark);
     min-height: 100vh; height: 100dvh; min-height: 100dvh;
+    /* 더블탭 확대 제스처 앱 전체에서 비활성화 — 사파리 '브라우저 탭'에서 실행 중일 때
+       (홈 화면 추가 없이 접속) 특히 필요함. 홈 화면에 추가해서 실행하면(standalone)
+       iOS가 이 제스처를 자동으로 꺼주기 때문에 원래도 안 나타났던 것. */
+    touch-action: manipulation;
 }
 
 /* ── 레이아웃 ────────────────────────────────────────── */
