@@ -486,6 +486,11 @@ let basePaths = []; // 저장된 필기 (박제)
         // 임시 채워둔 값을, 실제로 이 페이지를 렌더링해서 알게 된 진짜 크기로 갱신.
         // 이걸 안 하면 1페이지와 폭이 다른 페이지에서 행 마커 좌표 계산이 전부 어긋남.
         _pageSizes[pageNum] = { w: cssW / zoom, h: cssH / zoom };
+        // syncContainerSizes()는 로드/줌 변경 시 한 번만 돌고 이후 페이지별 렌더 완료 시점엔
+        // 다시 불리지 않아서, 위에서 고친 값이 컨테이너 div 크기엔 반영이 안 될 수 있음 →
+        // 이 페이지 컨테이너만 지금 바로 실제 크기로 맞춰줌 (재진입 시 잘림 현상의 원인)
+        const container = document.getElementById('page-container-' + pageNum);
+        if (container) { container.style.width = cssW + 'px'; container.style.height = cssH + 'px'; }
 
         // 모바일 OOM 방지: canvas buffer 픽셀 수 상한 (16MP, 기존 32MP에서 절반)
         const MAX_BUF_PX = 16 * 1024 * 1024;
