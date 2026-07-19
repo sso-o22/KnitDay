@@ -87,6 +87,14 @@
 /* ── 리셋 & 기본 ────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+html {
+    /* manipulation은 더블탭 확대만 막고 두 손가락 핀치 확대는 오히려 허용하는 값이라,
+       핀치 확대까지 막으려면 pan-x pan-y로 스크롤만 허용해야 함.
+       도안 뷰어 자체의 커스텀 핀치줌(JS 터치 이벤트)은 touch-action과 무관하게
+       계속 정상 동작함 — 이건 브라우저의 '기본 확대 동작'만 막는 설정이라서. */
+    touch-action: pan-x pan-y;
+}
+
 
 
 body {
@@ -94,10 +102,8 @@ body {
     background: var(--ivory);
     color: var(--text-dark);
     min-height: 100vh; height: 100dvh; min-height: 100dvh;
-    /* 더블탭 확대 제스처 앱 전체에서 비활성화 — 사파리 '브라우저 탭'에서 실행 중일 때
-       (홈 화면 추가 없이 접속) 특히 필요함. 홈 화면에 추가해서 실행하면(standalone)
-       iOS가 이 제스처를 자동으로 꺼주기 때문에 원래도 안 나타났던 것. */
-    touch-action: manipulation;
+    /* 더블탭/핀치 확대 제스처 앱 전체에서 비활성화 (html의 설정과 동일하게 유지) */
+    touch-action: pan-x pan-y;
 }
 
 /* ── 레이아웃 ────────────────────────────────────────── */
@@ -1530,7 +1536,8 @@ body {
    iOS Live Text/길게 누르기로 뜨는 선택 메뉴가 정밀하지 않고 화면 전체를
    선택해버리는 문제가 있어 아예 꺼둠 (요청에 따라 선택 기능 자체 비활성화) */
 .page-container,
-.page-container canvas {
+.page-container canvas,
+.pv-title-bar {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
