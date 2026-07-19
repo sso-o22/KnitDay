@@ -1534,10 +1534,12 @@ body {
 
 /* 도안 뷰어: PDF 캔버스는 실제 선택 가능한 텍스트가 아니라 이미지라서,
    iOS Live Text/길게 누르기로 뜨는 선택 메뉴가 정밀하지 않고 화면 전체를
-   선택해버리는 문제가 있어 아예 꺼둠 (요청에 따라 선택 기능 자체 비활성화) */
+   선택해버리는 문제가 있어 아예 꺼둠 (요청에 따라 선택 기능 자체 비활성화).
+   펜/형광펜/지우개 등 어떤 도구를 쓰든, 제목줄·상단 툴바까지 전부 적용 */
 .page-container,
 .page-container canvas,
-.pv-title-bar {
+.pv-title-bar,
+.top-bar {
     -webkit-touch-callout: none;
     -webkit-user-select: none;
     user-select: none;
