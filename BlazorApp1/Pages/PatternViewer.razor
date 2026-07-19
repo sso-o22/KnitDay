@@ -27,7 +27,7 @@
                     var pageNum = pg;
                     <div class="page-container" id="page-container-@pageNum" style="position:relative;display:inline-block;">
                         <canvas id="pdf-canvas-@pageNum" style="display:block;"></canvas>
-                        <canvas id="anno-canvas-@pageNum" style="position:absolute;top:0;left:0;z-index:10;cursor:@GetCursor();touch-action:@(_drawMode && _tool != "rowmarker" ? "none" : "auto");pointer-events:@(_drawMode && _tool == "rowmarker" ? "none" : "auto");"
+                        <canvas id="anno-canvas-@pageNum" style="position:absolute;top:0;left:0;z-index:10;cursor:@GetCursor();touch-action:@(_drawMode && _tool != "rowmarker" ? "none" : "auto");pointer-events:@(_drawMode && _tool == "rowmarker" ? "none" : "auto");-webkit-touch-callout:@(_drawMode && _tool != "rowmarker" ? "none" : "default");-webkit-user-select:@(_drawMode && _tool != "rowmarker" ? "none" : "auto");"
                                 @onclick="e => OnAnnoCanvasClick(e, pageNum)"></canvas>
 
                         @* ── 행 높이 수동 지정: 두 선 드래그 ── *@
@@ -948,15 +948,22 @@
     string _cwNewLabel = "";
     bool _cwAddMode = false;
 
+    bool _cwAddingCounterInFlight = false;
     async Task CwAddCounter()
     {
         if (_project == null || string.IsNullOrWhiteSpace(_cwNewLabel)) return;
-        _project.Counters.Add(new ProjectCounter { Label = _cwNewLabel.Trim() });
-        _activeCounterIndex = _project.Counters.Count - 1;
-        _cwNewLabel = "";
-        _cwAddMode = false;
-        await SaveProject();
-        StateHasChanged();
+        if (_cwAddingCounterInFlight) return; // 버튼 클릭 + Enter가 겹치거나 빠른 연타로 중복 생성되는 것 방지
+        _cwAddingCounterInFlight = true;
+        try
+        {
+            _project.Counters.Add(new ProjectCounter { Label = _cwNewLabel.Trim() });
+            _activeCounterIndex = _project.Counters.Count - 1;
+            _cwNewLabel = "";
+            _cwAddMode = false;
+            await SaveProject();
+            StateHasChanged();
+        }
+        finally { _cwAddingCounterInFlight = false; }
     }
 
     async Task CwAddKeyDown(KeyboardEventArgs e)
@@ -1033,6 +1040,7 @@
     // ── 초기화 ──
     protected override async Task OnInitializedAsync()
     {
+        Storage.OnSyncCompleted += OnSyncCompletedHandler;
         _project=(await Storage.GetProjectsAsync()).FirstOrDefault(p=>p.Id==ProjectId);
         if(_project?.Sessions.Any(s=>s.IsActive)==true)StartRefreshTimer();
         // 완료된 카운터(Target > 0 && Value >= Target)를 건너뛰고 첫 미완료 카운터부터 표시
@@ -2037,6 +2045,7 @@
 
     public async ValueTask DisposeAsync()
     {
+        Storage.OnSyncCompleted -= OnSyncCompletedHandler;
         _saveCts?.Cancel();
         _saveCts?.Dispose();
         StopRefreshTimer();
@@ -2045,5 +2054,25 @@
         // (세션 활성 중엔 EndSession에서도 해제하지만 중복 해제는 무해)
         try { await JS.InvokeVoidAsync("releaseWakeLock"); } catch { }
         try { await JS.InvokeVoidAsync("patternViewer.dispose"); } catch { }
+    }
+
+    // 다른 기기 동기화가 배경에서 완료됐을 때, 화면에 보여주고 있는 타이머/세션
+    // 상태가 낡은 채로 계속 돌아가 보이는 것 방지 (예: 폰에서 멈춘 타이머가
+    // 패드 화면엔 계속 도는 것처럼 보이는 문제)
+    async void OnSyncCompletedHandler()
+    {
+        if (_project == null) return;
+        try
+        {
+            var all = await Storage.GetProjectsAsync();
+            var fresh = all.FirstOrDefault(p => p.Id == _project.Id);
+            if (fresh == null) return;
+            _project.Sessions = fresh.Sessions;
+            _project.Status = fresh.Status;
+            if (_project.Sessions.Any(s => s.IsActive)) StartRefreshTimer();
+            else StopRefreshTimer();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
     }
 }
