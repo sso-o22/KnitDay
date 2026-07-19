@@ -760,6 +760,13 @@
             Project.Photos.Clear();
             foreach (var p in _photoSnapshot) Project.Photos.Add(p);
         }
+        // '완성작 추가'로 열어서 아직 한 번도 저장 안 한 새 항목이면, 취소 시
+        // 빈 상태의 조회 화면을 보여주지 말고 팝업 자체를 그냥 닫아야 함
+        if (StartInEditMode)
+        {
+            await OnClose.InvokeAsync();
+            return;
+        }
         LoadMeasures();
         _editing = false;
     }

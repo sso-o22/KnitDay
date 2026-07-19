@@ -87,6 +87,12 @@
 /* ── 리셋 & 기본 ────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* 라디오/체크박스 기본 파란색 대신 테마색 사용 (도구 추가 등 폼 전반) */
+input[type='radio'],
+input[type='checkbox'] {
+    accent-color: var(--theme-active);
+}
+
 html {
     /* manipulation은 더블탭 확대만 막고 두 손가락 핀치 확대는 오히려 허용하는 값이라,
        핀치 확대까지 막으려면 pan-x pan-y로 스크롤만 허용해야 함.
