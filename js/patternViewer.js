@@ -51,6 +51,7 @@ window.patternViewer = (() => {
     let currentZoom = 1.0, _fitZoom = 1.0;
     let currentPageNum = 1, totalPages = 0;
     let _pageSizes = {};      // pageNum → {w, h} at zoom=1 CSS px
+    let _pageLinks = {};      // pageNum → [{url, x, y, w, h}] at zoom=1 CSS px (PDF 링크 주석)
     let paths = [];
 let basePaths = []; // 저장된 필기 (박제)
     let isDrawing = false, currentPath = null;
@@ -486,6 +487,22 @@ let basePaths = []; // 저장된 필기 (박제)
         // 임시 채워둔 값을, 실제로 이 페이지를 렌더링해서 알게 된 진짜 크기로 갱신.
         // 이걸 안 하면 1페이지와 폭이 다른 페이지에서 행 마커 좌표 계산이 전부 어긋남.
         _pageSizes[pageNum] = { w: cssW / zoom, h: cssH / zoom };
+
+        // PDF에 실제 링크 주석(하이퍼링크)이 있으면 위치를 뽑아서 캐싱 (페이지당 1회만)
+        if (!_pageLinks[pageNum]) {
+            try {
+                const annots = await page.getAnnotations();
+                const vp1 = page.getViewport({ scale: 1 });
+                _pageLinks[pageNum] = annots
+                    .filter(a => a.subtype === 'Link' && a.url)
+                    .map(a => {
+                        const r = vp1.convertToViewportRectangle(a.rect);
+                        const x = Math.min(r[0], r[2]), y = Math.min(r[1], r[3]);
+                        const w = Math.abs(r[2] - r[0]), h = Math.abs(r[3] - r[1]);
+                        return { url: a.url, x, y, w, h };
+                    });
+            } catch (e) { _pageLinks[pageNum] = []; }
+        }
         // syncContainerSizes()는 로드/줌 변경 시 한 번만 돌고 이후 페이지별 렌더 완료 시점엔
         // 다시 불리지 않아서, 위에서 고친 값이 컨테이너 div 크기엔 반영이 안 될 수 있음 →
         // 이 페이지 컨테이너만 지금 바로 실제 크기로 맞춰줌 (재진입 시 잘림 현상의 원인).
@@ -782,7 +799,7 @@ let basePaths = []; // 저장된 필기 (박제)
         _lastPdfBytes = bytes.slice(0);
         pdfDoc = await window.pdfjsLib.getDocument({ data: bytes, cMapUrl: base+'/pdfjs/web/cmaps/', cMapPacked: true, standardFontDataUrl: base+'/pdfjs/web/standard_fonts/' }).promise;
         totalPages = pdfDoc.numPages;
-        abortAllPageHandlers(); _renderedPages = new Set(); _pageSizes = {}; paths = [];
+        abortAllPageHandlers(); _renderedPages = new Set(); _pageSizes = {}; _pageLinks = {}; paths = [];
         const p1 = await pdfDoc.getPage(1), vp1 = p1.getViewport({ scale: 1.0 });
         for (let i = 1; i <= totalPages; i++) _pageSizes[i] = { w: vp1.width, h: vp1.height };
         return totalPages;
@@ -862,7 +879,7 @@ let basePaths = []; // 저장된 필기 (박제)
             if (_intersectionObserver) { _intersectionObserver.disconnect(); _intersectionObserver=null; }
             abortAllPageHandlers();
             Object.values(_renderTasks).forEach(t => { try { if(t) t.cancel(); } catch(_){} });
-            _renderTasks={}; _renderedPages=new Set(); _pageSizes={}; pdfDoc=null; paths=[]; basePaths=[];
+            _renderTasks={}; _renderedPages=new Set(); _pageSizes={}; _pageLinks={}; pdfDoc=null; paths=[]; basePaths=[];
             isDrawing=false; currentPath=null; _isPinching=false; _isZooming=false;
         },
 
@@ -970,7 +987,7 @@ let basePaths = []; // 저장된 필기 (박제)
                 await ensurePdfJs();
                 const base = getPdfjsBase();
                 pdfDoc = await window.pdfjsLib.getDocument({ data: r.bytes, cMapUrl: base+'/pdfjs/web/cmaps/', cMapPacked: true, standardFontDataUrl: base+'/pdfjs/web/standard_fonts/' }).promise;
-                totalPages = pdfDoc.numPages; abortAllPageHandlers(); _renderedPages=new Set(); _pageSizes={}; _lastPdfBytes=r.bytes;
+                totalPages = pdfDoc.numPages; abortAllPageHandlers(); _renderedPages=new Set(); _pageSizes={}; _pageLinks={}; _lastPdfBytes=r.bytes;
                 const p1 = await pdfDoc.getPage(1), vp1 = p1.getViewport({scale:1.0});
                 for (let i=1;i<=totalPages;i++) _pageSizes[i]={w:vp1.width,h:vp1.height};
                 return totalPages;
@@ -1178,6 +1195,13 @@ let basePaths = []; // 저장된 필기 (박제)
         getPageHeight(pageNum) {
             const canvas = document.getElementById('pdf-canvas-' + pageNum);
             return canvas ? canvas.offsetHeight : 0;
+        },
+
+        // 이 페이지의 PDF 링크 주석(하이퍼링크) 목록 반환 — zoom=1 CSS px 좌표, JSON 문자열
+        // 아직 이 페이지를 렌더링 전이면 null(문자열 "null") 반환 — 빈 배열([])과 구분해서
+        // C# 쪽이 "링크 없음"으로 잘못 확정 캐싱하지 않게 함
+        getPageLinks(pageNum) {
+            return JSON.stringify(_pageLinks[pageNum] || null);
         },
 
         // 수동 행 높이: 두 선을 각각 드래그해서 한 행 높이 지정
