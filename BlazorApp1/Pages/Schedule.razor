@@ -873,8 +873,15 @@ else
     async Task OnPhotoSelected(InputFileChangeEventArgs e)
     {
         if (_editingProject == null) return;
+        var validPhotoExts = new[] { ".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp" };
+        var skipped = new List<string>();
         foreach (var file in e.GetMultipleFiles(10))
         {
+            // accept 속성은 기기(특히 갤럭시 등 안드로이드)에 따라 무시될 수 있어 실제로도 한 번 더 확인
+            var isImage = (file.ContentType ?? "").StartsWith("image/") ||
+                validPhotoExts.Contains(System.IO.Path.GetExtension(file.Name).ToLowerInvariant());
+            if (!isImage) { skipped.Add(file.Name); continue; }
+
             var buf = new byte[file.Size];
             await file.OpenReadStream(10 * 1024 * 1024).ReadAsync(buf);
             var base64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(buf)}";
@@ -885,6 +892,8 @@ else
                 TakenAt = DateTime.Now
             });
         }
+        if (skipped.Any())
+            await JS.InvokeVoidAsync("showToast", $"이미지 파일만 추가할 수 있어요. ({string.Join(", ", skipped)})", "error");
     }
 
     void RemovePhoto(Guid photoId)

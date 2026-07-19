@@ -935,6 +935,58 @@ namespace KnitLog.Services
             await SaveAsync(KEY_PROJECTS, "projects", "Id", list);
         }
 
+        /// <summary>
+        /// 프로젝트 하나만 클라우드에서 다시 읽어와 로컬보다 최신이면 병합해서 반영.
+        /// 동기화는 로그인 시점에만 도는 구조라, 다른 기기에서 방금 멈춘 타이머 같은 변경사항을
+        /// 재로그인 없이도 놓치지 않도록 프로젝트 상세를 열 때 호출하는 용도.
+        /// 세션은 "종료 기록이 있는 쪽"을 우선해서 병합 — 활성 상태를 무조건 우선하면
+        /// 이미 멈춘 세션이 로컬의 오래된 활성 상태 때문에 되살아나는 문제가 생김.
+        /// </summary>
+        public async Task<KnitProject?> RefreshProjectFromCloudAsync(Guid projectId)
+        {
+            if (!IsLoggedIn) return null;
+            try
+            {
+                var json = await _js.InvokeAsync<string?>("firebaseStore.getDocument", $"users/{Uid}/projects/{projectId}");
+                if (string.IsNullOrEmpty(json) || json.StartsWith("__error__")) return null;
+
+                var cloud = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json);
+                if (cloud == null) return null;
+
+                var list  = await GetProjectsAsync();
+                var local = list.FirstOrDefault(p => p.Id == projectId);
+                if (local == null)
+                {
+                    list.Add(cloud);
+                    await SaveLocalAsync(KEY_PROJECTS, list);
+                    return cloud;
+                }
+                if (cloud.UpdatedAt <= local.UpdatedAt) return local; // 로컬이 이미 최신이면 그대로 유지
+
+                var mergedSessions = new Dictionary<Guid, KnitSession>();
+                foreach (var s in local.Sessions) mergedSessions[s.Id] = s;
+                foreach (var s in cloud.Sessions)
+                {
+                    if (!mergedSessions.TryGetValue(s.Id, out var existing)) { mergedSessions[s.Id] = s; continue; }
+                    bool existingActive = existing.EndTime == null;
+                    bool incomingActive = s.EndTime == null;
+                    if (existingActive && !incomingActive) mergedSessions[s.Id] = s; // 로컬은 활성인데 클라우드가 종료 기록 있음 → 종료 기록 우선
+                    // 그 외(로컬이 이미 종료 / 둘 다 활성 / 둘 다 종료)는 기존 값 유지
+                }
+                cloud.Sessions = mergedSessions.Values.OrderBy(s => s.StartTime).ToList();
+
+                var idx = list.FindIndex(p => p.Id == projectId);
+                if (idx >= 0) list[idx] = cloud; else list.Add(cloud);
+                await SaveLocalAsync(KEY_PROJECTS, list);
+                return cloud;
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine($"RefreshProjectFromCloudAsync: {ex.Message}");
+                return null;
+            }
+        }
+
         public async Task DeleteProjectAsync(Guid id)
         {
             var list = await GetProjectsAsync();
@@ -1062,8 +1114,13 @@ namespace KnitLog.Services
             TombstoneFirebaseDocBackground("swatches", id.ToString());
         }
 
-        // ── 내보내기 ─────────────────────────────────────────────────
-        // export 시 사진 base64 제외 (용량 절감 — 사진은 기기 로컬에만 저장됨)
+        // ── 내보내기 (사용 안 됨) ──────────────────────────────────────
+        // ⚠️ 현재 실제 "데이터 내보내기" 버튼은 이 함수를 쓰지 않음 — 대신
+        // Settings.razor의 ExecuteExport()가 JS의 window.knitDB.exportAll()을
+        // 직접 호출해요 (knittracker_projects 등 IndexedDB 키를 그대로 읽어 내보냄).
+        // 이 함수는 그 키 이름 규칙과도 안 맞아서(예: "Projects" vs "knittracker_projects")
+        // 지금 호출하면 가져오기와 형식이 안 맞아 정상 동작하지 않아요. 삭제하거나,
+        // 실제로 쓸 계획이 있으면 ExecuteExport 쪽 로직과 통일해서 다시 연결해야 해요.
         public async Task<string> ExportAllAsync()
         {
             var projects = await GetProjectsAsync();

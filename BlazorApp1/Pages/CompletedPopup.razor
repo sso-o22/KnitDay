@@ -927,6 +927,18 @@
             files = files.Where(f => f.Size <= maxFileSize).ToList();
             if (!files.Any()) return;
         }
+        // accept 속성은 기기(특히 갤럭시 등 안드로이드)에 따라 무시될 수 있어 실제로도 한 번 더 확인
+        var validPhotoExts = new[] { ".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp" };
+        var invalidType = files.Where(f =>
+            !(f.ContentType ?? "").StartsWith("image/") &&
+            !validPhotoExts.Contains(System.IO.Path.GetExtension(f.Name).ToLowerInvariant())).ToList();
+        if (invalidType.Any())
+        {
+            var names = string.Join(", ", invalidType.Select(f => f.Name));
+            await JS.InvokeVoidAsync("showToast", $"이미지 파일만 추가할 수 있어요. ({names})", "error");
+            files = files.Except(invalidType).ToList();
+            if (!files.Any()) return;
+        }
         await JS.InvokeVoidAsync("showToast", "사진 업로드 중...");
         StateHasChanged();
         foreach (var file in files)

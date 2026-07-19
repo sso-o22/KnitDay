@@ -836,6 +836,15 @@ else
     {
         var file = e.File;
         if (file == null) return;
+        // accept 속성은 기기(특히 갤럭시 등 안드로이드)에 따라 무시될 수 있어 실제로도 한 번 더 확인
+        var validPhotoExts = new[] { ".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp" };
+        var isImage = (file.ContentType ?? "").StartsWith("image/") ||
+            validPhotoExts.Contains(System.IO.Path.GetExtension(file.Name).ToLowerInvariant());
+        if (!isImage)
+        {
+            await JS.InvokeVoidAsync("showToast", "이미지 파일만 추가할 수 있어요.", "error");
+            return;
+        }
         var maxSize = 5 * 1024 * 1024; // 5MB
         using var stream = file.OpenReadStream(maxSize);
         using var ms = new System.IO.MemoryStream();
