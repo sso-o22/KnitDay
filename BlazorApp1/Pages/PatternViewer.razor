@@ -30,6 +30,18 @@
                         <canvas id="anno-canvas-@pageNum" style="position:absolute;top:0;left:0;z-index:10;cursor:@GetCursor();touch-action:@(_drawMode && _tool != "rowmarker" ? "none" : "auto");pointer-events:@(_drawMode && _tool == "rowmarker" ? "none" : "auto");-webkit-touch-callout:@(_drawMode && _tool != "rowmarker" ? "none" : "default");-webkit-user-select:@(_drawMode && _tool != "rowmarker" ? "none" : "auto");"
                                 @onclick="e => OnAnnoCanvasClick(e, pageNum)"></canvas>
 
+                        @* ── PDF에 실제 등록된 하이퍼링크(유튜브 등) 탭 가능 영역 ── *@
+                        @if (_pageLinks.TryGetValue(pageNum, out var pageLinkList))
+                        {
+                            <div style="position:absolute;top:0;left:0;width:100%;height:100%;z-index:15;pointer-events:none;">
+                                @foreach (var link in pageLinkList)
+                                {
+                                    <a href="@link.Url" target="_blank" rel="noopener noreferrer" title="@link.Url"
+                                       style="position:absolute; left:@((link.X*_zoom).ToString("F1"))px; top:@((link.Y*_zoom).ToString("F1"))px; width:@((link.W*_zoom).ToString("F1"))px; height:@((link.H*_zoom).ToString("F1"))px; pointer-events:@(_drawMode ? "none" : "auto"); cursor:pointer;"></a>
+                                }
+                            </div>
+                        }
+
                         @* ── 행 높이 수동 지정: 두 선 드래그 ── *@
                         @if (_tool == "rowheightdraw" && _rowDrawPage == pageNum)
                         {
@@ -1446,6 +1458,7 @@
         _currentPage = page;
         StateHasChanged();
         _ = SaveViewerStateAsync();
+        _ = LoadPageLinksAsync(page);
     }
     [JSInvokable] public void NotifyAnnotationChanged()
     {
@@ -1462,6 +1475,32 @@
     [JSInvokable] public void OnRenderPdfComplete()
     {
         _renderPdfTcs?.TrySetResult();
+        _ = LoadPageLinksAsync(_currentPage);
+    }
+
+    // ── PDF 하이퍼링크(예: 도안 속 유튜브 링크) 탭 가능하게 ──
+    record PdfLinkRect(string Url, double X, double Y, double W, double H);
+    Dictionary<int, List<PdfLinkRect>> _pageLinks = new();
+
+    async Task LoadPageLinksAsync(int pageNum)
+    {
+        if (_pageLinks.ContainsKey(pageNum)) return; // 이미 로드됨
+        try
+        {
+            var json = await JS.InvokeAsync<string>("patternViewer.getPageLinks", pageNum);
+            if (json == "null")
+            {
+                // 아직 이 페이지가 렌더링되기 전 — 잠깐 뒤 다시 시도 (한 번만)
+                await Task.Delay(400);
+                json = await JS.InvokeAsync<string>("patternViewer.getPageLinks", pageNum);
+                if (json == "null") return; // 그래도 안 됐으면 다음 트리거(스크롤 등) 때 재시도
+            }
+            var links = System.Text.Json.JsonSerializer.Deserialize<List<PdfLinkRect>>(json,
+                new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+            _pageLinks[pageNum] = links;
+            if (links.Count > 0) await InvokeAsync(StateHasChanged);
+        }
+        catch { }
     }
 
     // ── 필기 ──
