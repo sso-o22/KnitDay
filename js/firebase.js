@@ -302,3 +302,114 @@ window.deleteKnitDayCloudDataOnly = async () => {
         return JSON.stringify({ success: false, error: e.message });
     }
 };
+
+// ── 비활성(오래 안 켰을 때) 데이터 유실 방지 푸시 알림 ──────────────
+// 로그인 여부와 무관하게 기기 단위 익명 구독. 계정이 없어도 동작해야 하므로
+// httpsCallable을 인증 없이 그대로 호출함 (해당 Cloud Function들은 로그인 불필요).
+const VAPID_PUBLIC_KEY = 'BJFsijDu2HCZ1yIBuaW4FdUMVEASRR5wnS8vWZhha4pTdkrBOPtIjog-s-SZcrODCgz40QWCuVPP3OacfY2UAnQ';
+
+function urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+function getOrCreateDeviceId() {
+    let id = localStorage.getItem('knitday_push_device_id');
+    if (!id) {
+        id = 'dev_' + crypto.randomUUID().replace(/-/g, '');
+        localStorage.setItem('knitday_push_device_id', id);
+    }
+    return id;
+}
+
+window.knitPush = {
+    // 이 기기/브라우저가 알림을 받을 수 있는 환경인지
+    // iOS(Safari)는 홈 화면 추가 앱에서만 가능 — 그 외(안드로이드 크롬 등)는
+    // 브라우저 탭에서도 알림 권한만 있으면 바로 동작함
+    isSupported() {
+        const hasApis = 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+        if (!hasApis) return false;
+        const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent)
+            || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS 13+ 데스크톱 UA 대응
+        if (!isIOS) return true; // 안드로이드/데스크톱은 탭에서도 바로 지원
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+            || window.navigator.standalone === true; // iOS 구버전 호환
+        return isStandalone;
+    },
+
+    // 현재 구독 상태 (권한 + 실제 구독 존재 여부)
+    async getStatus() {
+        if (!this.isSupported()) return 'unsupported';
+        if (Notification.permission === 'denied') return 'denied';
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            return sub ? 'subscribed' : 'not-subscribed';
+        } catch (e) {
+            return 'not-subscribed';
+        }
+    },
+
+    // 알림 켜기 — 권한 요청부터 구독, 서버 등록까지
+    async subscribe() {
+        if (!this.isSupported()) return { success: false, error: '이 기기에서는 지원되지 않아요.' };
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return { success: false, error: '알림 권한이 거부됐어요.' };
+
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            let sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+                sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+            }
+            const deviceId = getOrCreateDeviceId();
+            const fn = httpsCallable(functions, 'registerPushSubscription');
+            await fn({ deviceId, subscription: sub.toJSON() });
+            return { success: true };
+        } catch (e) {
+            console.error('knitPush.subscribe:', e);
+            return { success: false, error: e.message };
+        }
+    },
+
+    // 알림 끄기
+    async unsubscribe() {
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            const deviceId = localStorage.getItem('knitday_push_device_id');
+            if (!sub && !deviceId) return { success: true }; // 정리할 게 아예 없음 — 조용히 종료
+            if (sub) await sub.unsubscribe();
+            if (deviceId) {
+                const fn = httpsCallable(functions, 'unregisterPushSubscription');
+                await fn({ deviceId });
+                localStorage.removeItem('knitday_push_device_id'); // 재호출 시 다시 안 타도록
+            }
+            return { success: true };
+        } catch (e) {
+            console.error('knitPush.unsubscribe:', e);
+            return { success: false, error: e.message };
+        }
+    },
+
+    // 앱을 열 때마다 호출 — 이미 구독 중이면 "최근에 열었다"는 걸 서버에 알려서
+    // 불필요한 알림이 안 가게 함 (구독 안 돼있으면 조용히 아무것도 안 함)
+    async heartbeat() {
+        if (!this.isSupported()) return;
+        try {
+            const reg = await navigator.serviceWorker.ready;
+            const sub = await reg.pushManager.getSubscription();
+            if (!sub) return;
+            const deviceId = getOrCreateDeviceId();
+            const fn = httpsCallable(functions, 'pingDeviceActive');
+            await fn({ deviceId });
+        } catch (e) {
+            // 조용히 무시 — 하트비트 실패가 앱 사용을 막으면 안 됨
+        }
+    }
+};

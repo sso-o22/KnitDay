@@ -1,4 +1,4 @@
-/* Manifest version: gr9Q6k+x */
+/* Manifest version: +j1Seyu3 */
 // Caution! Be sure you understand the caveats before publishing an application with
 // offline support. See https://aka.ms/blazor-offline-considerations
 
@@ -57,4 +57,33 @@ async function onFetch(event) {
     }
 
     return cachedResponse || fetch(event.request);
-}// build-stamp: 20260719141545
+}
+
+// ── 푸시 알림 (비로그인 사용자 데이터 유실 방지 리마인더용) ──────────
+self.addEventListener('push', event => {
+    let data = {};
+    try { data = event.data ? event.data.json() : {}; } catch (e) { data = { body: event.data ? event.data.text() : '' }; }
+
+    const title = data.title || 'KnitDay';
+    const options = {
+        body: data.body || '오랜만이에요! 앱을 열어서 데이터가 안전한지 확인해보세요.',
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: data.tag || 'knitday-inactivity-reminder', // 같은 tag면 알림이 쌓이지 않고 최신 것만 보임
+        data: { url: data.url || '/' }
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', event => {
+    event.notification.close();
+    const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+            for (const client of clientList) {
+                if ('focus' in client) return client.focus();
+            }
+            if (clients.openWindow) return clients.openWindow(targetUrl);
+        })
+    );
+});// build-stamp: 20260720001224
