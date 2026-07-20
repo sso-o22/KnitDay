@@ -877,9 +877,21 @@ else
         await LoadData();
     }
 
+    bool _photoUploadInFlight = false;
     async Task OnPhotoSelected(InputFileChangeEventArgs e)
     {
         if (_editingProject == null) return;
+        if (_photoUploadInFlight) return; // 연타/중복 이벤트로 같은 사진이 두 번 추가되는 것 방지
+        _photoUploadInFlight = true;
+        try
+        {
+            await OnPhotoSelectedInner(e);
+        }
+        finally { _photoUploadInFlight = false; }
+    }
+
+    async Task OnPhotoSelectedInner(InputFileChangeEventArgs e)
+    {
         var validPhotoExts = new[] { ".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp" };
         var skipped = new List<string>();
         foreach (var file in e.GetMultipleFiles(10))
@@ -908,7 +920,7 @@ else
         if (_editingProject == null) return;
         var photo = _editingProject.Photos.FirstOrDefault(p => p.Id == photoId);
         if (photo != null && !string.IsNullOrEmpty(photo.StorageUrl))
-            _ = Storage.DeletePhotoAsync(_editingProject.Id.ToString(), photoId.ToString());
+            _ = Storage.DeletePhotoAsync(_editingProject.Id.ToString(), photoId.ToString(), photo.FileSizeBytes);
         _editingProject.Photos.RemoveAll(p => p.Id == photoId);
     }
 }

@@ -266,7 +266,7 @@
                                 }
                                 <button class="btn btn-danger btn-sm"
                                         style="position:absolute;top:2px;right:2px;padding:1px 4px;"
-                                        @onclick="() => RemovePhoto(ep)">
+                                        @onclick="async () => await RemovePhoto(ep)">
                                     <img src="icons/x.svg" class="icon-line" style="width:9px;height:9px;" />
                                 </button>
                             </div>
@@ -874,11 +874,13 @@
         await JS.InvokeVoidAsync("eval", "document.getElementById('popup-photo-input').click()");
     }
 
-    void RemovePhoto(ProjectPhoto photo)
+    async Task RemovePhoto(ProjectPhoto photo)
     {
         if (Project == null || photo == null) return;
         Project.Photos.Remove(photo);
         StateHasChanged();
+        if (!string.IsNullOrEmpty(photo.StorageUrl))
+            await Storage.DeletePhotoAsync(Project.Id.ToString(), photo.Id.ToString(), photo.FileSizeBytes);
     }
 
     void OnPopupAddYarn(ChangeEventArgs e)
@@ -900,9 +902,21 @@
         StateHasChanged();
     }
 
+    bool _photoUploadInFlight = false;
     async Task OnPhotoSelected(InputFileChangeEventArgs e)
     {
         if (Project == null) return;
+        if (_photoUploadInFlight) return; // 연타/중복 이벤트로 같은 사진이 두 번 업로드되는 것 방지
+        _photoUploadInFlight = true;
+        try
+        {
+            await OnPhotoSelectedInner(e);
+        }
+        finally { _photoUploadInFlight = false; }
+    }
+
+    async Task OnPhotoSelectedInner(InputFileChangeEventArgs e)
+    {
         const int maxPhotos = 5;
         var files = e.GetMultipleFiles(10).ToList();
         int selectedCount = files.Count;

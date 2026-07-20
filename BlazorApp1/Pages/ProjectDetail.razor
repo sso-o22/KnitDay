@@ -2163,9 +2163,21 @@ else
     }
 
     // ── 사진 ────────────────────────────────────────────
+    bool _photoUploadInFlight = false;
     async Task OnPhotoSelected(InputFileChangeEventArgs e)
     {
         if (_project == null) return;
+        if (_photoUploadInFlight) return; // 연타/중복 이벤트로 같은 사진이 두 번 업로드되는 것 방지
+        _photoUploadInFlight = true;
+        try
+        {
+            await OnPhotoSelectedInner(e);
+        }
+        finally { _photoUploadInFlight = false; }
+    }
+
+    async Task OnPhotoSelectedInner(InputFileChangeEventArgs e)
+    {
         const int maxPhotos = 5;
         var files = e.GetMultipleFiles(10).ToList();
         int selectedCount = files.Count;
@@ -2260,7 +2272,12 @@ else
         catch (Exception ex)
         {
             _saving = false;
-            _project.Photos.RemoveAll(p => files.Any(f => f.Name == p.FileName));
+            var failed = _project.Photos.Where(p => files.Any(f => f.Name == p.FileName)).ToList();
+            _project.Photos.RemoveAll(p => failed.Contains(p));
+            // 로컬 저장은 실패했어도 Cloudinary 업로드 자체는 이미 끝났을 수 있어서, 고아 파일로 안 남게 정리
+            foreach (var p in failed)
+                if (!string.IsNullOrEmpty(p.StorageUrl))
+                    await Storage.DeletePhotoAsync(_project.Id.ToString(), p.Id.ToString(), p.FileSizeBytes);
             await JS.InvokeVoidAsync("showToast", $"저장 실패 (용량 초과일 수 있어요): {ex.Message}", "error");
             StateHasChanged();
         }
