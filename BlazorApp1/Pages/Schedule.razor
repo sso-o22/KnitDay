@@ -762,8 +762,15 @@ else
     {
         _saving = true; StateHasChanged();
         if (_editingProject == null || string.IsNullOrWhiteSpace(_editingProject.PatternName)) return;
-        if (_editingProject.Id == Guid.Empty)
+        var isNew = _editingProject.Id == Guid.Empty;
+        if (isNew)
+        {
             _editingProject.Id = Guid.NewGuid();
+            // 문어발에서 바로 새 프로젝트를 만드는 경우, 위시리스트 "시작하기"를 거치지 않아서
+            // 활동 내역에 "시작"이 안 남던 문제 — 여기서 직접 기록
+            if (_editingProject.Status == ProjectStatus.진행중)
+                _editingProject.StatusLogs.Add(new StatusLog { At = DateTime.Now, Action = "시작" });
+        }
         await Storage.SaveProjectAsync(_editingProject);
         foreach (var s in _allSwatches)
             await Storage.SaveSwatchAsync(s);

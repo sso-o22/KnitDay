@@ -2611,6 +2611,16 @@ else
     async Task SaveEdit()
     {
         _saving = true; StateHasChanged();
+        // 수정 화면에서 시작일을 바꿨으면, 활동 기록의 "시작" 로그 날짜도 같이 맞춰줌
+        // (둘이 따로 노는 별개 값이라 안 맞으면 활동 기록이 요약 카드랑 다르게 보임)
+        if (_project != null && _editSnapshot != null && _project.StartDate != _editSnapshot.StartDate && _project.StartDate.HasValue)
+        {
+            var startLog = _project.StatusLogs.FirstOrDefault(l => l.Action == "시작");
+            if (startLog != null)
+                startLog.At = _project.StartDate.Value.Date + startLog.At.TimeOfDay;
+            else
+                _project.StatusLogs.Add(new StatusLog { At = _project.StartDate.Value, Action = "시작" });
+        }
         await Save();
         // 스와치 연결 변경사항 저장
         foreach (var s in _allSwatches)
