@@ -107,6 +107,51 @@
     </div>
     } @* _isPremium || IsLoggedIn *@
 
+    @if (!Auth.IsLoggedIn)
+    {
+    <!-- 데이터 유실 방지 알림 (비로그인 사용자용) -->
+    <div class="card">
+        <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+            <img src="icons/warning.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />데이터 유실 방지 알림
+        </div>
+        <p style="font-size:0.85rem;color:var(--text-mid);margin-bottom:12px;">
+            로그인 없이 사용 중이면 기기에만 데이터가 저장돼요. 오래 앱을 안 켜면(특히 아이폰) 기기 정책으로 데이터가 지워질 수 있는데, 이 알림을 켜두면 오래 안 켰을 때 미리 알려드려요.
+        </p>
+        @if (_pushStatus == "unsupported")
+        {
+            <p style="font-size:0.78rem;color:var(--text-light);">
+                이 기능은 <b>홈 화면에 추가</b>한 상태에서만 사용할 수 있어요. 먼저 홈 화면에 추가해 주세요.
+            </p>
+        }
+        else if (_pushStatus == "denied")
+        {
+            <p style="font-size:0.78rem;color:var(--text-light);">
+                알림 권한이 거부돼 있어요. 기기의 알림 설정에서 KnitDay 알림을 허용한 뒤 다시 시도해 주세요.
+            </p>
+        }
+        else if (_pushStatus == "subscribed")
+        {
+            <div style="display:flex;align-items:center;gap:8px;">
+                <span style="font-size:0.82rem;color:#267848;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                    <img src="icons/check-circle.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />알림이 켜져 있어요
+                </span>
+                <button class="btn btn-ghost btn-sm" @onclick="DisablePushReminder" disabled="@_pushBusy">끄기</button>
+            </div>
+        }
+        else
+        {
+            <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="EnablePushReminder" disabled="@_pushBusy">
+                <img src="icons/warning.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />
+                @(_pushBusy ? "처리 중..." : "알림 켜기")
+            </button>
+        }
+        @if (!string.IsNullOrEmpty(_pushError))
+        {
+            <p style="font-size:0.78rem;color:#c03030;margin-top:8px;">@_pushError</p>
+        }
+    </div>
+    }
+
     <!-- 테마 -->
     <div class="card">
         <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;"><img src="icons/palette.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />테마 색상</div>
@@ -890,6 +935,8 @@
             var premium = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_premium");
             _isPremium = premium == "1";
             await LoadCachedExpiryBannerAsync();
+            if (!Auth.IsLoggedIn)
+                await RefreshPushStatusAsync();
             try
             {
                 _versionInfo = await Http.GetFromJsonAsync<VersionInfo>("version.json");
@@ -897,6 +944,43 @@
             catch { }
             StateHasChanged();
         }
+    }
+
+    // ── 데이터 유실 방지 알림 (비로그인 사용자용, 익명 푸시 구독) ──────
+    string _pushStatus = "checking"; // unsupported | denied | subscribed | not-subscribed | checking
+    bool _pushBusy = false;
+    string _pushError = "";
+
+    async Task RefreshPushStatusAsync()
+    {
+        try { _pushStatus = await JS.InvokeAsync<string>("knitPush.getStatus"); }
+        catch { _pushStatus = "unsupported"; }
+        StateHasChanged();
+    }
+
+    async Task EnablePushReminder()
+    {
+        _pushBusy = true; _pushError = ""; StateHasChanged();
+        try
+        {
+            var result = await JS.InvokeAsync<System.Text.Json.JsonElement>("knitPush.subscribe");
+            var success = result.TryGetProperty("success", out var s) && s.GetBoolean();
+            if (!success)
+                _pushError = result.TryGetProperty("error", out var e) ? (e.GetString() ?? "알림을 켜지 못했어요.") : "알림을 켜지 못했어요.";
+        }
+        catch (Exception ex) { _pushError = $"오류: {ex.Message}"; }
+        await RefreshPushStatusAsync();
+        _pushBusy = false;
+        StateHasChanged();
+    }
+
+    async Task DisablePushReminder()
+    {
+        _pushBusy = true; StateHasChanged();
+        try { await JS.InvokeVoidAsync("knitPush.unsubscribe"); } catch { }
+        await RefreshPushStatusAsync();
+        _pushBusy = false;
+        StateHasChanged();
     }
 
     // 로그인 여부와 무관하게, 지난번 로그인 때 캐시해둔 만료일로 삭제 예정일을 계산
@@ -1129,6 +1213,8 @@
     {
         if (Auth.IsLoggedIn)
             await LoadUsageAsync();
+        else
+            await RefreshPushStatusAsync(); // 로그아웃하면 알림 상태 다시 확인 (로그인 중엔 정리됐을 것)
         // 이미 로그인된 상태에서 만료된 경우 팝업 표시
         if (Auth.ExpiredEmail != null && !_showExpiredPopup)
         {

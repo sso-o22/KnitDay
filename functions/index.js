@@ -290,3 +290,132 @@ exports.purgeExpiredUserData = onSchedule(
         }
     }
 );
+
+// ═══════════════════════════════════════════════════════════════════
+// 비활성 사용자 데이터 유실 방지 푸시 알림
+// (비로그인 상태로 홈 화면에 추가해서 쓰는 사용자용 — 계정이 없어서
+//  로그인 기반이 아니라, 기기별 익명 구독 ID로 추적함)
+// ═══════════════════════════════════════════════════════════════════
+
+const webpush = require("web-push");
+
+// VAPID 키 — 반드시 환경변수(.env)로 관리, 코드에 하드코딩하지 않음
+// VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / VAPID_SUBJECT (예: "mailto:you@example.com")
+function configureWebPush() {
+    const publicKey = process.env.VAPID_PUBLIC_KEY;
+    const privateKey = process.env.VAPID_PRIVATE_KEY;
+    const subject = process.env.VAPID_SUBJECT || "mailto:support@knitday.kr";
+    if (!publicKey || !privateKey) return false;
+    webpush.setVapidDetails(subject, publicKey, privateKey);
+    return true;
+}
+
+/**
+ * 익명 푸시 구독 등록/갱신 (로그인 불필요)
+ * - 최초 구독 시에도, 이후 앱을 열 때마다(하트비트) 이 함수를 다시 호출해서
+ *   lastActiveAt을 갱신함 → "N일간 미접속"을 정확히 추적하기 위함
+ * - 앱을 열 때마다 reminderSent를 false로 리셋해서, 돌아온 뒤 다시 오래 안 켜면
+ *   또 알림이 가도록 함
+ */
+exports.registerPushSubscription = onCall(async (request) => {
+    const { deviceId, subscription } = request.data || {};
+    if (!deviceId || typeof deviceId !== "string") {
+        throw new HttpsError("invalid-argument", "deviceId가 필요합니다.");
+    }
+    if (!subscription || !subscription.endpoint) {
+        throw new HttpsError("invalid-argument", "subscription이 필요합니다.");
+    }
+
+    const db = getFirestore();
+    const now = new Date();
+    await db.collection("pushSubscriptions").doc(deviceId).set({
+        subscription,
+        lastActiveAt: now.toISOString(),
+        reminderSent: false,
+        updatedAt: now.toISOString(),
+    }, { merge: true });
+
+    return { success: true };
+});
+
+/**
+ * 하트비트만 (구독 정보 재전송 없이 lastActiveAt만 갱신하고 싶을 때 사용 가능)
+ * — 프론트엔드는 편의상 registerPushSubscription 하나만 써도 무방
+ */
+exports.pingDeviceActive = onCall(async (request) => {
+    const { deviceId } = request.data || {};
+    if (!deviceId || typeof deviceId !== "string") {
+        throw new HttpsError("invalid-argument", "deviceId가 필요합니다.");
+    }
+    const db = getFirestore();
+    const ref = db.collection("pushSubscriptions").doc(deviceId);
+    const snap = await ref.get();
+    if (!snap.exists) return { success: false }; // 구독 안 된 기기 — 조용히 무시
+    await ref.set({ lastActiveAt: new Date().toISOString(), reminderSent: false }, { merge: true });
+    return { success: true };
+});
+
+/**
+ * 구독 해제 (설정에서 알림 끄기)
+ */
+exports.unregisterPushSubscription = onCall(async (request) => {
+    const { deviceId } = request.data || {};
+    if (!deviceId || typeof deviceId !== "string") {
+        throw new HttpsError("invalid-argument", "deviceId가 필요합니다.");
+    }
+    const db = getFirestore();
+    await db.collection("pushSubscriptions").doc(deviceId).delete();
+    return { success: true };
+});
+
+// 얼마나 안 켰을 때 알림을 보낼지 — iOS Safari의 약 7일 삭제 정책보다
+// 여유 있게 미리 경고하기 위해 5일로 설정
+const INACTIVITY_WARNING_DAYS = 5;
+
+/**
+ * 매일 새벽, 오래 안 켠 기기에 데이터 유실 경고 푸시 발송
+ */
+exports.sendInactivityReminders = onSchedule(
+    { schedule: "0 9 * * *", timeZone: "Asia/Seoul" }, // 매일 오전 9시 (한밤중 알림 방지)
+    async () => {
+        if (!configureWebPush()) {
+            console.error("sendInactivityReminders: VAPID 키가 설정되어 있지 않아 건너뜀");
+            return;
+        }
+
+        const db = getFirestore();
+        const now = new Date();
+        const threshold = new Date(now);
+        threshold.setDate(threshold.getDate() - INACTIVITY_WARNING_DAYS);
+
+        const snap = await db.collection("pushSubscriptions")
+            .where("reminderSent", "==", false)
+            .get();
+
+        for (const docSnap of snap.docs) {
+            const data = docSnap.data();
+            const lastActiveAt = data?.lastActiveAt ? new Date(data.lastActiveAt) : null;
+            if (!lastActiveAt || isNaN(lastActiveAt.getTime())) continue;
+            if (lastActiveAt > threshold) continue; // 아직 기준일 안 지남
+
+            try {
+                await webpush.sendNotification(data.subscription, JSON.stringify({
+                    title: "KnitDay",
+                    body: "오랜만이에요! 저장해둔 뜨개 기록이 사라지기 전에 앱을 한 번 열어주세요.",
+                    url: "/",
+                    tag: "knitday-inactivity-reminder",
+                }));
+                await docSnap.ref.set({ reminderSent: true }, { merge: true });
+                console.log(`sendInactivityReminders: ${docSnap.id} 발송 완료`);
+            } catch (e) {
+                // 구독이 만료/삭제된 경우(410/404) 정리
+                if (e.statusCode === 410 || e.statusCode === 404) {
+                    await docSnap.ref.delete();
+                    console.log(`sendInactivityReminders: ${docSnap.id} 구독 만료로 삭제`);
+                } else {
+                    console.error(`sendInactivityReminders 실패 (${docSnap.id}):`, e.message);
+                }
+            }
+        }
+    }
+);
