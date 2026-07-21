@@ -534,6 +534,9 @@ else
         {
             // 소요량이 m 단위로 저장돼있으면 g당/m당 환산 없이 바로 총 필요 길이로 사용
             if (proj.OriginalYarnAmountG > 0) _ycTotalMeters = proj.OriginalYarnAmountG;
+            // 원작 g당/m당 정보가 있으면, 참고용 "원작 총 소요g"도 역산해서 같이 채워줌
+            if (_ycOrigWeight > 0 && _ycOrigLength > 0 && _ycTotalMeters > 0)
+                _ycOrigTotalG = Math.Round(_ycTotalMeters / _ycOrigLength * _ycOrigWeight);
         }
         else if (proj.OriginalYarnAmountUnit == "볼")
         {
