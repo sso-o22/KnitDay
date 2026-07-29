@@ -964,3 +964,20 @@ window.dispatchForceInstallGuide = async () => {
         }
     }
 };
+// ── 플로팅 위젯 드래그 중 배경 스크롤 방지 ──────────────────────────
+// Blazor의 @ontouchmove:preventDefault는 브라우저가 리스너를 passive로
+// 등록해버리면 무시될 수 있어서(스크롤 성능 최적화 기본값), 확실하게 막으려면
+// 순수 JS로 { passive: false } 리스너를 직접 달아야 함
+window.dragScrollLock = {
+    _handler: null,
+    start() {
+        if (this._handler) return;
+        this._handler = (e) => e.preventDefault();
+        document.addEventListener('touchmove', this._handler, { passive: false });
+    },
+    stop() {
+        if (!this._handler) return;
+        document.removeEventListener('touchmove', this._handler);
+        this._handler = null;
+    }
+};
