@@ -307,9 +307,36 @@ else
     {
         var email = _emailInput.Trim().ToLower();
         if (string.IsNullOrEmpty(email)) return;
+        // 이미 등록된 계정이면 setDocument가 조용히 덮어써버려서(기존 라이선스 정보 유실 위험),
+        // 등록 전에 먼저 중복 여부를 확인
+        if (_users.Any(u => u.Email.Trim().ToLower() == email))
+        {
+            _addMsg = $"{email}은(는) 이미 등록된 계정이에요. 정보를 바꾸려면 목록에서 '라이선스 변경'을 이용해 주세요.";
+            _addError = true;
+            StateHasChanged();
+            return;
+        }
         _adding = true; _addMsg = ""; StateHasChanged();
         try
         {
+            // 화면에 로드된 목록이 오래돼서 놓칠 수 있는 경우 대비, 저장 직전 실제 Firestore에도 한 번 더 확인
+            var existing = await JS.InvokeAsync<string?>("firebaseStore.getDocument", $"allowedUsers/{email}");
+            if (existing != null && existing.StartsWith("__error__:"))
+            {
+                _addMsg = "중복 확인 중 오류가 발생했어요. 다시 시도해 주세요.";
+                _addError = true;
+                _adding = false;
+                StateHasChanged();
+                return;
+            }
+            if (!string.IsNullOrEmpty(existing))
+            {
+                _addMsg = $"{email}은(는) 이미 등록된 계정이에요. 정보를 바꾸려면 목록에서 '라이선스 변경'을 이용해 주세요.";
+                _addError = true;
+                _adding = false;
+                StateHasChanged();
+                return;
+            }
             var ok = await JS.InvokeAsync<bool>("firebaseStore.setDocument",
                 $"allowedUsers/{email}",
                 System.Text.Json.JsonSerializer.Serialize(new

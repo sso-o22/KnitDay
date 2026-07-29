@@ -379,6 +379,7 @@ namespace KnitLog.Services
             await MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools");
             await MergeCollectionAsync<Swatch>(KEY_SWATCHES, "swatches");
             await SyncTodosAsync();
+            await SyncHomeCountersAsync();
 
             // 로그인 전 비로그인 상태로 쌓인 사진/도안(Base64, 로컬 전용)을 Cloudinary로 옮겨
             // IDB·Firestore 용량 부담을 줄임 — 아래 조건 중 하나라도 해당하면 실행:
@@ -698,6 +699,62 @@ namespace KnitLog.Services
             catch { }
         }
 
+        // ── 홈 화면 독립 카운터 동기화 (Todos와 동일한 패턴) ─────────────
+        private const string KEY_HOME_COUNTERS    = "knitlog_home_counters";
+        private const string KEY_HOME_COUNTERS_TS = "knitlog_home_counters_ts";
+
+        private async Task SyncHomeCountersAsync()
+        {
+            var localJson = await _js.InvokeAsync<string?>("knitDB.getData", KEY_HOME_COUNTERS);
+
+            string? cloudJson = null;
+            DateTime cloudUpdatedAt = DateTime.MinValue;
+            try
+            {
+                var cloudDoc = await _js.InvokeAsync<string?>(
+                    "firebaseStore.getDocument", $"users/{Uid}/settings/homeCounters");
+                if (!string.IsNullOrEmpty(cloudDoc))
+                {
+                    var el = JsonSerializer.Deserialize<JsonElement>(cloudDoc, _jsonOpts);
+                    if (el.TryGetProperty("data", out var data))
+                        cloudJson = data.GetRawText();
+                    if (el.TryGetProperty("updatedAt", out var ts) && ts.ValueKind == JsonValueKind.String)
+                        DateTime.TryParse(ts.GetString(), out cloudUpdatedAt);
+                }
+            }
+            catch { }
+
+            // 수정일 기반 winner-takes-all: 더 최신인 쪽 전체를 사용
+            string mergedCountersJson;
+            var localUpdatedAt = await GetHomeCountersLocalUpdatedAt();
+            if (string.IsNullOrEmpty(cloudJson))
+            {
+                mergedCountersJson = localJson ?? "[]";
+            }
+            else if (string.IsNullOrEmpty(localJson) || localJson == "[]")
+            {
+                mergedCountersJson = cloudJson;
+            }
+            else if (cloudUpdatedAt > localUpdatedAt)
+            {
+                mergedCountersJson = cloudJson;
+            }
+            else
+            {
+                mergedCountersJson = localJson;
+            }
+
+            await _js.InvokeVoidAsync("knitDB.setData", KEY_HOME_COUNTERS, mergedCountersJson);
+
+            try
+            {
+                var payload = JsonSerializer.Serialize(new { data = JsonSerializer.Deserialize<JsonElement>(mergedCountersJson, _jsonOpts) }, _jsonOpts);
+                await _js.InvokeAsync<bool>("firebaseStore.setDocument",
+                    $"users/{Uid}/settings/homeCounters", payload);
+            }
+            catch { }
+        }
+
         private async Task MergeCollectionAsync<T>(string localKey, string collectionName)
         {
             var localJson = await _js.InvokeAsync<string?>("knitDB.getData", localKey);
@@ -872,6 +929,22 @@ namespace KnitLog.Services
                     }
                     catch { }
                 }
+
+                // 홈 카운터 push
+                var homeCountersJson = await _js.InvokeAsync<string?>("knitDB.getData", KEY_HOME_COUNTERS);
+                if (!string.IsNullOrEmpty(homeCountersJson))
+                {
+                    try
+                    {
+                        var tsStr = await _js.InvokeAsync<string?>("knitDB.getData", KEY_HOME_COUNTERS_TS);
+                        if (string.IsNullOrEmpty(tsStr)) tsStr = DateTime.UtcNow.ToString("O");
+                        var payload = JsonSerializer.Serialize(
+                            new { data = JsonSerializer.Deserialize<JsonElement>(homeCountersJson, _jsonOpts), updatedAt = tsStr }, _jsonOpts);
+                        await _js.InvokeAsync<bool>("firebaseStore.setDocument",
+                            $"users/{Uid}/settings/homeCounters", payload);
+                    }
+                    catch { }
+                }
             }
             catch (Exception ex)
             {
@@ -906,6 +979,37 @@ namespace KnitLog.Services
             try
             {
                 var ts = await _js.InvokeAsync<string?>("knitDB.getData", KEY_TODOS_TS);
+                if (!string.IsNullOrEmpty(ts) && DateTime.TryParse(ts, out var dt)) return dt;
+            }
+            catch { }
+            return DateTime.MinValue;
+        }
+
+        // ── 홈 카운터 저장 (IDB + Firebase 즉시) ────────────────────
+        public async Task SaveHomeCountersAsync(string countersJson)
+        {
+            var nowStr = DateTime.UtcNow.ToString("O");
+            await _js.InvokeVoidAsync("knitDB.setData", KEY_HOME_COUNTERS, countersJson);
+            await _js.InvokeVoidAsync("knitDB.setData", KEY_HOME_COUNTERS_TS, nowStr);
+            if (!IsLoggedIn) return;
+            _ = Task.Run(async () =>
+            {
+                try
+                {
+                    var payload = JsonSerializer.Serialize(
+                        new { data = JsonSerializer.Deserialize<JsonElement>(countersJson, _jsonOpts), updatedAt = nowStr }, _jsonOpts);
+                    await _js.InvokeAsync<bool>("firebaseStore.setDocument",
+                        $"users/{Uid}/settings/homeCounters", payload);
+                }
+                catch { }
+            });
+        }
+
+        private async Task<DateTime> GetHomeCountersLocalUpdatedAt()
+        {
+            try
+            {
+                var ts = await _js.InvokeAsync<string?>("knitDB.getData", KEY_HOME_COUNTERS_TS);
                 if (!string.IsNullOrEmpty(ts) && DateTime.TryParse(ts, out var dt)) return dt;
             }
             catch { }

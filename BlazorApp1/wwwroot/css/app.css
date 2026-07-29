@@ -1550,3 +1550,62 @@ body {
     -webkit-user-select: none;
     user-select: none;
 }
+
+/* ── 홈 화면 플로팅 카운터 위젯 (드래그 가능) ──────────────────────
+   도안 뷰어의 카운터 플로팅 위젯(cw-*)과 같은 껍데기 스타일을 공유해서
+   전역으로 옮겨둠 — 홈 화면에서도 재사용하기 위함 */
+.hc-wrap { user-select: none; }
+.hc-default-pos {
+    position: fixed !important;
+    right: 16px !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 90px) !important;
+    left: auto !important;
+    top: auto !important;
+    max-width: calc(100vw - 32px);
+}
+.hc-inner {
+    background: rgba(255,255,255,0.97);
+    backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 16px; padding: 12px 14px; min-width: 220px; max-width: 260px; width: max-content;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    color: #222;
+}
+.hc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; cursor: grab; }
+.hc-header:active { cursor: grabbing; }
+.hc-close { background: transparent; border: none; color: #aaa; cursor: pointer; font-size: 14px; padding: 2px 4px; }
+.hc-close:hover { color: #333; }
+.hc-fab {
+    position: fixed;
+    right: 16px;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 90px);
+    z-index: 600;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 50%; width: 48px; height: 48px;
+    font-size: 22px; cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    display: flex; align-items: center; justify-content: center;
+}
+.hc-fab:active { transform: scale(0.9); }
+.hc-nav-btn {
+    background: rgba(0,0,0,0.07); border: none; color: #333;
+    width: 26px; height: 26px; border-radius: 6px; cursor: pointer; font-size: 16px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.hc-nav-btn:hover { background: rgba(0,0,0,0.13); }
+.hc-nav-btn:disabled { opacity: 0.25; cursor: default; }
+
+[data-dark="true"] .hc-inner {
+    background: rgba(32,32,32,0.97); border-color: rgba(255,255,255,0.1);
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+[data-dark="true"] .hc-inner * { color: #f0f0f0 !important; }
+[data-dark="true"] .hc-close { color: #888 !important; }
+[data-dark="true"] .hc-close:hover { color: #eee !important; }
+[data-dark="true"] .hc-fab { background: rgba(32,32,32,0.92); border-color: rgba(255,255,255,0.12); }
+[data-dark="true"] .hc-fab img { filter: invert(1); opacity: 0.85; }
+[data-dark="true"] .hc-nav-btn { background: rgba(255,255,255,0.08); color: #eee !important; }
+[data-dark="true"] .hc-nav-btn:hover { background: rgba(255,255,255,0.15); }
+[data-dark="true"] .hc-inner input { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }

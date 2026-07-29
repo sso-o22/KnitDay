@@ -234,6 +234,17 @@ namespace KnitLog.Models
         public DateTime? LastUpdatedAt { get; set; }   // 마지막 + 클릭 시각
     }
 
+    // 프로젝트에 안 묶인 독립 카운터 (홈 화면용, 예: 스와치 뜰 때 임시로 세는 용도)
+    public class HomeCounter
+    {
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Label { get; set; } = "카운터";
+        public int Value { get; set; } = 0;
+        public int Step { get; set; } = 1;
+        public int Target { get; set; } = 0;
+        public DateTime? LastUpdatedAt { get; set; }
+    }
+
     public class ChecklistItem
     {
         public Guid Id { get; set; } = Guid.NewGuid();
