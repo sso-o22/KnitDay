@@ -362,48 +362,135 @@
                          style="cursor:grab;"
                          @onmousedown="CwDragStart"
                          @ontouchstart="CwTouchStart">
-                        <span style="font-size:11px;font-weight:700;color:#444;">카운터</span>
-                        <button class="cw-close" @onclick="()=>_showCounterWidget=false" @onmousedown:stopPropagation="true">✕</button>
+                        <span style="font-size:12px;font-weight:700;">카운터</span>
+                        <div style="display:flex;align-items:center;gap:4px;">
+                            @if (_project.Counters.Any())
+                            {
+                                <button class="cw-close" style="font-size:11px;font-weight:600;" @onclick="() => _cwEditMode = !_cwEditMode" @onmousedown:stopPropagation="true">@(_cwEditMode ? "완료" : "수정")</button>
+                            }
+                            <button class="cw-close" @onclick="()=>_showCounterWidget=false" @onmousedown:stopPropagation="true">✕</button>
+                        </div>
                     </div>
+
                     @if (_project.Counters.Any())
                     {
-                        <div class="cw-nav">
-                            <button class="cw-nav-btn" @onclick="PrevCounter" disabled="@(_project.Counters.Count<=1)">‹</button>
-                            <div style="text-align:center;flex:1;">
-                                <div style="font-size:12px;color:#333;font-weight:600;">@ActiveCounter.Label</div>
-                                <div style="font-size:10px;color:#aaa;">@(_activeCounterIndex+1)/@_project.Counters.Count</div>
+                        var counter = ActiveCounter;
+                        var hasTarget = counter.Target > 0;
+                        var progress = hasTarget ? Math.Min(100.0, counter.Value * 100.0 / counter.Target) : 0.0;
+                        var isDone = hasTarget && counter.Value >= counter.Target;
+
+                        <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:8px;" @onmousedown:stopPropagation="true">
+                            <button class="cw-nav-btn" disabled="@(_project.Counters.Count <= 1)" @onclick="PrevCounter">‹</button>
+                            <div style="flex:1;text-align:center;min-width:0;">
+                                @if (_cwEditMode)
+                                {
+                                    <input style="width:100%;font-size:12px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;text-align:center;box-sizing:border-box;"
+                                           value="@counter.Label"
+                                           @onchange="e => { counter.Label = e.Value?.ToString() ?? counter.Label; _ = SaveProject(); }" />
+                                }
+                                else
+                                {
+                                    <div style="font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@counter.Label</div>
+                                }
+                                <div style="font-size:10px;color:#aaa;">@(_activeCounterIndex + 1)/@_project.Counters.Count</div>
                             </div>
-                            <button class="cw-nav-btn" @onclick="NextCounter" disabled="@(_project.Counters.Count<=1)">›</button>
+                            <button class="cw-nav-btn" disabled="@(_project.Counters.Count <= 1)" @onclick="NextCounter">›</button>
                         </div>
-                        <div class="cw-controls">
-                            <button class="cw-btn minus" @onclick="()=>DecrementCounter(ActiveCounter)">−</button>
-                            <span class="cw-val">@ActiveCounter.Value</span>
-                            <button class="cw-btn plus"  @onclick="()=>IncrementCounter(ActiveCounter)">+</button>
+
+                        <div style="display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:8px;" @onmousedown:stopPropagation="true">
+                            <button class="cw-nav-btn" style="width:36px;height:36px;font-size:18px;border-radius:50%;" @onclick="() => DecrementCounter(counter)">−</button>
+                            <div style="position:relative;width:72px;height:72px;flex-shrink:0;">
+                                <svg viewBox="0 0 72 72" width="72" height="72" style="transform:rotate(-90deg);">
+                                    <circle cx="36" cy="36" r="30" fill="none" stroke="rgba(0,0,0,0.08)" stroke-width="6" />
+                                    @if (hasTarget)
+                                    {
+                                        var circ = 2 * Math.PI * 30;
+                                        var dash = circ * progress / 100.0;
+                                        <circle cx="36" cy="36" r="30" fill="none" stroke="var(--theme-active)"
+                                                stroke-width="6" stroke-linecap="round"
+                                                stroke-dasharray="@dash.ToString("F1") @circ.ToString("F1")" />
+                                    }
+                                </svg>
+                                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                                    <span style="font-size:1.3rem;font-weight:800;line-height:1;">@counter.Value</span>
+                                    @if (hasTarget) { <span style="font-size:0.6rem;color:#999;margin-top:1px;">/ @counter.Target</span> }
+                                </div>
+                            </div>
+                            <button class="cw-nav-btn" style="width:36px;height:36px;font-size:18px;border-radius:50%;" @onclick="() => IncrementCounter(counter)">+</button>
                         </div>
-                        @if (ActiveCounter.LastUpdatedAt.HasValue)
+
+                        @if (hasTarget)
                         {
-                            <div style="font-size:10px;color:#bbb;text-align:center;margin-top:4px;">
-                                @FormatLastUpdated(ActiveCounter.LastUpdatedAt.Value)
+                            <div style="height:4px;background:rgba(0,0,0,0.08);border-radius:99px;margin-bottom:6px;overflow:hidden;" @onmousedown:stopPropagation="true">
+                                <div style="height:100%;width:@(progress.ToString("F1"))%;background:var(--theme-active);border-radius:99px;"></div>
+                            </div>
+                            <div style="text-align:center;font-size:10px;color:@(isDone ? "var(--theme-active)" : "#999");margin-bottom:6px;" @onmousedown:stopPropagation="true">
+                                @if (isDone)
+                                {
+                                    <span style="display:inline-flex;align-items:center;gap:3px;">
+                                        <img src="icons/confetti.svg" class="icon-line" style="width:11px;height:11px;flex-shrink:0;" />목표 달성!
+                                    </span>
+                                }
+                                else
+                                {
+                                    @($"{progress:F0}% ({counter.Value}/{counter.Target})")
+                                }
+                            </div>
+                        }
+
+                        @if (counter.LastUpdatedAt.HasValue)
+                        {
+                            <div style="text-align:center;font-size:10px;color:#bbb;" @onmousedown:stopPropagation="true">
+                                @FormatLastUpdated(counter.LastUpdatedAt.Value)
+                            </div>
+                        }
+
+                        @if (_cwEditMode)
+                        {
+                            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#666;margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);" @onmousedown:stopPropagation="true">
+                                <span>단위</span>
+                                <input type="number" style="width:50px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                                       @bind="counter.Step" @bind:after="SaveProject" min="1" />
+                                <span>목표</span>
+                                <input type="number" style="width:65px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                                       value="@(counter.Target == 0 ? "" : counter.Target.ToString())"
+                                       @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = SaveProject(); }"
+                                       min="0" placeholder="없음" />
+                                <button class="cw-nav-btn" style="width:auto;padding:2px 8px;font-size:10px;" @onclick="() => CwResetCounter(counter)">초기화</button>
+                                <button class="cw-nav-btn" style="width:auto;padding:2px 8px;font-size:10px;color:#c0392b;" @onclick="() => CwRemoveCounter(counter)">삭제</button>
                             </div>
                         }
                     }
                     else
                     {
-                        <div style="font-size:11px;color:#aaa;text-align:center;padding:8px 0;">카운터가 없어요</div>
+                        <div style="font-size:12px;color:#aaa;text-align:center;padding:16px 0;" @onmousedown:stopPropagation="true">카운터가 없어요</div>
                     }
                     @* 카운터 추가 *@
                     @if (_cwAddMode)
                     {
-                        <div style="display:flex;gap:4px;margin-top:6px;padding-top:6px;border-top:1px solid #eee;">
-                            <input style="flex:1;font-size:11px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;min-width:0;"
-                                   @bind="_cwNewLabel" placeholder="이름" @onkeydown="CwAddKeyDown" />
-                            <button class="cw-nav-btn" style="display:inline-flex;align-items:center;" @onclick="CwAddCounter" @onmousedown:stopPropagation="true"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" /></button>
-                            <button class="cw-nav-btn" style="display:inline-flex;align-items:center;" @onclick="() => { _cwAddMode=false; _cwNewLabel=string.Empty; }" @onmousedown:stopPropagation="true"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" /></button>
+                        <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);" @onmousedown:stopPropagation="true">
+                            <div style="display:flex;gap:4px;margin-bottom:6px;">
+                                <input style="flex:1;font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;min-width:0;"
+                                       @bind="_cwNewLabel" placeholder="이름" @onkeydown="CwAddKeyDown" />
+                                <button class="cw-nav-btn" @onclick="CwAddCounter"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" /></button>
+                                <button class="cw-nav-btn" @onclick="() => { _cwAddMode=false; _cwNewLabel=string.Empty; }"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" /></button>
+                            </div>
+                            <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#666;">
+                                <span>단위</span>
+                                <input type="number" style="width:50px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                                       @bind="_cwNewStep" min="1" />
+                                <span>목표</span>
+                                <input type="number" style="width:65px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                                       value="@(_cwNewTarget == 0 ? "" : _cwNewTarget.ToString())"
+                                       @onchange="e => _cwNewTarget = int.TryParse(e.Value?.ToString(), out var t) ? t : 0"
+                                       min="0" placeholder="없음" />
+                            </div>
                         </div>
                     }
                     else
                     {
-                        <button style="width:100%;margin-top:6px;font-size:10px;color:#aaa;background:none;border:1px dashed #ddd;border-radius:4px;padding:2px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:3px;" @onclick="() => _cwAddMode=true" @onmousedown:stopPropagation="true"><img src="icons/plus.svg" class="icon-line" style="width:10px;height:10px;flex-shrink:0;" />카운터 추가</button>
+                        <button style="width:100%;margin-top:8px;font-size:11px;color:#999;background:none;border:1px dashed #ddd;border-radius:6px;padding:5px;cursor:pointer;"
+                                @onclick="CwStartAdd" @onmousedown:stopPropagation="true">+ 카운터 추가</button>
                     }
                 </div>
             </div>
@@ -966,6 +1053,17 @@
     }
     string _cwNewLabel = "";
     bool _cwAddMode = false;
+    int _cwNewStep = 1;
+    int _cwNewTarget = 0;
+    bool _cwEditMode = false;
+
+    void CwStartAdd()
+    {
+        _cwAddMode = true;
+        _cwNewLabel = "";
+        _cwNewStep = 1;
+        _cwNewTarget = 0;
+    }
 
     bool _cwAddingCounterInFlight = false;
     async Task CwAddCounter()
@@ -975,9 +1073,16 @@
         _cwAddingCounterInFlight = true;
         try
         {
-            _project.Counters.Add(new ProjectCounter { Label = _cwNewLabel.Trim() });
+            _project.Counters.Add(new ProjectCounter
+            {
+                Label = _cwNewLabel.Trim(),
+                Step = _cwNewStep > 0 ? _cwNewStep : 1,
+                Target = Math.Max(0, _cwNewTarget)
+            });
             _activeCounterIndex = _project.Counters.Count - 1;
             _cwNewLabel = "";
+            _cwNewStep = 1;
+            _cwNewTarget = 0;
             _cwAddMode = false;
             await SaveProject();
             StateHasChanged();
@@ -989,6 +1094,23 @@
     {
         if (e.Key == "Enter") await CwAddCounter();
         else if (e.Key == "Escape") { _cwAddMode = false; _cwNewLabel = ""; }
+    }
+
+    async Task CwResetCounter(ProjectCounter c)
+    {
+        c.Value = 0;
+        c.LastUpdatedAt = DateTime.Now;
+        await SaveProject();
+        StateHasChanged();
+    }
+
+    async Task CwRemoveCounter(ProjectCounter c)
+    {
+        if (_project == null) return;
+        _project.Counters.Remove(c);
+        if (_activeCounterIndex >= _project.Counters.Count) _activeCounterIndex = Math.Max(0, _project.Counters.Count - 1);
+        await SaveProject();
+        StateHasChanged();
     }
 
     async Task IncrementCounter(ProjectCounter c)

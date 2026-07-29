@@ -250,7 +250,16 @@ else
                             <div style="height:100%;width:@(progress.ToString("F1"))%;background:var(--theme-active);border-radius:99px;"></div>
                         </div>
                         <div style="text-align:center;font-size:10px;color:@(isDone ? "var(--theme-active)" : "#999");margin-bottom:6px;" @onmousedown:stopPropagation="true">
-                            @(isDone ? "🎉 목표 달성!" : $"{progress:F0}% ({counter.Value}/{counter.Target})")
+                            @if (isDone)
+                            {
+                                <span style="display:inline-flex;align-items:center;gap:3px;">
+                                    <img src="icons/confetti.svg" class="icon-line" style="width:11px;height:11px;flex-shrink:0;" />목표 달성!
+                                </span>
+                            }
+                            else
+                            {
+                                @($"{progress:F0}% ({counter.Value}/{counter.Target})")
+                            }
                         </div>
                     }
 
@@ -567,12 +576,13 @@ else
         _hcOffX = e.ClientX - _hcX;
         _hcOffY = e.ClientY - _hcY;
     }
-    void HcTouchStart(TouchEventArgs e)
+    async Task HcTouchStart(TouchEventArgs e)
     {
         if (_hcX < 0) { _hcX = 16; _hcY = 400; }
         _hcDragging = true;
         _hcOffX = e.Touches[0].ClientX - _hcX;
         _hcOffY = e.Touches[0].ClientY - _hcY;
+        await JS.InvokeVoidAsync("dragScrollLock.start");
     }
     void HcOnGlobalMouseMove(MouseEventArgs e)
     {
@@ -588,7 +598,13 @@ else
     }
     async Task HcOnGlobalTouchEnd(TouchEventArgs e)
     {
-        if (_hcDragging) { _hcDragging = false; await SaveHomeCounterWidgetPrefs(); StateHasChanged(); }
+        if (_hcDragging)
+        {
+            _hcDragging = false;
+            await JS.InvokeVoidAsync("dragScrollLock.stop");
+            await SaveHomeCounterWidgetPrefs();
+            StateHasChanged();
+        }
     }
 
     void MoveHomeCounter(int delta)
