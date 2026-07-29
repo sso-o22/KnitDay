@@ -354,7 +354,7 @@
         @if (_showCounterWidget)
         {
             <div class="cw-wrap @(_cwX < 0 ? "cw-default-pos" : "")"
-                 style="@(_cwX >= 0 ? $"position:fixed;left:{_cwX}px;top:{_cwY}px;" : "")z-index:600;touch-action:none;cursor:grab;"
+                 style="@(_cwX >= 0 ? $"position:fixed;left:{_cwX}px;top:{_cwY}px;max-width:calc(100vw - {_cwX}px - 12px);" : "")z-index:600;touch-action:none;cursor:grab;"
                  @onmousedown="CwDragStart">
                 <div class="cw-inner" @onmousedown:stopPropagation="true" @ontouchstart:stopPropagation="true">
                     <!-- 드래그 핸들 -->
@@ -710,9 +710,11 @@
         backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
         border: 1px solid rgba(0,0,0,0.1);
         border-radius: 16px; padding: 10px 12px; min-width: 160px; max-width: 220px; width: max-content;
+        max-height: calc(100vh - 120px); overflow-y: auto; box-sizing: border-box;
         box-shadow: 0 8px 32px rgba(0,0,0,0.15);
         color: #222;
     }
+    .cw-inner input, .cw-inner select { font-family: inherit; }
     .cw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; cursor: grab; }
     .cw-header:active { cursor: grabbing; }
     .cw-close { background: transparent; border: none; color: #aaa; cursor: pointer; font-size: 13px; }
@@ -1647,7 +1649,7 @@
 
     async Task OnGlobalMouseMove(MouseEventArgs e)
     {
-        if(_cwDragging){_cwX=e.ClientX-_cwOffX;_cwY=e.ClientY-_cwOffY;StateHasChanged();}
+        if(_cwDragging){_cwX=Math.Max(0,e.ClientX-_cwOffX);_cwY=Math.Max(0,e.ClientY-_cwOffY);StateHasChanged();}
     }
     async Task OnGlobalMouseUp(MouseEventArgs e)
     {
@@ -1659,7 +1661,7 @@
 
     async Task OnGlobalTouchMove(TouchEventArgs e)
     {
-        if(_cwDragging&&e.Touches.Length>0){_cwX=e.Touches[0].ClientX-_cwOffX;_cwY=e.Touches[0].ClientY-_cwOffY;StateHasChanged();}
+        if(_cwDragging&&e.Touches.Length>0){_cwX=Math.Max(0,e.Touches[0].ClientX-_cwOffX);_cwY=Math.Max(0,e.Touches[0].ClientY-_cwOffY);StateHasChanged();}
     }
     Task OnGlobalTouchEnd(TouchEventArgs e){_cwDragging=false;StateHasChanged();return Task.CompletedTask;}
 

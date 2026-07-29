@@ -173,16 +173,16 @@ else
         }
     </div>
 
-    @* ── 홈 화면 플로팅 카운터 위젯 (드래그 가능) ── *@
-    @* 드래그 캡처용 오버레이 — 조건부 렌더링하면 mousedown 직후 렌더가 늦게 반영돼서
-       첫 mousemove를 놓치는 문제가 있어서, 항상 DOM에 존재시키고 pointer-events로만 껐다 켬 *@
-    <div style="position:fixed;inset:0;z-index:598;touch-action:none;pointer-events:@(_hcDragging ? "auto" : "none");"
-         @onmousemove="HcOnGlobalMouseMove" @onmouseup="HcOnGlobalMouseUp"
-         @ontouchmove="HcOnGlobalTouchMove" @ontouchend="HcOnGlobalTouchEnd"></div>
+    @* ── 홈 화면 플로팅 카운터 위젯 (드래그 가능) ──
+       move/up 핸들러를 위젯을 감싸는 부모에 달아서, 커서가 위젯 위에 있든 빈 화면에
+       있든 이벤트 버블링으로 항상 잡히게 함 (형제 오버레이 방식은 위젯이 그 위에 있으면
+       가려서 이벤트가 못 올라오는 문제가 있었음) *@
+    <div @onmousemove="HcOnGlobalMouseMove" @onmouseup="HcOnGlobalMouseUp"
+         @ontouchmove="HcOnGlobalTouchMove" @ontouchend="HcOnGlobalTouchEnd">
     @if (_showHomeCounterWidget)
     {
         <div class="hc-wrap @(_hcX < 0 ? "hc-default-pos" : "")"
-             style="@(_hcX >= 0 ? $"position:fixed;left:{_hcX}px;top:{_hcY}px;" : "")z-index:600;touch-action:none;"
+             style="@(_hcX >= 0 ? $"position:fixed;left:{_hcX}px;top:{_hcY}px;max-width:calc(100vw - {_hcX}px - 12px);" : "")z-index:600;touch-action:none;"
              @onmousedown="HcDragStart">
             <div class="hc-inner" @onmousedown:stopPropagation="true" @ontouchstart:stopPropagation="true">
                 <div class="hc-header" @onmousedown="HcDragStart" @ontouchstart="HcTouchStart">
@@ -316,6 +316,7 @@ else
     {
         <button class="hc-fab" @onclick="OpenHomeCounterWidget"><img src="icons/plus-minus.svg" class="icon-line" style="width:22px;height:22px;" /></button>
     }
+    </div>
 
     @if (_recentProjects.Count > 0)
     {
@@ -574,7 +575,7 @@ else
     }
     void HcOnGlobalMouseMove(MouseEventArgs e)
     {
-        if (_hcDragging) { _hcX = e.ClientX - _hcOffX; _hcY = e.ClientY - _hcOffY; StateHasChanged(); }
+        if (_hcDragging) { _hcX = Math.Max(0, e.ClientX - _hcOffX); _hcY = Math.Max(0, e.ClientY - _hcOffY); StateHasChanged(); }
     }
     async Task HcOnGlobalMouseUp(MouseEventArgs e)
     {
@@ -582,7 +583,7 @@ else
     }
     void HcOnGlobalTouchMove(TouchEventArgs e)
     {
-        if (_hcDragging && e.Touches.Length > 0) { _hcX = e.Touches[0].ClientX - _hcOffX; _hcY = e.Touches[0].ClientY - _hcOffY; StateHasChanged(); }
+        if (_hcDragging && e.Touches.Length > 0) { _hcX = Math.Max(0, e.Touches[0].ClientX - _hcOffX); _hcY = Math.Max(0, e.Touches[0].ClientY - _hcOffY); StateHasChanged(); }
     }
     async Task HcOnGlobalTouchEnd(TouchEventArgs e)
     {
