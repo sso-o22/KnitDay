@@ -78,7 +78,7 @@ window.knitDB = (() => {
 
         // ── 내보내기용 전체 데이터 ──
         async exportAll() {
-            const keys = ['knittracker_projects','knittracker_yarns','knittracker_tools','knittracker_swatches','knitlog_todos'];
+            const keys = ['knittracker_projects','knittracker_yarns','knittracker_tools','knittracker_swatches','knitlog_todos','knitlog_home_counters'];
             const result = {};
             for (const k of keys) {
                 const v = await get('data', k);
