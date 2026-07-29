@@ -1557,10 +1557,11 @@ body {
 .hc-wrap { user-select: none; }
 .hc-default-pos {
     position: fixed !important;
-    right: 16px !important;
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 90px) !important;
-    left: auto !important;
+    left: 50% !important;
+    right: auto !important;
     top: auto !important;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 90px) !important;
+    transform: translateX(-50%);
     max-width: calc(100vw - 32px);
 }
 .hc-inner {
@@ -1568,9 +1569,11 @@ body {
     backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(0,0,0,0.1);
     border-radius: 16px; padding: 12px 14px; min-width: 220px; max-width: 260px; width: max-content;
+    max-height: calc(100vh - 120px); overflow-y: auto; box-sizing: border-box;
     box-shadow: 0 8px 32px rgba(0,0,0,0.18);
     color: #222;
 }
+.hc-inner input, .hc-inner select { font-family: inherit; }
 .hc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; cursor: grab; }
 .hc-header:active { cursor: grabbing; }
 .hc-close { background: transparent; border: none; color: #aaa; cursor: pointer; font-size: 14px; padding: 2px 4px; }
