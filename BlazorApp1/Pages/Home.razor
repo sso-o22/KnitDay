@@ -263,26 +263,32 @@ else
                         </div>
                     }
 
-                    @if (counter.LastUpdatedAt.HasValue)
-                    {
-                        <div style="text-align:center;font-size:10px;color:#bbb;" @onmousedown:stopPropagation="true">
-                            @counter.LastUpdatedAt.Value.ToString("M.d HH:mm")
-                        </div>
-                    }
+                    <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-top:2px;" @onmousedown:stopPropagation="true">
+                        @if (counter.LastUpdatedAt.HasValue)
+                        {
+                            <span style="font-size:10px;color:#bbb;">@counter.LastUpdatedAt.Value.ToString("M.d HH:mm")</span>
+                        }
+                        <button class="hc-nav-btn" style="width:auto;padding:2px 8px;font-size:10px;display:inline-flex;align-items:center;gap:3px;color:#888;" @onclick="() => ResetHomeCounter(counter)">
+                            <img src="icons/arrows-counter-clockwise.svg" class="icon-line" style="width:10px;height:10px;flex-shrink:0;" />초기화
+                        </button>
+                    </div>
 
                     @if (_homeCounterEditMode)
                     {
-                        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#666;margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);" @onmousedown:stopPropagation="true">
-                            <span>단위</span>
-                            <input type="number" style="width:50px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
-                                   @bind="counter.Step" @bind:after="SaveHomeCounters" min="1" />
-                            <span>목표</span>
-                            <input type="number" style="width:65px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
-                                   value="@(counter.Target == 0 ? "" : counter.Target.ToString())"
-                                   @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = SaveHomeCounters(); }"
-                                   min="0" placeholder="없음" />
-                            <button class="hc-nav-btn" style="width:auto;padding:2px 8px;font-size:10px;" @onclick="() => ResetHomeCounter(counter)">초기화</button>
-                            <button class="hc-nav-btn" style="width:auto;padding:2px 8px;font-size:10px;color:#c0392b;" @onclick="() => RemoveHomeCounter(counter)">삭제</button>
+                        <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);font-size:11px;color:#666;" @onmousedown:stopPropagation="true">
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                                <span>단위</span>
+                                <input type="number" style="width:50px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                                       @bind="counter.Step" @bind:after="SaveHomeCounters" min="1" />
+                                <span>목표</span>
+                                <input type="number" style="width:65px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                                       value="@(counter.Target == 0 ? "" : counter.Target.ToString())"
+                                       @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = SaveHomeCounters(); }"
+                                       min="0" placeholder="없음" />
+                            </div>
+                            <button class="hc-nav-btn" style="width:auto;padding:3px 10px;color:#c0392b;display:inline-flex;align-items:center;gap:4px;" @onclick="() => RemoveHomeCounter(counter)">
+                                <img src="icons/trash.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" />삭제
+                            </button>
                         </div>
                     }
                 }
