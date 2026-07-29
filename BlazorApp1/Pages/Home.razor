@@ -174,12 +174,11 @@ else
     </div>
 
     @* ── 홈 화면 플로팅 카운터 위젯 (드래그 가능) ── *@
-    @if (_hcDragging)
-    {
-        <div style="position:fixed;inset:0;z-index:598;touch-action:none;"
-             @onmousemove="HcOnGlobalMouseMove" @onmouseup="HcOnGlobalMouseUp"
-             @ontouchmove="HcOnGlobalTouchMove" @ontouchend="HcOnGlobalTouchEnd"></div>
-    }
+    @* 드래그 캡처용 오버레이 — 조건부 렌더링하면 mousedown 직후 렌더가 늦게 반영돼서
+       첫 mousemove를 놓치는 문제가 있어서, 항상 DOM에 존재시키고 pointer-events로만 껐다 켬 *@
+    <div style="position:fixed;inset:0;z-index:598;touch-action:none;pointer-events:@(_hcDragging ? "auto" : "none");"
+         @onmousemove="HcOnGlobalMouseMove" @onmouseup="HcOnGlobalMouseUp"
+         @ontouchmove="HcOnGlobalTouchMove" @ontouchend="HcOnGlobalTouchEnd"></div>
     @if (_showHomeCounterWidget)
     {
         <div class="hc-wrap @(_hcX < 0 ? "hc-default-pos" : "")"
@@ -286,17 +285,29 @@ else
 
                 @if (_addingHomeCounter)
                 {
-                    <div style="display:flex;gap:4px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);" @onmousedown:stopPropagation="true">
-                        <input style="flex:1;font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;min-width:0;"
-                               @bind="_newHomeCounterLabel" placeholder="이름 (예: 스와치 단수)" @onkeydown="HcAddKeyDown" />
-                        <button class="hc-nav-btn" @onclick="AddHomeCounter"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" /></button>
-                        <button class="hc-nav-btn" @onclick="() => _addingHomeCounter = false"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" /></button>
+                    <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);" @onmousedown:stopPropagation="true">
+                        <div style="display:flex;gap:4px;margin-bottom:6px;">
+                            <input style="flex:1;font-size:11px;padding:3px 6px;border:1px solid #ddd;border-radius:4px;min-width:0;"
+                                   @bind="_newHomeCounterLabel" placeholder="이름 (예: 스와치 단수)" @onkeydown="HcAddKeyDown" />
+                            <button class="hc-nav-btn" @onclick="AddHomeCounter"><img src="icons/check.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" /></button>
+                            <button class="hc-nav-btn" @onclick="() => _addingHomeCounter = false"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" /></button>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#666;">
+                            <span>단위</span>
+                            <input type="number" style="width:40px;font-size:11px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                                   @bind="_newHomeCounterStep" min="1" />
+                            <span>목표</span>
+                            <input type="number" style="width:52px;font-size:11px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                                   value="@(_newHomeCounterTarget == 0 ? "" : _newHomeCounterTarget.ToString())"
+                                   @onchange="e => _newHomeCounterTarget = int.TryParse(e.Value?.ToString(), out var t) ? t : 0"
+                                   min="0" placeholder="없음" />
+                        </div>
                     </div>
                 }
                 else
                 {
                     <button style="width:100%;margin-top:8px;font-size:11px;color:#999;background:none;border:1px dashed #ddd;border-radius:6px;padding:5px;cursor:pointer;"
-                            @onclick="() => { _addingHomeCounter = true; _newHomeCounterLabel = string.Empty; }" @onmousedown:stopPropagation="true">+ 카운터 추가</button>
+                            @onclick="StartAddingHomeCounter" @onmousedown:stopPropagation="true">+ 카운터 추가</button>
                 }
             </div>
         </div>
@@ -497,6 +508,16 @@ else
     bool _homeCounterEditMode = false;
     bool _addingHomeCounter = false;
     string _newHomeCounterLabel = "";
+    int _newHomeCounterStep = 1;
+    int _newHomeCounterTarget = 0;
+
+    void StartAddingHomeCounter()
+    {
+        _addingHomeCounter = true;
+        _newHomeCounterLabel = "";
+        _newHomeCounterStep = 1;
+        _newHomeCounterTarget = 0;
+    }
 
     // 드래그 위치 (기기별 localStorage에 저장 — 위젯 열림 상태도 같이 저장)
     double _hcX = -1, _hcY = -1;
@@ -596,9 +617,16 @@ else
         _addingHomeCounterInFlight = true;
         try
         {
-            _homeCounters.Add(new HomeCounter { Label = _newHomeCounterLabel.Trim() });
+            _homeCounters.Add(new HomeCounter
+            {
+                Label = _newHomeCounterLabel.Trim(),
+                Step = _newHomeCounterStep > 0 ? _newHomeCounterStep : 1,
+                Target = Math.Max(0, _newHomeCounterTarget)
+            });
             _homeCounterIndex = _homeCounters.Count - 1;
             _newHomeCounterLabel = "";
+            _newHomeCounterStep = 1;
+            _newHomeCounterTarget = 0;
             _addingHomeCounter = false;
             await SaveHomeCounters();
         }
