@@ -710,11 +710,16 @@
         backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
         border: 1px solid rgba(0,0,0,0.1);
         border-radius: 16px; padding: 10px 12px; min-width: 160px; max-width: 220px; width: max-content;
-        max-height: calc(100vh - 120px); overflow-y: auto; box-sizing: border-box;
+        max-height: min(460px, calc(100dvh - 140px)); overflow-y: auto; box-sizing: border-box;
         box-shadow: 0 8px 32px rgba(0,0,0,0.15);
         color: #222;
     }
     .cw-inner input, .cw-inner select { font-family: inherit; }
+    .cw-inner input[type="text"], .cw-inner input:not([type]), .cw-inner input[type="number"] {
+        font-size: 16px !important;
+        transform: scale(0.8);
+        transform-origin: left center;
+    }
     .cw-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; cursor: grab; }
     .cw-header:active { cursor: grabbing; }
     .cw-close { background: transparent; border: none; color: #aaa; cursor: pointer; font-size: 13px; }
@@ -1077,7 +1082,8 @@
             var vw = await JS.InvokeAsync<double>("eval", "window.innerWidth");
             var vh = await JS.InvokeAsync<double>("eval", "window.innerHeight");
             _cwX = Math.Max(16, vw - 280);
-            _cwY = Math.Max(80, vh - 250);
+            // 수정/추가 폼까지 펼쳐지면 위젯이 꽤 길어질 수 있어서, 그만큼 여유를 두고 위쪽에서 시작
+            _cwY = Math.Max(60, vh - 480);
             _dotNetRef=DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("patternViewer.init",_dotNetRef);
             await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, false, "select", _penOpacity);

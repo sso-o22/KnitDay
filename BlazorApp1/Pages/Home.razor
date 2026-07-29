@@ -178,7 +178,8 @@ else
        있든 이벤트 버블링으로 항상 잡히게 함 (형제 오버레이 방식은 위젯이 그 위에 있으면
        가려서 이벤트가 못 올라오는 문제가 있었음) *@
     <div @onmousemove="HcOnGlobalMouseMove" @onmouseup="HcOnGlobalMouseUp"
-         @ontouchmove="HcOnGlobalTouchMove" @ontouchend="HcOnGlobalTouchEnd">
+         @ontouchmove="HcOnGlobalTouchMove" @ontouchmove:preventDefault="_hcDragging"
+         @ontouchend="HcOnGlobalTouchEnd" style="touch-action:@(_hcDragging ? "none" : "auto");">
     @if (_showHomeCounterWidget)
     {
         <div class="hc-wrap @(_hcX < 0 ? "hc-default-pos" : "")"
@@ -264,10 +265,10 @@ else
                     {
                         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11px;color:#666;margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);" @onmousedown:stopPropagation="true">
                             <span>단위</span>
-                            <input type="number" style="width:40px;font-size:11px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                            <input type="number" style="width:50px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
                                    @bind="counter.Step" @bind:after="SaveHomeCounters" min="1" />
                             <span>목표</span>
-                            <input type="number" style="width:52px;font-size:11px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                            <input type="number" style="width:65px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
                                    value="@(counter.Target == 0 ? "" : counter.Target.ToString())"
                                    @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = SaveHomeCounters(); }"
                                    min="0" placeholder="없음" />
@@ -294,10 +295,10 @@ else
                         </div>
                         <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#666;">
                             <span>단위</span>
-                            <input type="number" style="width:40px;font-size:11px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                            <input type="number" style="width:50px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
                                    @bind="_newHomeCounterStep" min="1" />
                             <span>목표</span>
-                            <input type="number" style="width:52px;font-size:11px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                            <input type="number" style="width:65px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
                                    value="@(_newHomeCounterTarget == 0 ? "" : _newHomeCounterTarget.ToString())"
                                    @onchange="e => _newHomeCounterTarget = int.TryParse(e.Value?.ToString(), out var t) ? t : 0"
                                    min="0" placeholder="없음" />
