@@ -209,7 +209,7 @@ else
                         <div style="flex:1;text-align:center;min-width:0;">
                             @if (_homeCounterEditMode)
                             {
-                                <input style="width:100%;font-size:12px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;text-align:center;box-sizing:border-box;"
+                                <input style="width:100%;font-size:16px;padding:2px 6px;border:1px solid #ddd;border-radius:4px;text-align:center;box-sizing:border-box;"
                                        value="@counter.Label"
                                        @onchange="e => { counter.Label = e.Value?.ToString() ?? counter.Label; _ = SaveHomeCounters(); }" />
                             }
@@ -276,19 +276,19 @@ else
                     @if (_homeCounterEditMode)
                     {
                         <div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.08);font-size:11px;color:#666;" @onmousedown:stopPropagation="true">
-                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+                            <div style="display:flex;align-items:center;gap:6px;">
                                 <span>단위</span>
-                                <input type="number" style="width:50px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                                <input type="number" style="width:44px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
                                        @bind="counter.Step" @bind:after="SaveHomeCounters" min="1" />
                                 <span>목표</span>
-                                <input type="number" style="width:65px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
+                                <input type="number" style="width:52px;padding:1px 4px;border:1px solid #ddd;border-radius:4px;"
                                        value="@(counter.Target == 0 ? "" : counter.Target.ToString())"
                                        @onchange="e => { counter.Target = int.TryParse(e.Value?.ToString(), out var t) ? t : 0; _ = SaveHomeCounters(); }"
                                        min="0" placeholder="없음" />
+                                <button class="hc-nav-btn" style="width:26px;height:26px;padding:0;margin-left:auto;color:#c0392b;flex-shrink:0;" title="삭제" @onclick="() => RemoveHomeCounter(counter)">
+                                    <img src="icons/trash.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;" />
+                                </button>
                             </div>
-                            <button class="hc-nav-btn" style="width:auto;padding:3px 10px;color:#c0392b;display:inline-flex;align-items:center;gap:4px;" @onclick="() => RemoveHomeCounter(counter)">
-                                <img src="icons/trash.svg" class="icon-line" style="width:12px;height:12px;flex-shrink:0;" />삭제
-                            </button>
                         </div>
                     }
                 }
