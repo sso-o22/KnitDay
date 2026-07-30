@@ -368,7 +368,7 @@
                             {
                                 <button class="cw-close" style="font-size:11px;font-weight:600;" @onclick="() => _cwEditMode = !_cwEditMode" @onmousedown:stopPropagation="true">@(_cwEditMode ? "완료" : "수정")</button>
                             }
-                            <button class="cw-close" @onclick="()=>_showCounterWidget=false" @onmousedown:stopPropagation="true">✕</button>
+                            <button class="cw-close" @onclick="CwCloseWidget" @onmousedown:stopPropagation="true">✕</button>
                         </div>
                     </div>
 
@@ -503,7 +503,7 @@
         }
         else
         {
-            <button class="cw-fab" @onclick="()=>_showCounterWidget=true"><img src="icons/plus-minus.svg" class="icon-line" style="width:22px;height:22px;" /></button>
+            <button class="cw-fab" @onclick="CwOpenWidget"><img src="icons/plus-minus.svg" class="icon-line" style="width:22px;height:22px;" /></button>
         }
     }
     <!-- ── (도형 기능 제거됨) ── -->
@@ -1067,6 +1067,15 @@
     int _cwNewTarget = 0;
     bool _cwEditMode = false;
 
+    async Task SaveCwWidgetPrefs()
+    {
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitday_pv_counter_shown", _showCounterWidget ? "1" : "0");
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitday_pv_counter_x", _cwX.ToString());
+        await JS.InvokeVoidAsync("localStorage.setItem", "knitday_pv_counter_y", _cwY.ToString());
+    }
+    async Task CwOpenWidget() { _showCounterWidget = true; await SaveCwWidgetPrefs(); }
+    async Task CwCloseWidget() { _showCounterWidget = false; await SaveCwWidgetPrefs(); }
+
     void CwStartAdd()
     {
         _cwAddMode = true;
@@ -1213,9 +1222,22 @@
         {
             var vw = await JS.InvokeAsync<double>("eval", "window.innerWidth");
             var vh = await JS.InvokeAsync<double>("eval", "window.innerHeight");
-            _cwX = Math.Max(16, vw - 280);
-            // 수정/추가 폼까지 펼쳐지면 위젯이 꽤 길어질 수 있어서, 그만큼 여유를 두고 위쪽에서 시작
-            _cwY = Math.Max(60, vh - 480);
+            // 홈 화면 카운터 위젯이랑 동일하게, 저장된 위치/열림 상태가 있으면 그걸 우선 사용
+            var savedShown = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_pv_counter_shown");
+            if (savedShown != null) _showCounterWidget = savedShown == "1";
+            var savedX = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_pv_counter_x");
+            var savedY = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_pv_counter_y");
+            if (double.TryParse(savedX, out var sx) && double.TryParse(savedY, out var sy))
+            {
+                _cwX = sx;
+                _cwY = sy;
+            }
+            else
+            {
+                _cwX = Math.Max(16, vw - 280);
+                // 수정/추가 폼까지 펼쳐지면 위젯이 꽤 길어질 수 있어서, 그만큼 여유를 두고 위쪽에서 시작
+                _cwY = Math.Max(60, vh - 480);
+            }
             _dotNetRef=DotNetObjectReference.Create(this);
             await JS.InvokeVoidAsync("patternViewer.init",_dotNetRef);
             await JS.InvokeVoidAsync("patternViewer.setTool", _penColor, _penSize, false, "select", _penOpacity);
@@ -1791,7 +1813,9 @@
     }
     async Task OnGlobalMouseUp(MouseEventArgs e)
     {
+        var wasCwDragging = _cwDragging;
         _cwDragging=false;
+        if (wasCwDragging) await SaveCwWidgetPrefs();
         if(_isDrawing&&_pdfLoaded&&(_tool=="pen"||_tool=="eraser"||_tool=="highlighter"))await JS.InvokeVoidAsync("patternViewer.endDraw");
         _isDrawing=false;
         StateHasChanged();
@@ -1803,8 +1827,10 @@
     }
     async Task OnGlobalTouchEnd(TouchEventArgs e)
     {
+        var wasCwDragging = _cwDragging;
         _cwDragging=false;
         await JS.InvokeVoidAsync("dragScrollLock.stop");
+        if (wasCwDragging) await SaveCwWidgetPrefs();
         StateHasChanged();
     }
 
