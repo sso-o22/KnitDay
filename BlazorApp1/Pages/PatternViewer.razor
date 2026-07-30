@@ -1030,12 +1030,13 @@
         _cwOffX=e.ClientX-_cwX;
         _cwOffY=e.ClientY-_cwY;
     }
-    void CwTouchStart(TouchEventArgs e)
+    async Task CwTouchStart(TouchEventArgs e)
     {
         if(e.Touches.Length==0)return;
         _cwDragging=true;
         _cwOffX=e.Touches[0].ClientX-_cwX;
         _cwOffY=e.Touches[0].ClientY-_cwY;
+        await JS.InvokeVoidAsync("dragScrollLock.start");
     }
 
     // ── 타이머 ──
@@ -1800,7 +1801,12 @@
     {
         if(_cwDragging&&e.Touches.Length>0){_cwX=Math.Max(0,e.Touches[0].ClientX-_cwOffX);_cwY=Math.Max(0,e.Touches[0].ClientY-_cwOffY);StateHasChanged();}
     }
-    Task OnGlobalTouchEnd(TouchEventArgs e){_cwDragging=false;StateHasChanged();return Task.CompletedTask;}
+    async Task OnGlobalTouchEnd(TouchEventArgs e)
+    {
+        _cwDragging=false;
+        await JS.InvokeVoidAsync("dragScrollLock.stop");
+        StateHasChanged();
+    }
 
     string HexToRgb(string hex){hex=hex.TrimStart('#');return $"{Convert.ToInt32(hex[..2],16)},{Convert.ToInt32(hex[2..4],16)},{Convert.ToInt32(hex[4..6],16)}";}
     string RgbToHex(string rgb){var p=rgb.Split(',');return $"#{int.Parse(p[0]):X2}{int.Parse(p[1]):X2}{int.Parse(p[2]):X2}";}
