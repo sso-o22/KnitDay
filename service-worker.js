@@ -1,4 +1,4 @@
-/* Manifest version: CAXOU1me */
+/* Manifest version: q2AY723a */
 // Caution! Be sure you understand the caveats before publishing an application with
 // offline support. See https://aka.ms/blazor-offline-considerations
 
@@ -86,4 +86,4 @@ self.addEventListener('notificationclick', event => {
             if (clients.openWindow) return clients.openWindow(targetUrl);
         })
     );
-});// build-stamp: 20260730234038
+});// build-stamp: 20260731002200
