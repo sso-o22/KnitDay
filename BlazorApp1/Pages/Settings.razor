@@ -838,8 +838,10 @@
     VersionInfo? _versionInfo;
     bool _showHistoryPopup = false;
 
-    // 관리자 계정이면 전체, 아니면 adminOnly가 아닌 항목만
+    // 로그인 안 한 상태면 히스토리 자체를 아예 안 보여줌.
+    // 로그인했으면: 관리자 계정은 전체, 일반 계정은 adminOnly가 아닌 항목만
     IEnumerable<VersionHistoryEntry> VisibleHistory =>
+        !Auth.IsLoggedIn ? Enumerable.Empty<VersionHistoryEntry>() :
         (_versionInfo?.History ?? new()).Where(h =>
             !h.AdminOnly || Auth.CurrentUser?.Uid == "xAz2xO8kulWUgoHnaaxCkzZV2nG2");
 

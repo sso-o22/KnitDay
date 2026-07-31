@@ -6,6 +6,13 @@
   ],
   "history": [
     {
+        "version": "1.1.0",
+        "date": "2026-07-31",
+        "updates": [
+          "정식 출시!"
+        ]
+    },
+    {
         "version": "1.0.22",
         "date": "2026-07-30",
         "adminOnly": true,
