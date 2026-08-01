@@ -361,15 +361,15 @@
     <!-- 버전 정보 -->
     <div class="card">
         <div class="card-title" style="margin-bottom:12px; display:flex; align-items:center; gap:6px;"><img src="icons/app-window.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />앱 정보</div>
-        @if (_versionInfo != null)
+        @if (DisplayedVersion is { } dv)
         {
             <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                <span style="font-size:0.92rem; font-weight:600; color:var(--text-dark);">KnitDay v@(_versionInfo.Version)</span>
-                <span style="font-size:0.78rem; color:var(--text-light);">@(_versionInfo.Date)</span>
+                <span style="font-size:0.92rem; font-weight:600; color:var(--text-dark);">KnitDay v@(dv.Version)</span>
+                <span style="font-size:0.78rem; color:var(--text-light);">@(dv.Date)</span>
             </div>
             <div style="font-size:0.82rem; color:var(--text-mid); margin-bottom:6px;">이번 업데이트</div>
             <ul style="margin:0 0 12px; padding-left:18px; display:flex; flex-direction:column; gap:4px;">
-                @foreach (var item in _versionInfo.Updates)
+                @foreach (var item in dv.Updates)
                 {
                     <li style="font-size:0.85rem; color:var(--text-dark);">@item</li>
                 }
@@ -820,6 +820,9 @@
         public List<string> Updates { get; set; } = new();
         [System.Text.Json.Serialization.JsonPropertyName("history")]
         public List<VersionHistoryEntry> History { get; set; } = new();
+        // 최상단(현재 버전) 자체도 관리자 전용으로 숨길 수 있게
+        [System.Text.Json.Serialization.JsonPropertyName("adminOnly")]
+        public bool AdminOnly { get; set; } = false;
     }
 
     class VersionHistoryEntry
@@ -838,6 +841,21 @@
 
     VersionInfo? _versionInfo;
     bool _showHistoryPopup = false;
+
+    // 관리자면 최상단 그대로, 아니면 최상단이 관리자 전용일 때 history에서
+    // 처음 나오는(관리자 전용 아닌) 항목으로 대체 — "현재 버전"으로 보여줌
+    (string Version, string Date, List<string> Updates)? DisplayedVersion
+    {
+        get
+        {
+            if (_versionInfo == null) return null;
+            bool isAdmin = Auth.CurrentUser?.Uid == "xAz2xO8kulWUgoHnaaxCkzZV2nG2";
+            if (!_versionInfo.AdminOnly || isAdmin)
+                return (_versionInfo.Version, _versionInfo.Date, _versionInfo.Updates);
+            var fallback = _versionInfo.History.FirstOrDefault(h => !h.AdminOnly);
+            return fallback != null ? (fallback.Version, fallback.Date, fallback.Updates) : null;
+        }
+    }
 
     // 로그인 안 한 상태면 히스토리 자체를 아예 안 보여줌.
     // 로그인했으면: 관리자 계정은 전체, 일반 계정은 adminOnly가 아닌 항목만
