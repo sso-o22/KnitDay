@@ -1899,8 +1899,12 @@ else
     async Task SaveCollapsedCards()
     {
         if (_project == null) return;
-        _project.CollapsedCards = _collapsedCards.ToList();
-        await Storage.SaveProjectAsync(_project);
+        try
+        {
+            var json = System.Text.Json.JsonSerializer.Serialize(_collapsedCards.ToList());
+            await JS.InvokeVoidAsync("localStorage.setItem", $"knitday_collapsed_cards_{_project.Id}", json);
+        }
+        catch { /* 로컬 저장 실패해도 화면 접기/펼치기 자체는 이미 반영돼 있어서 무해 */ }
     }
 
     // 카운터 이름 편집
@@ -1994,8 +1998,22 @@ else
         _project = all.FirstOrDefault(p => p.Id == ProjectId);
         // 데이터 불러오기 후 빈 사진 항목 정리
         _project?.Photos.RemoveAll(p => string.IsNullOrEmpty(p.Base64Data) && string.IsNullOrEmpty(p.StorageUrl));
-        // 저장된 카드 접기 상태 복원
-        _collapsedCards = _project != null ? new HashSet<string>(_project.CollapsedCards ?? new()) : new HashSet<string>();
+        // 저장된 카드 접기 상태 복원 — 기기별 취향이라 클라우드 동기화 대상이 아니라 로컬에만 저장
+        if (_project != null)
+        {
+            try
+            {
+                var savedJson = await JS.InvokeAsync<string?>("localStorage.getItem", $"knitday_collapsed_cards_{_project.Id}");
+                _collapsedCards = !string.IsNullOrEmpty(savedJson)
+                    ? new HashSet<string>(System.Text.Json.JsonSerializer.Deserialize<List<string>>(savedJson) ?? new())
+                    : new HashSet<string>();
+            }
+            catch { _collapsedCards = new HashSet<string>(); }
+        }
+        else
+        {
+            _collapsedCards = new HashSet<string>();
+        }
         // 구버전 VideoLinks(string) → 신버전 Links(VideoLink)로 1회 마이그레이션
         if (_project != null && _project.VideoLinks.Count > 0)
         {
