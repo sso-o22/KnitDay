@@ -922,6 +922,25 @@ window.addEventListener('beforeinstallprompt', (e) => {
     _installPromptEvent = e;
 });
 
+// 안드로이드 크롬은 설치 완료 시점에 이 이벤트가 정확히 한 번 발생함
+window.addEventListener('appinstalled', () => {
+    try { window.knitAnalytics?.log('home_screen_install', JSON.stringify({ platform: 'android' })); } catch (_) { }
+});
+
+// iOS Safari는 설치 완료를 알려주는 네이티브 이벤트가 없어서, standalone 모드로
+// 처음 실행되는 순간을 "설치 완료"로 간주해 1회만 기록 (localStorage 플래그로 중복 방지)
+// app.js(일반 스크립트)가 firebase.js(module, 파싱 이후 실행)보다 먼저 실행되므로
+// knitAnalytics가 아직 없을 수 있어 약간 지연 후 확인
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+        if (!isStandalone) return;
+        if (localStorage.getItem('knitday_install_logged') === '1') return;
+        localStorage.setItem('knitday_install_logged', '1');
+        try { window.knitAnalytics?.log('home_screen_install', JSON.stringify({ platform: 'ios_or_other' })); } catch (_) { }
+    }, 1500);
+});
+
 window.pwaInstall = {
     // 설치 프롬프트 사용 가능 여부
     canPrompt: () => !!_installPromptEvent,

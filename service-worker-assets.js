@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "gucNSyrI",
+  "version": "B3j+BmCn",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-6TqWqY4fRCwARdceJ9/4xeQwdtko1nQ8j6HF2IaXEz4=",
+      "hash": "sha256-qKoT7jPrOuqQzTuKwQW12wnjd+GEweGSlBNrvM6Mx54=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -82,7 +82,7 @@ self.assetsManifest = {
       "url": "_framework/System.Collections.Specialized.wasm"
     },
     {
-      "hash": "sha256-Z6Pj0RVjqlMJJqdxlH0Sui9CaErSSrc/jYIElNzxMOI=",
+      "hash": "sha256-yZjEDFtuz1wPg03MKvNR74h214lKxzEP6Fmya6ymxzA=",
       "url": "_framework/System.Collections.wasm"
     },
     {
@@ -142,7 +142,7 @@ self.assetsManifest = {
       "url": "_framework/System.Runtime.InteropServices.JavaScript.wasm"
     },
     {
-      "hash": "sha256-wns21v3RkwbyJjZyC8f8xm1qtWoKf7MDS4+Y7BEXU78=",
+      "hash": "sha256-p/OFqdWIn7wFida2rPBGmVsZdsLHDQHeS0fp9vUg9AA=",
       "url": "_framework/System.Runtime.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-SKADnhyF28J9MWIZmm4S59MxQRwnLDCpxuOhUhshR8w=",
+      "hash": "sha256-Km18DiWVln3ixDM7a8pjpH7DnAzj8e/l8XVcPjrE9Yc=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -202,7 +202,7 @@ self.assetsManifest = {
       "url": "_framework/icudt_no_CJK.dat"
     },
     {
-      "hash": "sha256-r1y6oqLoKp2vvmCZLlMzO9C3CklmU49WtEDmtwzEfQ0=",
+      "hash": "sha256-8PqosfcABe6xWunJkFS+VrC1Ydzf/Fv1xwg6whDxZpQ=",
       "url": "css/app.css"
     },
     {
@@ -942,11 +942,11 @@ self.assetsManifest = {
       "url": "index.html"
     },
     {
-      "hash": "sha256-VVsv3/zpZ98QmsiOil70kfWp5ePCNOXndC+oqW58JIE=",
+      "hash": "sha256-+Oa6ostTbvXnCD981ZCrmWvb8R5/TTMwsFoAr2+mM/A=",
       "url": "js/app.js"
     },
     {
-      "hash": "sha256-F6rnqoNlNxOsmCZD2hF9br+0PJ/zRQHViNd41nUpczY=",
+      "hash": "sha256-+ZTbE8hrEJlQhKy5sB3FLQ1R8LYegyO0b51YRHoaxc0=",
       "url": "js/firebase.js"
     },
     {

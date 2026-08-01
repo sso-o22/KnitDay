@@ -5,11 +5,14 @@ import {
     indexedDBLocalPersistence, setPersistence
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-    getFirestore, doc, getDoc, getDocFromServer, setDoc, collection, getDocs, deleteDoc
+    getFirestore, doc, getDoc, getDocFromServer, setDoc, collection, getDocs, deleteDoc, addDoc, serverTimestamp
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import {
     getFunctions, httpsCallable
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
+import {
+    getAnalytics, logEvent
+} from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js';
 
 const firebaseConfig = {
     apiKey:            "AIzaSyDO6b38CHxrbN0QrKRyzOuk-k7yOitDyKU",
@@ -17,7 +20,8 @@ const firebaseConfig = {
     projectId:         "knitlog-94c63",
     storageBucket:     "knitlog-94c63.firebasestorage.app",
     messagingSenderId: "448627074243",
-    appId:             "1:448627074243:web:32924c7262d7efc6e5ae76"
+    appId:             "1:448627074243:web:32924c7262d7efc6e5ae76",
+    measurementId:     "G-B1TNXX22QY"
 };
 
 const app      = initializeApp(firebaseConfig);
@@ -25,6 +29,21 @@ const auth     = getAuth(app);
 const db       = getFirestore(app);
 const functions = getFunctions(app, 'asia-northeast3');
 const provider = new GoogleAuthProvider();
+// 로그인 여부와 무관하게 접속하는 모든 사용자를 집계 (익명 방문자 포함) —
+// measurementId가 비어있으면(치환 실패) 조용히 무시하도록 try/catch로 감쌈
+let _analytics = null;
+try { _analytics = getAnalytics(app); } catch (e) { console.warn('Firebase Analytics 초기화 실패:', e); }
+
+// ── 커스텀 이벤트 로깅 (Blazor에서 호출) ──────────────────────────
+window.knitAnalytics = {
+    log(eventName, paramsJson) {
+        if (!_analytics) return;
+        try {
+            const params = paramsJson ? JSON.parse(paramsJson) : undefined;
+            logEvent(_analytics, eventName, params);
+        } catch (e) { console.warn('knitAnalytics.log 실패:', eventName, e); }
+    }
+};
 
 // Blazor에서 Cloud Function 호출용 전역 함수
 window.callFirebaseFunction = async (name, jsonData) => {
@@ -80,15 +99,21 @@ window.firebaseAuth = {
 
             // allowedUsers에 uid 업데이트 (탈퇴/완전삭제 시 활용)
             // expiresAt 없으면 "lifetime"으로 자동 생성 (관리자 포함)
+            let isFirstLogin = false;
             try {
                 const allowRef = doc(db, 'allowedUsers', u.email);
                 const existingDoc = await getDoc(allowRef);
+                isFirstLogin = !existingDoc.data()?.lastLoginAt;
                 const updateData = { uid: u.uid, lastLoginAt: new Date().toISOString(), lastActiveAt: new Date().toISOString() };
                 if (!existingDoc.data()?.expiresAt) {
                     updateData.expiresAt = 'lifetime';
                 }
                 await setDoc(allowRef, updateData, { merge: true });
             } catch (_) { /* uid 업데이트 실패해도 로그인은 진행 */ }
+
+            if (isFirstLogin && _analytics) {
+                try { logEvent(_analytics, 'signup_completed'); } catch (_) { }
+            }
 
             return { uid: u.uid, displayName: u.displayName, email: u.email, photoURL: u.photoURL };
         } catch (e) {
@@ -220,6 +245,18 @@ window.firebaseStore = {
             return true;
         } catch (e) {
             console.error('setDocument:', path, e);
+            return false;
+        }
+    },
+
+    // 컬렉션 경로에 새 문서를 자동 생성 ID로 추가 (로그성 기록용)
+    async addDocument(collectionPath, jsonData) {
+        try {
+            const parts = collectionPath.split('/');
+            await addDoc(collection(db, ...parts), JSON.parse(jsonData));
+            return true;
+        } catch (e) {
+            console.error('addDocument:', collectionPath, e);
             return false;
         }
     },
@@ -412,4 +449,57 @@ window.knitPush = {
             // 조용히 무시 — 하트비트 실패가 앱 사용을 막으면 안 됨
         }
     }
+};
+// ── 전역 오류 로깅 (사용자가 신고 안 해도 알 수 있게) ─────────────────
+// Firestore의 errorLogs 컬렉션에 조용히 기록. 스팸 방지를 위해 세션당
+// 최대 개수 제한 + 같은 메시지 중복 방지.
+const _errorLogState = { count: 0, maxPerSession: 8, seen: new Set() };
+
+async function logClientError(kind, message, extra) {
+    try {
+        if (_errorLogState.count >= _errorLogState.maxPerSession) return;
+        const key = kind + ':' + String(message).slice(0, 200);
+        if (_errorLogState.seen.has(key)) return; // 같은 오류 반복 기록 방지
+        _errorLogState.seen.add(key);
+        _errorLogState.count++;
+
+        await addDoc(collection(db, 'errorLogs'), {
+            kind,
+            message: String(message).slice(0, 1000),
+            url: location.href,
+            userAgent: navigator.userAgent,
+            uid: auth.currentUser?.uid || null,
+            email: auth.currentUser?.email || null,
+            appVersion: window.__knitdayVersion || null,
+            createdAt: serverTimestamp(),
+            ...extra
+        });
+    } catch (e) {
+        // 로깅 자체가 실패해도 앱 사용에 영향 주면 안 됨 — 콘솔에만 남김
+        console.warn('logClientError 실패:', e);
+    }
+}
+
+window.addEventListener('error', (e) => {
+    // 리소스 로드 실패(이미지 깨짐 등)는 너무 흔해서 제외, 실제 스크립트 오류만
+    if (e.error) {
+        logClientError('js_error', e.message, {
+            stack: e.error?.stack ? String(e.error.stack).slice(0, 2000) : null,
+            source: e.filename || null,
+            line: e.lineno || null
+        });
+    }
+});
+
+window.addEventListener('unhandledrejection', (e) => {
+    const reason = e.reason;
+    const message = reason?.message || String(reason);
+    logClientError('unhandled_promise_rejection', message, {
+        stack: reason?.stack ? String(reason.stack).slice(0, 2000) : null
+    });
+});
+
+// Blazor(.NET 쪽) 예외도 같은 곳에 남길 수 있게 노출
+window.logDotnetError = (message, stack) => {
+    logClientError('dotnet_error', message, { stack: stack ? String(stack).slice(0, 2000) : null });
 };
