@@ -29,6 +29,65 @@ else
 
     <div class="settings-wrapper">
 
+        <!-- 관리 통계 -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:6px;">
+                <span style="display:flex;align-items:center;gap:6px;">
+                    <img src="icons/chart-bar.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />관리 통계
+                </span>
+                <button class="btn btn-ghost btn-sm" @onclick="LoadMetrics" disabled="@_loadingMetrics">
+                    <img src="icons/arrows-clockwise.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />
+                </button>
+            </div>
+            @if (_loadingMetrics)
+            {
+                <div style="font-size:0.82rem;color:var(--text-light);">불러오는 중...</div>
+            }
+            else if (_metrics == null)
+            {
+                <div style="font-size:0.82rem;color:var(--text-light);">
+                    아직 통계가 없어요. 매일 새벽 5시에 자동으로 집계돼요 (Cloud Function <code>collectDailyMetrics</code>가 배포·실행된 이후부터).
+                </div>
+            }
+            else
+            {
+                <div style="font-size:0.72rem;color:var(--text-light);margin-bottom:10px;">
+                    @_metrics.Date 기준 스냅샷 (매일 새벽 5시 자동 갱신)
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px;">
+                    <div class="admin-stat-box">
+                        <div class="admin-stat-num">@_metrics.TotalUsers</div>
+                        <div class="admin-stat-label">전체 가입자</div>
+                    </div>
+                    <div class="admin-stat-box">
+                        <div class="admin-stat-num">@(_metrics.TotalStorageMB.ToString("N0"))MB</div>
+                        <div class="admin-stat-label">클라우드 저장 용량 합계</div>
+                    </div>
+                    <div class="admin-stat-box">
+                        <div class="admin-stat-num">@_metrics.LicenseChangesLast30d</div>
+                        <div class="admin-stat-label">최근 30일 이용권 변경/갱신</div>
+                    </div>
+                    <div class="admin-stat-box">
+                        <div class="admin-stat-num">@_metrics.PushComebacksLast30d</div>
+                        <div class="admin-stat-label">
+                            최근 30일 알림 보고 복귀
+                            @if (_metrics.PushComebackAvgDays != null)
+                            {
+                                <span> (평균 @(_metrics.PushComebackAvgDays)일 후)</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size:0.78rem;color:var(--text-mid);">
+                    이용권 종류별: 평생 @(_metrics.LicenseCounts.GetValueOrDefault("lifetime") + _metrics.LicenseCounts.GetValueOrDefault("earlybird_lifetime"))명
+                    (얼리버드 @(_metrics.LicenseCounts.GetValueOrDefault("earlybird_lifetime"))명) ·
+                    1년 @(_metrics.LicenseCounts.GetValueOrDefault("1year"))명 ·
+                    6개월 @(_metrics.LicenseCounts.GetValueOrDefault("6month"))명 ·
+                    기타 @(_metrics.LicenseCounts.GetValueOrDefault("etc"))명
+                </div>
+            }
+        </div>
+
         <!-- 계정 등록 -->
         <div class="card">
             <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:6px;">
@@ -80,6 +139,35 @@ else
                 </div>
             }
 
+            @if (_users != null && _users.Count > 0)
+            {
+                <div class="filter-sort-bar" style="margin-bottom:12px;">
+                    <div class="filter-sort-group">
+                        @foreach (var (label, key) in new[]{("등록순","registered"),("이름순","name"),("마감일","expiry")})
+                        {
+                            var ascVal  = key + "_asc";
+                            var descVal = key + "_desc";
+                            var isActive = _userSort == ascVal || _userSort == descVal;
+                            var isAsc   = _userSort == ascVal;
+                            <button class="btn btn-sm @(isActive?"btn-sage":"btn-ghost")" style="flex-shrink:0;"
+                                    @onclick="() => _userSort = isActive ? (isAsc ? descVal : ascVal) : descVal">
+                                @label @if (isActive) { <img src="@(isAsc?"icons/arrow-up.svg":"icons/arrow-down.svg")" class="icon-line" style="width:11px;height:11px;margin-left:2px;" /> }
+                            </button>
+                        }
+                    </div>
+                    <div class="filter-sort-divider"></div>
+                    <div class="filter-sort-group swatch-needle-wrapper">
+                        <select class="form-control swatch-needle-select" style="flex-shrink:0;" @bind="_userLicenseFilter">
+                            <option value="all">이용권 전체</option>
+                            <option value="6month">6개월</option>
+                            <option value="1year">1년</option>
+                            <option value="lifetime">평생</option>
+                            <option value="etc">기타</option>
+                        </select>
+                    </div>
+                </div>
+            }
+
             @if (_loading)
             {
                 <div style="font-size:0.85rem;color:var(--text-light);padding:8px 0;">불러오는 중...</div>
@@ -91,7 +179,7 @@ else
             else
             {
                 <div style="display:flex;flex-direction:column;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;">
-                    @foreach (var user in _users)
+                    @foreach (var user in FilteredSortedUsers)
                     {
                         var u = user;
                         <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);">
@@ -232,10 +320,49 @@ else
 @code {
     const string AdminUid = "xAz2xO8kulWUgoHnaaxCkzZV2nG2";
 
-    record UserEntry(string Email, string? Uid, string? ExpiresAt = null, string? LicenseType = null, string? LastActiveAt = null);
+    record UserEntry(string Email, string? Uid, string? ExpiresAt = null, string? LicenseType = null, string? LastActiveAt = null, string? RegisteredAt = null);
 
     List<UserEntry>? _users;
     bool _loading = false;
+    string _userSort = "registered_desc";
+    string _userLicenseFilter = "all";
+
+    IEnumerable<UserEntry> FilteredSortedUsers
+    {
+        get
+        {
+            var list = (_users ?? new()).AsEnumerable();
+
+            list = _userLicenseFilter switch
+            {
+                "6month"  => list.Where(u => u.LicenseType == "6month"),
+                "1year"   => list.Where(u => u.LicenseType == "1year"),
+                "lifetime" => list.Where(u => u.LicenseType == "lifetime" || u.LicenseType == "earlybird_lifetime"),
+                "etc"     => list.Where(u => u.LicenseType != "6month" && u.LicenseType != "1year"
+                                          && u.LicenseType != "lifetime" && u.LicenseType != "earlybird_lifetime"),
+                _         => list
+            };
+
+            // 등록일 없는 옛날 계정은 정렬 방향과 무관하게 맨 뒤로 (모르는 값이라 순서를 단정할 수 없음)
+            DateTime? RegDate(UserEntry u) => DateTime.TryParse(u.RegisteredAt, out var d) ? d : null;
+            // 만료일이 "lifetime"이거나 없으면 정렬 비교가 안 되니 맨 뒤로 보냄
+            DateTime? ExpDate(UserEntry u) => DateTime.TryParse(u.ExpiresAt, out var d) ? d : null;
+
+            list = _userSort switch
+            {
+                "registered_asc"  => list.OrderBy(u => RegDate(u) == null).ThenBy(u => RegDate(u)),
+                "registered_desc" => list.OrderBy(u => RegDate(u) == null).ThenByDescending(u => RegDate(u)),
+                "name_asc"        => list.OrderBy(u => u.Email, StringComparer.OrdinalIgnoreCase),
+                "name_desc"       => list.OrderByDescending(u => u.Email, StringComparer.OrdinalIgnoreCase),
+                "expiry_asc"      => list.OrderBy(u => ExpDate(u) == null).ThenBy(u => ExpDate(u)),
+                "expiry_desc"     => list.OrderBy(u => ExpDate(u) == null).ThenByDescending(u => ExpDate(u)),
+                _                 => list
+            };
+
+            return list;
+        }
+    }
+
     string _emailInput = "";
     string _licenseType = "lifetime";
     DateTime _customExpiry = DateTime.Today.AddYears(1);
@@ -265,14 +392,75 @@ else
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && Auth.IsLoggedIn && Auth.CurrentUser?.Uid == AdminUid)
+        {
             await LoadUsers();
+            await LoadMetrics();
+        }
     }
 
     async void OnAuthChanged()
     {
         if (Auth.IsLoggedIn && Auth.CurrentUser?.Uid == AdminUid)
+        {
             await LoadUsers();
+            await LoadMetrics();
+        }
         await InvokeAsync(StateHasChanged);
+    }
+
+    class MetricsSnapshot
+    {
+        public string Date { get; set; } = "";
+        public int TotalUsers { get; set; }
+        public Dictionary<string, int> LicenseCounts { get; set; } = new();
+        public double TotalStorageMB { get; set; }
+        public int LicenseChangesLast30d { get; set; }
+        public int PushComebacksLast30d { get; set; }
+        public double? PushComebackAvgDays { get; set; }
+    }
+
+    MetricsSnapshot? _metrics;
+    bool _loadingMetrics = false;
+
+    async Task LoadMetrics()
+    {
+        _loadingMetrics = true;
+        StateHasChanged();
+        try
+        {
+            var json = await JS.InvokeAsync<string?>("firebaseStore.getCollection", "metrics");
+            if (!string.IsNullOrEmpty(json))
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(json);
+                // 문서 id가 yyyy-MM-dd라 문자열 정렬로도 최신순 정렬됨
+                var latest = doc.RootElement.EnumerateArray()
+                    .OrderByDescending(e => e.TryGetProperty("date", out var d) ? d.GetString() : "")
+                    .FirstOrDefault();
+                if (latest.ValueKind == System.Text.Json.JsonValueKind.Object)
+                {
+                    var licenseCounts = new Dictionary<string, int>();
+                    if (latest.TryGetProperty("licenseCounts", out var lc) && lc.ValueKind == System.Text.Json.JsonValueKind.Object)
+                        foreach (var p in lc.EnumerateObject())
+                            licenseCounts[p.Name] = p.Value.GetInt32();
+
+                    _metrics = new MetricsSnapshot
+                    {
+                        Date = latest.TryGetProperty("date", out var dt) ? dt.GetString() ?? "" : "",
+                        TotalUsers = latest.TryGetProperty("totalUsers", out var tu) ? tu.GetInt32() : 0,
+                        LicenseCounts = licenseCounts,
+                        TotalStorageMB = latest.TryGetProperty("totalStorageMB", out var sm) ? sm.GetDouble() : 0,
+                        LicenseChangesLast30d = latest.TryGetProperty("licenseChangesLast30d", out var lc30) ? lc30.GetInt32() : 0,
+                        PushComebacksLast30d = latest.TryGetProperty("pushComebacksLast30d", out var pc30) ? pc30.GetInt32() : 0,
+                        PushComebackAvgDays = latest.TryGetProperty("pushComebackAvgDays", out var pca) && pca.ValueKind != System.Text.Json.JsonValueKind.Null ? pca.GetDouble() : null,
+                    };
+                }
+                else _metrics = null;
+            }
+            else _metrics = null;
+        }
+        catch { _metrics = null; }
+        _loadingMetrics = false;
+        StateHasChanged();
     }
 
     async Task LoadUsers()
@@ -291,7 +479,8 @@ else
                         e.TryGetProperty("uid", out var uid) ? uid.GetString() : null,
                         e.TryGetProperty("expiresAt", out var exp) ? exp.GetString() : null,
                         e.TryGetProperty("licenseType", out var lt) ? lt.GetString() : null,
-                        e.TryGetProperty("lastActiveAt", out var la) ? la.GetString() : null))
+                        e.TryGetProperty("lastActiveAt", out var la) ? la.GetString() : null,
+                        e.TryGetProperty("registeredAt", out var ra) ? ra.GetString() : null))
                     .Where(u => !string.IsNullOrEmpty(u.Email))
                     .OrderBy(u => u.Email)
                     .ToList();
@@ -410,6 +599,21 @@ else
             if (ok)
             {
                 _licenseChangeMsg = "변경 완료!"; _licenseChangeError = false;
+                // 갱신율 분석용 로그 — 관리자가 라이선스를 바꿀 때마다 이전/이후 값을 남겨둠
+                try
+                {
+                    await JS.InvokeAsync<bool>("firebaseStore.addDocument", "licenseEvents",
+                        System.Text.Json.JsonSerializer.Serialize(new
+                        {
+                            email = _changeLicenseUser.Email,
+                            previousExpiresAt = _changeLicenseUser.ExpiresAt,
+                            previousLicenseType = _changeLicenseUser.LicenseType,
+                            newExpiresAt = expiresAt,
+                            newLicenseType = _newLicenseType,
+                            changedAt = DateTime.UtcNow.ToString("O")
+                        }));
+                }
+                catch { /* 로그 실패해도 실제 라이선스 변경엔 영향 없음 */ }
                 await LoadUsers();
             }
             else { _licenseChangeMsg = "변경 실패"; _licenseChangeError = true; }

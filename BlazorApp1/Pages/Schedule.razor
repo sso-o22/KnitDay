@@ -772,6 +772,8 @@ else
                 _editingProject.StatusLogs.Add(new StatusLog { At = DateTime.Now, Action = "시작" });
         }
         await Storage.SaveProjectAsync(_editingProject);
+        if (isNew)
+            try { await JS.InvokeVoidAsync("knitAnalytics.log", "project_created", (string?)null); } catch { }
         foreach (var s in _allSwatches)
             await Storage.SaveSwatchAsync(s);
         _swatchSnapshot = null;

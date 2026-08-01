@@ -1520,6 +1520,7 @@
             // JS에 byte[] 직접 전달 (DotNetStreamReference는 Android에서 불안정 → byte[] 사용)
             var pages = await JS.InvokeAsync<int>("patternViewer.loadPdfBytes", bytes);
             if (pages <= 0) return;
+            try { await JS.InvokeVoidAsync("knitAnalytics.log", "pattern_uploaded", (string?)null); } catch { }
 
             // Blazor DOM에 캔버스 생성
             _totalPages = pages;

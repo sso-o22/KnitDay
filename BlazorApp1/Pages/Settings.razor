@@ -374,7 +374,7 @@
                     <li style="font-size:0.85rem; color:var(--text-dark);">@item</li>
                 }
             </ul>
-            @if (_versionInfo.History.Any())
+            @if (VisibleHistory.Any())
             {
                 <button style="background:none;border:none;padding:0;font-size:0.78rem;color:var(--text-light);cursor:pointer;text-decoration:underline;text-decoration-style:dotted;"
                         @onclick="OpenHistoryPopup">과거 업데이트 이력 보기</button>
@@ -417,7 +417,8 @@
             {
                 <div style="margin-top:0; margin-bottom:10px; font-size:0.82rem; color:@(_premiumError ? "#c03030" : "var(--theme-active)");">@_premiumMsg</div>
             }
-            <a href="https://smartstore.naver.com/knitday_studio/products/13687724086" target="_blank" rel="noopener noreferrer"
+            <a href="https://smartstore.naver.com/knitday_studio" target="_blank" rel="noopener noreferrer"
+               @onclick='() => JS.InvokeVoidAsync("knitAnalytics.log", "license_purchase_click", (string?)null)'
                style="display:inline-flex;align-items:center;gap:6px;font-size:0.82rem;color:var(--text-light);text-decoration:none;">
                 <img src="icons/storefront.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />네이버 스토어에서 구매하기
             </a>
@@ -649,7 +650,7 @@
                 과거 업데이트 이력
             </div>
             <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:10px;">
-                @foreach (var h in _versionInfo.History)
+                @foreach (var h in VisibleHistory)
                 {
                     <div style="border:1px solid var(--border);border-radius:12px;padding:14px 16px;">
                         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
@@ -829,10 +830,21 @@
         public string Date { get; set; } = "";
         [System.Text.Json.Serialization.JsonPropertyName("updates")]
         public List<string> Updates { get; set; } = new();
+        // true면 관리자 계정으로 로그인했을 때만 이 항목이 보임 (베타 시절 이력 숨김용).
+        // 앞으로 새로 추가하는 항목은 이 값을 안 넣으면 기본 false라 모두에게 보임.
+        [System.Text.Json.Serialization.JsonPropertyName("adminOnly")]
+        public bool AdminOnly { get; set; } = false;
     }
 
     VersionInfo? _versionInfo;
     bool _showHistoryPopup = false;
+
+    // 로그인 안 한 상태면 히스토리 자체를 아예 안 보여줌.
+    // 로그인했으면: 관리자 계정은 전체, 일반 계정은 adminOnly가 아닌 항목만
+    IEnumerable<VersionHistoryEntry> VisibleHistory =>
+        !Auth.IsLoggedIn ? Enumerable.Empty<VersionHistoryEntry>() :
+        (_versionInfo?.History ?? new()).Where(h =>
+            !h.AdminOnly || Auth.CurrentUser?.Uid == "xAz2xO8kulWUgoHnaaxCkzZV2nG2");
 
     async Task OpenHistoryPopup() { _showHistoryPopup = true; await JS.InvokeVoidAsync("lockBodyScroll"); }
     async Task CloseHistoryPopup() { _showHistoryPopup = false; await JS.InvokeVoidAsync("unlockBodyScroll"); }

@@ -28,6 +28,8 @@ jobs:
         run: |
           sed -i "s|%%FIREBASE_API_KEY%%|${{ secrets.FIREBASE_API_KEY }}|g" \
             BlazorApp1/wwwroot/js/firebase.js
+          sed -i "s|%%FIREBASE_MEASUREMENT_ID%%|${{ secrets.FIREBASE_MEASUREMENT_ID }}|g" \
+            BlazorApp1/wwwroot/js/firebase.js
 
       - name: Fix base href for custom domain
         run: |

@@ -4,7 +4,7 @@ const { setGlobalOptions } = require("firebase-functions/v2");
 const crypto = require("crypto");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 setGlobalOptions({ region: "asia-northeast3" }); // 서울 리전
 
@@ -317,6 +317,24 @@ function configureWebPush() {
  * - 앱을 열 때마다 reminderSent를 false로 리셋해서, 돌아온 뒤 다시 오래 안 켜면
  *   또 알림이 가도록 함
  */
+// 리마인더를 보낸 뒤 사용자가 돌아왔는지 기록 (알림 효과 측정용)
+async function recordComeBackIfReminded(db, deviceId, existingData, now) {
+    if (!existingData?.reminderSentAt) return {};
+    try {
+        const sentAt = new Date(existingData.reminderSentAt);
+        const daysSinceReminder = (now - sentAt) / (1000 * 60 * 60 * 24);
+        await db.collection("pushEffectiveness").add({
+            deviceId,
+            reminderSentAt: existingData.reminderSentAt,
+            cameBackAt: now.toISOString(),
+            daysSinceReminder: Math.round(daysSinceReminder * 10) / 10,
+        });
+    } catch (e) {
+        console.error("recordComeBackIfReminded 실패:", e.message);
+    }
+    return { reminderSentAt: FieldValue.delete() };
+}
+
 exports.registerPushSubscription = onCall(async (request) => {
     const { deviceId, subscription } = request.data || {};
     if (!deviceId || typeof deviceId !== "string") {
@@ -328,11 +346,15 @@ exports.registerPushSubscription = onCall(async (request) => {
 
     const db = getFirestore();
     const now = new Date();
-    await db.collection("pushSubscriptions").doc(deviceId).set({
+    const ref = db.collection("pushSubscriptions").doc(deviceId);
+    const existing = (await ref.get()).data();
+    const comeBackFields = await recordComeBackIfReminded(db, deviceId, existing, now);
+    await ref.set({
         subscription,
         lastActiveAt: now.toISOString(),
         reminderSent: false,
         updatedAt: now.toISOString(),
+        ...comeBackFields,
     }, { merge: true });
 
     return { success: true };
@@ -351,7 +373,9 @@ exports.pingDeviceActive = onCall(async (request) => {
     const ref = db.collection("pushSubscriptions").doc(deviceId);
     const snap = await ref.get();
     if (!snap.exists) return { success: false }; // 구독 안 된 기기 — 조용히 무시
-    await ref.set({ lastActiveAt: new Date().toISOString(), reminderSent: false }, { merge: true });
+    const now = new Date();
+    const comeBackFields = await recordComeBackIfReminded(db, deviceId, snap.data(), now);
+    await ref.set({ lastActiveAt: now.toISOString(), reminderSent: false, ...comeBackFields }, { merge: true });
     return { success: true };
 });
 
@@ -405,7 +429,7 @@ exports.sendInactivityReminders = onSchedule(
                     url: "/",
                     tag: "knitday-inactivity-reminder",
                 }));
-                await docSnap.ref.set({ reminderSent: true }, { merge: true });
+                await docSnap.ref.set({ reminderSent: true, reminderSentAt: now.toISOString() }, { merge: true });
                 console.log(`sendInactivityReminders: ${docSnap.id} 발송 완료`);
             } catch (e) {
                 // 구독이 만료/삭제된 경우(410/404) 정리
@@ -417,5 +441,85 @@ exports.sendInactivityReminders = onSchedule(
                 }
             }
         }
+    }
+);
+// ═══════════════════════════════════════════════════════════════════
+// 관리 통계: 매일 새벽 스냅샷을 metrics/{yyyy-MM-dd} 문서에 저장
+// (이용권 종류별 계정 수, 클라우드 저장 용량 합계, 최근 30일 라이선스
+//  변경/갱신 건수, 데이터 유실 방지 알림 효과)
+// ═══════════════════════════════════════════════════════════════════
+exports.collectDailyMetrics = onSchedule(
+    { schedule: "0 5 * * *", timeZone: "Asia/Seoul" }, // 매일 새벽 5시 (트래픽 적은 시간)
+    async () => {
+        const db = getFirestore();
+        const today = new Date().toISOString().slice(0, 10); // yyyy-MM-dd
+
+        // ── ① 이용권 종류별 계정 수 ──
+        const usersSnap = await db.collection("allowedUsers").get();
+        const licenseCounts = { "6month": 0, "1year": 0, lifetime: 0, earlybird_lifetime: 0, etc: 0 };
+        let totalUsers = 0;
+        usersSnap.forEach((d) => {
+            totalUsers++;
+            const lt = d.data()?.licenseType;
+            if (lt && Object.prototype.hasOwnProperty.call(licenseCounts, lt)) licenseCounts[lt]++;
+            else licenseCounts.etc++;
+        });
+
+        // ── ② 클라우드 저장 용량 합계 (users/{uid}/meta/usage) ──
+        // 계정 수가 많아지면 이 부분은 부하가 커질 수 있어 추후 최적화 필요할 수 있음
+        let totalStorageBytes = 0;
+        let usersWithUsageData = 0;
+        const uidList = usersSnap.docs.map((d) => d.data()?.uid).filter(Boolean);
+        for (const uid of uidList) {
+            try {
+                const usageDoc = await db.doc(`users/${uid}/meta/usage`).get();
+                if (usageDoc.exists) {
+                    const photoBytes = Number(usageDoc.data()?.photoBytes) || 0;
+                    const pdfBytes = Number(usageDoc.data()?.pdfBytes) || 0;
+                    totalStorageBytes += photoBytes + pdfBytes;
+                    usersWithUsageData++;
+                }
+            } catch (e) { /* 개별 실패는 무시하고 계속 */ }
+        }
+
+        // ── ③ 최근 30일 라이선스 변경(갱신) 건수 ──
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        let licenseChangesLast30d = 0;
+        try {
+            const eventsSnap = await db.collection("licenseEvents")
+                .where("changedAt", ">=", thirtyDaysAgo.toISOString())
+                .get();
+            licenseChangesLast30d = eventsSnap.size;
+        } catch (e) { console.error("licenseEvents 집계 실패:", e.message); }
+
+        // ── ④ 데이터 유실 방지 알림 효과 (최근 30일간 리마인더 받고 돌아온 사례) ──
+        let pushComebacksLast30d = 0;
+        let pushComebackAvgDays = null;
+        try {
+            const effSnap = await db.collection("pushEffectiveness")
+                .where("cameBackAt", ">=", thirtyDaysAgo.toISOString())
+                .get();
+            pushComebacksLast30d = effSnap.size;
+            if (effSnap.size > 0) {
+                const sum = effSnap.docs.reduce((acc, d) => acc + (d.data()?.daysSinceReminder || 0), 0);
+                pushComebackAvgDays = Math.round((sum / effSnap.size) * 10) / 10;
+            }
+        } catch (e) { console.error("pushEffectiveness 집계 실패:", e.message); }
+
+        await db.collection("metrics").doc(today).set({
+            date: today,
+            totalUsers,
+            licenseCounts,
+            totalStorageBytes,
+            totalStorageMB: Math.round((totalStorageBytes / 1024 / 1024) * 10) / 10,
+            usersWithUsageData,
+            licenseChangesLast30d,
+            pushComebacksLast30d,
+            pushComebackAvgDays,
+            collectedAt: new Date().toISOString(),
+        }, { merge: true });
+
+        console.log(`collectDailyMetrics: ${today} 스냅샷 저장 완료 (가입자 ${totalUsers}명, 저장용량 ${Math.round(totalStorageBytes / 1024 / 1024)}MB)`);
     }
 );
