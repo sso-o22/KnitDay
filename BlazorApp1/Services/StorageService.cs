@@ -1156,6 +1156,13 @@ namespace KnitLog.Services
             if (proj is null) return;
             proj.Status    = ProjectStatus.진행중;
             proj.StartDate ??= DateTime.Today;
+            if (!string.IsNullOrEmpty(proj.WishMemo))
+            {
+                proj.PatternMemo = string.IsNullOrEmpty(proj.PatternMemo)
+                    ? proj.WishMemo
+                    : proj.PatternMemo + "\n" + proj.WishMemo;
+                proj.WishMemo = "";
+            }
             proj.StatusLogs.Add(new StatusLog { At = DateTime.Now, Action = "시작" });
             proj.UpdatedAt = DateTime.Now;
             await SaveAsync(KEY_PROJECTS, "projects", "Id", list);

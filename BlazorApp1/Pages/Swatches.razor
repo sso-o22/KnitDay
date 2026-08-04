@@ -885,7 +885,7 @@ else
                     await Storage.DeleteSwatchPhotoAsync(_editing.Id.ToString(), original?.PhotoFileSizeBytes ?? 0);
                 var (url, err, fileBytes) = await Storage.UploadSwatchPhotoAsync(_editing.Id.ToString(), _editing.PhotoBase64);
                 if (err == "quota")
-                    await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요.", "error");
+                    await JS.InvokeVoidAsync("showToast", "저장공간 300MB 한도를 초과했어요.", "error");
                 else if (!string.IsNullOrEmpty(url))
                 {
                     _editing.PhotoStorageUrl = url;

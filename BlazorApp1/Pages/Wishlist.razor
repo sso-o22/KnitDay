@@ -65,6 +65,13 @@ else
         @foreach (var proj in SortedWishes)
         {
             <div class="card">
+                @{ var wishThumb = WishThumbUrl(proj); }
+                @if (wishThumb != null)
+                {
+                    <div style="width:100%; aspect-ratio:4/3; border-radius:var(--radius-sm); overflow:hidden; margin-bottom:10px; background:var(--ivory-dark);">
+                        <img src="@wishThumb" alt="@proj.PatternName" style="width:100%; height:100%; object-fit:cover; display:block;" />
+                    </div>
+                }
                 <div class="flex-between mb-1">
                     <div class="card-title" style="margin-bottom:0;">@proj.PatternName</div>
                     <div style="display:flex; gap:4px; flex-shrink:0;">
@@ -119,7 +126,7 @@ else
     <div class="modal-backdrop">
         <div class="modal" @onclick:stopPropagation="true">
             <div class="modal-header">
-                <h2 class="modal-title">@(_editingProject.Id == Guid.Empty ? "위시 추가" : "위시 수정")</h2>
+                <h2 class="modal-title">@(_isNewWish ? "위시 추가" : "위시 수정")</h2>
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
             </div>
 
@@ -213,6 +220,31 @@ else
                     <input class="form-control" @bind="_editingProject.OriginalOther" placeholder="예: 단추 7개, 50cm 지퍼" />
                 </div>
             </div>
+            <div class="form-group">
+                <label class="form-label">사진</label>
+                <p style="font-size:0.72rem; color:var(--text-light); margin-top:-2px; margin-bottom:6px;">항목이 많아졌을 때 한눈에 구분하기 쉬워져요.</p>
+                @{ var wishEditThumb = WishThumbUrl(_editingProject); }
+                @if (wishEditThumb != null)
+                {
+                    <div style="position:relative; width:120px; aspect-ratio:4/3;">
+                        <img src="@wishEditThumb" alt="위시 사진" style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm);" />
+                        <button type="button" class="btn btn-danger btn-sm" style="position:absolute; top:3px; right:3px; padding:2px 5px;"
+                                @onclick="RemoveWishPhoto">
+                            <img src="icons/x.svg" class="icon-line" style="width:10px;height:10px;" />
+                        </button>
+                    </div>
+                }
+                else
+                {
+                    <label style="width:120px; aspect-ratio:4/3; border:1.5px dashed var(--border); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-light); background:var(--ivory-dark); position:relative; overflow:hidden;">
+                        <img src="icons/plus.svg" class="icon-line" style="width:20px;height:20px;opacity:0.4;" />
+                        <InputFile OnChange="OnWishPhotoSelected"
+                                   accept="image/jpeg,image/png,image/heic,image/heif,image/webp"
+                                   style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
+                    </label>
+                }
+            </div>
+
             <div class="form-group">
                 <label class="form-label">메모</label>
                 <textarea class="form-control" rows="3" @bind="_editingProject.WishMemo"
@@ -386,9 +418,11 @@ else
         _               => FilteredWishes.OrderByDescending(p => p.CreatedAt),
     };
     bool _showModal = false;
+    bool _isNewWish = false;
     List<KnitProject> _projects = new();
     List<Yarn> _yarns = new();
     KnitProject? _editingProject;
+    List<ProjectPhoto> _originalWishPhotos = new(); // 모달 열 때 시점의 사진 스냅샷 (취소/저장 시 클라우드 정리용)
 
     protected override async Task OnInitializedAsync()
     {
@@ -426,12 +460,14 @@ else
 
     void OpenAddModal()
     {
-        // 초기화 시 빈 문자열이라도 넣어둡니다.
+        // 사진 업로드 시 클라우드 저장 경로로 쓸 Id가 필요해서 미리 발급 (저장 전이라도 유효)
         _editingProject = new KnitProject { 
-            Id = Guid.Empty, 
+            Id = Guid.NewGuid(), 
             Status = ProjectStatus.위시리스트,
             PatternName = "" 
         };
+        _isNewWish = true;
+        _originalWishPhotos = new();
         _showModal = true;
         _scrollModalTop = true;
         _ = JS.InvokeVoidAsync("lockBodyScroll");
@@ -448,10 +484,26 @@ else
         // 취소 시 원본이 오염되지 않도록 JSON 딥카피해서 편집 (저장 버튼을 눌러야만 실제 반영됨)
         var json = System.Text.Json.JsonSerializer.Serialize(proj);
         _editingProject = System.Text.Json.JsonSerializer.Deserialize<KnitProject>(json)!;
+        _isNewWish = false;
+        _originalWishPhotos = new(proj.Photos);
         _showModal = true; _scrollModalTop = true;
         _ = JS.InvokeVoidAsync("lockBodyScroll");
     }
-    void CloseModal() { _showModal = false; _editingProject = null; _ = JS.InvokeVoidAsync("unlockBodyScroll"); }
+
+    void CloseModal()
+    {
+        // 취소 시 이번 편집 세션에서 새로 업로드했지만 저장하지 않은 사진은 클라우드에 고아로 남지 않도록 정리
+        if (_editingProject != null)
+        {
+            var addedThisSession = _editingProject.Photos
+                .Where(p => !_originalWishPhotos.Any(op => op.Id == p.Id) && !string.IsNullOrEmpty(p.StorageUrl))
+                .ToList();
+            foreach (var p in addedThisSession)
+                _ = Storage.DeletePhotoAsync(_editingProject.Id.ToString(), p.Id.ToString(), p.FileSizeBytes);
+        }
+        _showModal = false; _editingProject = null; _originalWishPhotos = new();
+        _ = JS.InvokeVoidAsync("unlockBodyScroll");
+    }
 
     async Task SaveProject()
     {
@@ -467,12 +519,109 @@ else
         }
 
         if (_editingProject.Id == Guid.Empty) _editingProject.Id = Guid.NewGuid();
-        
+
+        // 편집 중 제거된 사진은 저장 시점에 클라우드에서도 정리
+        var removedPhotos = _originalWishPhotos
+            .Where(op => !_editingProject.Photos.Any(np => np.Id == op.Id) && !string.IsNullOrEmpty(op.StorageUrl))
+            .ToList();
+
         await Storage.SaveProjectAsync(_editingProject);
+        foreach (var p in removedPhotos)
+            await Storage.DeletePhotoAsync(_editingProject.Id.ToString(), p.Id.ToString(), p.FileSizeBytes);
+
         _saving = false;
         await JS.InvokeVoidAsync("showToast", "저장됐어요");
-        CloseModal();
+        _showModal = false; _editingProject = null; _originalWishPhotos = new(); // 클라우드 정리를 이미 마쳤으므로 CloseModal의 재정리 로직은 건너뜀
+        _ = JS.InvokeVoidAsync("unlockBodyScroll");
         await LoadData();
+    }
+
+    // ── 위시 대표 사진 (항목이 많아질 때 구분용, 1장만) ──────────────
+    string? WishThumbUrl(KnitProject? proj)
+    {
+        var photo = proj?.Photos.FirstOrDefault(p => !string.IsNullOrEmpty(p.StorageUrl) || !string.IsNullOrEmpty(p.Base64Data));
+        if (photo == null) return null;
+        return !string.IsNullOrEmpty(photo.StorageUrl) ? photo.StorageUrl : photo.Base64Data;
+    }
+
+    bool _wishPhotoUploadInFlight = false;
+    async Task OnWishPhotoSelected(InputFileChangeEventArgs e)
+    {
+        if (_wishPhotoUploadInFlight) return; // 연타 방지
+        _wishPhotoUploadInFlight = true;
+        try { await OnWishPhotoSelectedInner(e); }
+        finally { _wishPhotoUploadInFlight = false; }
+    }
+
+    async Task OnWishPhotoSelectedInner(InputFileChangeEventArgs e)
+    {
+        if (_editingProject == null) return;
+        var file = e.File;
+        if (file == null) return;
+
+        long maxFileSize = 20 * 1024 * 1024;
+        if (file.Size > maxFileSize)
+        {
+            await JS.InvokeVoidAsync("showToast", "20MB를 초과하는 사진은 추가할 수 없어요.", "error");
+            return;
+        }
+        var validPhotoExts = new[] { ".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp" };
+        if (!(file.ContentType ?? "").StartsWith("image/") &&
+            !validPhotoExts.Contains(System.IO.Path.GetExtension(file.Name).ToLowerInvariant()))
+        {
+            await JS.InvokeVoidAsync("showToast", "이미지 파일만 추가할 수 있어요.", "error");
+            return;
+        }
+
+        try
+        {
+            using var stream = file.OpenReadStream(maxFileSize);
+            using var ms = new System.IO.MemoryStream();
+            await stream.CopyToAsync(ms);
+            var rawBase64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(ms.ToArray())}";
+            string compressed;
+            try { compressed = await JS.InvokeAsync<string>("compressImage", rawBase64, 800, 0.75); }
+            catch { compressed = rawBase64; }
+
+            var photo = new ProjectPhoto { FileName = file.Name, TakenAt = DateTime.Now };
+
+            if (Storage.IsLoggedIn)
+            {
+                var (url, err, fileBytes) = await Storage.UploadPhotoAsync(_editingProject.Id.ToString(), photo.Id.ToString(), compressed);
+                if (err == "quota")
+                {
+                    await JS.InvokeVoidAsync("showToast", "저장공간 300MB 한도를 초과했어요. 사진을 정리하고 다시 시도해 주세요.", "error");
+                    return;
+                }
+                if (!string.IsNullOrEmpty(url))
+                {
+                    photo.StorageUrl = url;
+                    photo.FileSizeBytes = fileBytes;
+                }
+                else
+                    photo.Base64Data = compressed; // 업로드 실패 시 로컬 fallback
+            }
+            else
+            {
+                photo.Base64Data = compressed;
+            }
+
+            _editingProject.Photos.Clear(); // 위시 사진은 1장만
+            _editingProject.Photos.Add(photo);
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("showToast", $"사진 첨부 실패: {ex.Message}", "error");
+        }
+    }
+
+    void RemoveWishPhoto()
+    {
+        if (_editingProject == null) return;
+        // 진행중 프로젝트에서 '위시리스트로 복귀'한 경우 사진이 여러 장 남아있을 수 있어서,
+        // 전체를 지우지 않고 대표(썸네일)로 쓰인 첫 유효 사진 1장만 제거
+        var photo = _editingProject.Photos.FirstOrDefault(p => !string.IsNullOrEmpty(p.StorageUrl) || !string.IsNullOrEmpty(p.Base64Data));
+        if (photo != null) _editingProject.Photos.Remove(photo);
     }
 
     async Task StartProject(Guid id)

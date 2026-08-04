@@ -2258,7 +2258,7 @@ else
                     var (url, err, fileBytes) = await Storage.UploadPhotoAsync(_project.Id.ToString(), photo.Id.ToString(), compressed);
                     if (err == "quota")
                     {
-                        await JS.InvokeVoidAsync("showToast", "저장공간 500MB 한도를 초과했어요. 사진을 삭제하고 다시 시도해 주세요.", "error");
+                        await JS.InvokeVoidAsync("showToast", "저장공간 300MB 한도를 초과했어요. 사진을 삭제하고 다시 시도해 주세요.", "error");
                         return;
                     }
                     if (!string.IsNullOrEmpty(url))
