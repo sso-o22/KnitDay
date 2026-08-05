@@ -217,8 +217,8 @@ else
                 @* 사진 *@
                 @if (!string.IsNullOrEmpty(s.PhotoStorageUrl) || !string.IsNullOrEmpty(s.PhotoBase64))
                 {
-                    <div style="margin-top:10px;">
-                        <img src="@(!string.IsNullOrEmpty(s.PhotoStorageUrl) ? s.PhotoStorageUrl : s.PhotoBase64)" style="width:100%; border-radius:var(--radius-sm); object-fit:cover; max-height:180px;" />
+                    <div style="margin-top:10px; width:100%; aspect-ratio:4/3; border-radius:var(--radius-sm); overflow:hidden; background:var(--ivory-dark);">
+                        <img src="@(!string.IsNullOrEmpty(s.PhotoStorageUrl) ? s.PhotoStorageUrl : s.PhotoBase64)" style="width:100%; height:100%; object-fit:cover; display:block;" />
                     </div>
                 }
             </div>
