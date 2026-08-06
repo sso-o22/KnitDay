@@ -10,6 +10,7 @@ window.knitDB = (() => {
             const req = indexedDB.open(DB_NAME, DB_VER);
             req.onupgradeneeded = e => {
                 const db = e.target.result;
+                if (!db) { rej(new Error('IndexedDB 업그레이드 중 DB 핸들을 가져오지 못했어요.')); return; }
                 STORES.forEach(s => { if (!db.objectStoreNames.contains(s)) db.createObjectStore(s); });
             };
             req.onsuccess = e => res(e.target.result);
@@ -18,6 +19,7 @@ window.knitDB = (() => {
     }
 
     async function get(store, key) {
+        if (key === null || key === undefined || key === '') return null; // 유효하지 않은 키 — 조용히 null 반환
         const db = await openDB();
         return new Promise((res, rej) => {
             const req = db.transaction(store, 'readonly').objectStore(store).get(key);
@@ -37,6 +39,7 @@ window.knitDB = (() => {
     }
 
     async function remove(store, key) {
+        if (key === null || key === undefined || key === '') return; // 유효하지 않은 키 — 조용히 무시
         const db = await openDB();
         return new Promise((res, rej) => {
             const tx = db.transaction(store, 'readwrite');
@@ -219,7 +222,7 @@ window.initCardDrag = (dotNetRef) => {
         });
         if (!card || !dragId || card.dataset.cardid === dragId) { dragId = null; return; }
         const fromId = dragId; dragId = null;
-        dotNetRef.invokeMethodAsync('DropCard', fromId, card.dataset.cardid);
+        dotNetRef.invokeMethodAsync('DropCard', fromId, card.dataset.cardid).catch(() => {});
     };
 
     document.addEventListener('dragstart', onDragStart);
@@ -330,7 +333,7 @@ window.initCardDrag = (dotNetRef) => {
         touchDragId = null; touchOverId = null; touchStartEl = null;
 
         if (toId && toId !== fromId) {
-            dotNetRef.invokeMethodAsync('DropCard', fromId, toId);
+            dotNetRef.invokeMethodAsync('DropCard', fromId, toId).catch(() => {});
         }
     };
 

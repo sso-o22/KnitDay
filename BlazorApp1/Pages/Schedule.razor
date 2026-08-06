@@ -896,17 +896,20 @@ else
 
     async Task OnPhotoSelectedInner(InputFileChangeEventArgs e)
     {
+        const long maxFileSize = 20 * 1024 * 1024; // 20MB (다른 사진 업로드와 통일)
         var validPhotoExts = new[] { ".jpg", ".jpeg", ".png", ".heic", ".heif", ".webp" };
         var skipped = new List<string>();
+        var tooLarge = new List<string>();
         foreach (var file in e.GetMultipleFiles(10))
         {
             // accept 속성은 기기(특히 갤럭시 등 안드로이드)에 따라 무시될 수 있어 실제로도 한 번 더 확인
             var isImage = (file.ContentType ?? "").StartsWith("image/") ||
                 validPhotoExts.Contains(System.IO.Path.GetExtension(file.Name).ToLowerInvariant());
             if (!isImage) { skipped.Add(file.Name); continue; }
+            if (file.Size > maxFileSize) { tooLarge.Add(file.Name); continue; }
 
             var buf = new byte[file.Size];
-            await file.OpenReadStream(10 * 1024 * 1024).ReadAsync(buf);
+            await file.OpenReadStream(maxFileSize).ReadAsync(buf);
             var base64 = $"data:{file.ContentType};base64,{Convert.ToBase64String(buf)}";
             _editingProject.Photos.Add(new ProjectPhoto
             {
@@ -917,6 +920,8 @@ else
         }
         if (skipped.Any())
             await JS.InvokeVoidAsync("showToast", $"이미지 파일만 추가할 수 있어요. ({string.Join(", ", skipped)})", "error");
+        if (tooLarge.Any())
+            await JS.InvokeVoidAsync("showToast", $"20MB를 초과하는 사진은 추가할 수 없어요. ({string.Join(", ", tooLarge)})", "error");
     }
 
     void RemovePhoto(Guid photoId)

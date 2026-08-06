@@ -482,11 +482,28 @@ async function logClientError(kind, message, extra) {
     }
 }
 
+// 인스타그램/페이스북 등 인앱 브라우저가 페이지에 몰래 주입하는 브릿지 스크립트에서
+// 자기들끼리 내는 오류 — 니트데이 코드랑 무관하지만 window 전역 에러로 잡혀서 유입됨.
+// 세션당 기록 한도를 이런 노이즈가 차지해서 진짜 버그를 못 남기는 걸 방지하기 위해 걸러냄.
+const _thirdPartyNoisePatterns = [
+    /sendDataToNative/i,
+    /sendPageHide/i,
+    /fb_xd_fragment/i,
+    /igsendDataToNative/i,
+    /webkit\.messageHandlers/i,
+];
+function isThirdPartyNoise(message, stack) {
+    const text = String(message || '') + ' ' + String(stack || '');
+    return _thirdPartyNoisePatterns.some(p => p.test(text));
+}
+
 window.addEventListener('error', (e) => {
     // 리소스 로드 실패(이미지 깨짐 등)는 너무 흔해서 제외, 실제 스크립트 오류만
     if (e.error) {
+        const stack = e.error?.stack ? String(e.error.stack).slice(0, 2000) : null;
+        if (isThirdPartyNoise(e.message, stack)) return; // 인앱브라우저 자체 오류 — 기록 안 함
         logClientError('js_error', e.message, {
-            stack: e.error?.stack ? String(e.error.stack).slice(0, 2000) : null,
+            stack,
             source: e.filename || null,
             line: e.lineno || null
         });
@@ -496,9 +513,9 @@ window.addEventListener('error', (e) => {
 window.addEventListener('unhandledrejection', (e) => {
     const reason = e.reason;
     const message = reason?.message || String(reason);
-    logClientError('unhandled_promise_rejection', message, {
-        stack: reason?.stack ? String(reason.stack).slice(0, 2000) : null
-    });
+    const stack = reason?.stack ? String(reason.stack).slice(0, 2000) : null;
+    if (isThirdPartyNoise(message, stack)) return; // 인앱브라우저 자체 오류 — 기록 안 함
+    logClientError('unhandled_promise_rejection', message, { stack });
 });
 
 // Blazor(.NET 쪽) 예외도 같은 곳에 남길 수 있게 노출

@@ -845,8 +845,13 @@ else
             await JS.InvokeVoidAsync("showToast", "이미지 파일만 추가할 수 있어요.", "error");
             return;
         }
-        var maxSize = 5 * 1024 * 1024; // 5MB
-        using var stream = file.OpenReadStream(maxSize);
+        long maxFileSize = 20 * 1024 * 1024; // 20MB (다른 사진 업로드와 통일)
+        if (file.Size > maxFileSize)
+        {
+            await JS.InvokeVoidAsync("showToast", "20MB를 초과하는 사진은 추가할 수 없어요.", "error");
+            return;
+        }
+        using var stream = file.OpenReadStream(maxFileSize);
         using var ms = new System.IO.MemoryStream();
         await stream.CopyToAsync(ms);
         var bytes = ms.ToArray();
