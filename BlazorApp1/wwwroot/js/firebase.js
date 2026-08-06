@@ -394,10 +394,10 @@ window.knitPush = {
     // 알림 켜기 — 권한 요청부터 구독, 서버 등록까지
     async subscribe() {
         if (!this.isSupported()) return { success: false, error: '이 기기에서는 지원되지 않아요.' };
-        const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return { success: false, error: '알림 권한이 거부됐어요.' };
-
         try {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') return { success: false, error: '알림 권한이 거부됐어요.' };
+
             const reg = await navigator.serviceWorker.ready;
             let sub = await reg.pushManager.getSubscription();
             if (!sub) {
