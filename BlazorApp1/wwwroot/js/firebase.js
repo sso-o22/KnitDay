@@ -170,8 +170,10 @@ window.firebaseAuth = {
                 // 앱을 재실행/세션 복원만 해도(재로그인 없이) 여기로 옴 —
                 // lastLoginAt은 명시적 로그인 때만 갱신되므로, 실사용 빈도를 보려면
                 // 별도 필드로 매번(=앱을 열 때마다) 기록해줌. 관리자도 예외 없이 기록.
+                // uid도 함께 채워서, 과거 쓰기 실패 등으로 uid가 누락된 계정이
+                // 재로그인 없이 재실행만으로도 자동 복구되게 함 (이미 맞는 값이면 동일 값 덮어쓰기라 무해함)
                 setDoc(doc(db, 'allowedUsers', user.email),
-                    { lastActiveAt: new Date().toISOString() }, { merge: true })
+                    { uid: user.uid, lastActiveAt: new Date().toISOString() }, { merge: true })
                     .catch(() => {}); // 실패해도 로그인 흐름은 막지 않음 (fire-and-forget)
                 const info = { uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL };
                 dotNetRef.invokeMethodAsync('OnAuthStateChanged', info);
