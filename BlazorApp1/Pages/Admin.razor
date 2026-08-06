@@ -237,6 +237,8 @@ else
                     <option value="earlybird_lifetime">얼리버드 평생권</option>
                     <option value="1year">1년 이용권 (오늘부터 +1년)</option>
                     <option value="6month">6개월 이용권 (오늘부터 +6개월)</option>
+                    <option value="1year_extend">1년 연장 (기존 만료일부터 +1년)</option>
+                    <option value="6month_extend">6개월 연장 (기존 만료일부터 +6개월)</option>
                     <option value="custom">직접 입력</option>
                 </select>
                 @if (_newLicenseType == "custom")
@@ -589,13 +591,30 @@ else
         _changingLicense = true; _licenseChangeMsg = ""; StateHasChanged();
         try
         {
+            // 연장(_extend) 옵션은 기존 만료일이 아직 안 지났으면 거기서부터, 이미 지났거나 없으면 오늘부터 계산
+            // (미리 연장 구매한 사용자가 남은 기간을 손해보지 않도록 함)
+            DateTime baseDate = DateTime.Today;
+            if (!string.IsNullOrEmpty(_changeLicenseUser.ExpiresAt)
+                && _changeLicenseUser.ExpiresAt != "lifetime"
+                && DateTime.TryParse(_changeLicenseUser.ExpiresAt, out var existingExpiry)
+                && existingExpiry > DateTime.Today)
+            {
+                baseDate = existingExpiry;
+            }
+            // 저장되는 licenseType은 실제 이용권 종류(1year/6month)로 통일 — _extend는 UI 선택용 구분일 뿐,
+            // 별도 타입으로 저장하면 통계(LicenseCounts 등) 집계가 갈라져버림
+            var savedLicenseType = _newLicenseType == "1year_extend" ? "1year"
+                                  : _newLicenseType == "6month_extend" ? "6month"
+                                  : _newLicenseType;
             var expiresAt = _newLicenseType == "lifetime" || _newLicenseType == "earlybird_lifetime" ? "lifetime"
                           : _newLicenseType == "1year"    ? DateTime.Today.AddYears(1).ToString("yyyy-MM-dd")
                           : _newLicenseType == "6month"   ? DateTime.Today.AddMonths(6).ToString("yyyy-MM-dd")
+                          : _newLicenseType == "1year_extend"  ? baseDate.AddYears(1).ToString("yyyy-MM-dd")
+                          : _newLicenseType == "6month_extend" ? baseDate.AddMonths(6).ToString("yyyy-MM-dd")
                           : _newLicenseExpiry.ToString("yyyy-MM-dd");
             var ok = await JS.InvokeAsync<bool>("firebaseStore.setDocument",
                 $"allowedUsers/{_changeLicenseUser.Email}",
-                System.Text.Json.JsonSerializer.Serialize(new { expiresAt, licenseType = _newLicenseType }));
+                System.Text.Json.JsonSerializer.Serialize(new { expiresAt, licenseType = savedLicenseType }));
             if (ok)
             {
                 _licenseChangeMsg = "변경 완료!"; _licenseChangeError = false;
@@ -609,7 +628,7 @@ else
                             previousExpiresAt = _changeLicenseUser.ExpiresAt,
                             previousLicenseType = _changeLicenseUser.LicenseType,
                             newExpiresAt = expiresAt,
-                            newLicenseType = _newLicenseType,
+                            newLicenseType = savedLicenseType,
                             changedAt = DateTime.UtcNow.ToString("O")
                         }));
                 }
@@ -633,12 +652,15 @@ else
         _changing = true; _changeMsg = ""; StateHasChanged();
         try
         {
-            // 새 이메일로 등록 (uid 포함 이전)
-            var data = System.Text.Json.JsonSerializer.Serialize(new
+            // 새 이메일로 등록 (uid + 이용권 정보 그대로 이전)
+            var fields = new Dictionary<string, object>
             {
-                registeredAt = DateTime.UtcNow.ToString("yyyy-MM-dd"),
-                uid = _changeEmailUser.Uid ?? ""
-            });
+                ["registeredAt"] = DateTime.UtcNow.ToString("yyyy-MM-dd"),
+                ["uid"] = _changeEmailUser.Uid ?? ""
+            };
+            if (!string.IsNullOrEmpty(_changeEmailUser.ExpiresAt)) fields["expiresAt"] = _changeEmailUser.ExpiresAt;
+            if (!string.IsNullOrEmpty(_changeEmailUser.LicenseType)) fields["licenseType"] = _changeEmailUser.LicenseType;
+            var data = System.Text.Json.JsonSerializer.Serialize(fields);
             var ok = await JS.InvokeAsync<bool>("firebaseStore.setDocument", $"allowedUsers/{newEmail}", data);
             if (!ok) { _changeMsg = "새 이메일 등록 실패."; _changeError = true; _changing = false; StateHasChanged(); return; }
 
