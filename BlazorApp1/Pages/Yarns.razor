@@ -7,6 +7,7 @@
 @inject StorageService Storage
 @inject IJSRuntime JS
 @inject NavigationManager Nav
+@inject HttpClient Http
 
 <div class="page-header">
     <div>
@@ -226,9 +227,36 @@ else
             </div>
 
             <div class="form-row">
-                <div class="form-group">
+                <div class="form-group" style="position:relative;">
                     <label class="form-label">실 이름 *</label>
-                    <input class="form-control" @bind="_editingYarn.Name" placeholder="예: 러스크" />
+                    <input class="form-control" value="@_editingYarn.Name" autocomplete="off"
+                           @oninput="OnYarnNameInput" @onfocus="OnYarnNameFocus" @onblur="OnYarnNameBlur"
+                           placeholder="예: 러스크" />
+                    @if (_showYarnSuggestions && _yarnSuggestions.Count > 0)
+                    {
+                        <div style="position:absolute; top:100%; left:0; right:0; z-index:30; margin-top:2px; background:var(--white); border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.14); max-height:220px; overflow-y:auto;">
+                            @foreach (var p in _yarnSuggestions)
+                            {
+                                <div style="padding:8px 12px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid var(--border);"
+                                     @onmousedown="() => SelectYarnDbProduct(p)" @onmousedown:preventDefault="true">
+                                    <span style="font-weight:600; color:var(--text-dark);">@p.Name</span>
+                                    <span style="color:var(--text-light); margin-left:6px; font-size:0.78rem;">@p.Brand</span>
+                                </div>
+                            }
+                        </div>
+                    }
+                    @if (_plyPickerProduct != null)
+                    {
+                        <div style="margin-top:6px; padding:8px 10px; background:var(--mint-pale); border:1px solid var(--mint-light); border-radius:8px;">
+                            <div style="font-size:0.76rem; color:var(--text-mid); margin-bottom:6px;">합수를 선택하면 나머지 정보가 자동입력돼요</div>
+                            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                                @foreach (var entry in _plyPickerProduct.Entries)
+                                {
+                                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => ApplyYarnDbEntry(_plyPickerProduct!, entry)">@(entry.Ply)합 · @(entry.WeightGram)g · @(entry.LengthMeter)m</button>
+                                }
+                            </div>
+                        </div>
+                    }
                 </div>
                 <div class="form-group">
                     <label class="form-label">브랜드</label>
@@ -458,6 +486,90 @@ else
 }
 
 @code {
+    // ── 실 DB 자동완성 (실_DB.xlsx → wwwroot/data/yarn-db.json) ──
+    class YarnDbEntry
+    {
+        public string YarnType { get; set; } = "";
+        public string Material { get; set; } = "";
+        public int Ply { get; set; }
+        public int WeightGram { get; set; }
+        public int LengthMeter { get; set; }
+        public decimal Price { get; set; }
+    }
+    class YarnDbProduct
+    {
+        public string Brand { get; set; } = "";
+        public string Name { get; set; } = "";
+        public List<YarnDbEntry> Entries { get; set; } = new();
+    }
+
+    List<YarnDbProduct> _yarnDbAll = new();
+    List<YarnDbProduct> _yarnSuggestions = new();
+    bool _showYarnSuggestions = false;
+    YarnDbProduct? _plyPickerProduct = null;
+
+    async Task LoadYarnDbAsync()
+    {
+        try { _yarnDbAll = await Http.GetFromJsonAsync<List<YarnDbProduct>>("data/yarn-db.json") ?? new(); }
+        catch { _yarnDbAll = new(); }
+    }
+
+    void FilterYarnSuggestions(string q)
+    {
+        q = q.Trim();
+        if (string.IsNullOrEmpty(q)) { _yarnSuggestions = new(); _showYarnSuggestions = false; return; }
+        _yarnSuggestions = _yarnDbAll
+            .Where(p => p.Name.Contains(q, StringComparison.OrdinalIgnoreCase) || p.Brand.Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Take(6).ToList();
+        _showYarnSuggestions = _yarnSuggestions.Count > 0;
+    }
+
+    void OnYarnNameInput(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString() ?? "";
+        _editingYarn!.Name = val;
+        _plyPickerProduct = null;
+        FilterYarnSuggestions(val);
+    }
+
+    void OnYarnNameFocus()
+    {
+        if (!string.IsNullOrWhiteSpace(_editingYarn?.Name))
+            FilterYarnSuggestions(_editingYarn!.Name);
+    }
+
+    async Task OnYarnNameBlur()
+    {
+        await Task.Delay(150);
+        _showYarnSuggestions = false;
+        StateHasChanged();
+    }
+
+    void SelectYarnDbProduct(YarnDbProduct p)
+    {
+        _editingYarn!.Name = p.Name;
+        _editingYarn.Brand = p.Brand;
+        _showYarnSuggestions = false;
+        _yarnSuggestions = new();
+        if (p.Entries.Count == 1)
+            ApplyYarnDbEntry(p, p.Entries[0]);
+        else
+            _plyPickerProduct = p;
+    }
+
+    void ApplyYarnDbEntry(YarnDbProduct p, YarnDbEntry entry)
+    {
+        _editingYarn!.Name = p.Name;
+        _editingYarn.Brand = p.Brand;
+        if (entry.YarnType == "콘사") _editingYarn.YarnType = YarnType.콘사;
+        _editingYarn.Material = entry.Material;
+        _editingYarn.Ply = entry.Ply;
+        _editingYarn.WeightGram = entry.WeightGram;
+        _editingYarn.LengthMeter = entry.LengthMeter;
+        _editingYarn.Price = entry.Price;
+        _plyPickerProduct = null;
+    }
+
     bool _saving = false;
     bool _showConfirm = false;
     string _confirmMsg = "";
@@ -545,6 +657,7 @@ else
         _CalcUsed();
         _filter    = await JS.InvokeAsync<string?>("localStorage.getItem", "yarn_filter") ?? "all";
         _yarnSort  = await JS.InvokeAsync<string?>("localStorage.getItem", "yarn_sort")   ?? "created_desc";
+        await LoadYarnDbAsync();
         _loading = false;
     }
 
@@ -611,11 +724,19 @@ else
             Memo = source.Memo,
         };
         _editingProjectAmounts = new();
+        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null;
         _showModal = true;
         _scrollModalTop = true;
         await JS.InvokeVoidAsync("lockBodyScroll");
     }
-    async Task OpenAddModal() { _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 }; _editingProjectAmounts = new(); _showModal = true; _scrollModalTop = true; await JS.InvokeVoidAsync("lockBodyScroll"); }
+    async Task OpenAddModal()
+    {
+        _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 };
+        _editingProjectAmounts = new();
+        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null;
+        _showModal = true; _scrollModalTop = true;
+        await JS.InvokeVoidAsync("lockBodyScroll");
+    }
     async Task OpenEditModal(Yarn yarn)
     {
         // 취소 시 원본이 오염되지 않도록 JSON 딥카피해서 편집 (저장 버튼을 눌러야만 실제 반영됨)
@@ -623,11 +744,17 @@ else
         _editingYarn = System.Text.Json.JsonSerializer.Deserialize<Yarn>(json)!;
         _editingProjectAmounts = GetConnectedProjects(yarn.Id)
             .ToDictionary(p => p.Id, p => p.YarnUsages.FirstOrDefault(u => u.YarnId == yarn.Id)?.BallsUsed ?? 1);
+        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null;
         _showModal = true;
         _scrollModalTop = true;
         await JS.InvokeVoidAsync("lockBodyScroll");
     }
-    async Task CloseModal() { _showModal = false; _editingYarn = null; _editingProjectAmounts = new(); await JS.InvokeVoidAsync("unlockBodyScroll"); }
+    async Task CloseModal()
+    {
+        _showModal = false; _editingYarn = null; _editingProjectAmounts = new();
+        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null;
+        await JS.InvokeVoidAsync("unlockBodyScroll");
+    }
 
     void OnProjectChanged(ChangeEventArgs e)
     {
