@@ -1,0 +1,1188 @@
+[
+  {
+    "brand": "솜솜뜨개",
+    "name": "어푸",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 45%, acrylic 45%, nylon 10%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 300,
+        "price": 8500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "하모니",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Supima Cotton 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 600,
+        "price": 10000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Supima Cotton 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 300,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "잼잼",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 60%, modal 40%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 660,
+        "price": 18000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "립파이",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "paper 80%, cotton 20%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 500,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "레이니",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 61%, linen 22%, nylon 17%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 200,
+        "price": 8500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "소바",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "compact cotton 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 300,
+        "price": 8000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "스무디",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "mercerized cotton 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 640,
+        "price": 11000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "mercerized cotton 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 320,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "모네",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 70%, acrylic 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 400,
+        "price": 13000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "cotton 70%, acrylic 31%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 200,
+        "price": 13000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "카프리",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 65%, linen 25%, rayon 10%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 400,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "프빌",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "tasmania wool 70%, baby alpaca 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 800,
+        "price": 13500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "tasmania wool 70%, baby alpaca 30%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 400,
+        "price": 13500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "tasmania wool 70%, baby alpaca 30%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 266,
+        "price": 13500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "tasmania wool 70%, baby alpaca 30%",
+        "ply": 4,
+        "weightGram": 100,
+        "lengthMeter": 200,
+        "price": 13500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "엘모",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "alpaca 90%, nylon 10%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 180,
+        "price": 17000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "뉴보름",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "tasmania wool 90%, cashmere 10%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 500,
+        "price": 13500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "tasmania wool 90%, cashmere 10%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 13500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "수플레",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "extra fine wool 65%, cashmere 10%, nylon 25",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 300,
+        "price": 11000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "extra fine wool 65%, cashmere 10%, nylon 25",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 150,
+        "price": 11000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "extra fine wool 65%, cashmere 10%, nylon 25",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 100,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "메모리",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "super fine merino wool 57%, cashmere 25%, nylon 18%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 300,
+        "price": 25000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "그믐",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "super fine merino wool 90%, cashmere 10%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 500,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "super fine merino wool 90%, cashmere 10%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "데이지",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "tasmania wool 50%, cashType polymide 40%, cashmere 5%, camel 5%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 800,
+        "price": 11500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "tasmania wool 50%, cashType polymide 40%, cashmere 5%, camel 5%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 400,
+        "price": 11500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "tasmania wool 50%, cashType polymide 40%, cashmere 5%, camel 5%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 266,
+        "price": 11500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "tasmania wool 50%, cashType polymide 40%, cashmere 5%, camel 5%",
+        "ply": 4,
+        "weightGram": 100,
+        "lengthMeter": 200,
+        "price": 11500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "머랭",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "extra fine wool 60%, cashmere 5%, nylon 35",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 280,
+        "price": 9500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "드리밍",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "super fine wool 80%, cash 5%, cash nylon 15%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 500,
+        "price": 9000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "super fine wool 80%, cash 5%, cash nylon 15%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 9000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "super fine wool 80%, cash 5%, cash nylon 15%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 166,
+        "price": 9000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "소보로",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 220,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "토핑",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "super fine wool 65%, nep 5%, cash nylon 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 425,
+        "price": 9000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "super fine wool 65%, nep 5%, cash nylon 30%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 212,
+        "price": 9000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "러스크",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "fine soft shetland wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 450,
+        "price": 10000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "fine soft shetland wool 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 225,
+        "price": 10000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "fine soft shetland wool 100%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 150,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "클라우드",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "super fine merino wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 533,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "super fine merino wool 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 266,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "super fine merino wool 100%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 177,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "후르츠",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "viscose 25%, wool 13%, nylon 16%, poly 46%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 9500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "viscose 25%, wool 13%, nylon 16%, poly 46%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 125,
+        "price": 9500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "쉬폰",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "super wool 52%, nylon 32%, acrylic 16%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 220,
+        "price": 10500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "포니",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "super fine merino wool 25%, cotton 18%, modal 17%, nylon 40%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 700,
+        "price": 11000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "super fine merino wool 25%, cotton 18%, modal 17%, nylon 40%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 350,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "뮬리",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "super kid mohair 55%, wool 15%, nylon 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 1300,
+        "price": 19500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "super kid mohair 55%, wool 15%, nylon 30%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 750,
+        "price": 19500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "super kid mohair 55%, wool 15%, nylon 30%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 430,
+        "price": 19500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "아르떼",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "mohair 26%, wool 25%, nylon 46%, span 3%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 1500,
+        "price": 19500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "플러피",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cashmere 17%, mercerized wool 45%, nylon 34%, span 4%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 2000,
+        "price": 29000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "별무리",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "mohair 26.5%, wool 26.5%, nylon 35%, metal 9%, spangle 3%",
+        "ply": 1,
+        "weightGram": 150,
+        "lengthMeter": 1800,
+        "price": 25500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "퍼피",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "mohair 70%, wool 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 260,
+        "price": 28000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "시나몬",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "fox 20%, lambswool 50%, nylon 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 500,
+        "price": 12500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "fox 20%, lambswool 50%, nylon 30%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 12500.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "코지",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "raxxoon 30%, super fine merino wool 30%, nylon 40%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 400,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "raxxoon 30%, super fine merino wool 30%, nylon 40%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 200,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "비레더",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "polyester 100%",
+        "ply": 1,
+        "weightGram": 150,
+        "lengthMeter": 83,
+        "price": 13000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "사락",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 65%, paper 35%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 460,
+        "price": 8500.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "파르페",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "linen 16%, tencel 26%, acrl 58%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 330,
+        "price": 8500.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "글로리",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "modal 60%, cotton 40%",
+        "ply": 1,
+        "weightGram": 400,
+        "lengthMeter": 1360,
+        "price": 34000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "칠링",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "paper(한지) 57%, cotton 43%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 330,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "선샤인",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool 10%, bamboo 20%, poleter 25%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 260,
+        "price": 9500.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "포엠",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 35%, polyester 65%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 380,
+        "price": 8500.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "노리",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 67%, linen 12%, nylon 21%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 660,
+        "price": 10000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "cotton 67%, linen 12%, nylon 21%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 340,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "사계",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 72%, polyester 28%",
+        "ply": 1,
+        "weightGram": 400,
+        "lengthMeter": 1480,
+        "price": 32000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "빙고",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 36%, acyl 33%, polyster 18%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 590,
+        "price": 11000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "cotton 36%, acyl 33%, polyster 18%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 280,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "선라이즈",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "mercerized cotton 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 390,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "빚은달",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "mercerized cotton 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 350,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "바게트",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 90%, acyl 10%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 220,
+        "price": 9000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "아람",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cashmere 10%, wool 70%, nylon 20%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 270,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "그날의정원",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 500,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "wool 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 240,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "도화",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "super fine lambs wool 48%, polyamide 37%, high soft poly 15%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 340,
+        "price": 9000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "피크닉",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool 50%, cash nylon 50%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 450,
+        "price": 8500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "wool 50%, cash nylon 50%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 245,
+        "price": 8500.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "컨트리",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool 80%, nylon 20%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 245,
+        "price": 10500.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "동화",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool 90%, cashmere 10%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 360,
+        "price": 13500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "wool 90%, cashmere 10%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 180,
+        "price": 13500.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "고요",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cashmere 15%, wool 85%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 290,
+        "price": 16000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "온유",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool(양모) 65%, nylon 25%, cashmere 10%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "오롯",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool 95%, cashmere 5%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 720,
+        "price": 13000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "wool 95%, cashmere 5%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 360,
+        "price": 13000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "wool 95%, cashmere 5%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 240,
+        "price": 13000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "쿠키",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "super fine wool 65%, nep 5%, cash nylon 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 425,
+        "price": 9000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "super fine wool 65%, nep 5%, cash nylon 30%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 210,
+        "price": 9000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "크리스피",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 460,
+        "price": 10000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "wool 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 230,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "모먼트",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool(양모) 70%, baby alpaca 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 750,
+        "price": 13000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "wool(양모) 70%, baby alpaca 30%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 400,
+        "price": 13000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "wool(양모) 70%, baby alpaca 30%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 270,
+        "price": 13000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "온화",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 12500.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "버디",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cashmere 10%, wool 55%, nylon 35%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 510,
+        "price": 10000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "cashmere 10%, wool 55%, nylon 35%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 255,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "새벽안개 모헤어",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "kid mohair 55%, wool(양모) 15%, nylon 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 1280,
+        "price": 25000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "솜결 알파카 헤어",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "alpaca 30%, wool 30%, nylon 40%",
+        "ply": 1,
+        "weightGram": 110,
+        "lengthMeter": 1270,
+        "price": 20000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "소울 알파카 헤어",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "alpaca 30%, wool 30%, nylon 40%",
+        "ply": 1,
+        "weightGram": 150,
+        "lengthMeter": 1230,
+        "price": 27000.0
+      }
+    ]
+  },
+  {
+    "brand": "열매달이틀",
+    "name": "샬롯 모헤어",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "kid mohair 70%, nylon 30%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 285,
+        "price": 15000.0
+      }
+    ]
+  }
+]
