@@ -226,60 +226,43 @@ else
                 <button class="btn btn-ghost btn-sm" @onclick="CloseModal">✕</button>
             </div>
 
-            <div class="form-row">
-                <div class="form-group" style="position:relative;">
-                    <label class="form-label">실 이름 *</label>
-                    <input class="form-control" value="@_editingYarn.Name" autocomplete="off"
-                           @oninput="OnYarnNameInput" @onfocus="OnYarnNameFocus" @onblur="OnYarnNameBlur"
-                           placeholder="예: 러스크" />
-                    @if (_showYarnSuggestions && _yarnSuggestions.Count > 0)
-                    {
-                        <div style="position:absolute; top:100%; left:0; right:0; z-index:30; margin-top:2px; background:var(--white); border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.14); max-height:220px; overflow-y:auto;">
-                            @foreach (var p in _yarnSuggestions)
+            <div class="form-group" style="position:relative;">
+                <label class="form-label">실 이름 *</label>
+                <input class="form-control" value="@_editingYarn.Name" autocomplete="off"
+                       @oninput="OnYarnNameInput" @onfocus="OnYarnNameFocus" @onblur="OnYarnNameBlur"
+                       placeholder="예: 러스크" />
+                @if (_showYarnSuggestions && _yarnSuggestions.Count > 0)
+                {
+                    <div style="position:absolute; top:100%; left:0; right:0; z-index:30; margin-top:2px; background:var(--white); border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.14); max-height:220px; overflow-y:auto;">
+                        @foreach (var p in _yarnSuggestions)
+                        {
+                            <div style="padding:8px 12px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid var(--border);"
+                                 @onmousedown="() => SelectYarnDbProduct(p)" @onmousedown:preventDefault="true">
+                                <span style="font-weight:600; color:var(--text-dark);">@p.Name</span>
+                                <span style="color:var(--text-light); margin-left:6px; font-size:0.78rem;">@p.Brand</span>
+                            </div>
+                        }
+                    </div>
+                }
+                @if (_plyPickerProduct != null)
+                {
+                    <div style="margin-top:6px; padding:8px 10px; background:var(--mint-pale); border:1px solid var(--mint-light); border-radius:8px;">
+                        <div style="font-size:0.76rem; color:var(--text-mid); margin-bottom:6px;">합수를 선택하면 무게/길이/가격이 자동입력돼요</div>
+                        <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                            @foreach (var entry in _plyPickerProduct.Entries)
                             {
-                                <div style="padding:8px 12px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid var(--border);"
-                                     @onmousedown="() => SelectYarnDbProduct(p)" @onmousedown:preventDefault="true">
-                                    <span style="font-weight:600; color:var(--text-dark);">@p.Name</span>
-                                    <span style="color:var(--text-light); margin-left:6px; font-size:0.78rem;">@p.Brand</span>
-                                </div>
+                                <button type="button" class="btn btn-secondary btn-sm" @onclick="() => ApplyYarnDbEntry(_plyPickerProduct!, entry)">@(entry.Ply)합 · @(entry.WeightGram)g · @(entry.LengthMeter)m</button>
                             }
                         </div>
-                    }
-                    @if (_plyPickerProduct != null)
-                    {
-                        <div style="margin-top:6px; padding:8px 10px; background:var(--mint-pale); border:1px solid var(--mint-light); border-radius:8px;">
-                            <div style="font-size:0.76rem; color:var(--text-mid); margin-bottom:6px;">합수를 선택하면 나머지 정보가 자동입력돼요</div>
-                            <div style="display:flex; flex-wrap:wrap; gap:6px;">
-                                @foreach (var entry in _plyPickerProduct.Entries)
-                                {
-                                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => ApplyYarnDbEntry(_plyPickerProduct!, entry)">@(entry.Ply)합 · @(entry.WeightGram)g · @(entry.LengthMeter)m</button>
-                                }
-                            </div>
-                        </div>
-                    }
-                </div>
+                    </div>
+                }
+            </div>
+
+            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">브랜드</label>
                     <input class="form-control" @bind="_editingYarn.Brand" placeholder="예: 솜솜뜨개" />
                 </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">색상명</label>
-                    <input class="form-control" @bind="_editingYarn.Color" placeholder="예: 아이보리" />
-                </div>
-                <div class="form-group">
-                    <label class="form-label">색상 코드</label>
-                    <div style="display:flex; gap:8px; align-items:center;">
-                        <input type="color" class="form-control" style="width:50px; padding:4px; height:40px;"
-                               @bind="_editingYarn.ColorCode" />
-                        <input class="form-control" @bind="_editingYarn.ColorCode" placeholder="#ffffff" style="flex:1;" />
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-row">
                 <div class="form-group">
                     <label class="form-label">실 종류</label>
                     <select class="form-control" @bind="_editingYarn.YarnType">
@@ -287,9 +270,23 @@ else
                         { <option value="@t">@t</option> }
                     </select>
                 </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">소재</label>
+                <input class="form-control" @bind="_editingYarn.Material" placeholder="예: 울 100%" />
+            </div>
+
+            <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">소재</label>
-                    <input class="form-control" @bind="_editingYarn.Material" placeholder="예: 울 100%" />
+                    <label class="form-label">Lot 번호</label>
+                    <input class="form-control" @bind="_editingYarn.LotNumber" placeholder="예: 1234" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">합수</label>
+                    <input type="number" class="form-control" min="0" placeholder="예: 2"
+                           value="@(_editingYarn.Ply == 0 ? "" : _editingYarn.Ply.ToString())"
+                           @onchange="e => _editingYarn.Ply = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
                 </div>
             </div>
 
@@ -341,49 +338,31 @@ else
                 </div>
             }
 
-            @* ── Lot번호 / 합수 / 수량 ── *@
-            @if (_editingYarn.YarnType == YarnType.콘사)
-            {
-                <div class="form-row-3">
-                    <div class="form-group">
-                        <label class="form-label">Lot 번호</label>
-                        <input class="form-control" @bind="_editingYarn.LotNumber" placeholder="예: 1234" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">합수</label>
-                        <input type="number" class="form-control" min="0" placeholder="예: 2"
-                               value="@(_editingYarn.Ply == 0 ? "" : _editingYarn.Ply.ToString())"
-                               @onchange="e => _editingYarn.Ply = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">수량 (콘)</label>
-                        <input type="number" class="form-control" min="0" placeholder="예: 5"
-                               value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
-                               @onchange="e => _editingYarn.Quantity = decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var q) ? q : 0" />
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">색상명</label>
+                    <input class="form-control" @bind="_editingYarn.Color" placeholder="예: 아이보리" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">색상 코드</label>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <input type="color" class="form-control" style="width:50px; padding:4px; height:40px;"
+                               @bind="_editingYarn.ColorCode" />
+                        <input class="form-control" @bind="_editingYarn.ColorCode" placeholder="#ffffff" style="flex:1;" />
                     </div>
                 </div>
+            </div>
+
+            @{
+                bool isConeType = _editingYarn.YarnType == YarnType.콘사;
+                string qtyUnitLabel = isConeType ? "콘" : "볼";
             }
-            else
-            {
-                <div class="form-row-3">
-                    <div class="form-group">
-                        <label class="form-label">Lot 번호</label>
-                        <input class="form-control" @bind="_editingYarn.LotNumber" placeholder="예: 1234" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">합수</label>
-                        <input type="number" class="form-control" min="0" placeholder="예: 2"
-                               value="@(_editingYarn.Ply == 0 ? "" : _editingYarn.Ply.ToString())"
-                               @onchange="e => _editingYarn.Ply = int.TryParse(e.Value?.ToString(), out var v) ? v : 0" />
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">수량 (볼)</label>
-                        <input type="number" class="form-control" min="0" placeholder="예: 5"
-                               value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
-                               @onchange="e => _editingYarn.Quantity = decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var q) ? q : 0" />
-                    </div>
-                </div>
-            }
+            <div class="form-group">
+                <label class="form-label">수량 (@qtyUnitLabel)</label>
+                <input type="number" class="form-control" min="0" placeholder="예: 5"
+                       value="@(_editingYarn.Quantity == 0 ? "" : _editingYarn.Quantity.ToString())"
+                       @onchange="e => _editingYarn.Quantity = decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var q) ? q : 0" />
+            </div>
 
 
             @{
@@ -552,9 +531,18 @@ else
         _showYarnSuggestions = false;
         _yarnSuggestions = new();
         if (p.Entries.Count == 1)
+        {
             ApplyYarnDbEntry(p, p.Entries[0]);
+        }
         else
+        {
+            // 합수마다 무게/길이/가격은 다르지만 실종류·소재는 공통이므로 먼저 채워두고,
+            // 합수 선택은 합수 입력란 아래 칩에서 하도록 대기 상태로 전환
+            var first = p.Entries[0];
+            if (first.YarnType == "콘사") _editingYarn.YarnType = YarnType.콘사;
+            _editingYarn.Material = first.Material;
             _plyPickerProduct = p;
+        }
     }
 
     void ApplyYarnDbEntry(YarnDbProduct p, YarnDbEntry entry)
