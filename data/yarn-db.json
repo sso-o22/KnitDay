@@ -9,7 +9,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 300,
-        "price": 8500.0
+        "price": 8500
       }
     ]
   },
@@ -23,7 +23,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 600,
-        "price": 10000.0
+        "price": 10000
       },
       {
         "yarnType": "콘사",
@@ -31,7 +31,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 300,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -45,7 +45,7 @@
         "ply": 1,
         "weightGram": 200,
         "lengthMeter": 660,
-        "price": 18000.0
+        "price": 18000
       }
     ]
   },
@@ -59,7 +59,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 500,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -73,7 +73,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 200,
-        "price": 8500.0
+        "price": 8500
       }
     ]
   },
@@ -87,7 +87,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 300,
-        "price": 8000.0
+        "price": 8000
       }
     ]
   },
@@ -101,7 +101,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 640,
-        "price": 11000.0
+        "price": 11000
       },
       {
         "yarnType": "콘사",
@@ -109,7 +109,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 320,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -123,7 +123,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 400,
-        "price": 13000.0
+        "price": 13000
       },
       {
         "yarnType": "콘사",
@@ -131,7 +131,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 200,
-        "price": 13000.0
+        "price": 13000
       }
     ]
   },
@@ -145,7 +145,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 400,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -159,7 +159,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 800,
-        "price": 13500.0
+        "price": 13500
       },
       {
         "yarnType": "콘사",
@@ -167,7 +167,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 400,
-        "price": 13500.0
+        "price": 13500
       },
       {
         "yarnType": "콘사",
@@ -175,7 +175,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 266,
-        "price": 13500.0
+        "price": 13500
       },
       {
         "yarnType": "콘사",
@@ -183,7 +183,7 @@
         "ply": 4,
         "weightGram": 100,
         "lengthMeter": 200,
-        "price": 13500.0
+        "price": 13500
       }
     ]
   },
@@ -197,7 +197,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 180,
-        "price": 17000.0
+        "price": 17000
       }
     ]
   },
@@ -211,7 +211,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 500,
-        "price": 13500.0
+        "price": 13500
       },
       {
         "yarnType": "콘사",
@@ -219,7 +219,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 13500.0
+        "price": 13500
       }
     ]
   },
@@ -233,7 +233,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 300,
-        "price": 11000.0
+        "price": 11000
       },
       {
         "yarnType": "콘사",
@@ -241,7 +241,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 150,
-        "price": 11000.0
+        "price": 11000
       },
       {
         "yarnType": "콘사",
@@ -249,7 +249,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 100,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -263,7 +263,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 300,
-        "price": 25000.0
+        "price": 25000
       }
     ]
   },
@@ -277,7 +277,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 500,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -285,7 +285,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -299,7 +299,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 800,
-        "price": 11500.0
+        "price": 11500
       },
       {
         "yarnType": "콘사",
@@ -307,7 +307,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 400,
-        "price": 11500.0
+        "price": 11500
       },
       {
         "yarnType": "콘사",
@@ -315,7 +315,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 266,
-        "price": 11500.0
+        "price": 11500
       },
       {
         "yarnType": "콘사",
@@ -323,7 +323,7 @@
         "ply": 4,
         "weightGram": 100,
         "lengthMeter": 200,
-        "price": 11500.0
+        "price": 11500
       }
     ]
   },
@@ -337,7 +337,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 280,
-        "price": 9500.0
+        "price": 9500
       }
     ]
   },
@@ -351,7 +351,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 500,
-        "price": 9000.0
+        "price": 9000
       },
       {
         "yarnType": "콘사",
@@ -359,7 +359,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 9000.0
+        "price": 9000
       },
       {
         "yarnType": "콘사",
@@ -367,7 +367,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 166,
-        "price": 9000.0
+        "price": 9000
       }
     ]
   },
@@ -381,7 +381,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 220,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -395,7 +395,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 425,
-        "price": 9000.0
+        "price": 9000
       },
       {
         "yarnType": "콘사",
@@ -403,7 +403,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 212,
-        "price": 9000.0
+        "price": 9000
       }
     ]
   },
@@ -417,7 +417,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 450,
-        "price": 10000.0
+        "price": 10000
       },
       {
         "yarnType": "콘사",
@@ -425,7 +425,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 225,
-        "price": 10000.0
+        "price": 10000
       },
       {
         "yarnType": "콘사",
@@ -433,7 +433,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 150,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -447,7 +447,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 533,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -455,7 +455,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 266,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -463,7 +463,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 177,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -477,7 +477,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 9500.0
+        "price": 9500
       },
       {
         "yarnType": "콘사",
@@ -485,7 +485,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 125,
-        "price": 9500.0
+        "price": 9500
       }
     ]
   },
@@ -499,7 +499,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 220,
-        "price": 10500.0
+        "price": 10500
       }
     ]
   },
@@ -513,7 +513,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 700,
-        "price": 11000.0
+        "price": 11000
       },
       {
         "yarnType": "콘사",
@@ -521,7 +521,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 350,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -535,7 +535,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 1300,
-        "price": 19500.0
+        "price": 19500
       },
       {
         "yarnType": "콘사",
@@ -543,7 +543,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 750,
-        "price": 19500.0
+        "price": 19500
       },
       {
         "yarnType": "콘사",
@@ -551,7 +551,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 430,
-        "price": 19500.0
+        "price": 19500
       }
     ]
   },
@@ -565,7 +565,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 1500,
-        "price": 19500.0
+        "price": 19500
       }
     ]
   },
@@ -579,7 +579,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 2000,
-        "price": 29000.0
+        "price": 29000
       }
     ]
   },
@@ -593,7 +593,7 @@
         "ply": 1,
         "weightGram": 150,
         "lengthMeter": 1800,
-        "price": 25500.0
+        "price": 25500
       }
     ]
   },
@@ -607,7 +607,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 260,
-        "price": 28000.0
+        "price": 28000
       }
     ]
   },
@@ -621,7 +621,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 500,
-        "price": 12500.0
+        "price": 12500
       },
       {
         "yarnType": "콘사",
@@ -629,7 +629,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 12500.0
+        "price": 12500
       }
     ]
   },
@@ -643,7 +643,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 400,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -651,7 +651,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 200,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -665,7 +665,7 @@
         "ply": 1,
         "weightGram": 150,
         "lengthMeter": 83,
-        "price": 13000.0
+        "price": 13000
       }
     ]
   },
@@ -679,7 +679,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 460,
-        "price": 8500.0
+        "price": 8500
       }
     ]
   },
@@ -693,7 +693,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 330,
-        "price": 8500.0
+        "price": 8500
       }
     ]
   },
@@ -707,7 +707,7 @@
         "ply": 1,
         "weightGram": 400,
         "lengthMeter": 1360,
-        "price": 34000.0
+        "price": 34000
       }
     ]
   },
@@ -721,7 +721,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 330,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -735,7 +735,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 260,
-        "price": 9500.0
+        "price": 9500
       }
     ]
   },
@@ -749,7 +749,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 380,
-        "price": 8500.0
+        "price": 8500
       }
     ]
   },
@@ -763,7 +763,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 660,
-        "price": 10000.0
+        "price": 10000
       },
       {
         "yarnType": "콘사",
@@ -771,7 +771,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 340,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -785,7 +785,7 @@
         "ply": 1,
         "weightGram": 400,
         "lengthMeter": 1480,
-        "price": 32000.0
+        "price": 32000
       }
     ]
   },
@@ -799,7 +799,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 590,
-        "price": 11000.0
+        "price": 11000
       },
       {
         "yarnType": "콘사",
@@ -807,7 +807,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 280,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -821,7 +821,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 390,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -835,7 +835,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 350,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -849,7 +849,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 220,
-        "price": 9000.0
+        "price": 9000
       }
     ]
   },
@@ -863,7 +863,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 270,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -877,7 +877,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 500,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -885,7 +885,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 240,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -899,7 +899,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 340,
-        "price": 9000.0
+        "price": 9000
       }
     ]
   },
@@ -913,7 +913,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 450,
-        "price": 8500.0
+        "price": 8500
       },
       {
         "yarnType": "콘사",
@@ -921,7 +921,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 245,
-        "price": 8500.0
+        "price": 8500
       }
     ]
   },
@@ -935,7 +935,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 245,
-        "price": 10500.0
+        "price": 10500
       }
     ]
   },
@@ -949,7 +949,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 360,
-        "price": 13500.0
+        "price": 13500
       },
       {
         "yarnType": "콘사",
@@ -957,7 +957,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 180,
-        "price": 13500.0
+        "price": 13500
       }
     ]
   },
@@ -971,7 +971,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 290,
-        "price": 16000.0
+        "price": 16000
       }
     ]
   },
@@ -985,7 +985,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -999,7 +999,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 720,
-        "price": 13000.0
+        "price": 13000
       },
       {
         "yarnType": "콘사",
@@ -1007,7 +1007,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 360,
-        "price": 13000.0
+        "price": 13000
       },
       {
         "yarnType": "콘사",
@@ -1015,7 +1015,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 240,
-        "price": 13000.0
+        "price": 13000
       }
     ]
   },
@@ -1029,7 +1029,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 425,
-        "price": 9000.0
+        "price": 9000
       },
       {
         "yarnType": "콘사",
@@ -1037,7 +1037,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 210,
-        "price": 9000.0
+        "price": 9000
       }
     ]
   },
@@ -1051,7 +1051,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 460,
-        "price": 10000.0
+        "price": 10000
       },
       {
         "yarnType": "콘사",
@@ -1059,7 +1059,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 230,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -1073,7 +1073,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 750,
-        "price": 13000.0
+        "price": 13000
       },
       {
         "yarnType": "콘사",
@@ -1081,7 +1081,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 400,
-        "price": 13000.0
+        "price": 13000
       },
       {
         "yarnType": "콘사",
@@ -1089,7 +1089,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 270,
-        "price": 13000.0
+        "price": 13000
       }
     ]
   },
@@ -1103,7 +1103,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 12500.0
+        "price": 12500
       }
     ]
   },
@@ -1117,7 +1117,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 510,
-        "price": 10000.0
+        "price": 10000
       },
       {
         "yarnType": "콘사",
@@ -1125,7 +1125,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 255,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -1139,7 +1139,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 1280,
-        "price": 25000.0
+        "price": 25000
       }
     ]
   },
@@ -1153,7 +1153,7 @@
         "ply": 1,
         "weightGram": 110,
         "lengthMeter": 1270,
-        "price": 20000.0
+        "price": 20000
       }
     ]
   },
@@ -1167,7 +1167,7 @@
         "ply": 1,
         "weightGram": 150,
         "lengthMeter": 1230,
-        "price": 27000.0
+        "price": 27000
       }
     ]
   },
@@ -1181,7 +1181,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 285,
-        "price": 15000.0
+        "price": 15000
       }
     ]
   },
@@ -1195,7 +1195,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 264,
-        "price": 7500.0
+        "price": 7500
       }
     ]
   },
@@ -1209,7 +1209,7 @@
         "ply": 1,
         "weightGram": 200,
         "lengthMeter": 588,
-        "price": 15000.0
+        "price": 15000
       }
     ]
   },
@@ -1223,7 +1223,7 @@
         "ply": 1,
         "weightGram": 200,
         "lengthMeter": 392,
-        "price": 15000.0
+        "price": 15000
       }
     ]
   },
@@ -1237,7 +1237,7 @@
         "ply": 1,
         "weightGram": 200,
         "lengthMeter": 140,
-        "price": 20000.0
+        "price": 20000
       }
     ]
   },
@@ -1251,7 +1251,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 370,
-        "price": 13000.0
+        "price": 13000
       }
     ]
   },
@@ -1265,7 +1265,7 @@
         "ply": 1,
         "weightGram": 200,
         "lengthMeter": 270,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -1279,7 +1279,7 @@
         "ply": 1,
         "weightGram": 110,
         "lengthMeter": 1430,
-        "price": 18000.0
+        "price": 18000
       }
     ]
   },
@@ -1293,7 +1293,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 100,
-        "price": 16000.0
+        "price": 16000
       }
     ]
   },
@@ -1307,7 +1307,7 @@
         "ply": 1,
         "weightGram": 260,
         "lengthMeter": 650,
-        "price": 32000.0
+        "price": 32000
       }
     ]
   },
@@ -1321,7 +1321,7 @@
         "ply": 1,
         "weightGram": 260,
         "lengthMeter": 800,
-        "price": 29000.0
+        "price": 29000
       }
     ]
   },
@@ -1335,7 +1335,7 @@
         "ply": 1,
         "weightGram": 80,
         "lengthMeter": 131,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -1349,7 +1349,7 @@
         "ply": 1,
         "weightGram": 40,
         "lengthMeter": 111,
-        "price": 8000.0
+        "price": 8000
       }
     ]
   },
@@ -1363,7 +1363,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 50,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -1377,7 +1377,7 @@
         "ply": 1,
         "weightGram": 200,
         "lengthMeter": 80,
-        "price": 22000.0
+        "price": 22000
       }
     ]
   },
@@ -1391,7 +1391,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 300,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -1405,7 +1405,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 430,
-        "price": 13500.0
+        "price": 13500
       }
     ]
   },
@@ -1419,7 +1419,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 97,
-        "price": 3900.0
+        "price": 3900
       }
     ]
   },
@@ -1433,7 +1433,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 103,
-        "price": 5900.0
+        "price": 5900
       }
     ]
   },
@@ -1447,7 +1447,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 107,
-        "price": 5000.0
+        "price": 5000
       }
     ]
   },
@@ -1461,7 +1461,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 100,
-        "price": 7500.0
+        "price": 7500
       }
     ]
   },
@@ -1475,7 +1475,7 @@
         "ply": 1,
         "weightGram": 260,
         "lengthMeter": 585,
-        "price": 52000.0
+        "price": 52000
       }
     ]
   },
@@ -1489,7 +1489,7 @@
         "ply": 1,
         "weightGram": 500,
         "lengthMeter": 51,
-        "price": 20000.0
+        "price": 20000
       }
     ]
   },
@@ -1503,7 +1503,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 565,
-        "price": 15000.0
+        "price": 15000
       }
     ]
   },
@@ -1517,7 +1517,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 225,
-        "price": 4200.0
+        "price": 4200
       }
     ]
   },
@@ -1531,7 +1531,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 125,
-        "price": 4200.0
+        "price": 4200
       }
     ]
   },
@@ -1545,7 +1545,7 @@
         "ply": 1,
         "weightGram": 40,
         "lengthMeter": 90,
-        "price": 9000.0
+        "price": 9000
       }
     ]
   },
@@ -1559,7 +1559,7 @@
         "ply": 1,
         "weightGram": 360,
         "lengthMeter": 1440,
-        "price": 45000.0
+        "price": 45000
       }
     ]
   },
@@ -1573,7 +1573,7 @@
         "ply": 1,
         "weightGram": 260,
         "lengthMeter": 305,
-        "price": 24000.0
+        "price": 24000
       }
     ]
   },
@@ -1587,7 +1587,7 @@
         "ply": 1,
         "weightGram": 250,
         "lengthMeter": 105,
-        "price": 15000.0
+        "price": 15000
       }
     ]
   },
@@ -1601,7 +1601,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 150,
-        "price": 9000.0
+        "price": 9000
       }
     ]
   },
@@ -1615,7 +1615,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 120,
-        "price": 7300.0
+        "price": 7300
       }
     ]
   },
@@ -1629,7 +1629,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 190,
-        "price": 15000.0
+        "price": 15000
       }
     ]
   },
@@ -1643,7 +1643,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 90,
-        "price": 11500.0
+        "price": 11500
       }
     ]
   },
@@ -1657,7 +1657,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 42,
-        "price": 7000.0
+        "price": 7000
       }
     ]
   },
@@ -1671,7 +1671,7 @@
         "ply": 1,
         "weightGram": 200,
         "lengthMeter": 87,
-        "price": 15000.0
+        "price": 15000
       }
     ]
   },
@@ -1685,7 +1685,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 200,
-        "price": 110000.0
+        "price": 110000
       }
     ]
   },
@@ -1699,7 +1699,7 @@
         "ply": 1,
         "weightGram": 360,
         "lengthMeter": 396,
-        "price": 60000.0
+        "price": 60000
       }
     ]
   },
@@ -1713,7 +1713,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 220,
-        "price": 11500.0
+        "price": 11500
       }
     ]
   },
@@ -1727,7 +1727,7 @@
         "ply": 1,
         "weightGram": 150,
         "lengthMeter": 120,
-        "price": 10500.0
+        "price": 10500
       }
     ]
   },
@@ -1741,7 +1741,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 121,
-        "price": 7000.0
+        "price": 7000
       }
     ]
   },
@@ -1755,7 +1755,7 @@
         "ply": 1,
         "weightGram": 25,
         "lengthMeter": 187,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -1769,7 +1769,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 110,
-        "price": 19000.0
+        "price": 19000
       }
     ]
   },
@@ -1783,7 +1783,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 300,
-        "price": 17000.0
+        "price": 17000
       }
     ]
   },
@@ -1797,7 +1797,7 @@
         "ply": 1,
         "weightGram": 200,
         "lengthMeter": 100,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -1811,7 +1811,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 280,
-        "price": 9500.0
+        "price": 9500
       }
     ]
   },
@@ -1825,7 +1825,7 @@
         "ply": 1,
         "weightGram": 70,
         "lengthMeter": 250,
-        "price": 5000.0
+        "price": 5000
       }
     ]
   },
@@ -1839,7 +1839,7 @@
         "ply": 1,
         "weightGram": 250,
         "lengthMeter": 180,
-        "price": 15000.0
+        "price": 15000
       }
     ]
   },
@@ -1853,7 +1853,7 @@
         "ply": 1,
         "weightGram": 260,
         "lengthMeter": 600,
-        "price": 19000.0
+        "price": 19000
       }
     ]
   },
@@ -1867,7 +1867,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 285,
-        "price": 8500.0
+        "price": 8500
       }
     ]
   },
@@ -1881,7 +1881,7 @@
         "ply": 1,
         "weightGram": 200,
         "lengthMeter": 185,
-        "price": 23000.0
+        "price": 23000
       }
     ]
   },
@@ -1895,7 +1895,7 @@
         "ply": 1,
         "weightGram": 30,
         "lengthMeter": 120,
-        "price": 2500.0
+        "price": 2500
       }
     ]
   },
@@ -1909,7 +1909,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 130,
-        "price": 4500.0
+        "price": 4500
       }
     ]
   },
@@ -1923,7 +1923,7 @@
         "ply": 1,
         "weightGram": 260,
         "lengthMeter": 1020,
-        "price": 35000.0
+        "price": 35000
       }
     ]
   },
@@ -1937,7 +1937,7 @@
         "ply": 1,
         "weightGram": 80,
         "lengthMeter": 145,
-        "price": 14000.0
+        "price": 14000
       }
     ]
   },
@@ -1951,7 +1951,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 80,
-        "price": 22000.0
+        "price": 22000
       }
     ]
   },
@@ -1965,7 +1965,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 200,
-        "price": 26500.0
+        "price": 26500
       }
     ]
   },
@@ -1979,7 +1979,7 @@
         "ply": 1,
         "weightGram": 80,
         "lengthMeter": 0,
-        "price": 4000.0
+        "price": 4000
       }
     ]
   },
@@ -1993,7 +1993,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 104,
-        "price": 8000.0
+        "price": 8000
       }
     ]
   },
@@ -2007,7 +2007,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 180,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -2021,7 +2021,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 90,
-        "price": 8000.0
+        "price": 8000
       }
     ]
   },
@@ -2035,7 +2035,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 80,
-        "price": 10500.0
+        "price": 10500
       }
     ]
   },
@@ -2049,7 +2049,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 320,
-        "price": 8000.0
+        "price": 8000
       }
     ]
   },
@@ -2063,7 +2063,7 @@
         "ply": 1,
         "weightGram": 80,
         "lengthMeter": 100,
-        "price": 2700.0
+        "price": 2700
       }
     ]
   },
@@ -2077,7 +2077,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 230,
-        "price": 9500.0
+        "price": 9500
       }
     ]
   },
@@ -2091,7 +2091,7 @@
         "ply": 1,
         "weightGram": 45,
         "lengthMeter": 100,
-        "price": 5000.0
+        "price": 5000
       }
     ]
   },
@@ -2105,7 +2105,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 200,
-        "price": 14000.0
+        "price": 14000
       }
     ]
   },
@@ -2119,7 +2119,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 180,
-        "price": 8000.0
+        "price": 8000
       }
     ]
   },
@@ -2133,7 +2133,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 175,
-        "price": 8500.0
+        "price": 8500
       }
     ]
   },
@@ -2147,7 +2147,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 196,
-        "price": 8000.0
+        "price": 8000
       }
     ]
   },
@@ -2161,7 +2161,7 @@
         "ply": 1,
         "weightGram": 25,
         "lengthMeter": 210,
-        "price": 15000.0
+        "price": 15000
       }
     ]
   },
@@ -2175,7 +2175,7 @@
         "ply": 1,
         "weightGram": 250,
         "lengthMeter": 110,
-        "price": 20000.0
+        "price": 20000
       }
     ]
   },
@@ -2189,7 +2189,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 540,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -2203,7 +2203,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 180,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -2217,7 +2217,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 154,
-        "price": 16000.0
+        "price": 16000
       }
     ]
   },
@@ -2231,7 +2231,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 130,
-        "price": 5000.0
+        "price": 5000
       }
     ]
   },
@@ -2245,7 +2245,7 @@
         "ply": 1,
         "weightGram": 20,
         "lengthMeter": 195,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -2259,7 +2259,7 @@
         "ply": 1,
         "weightGram": 25,
         "lengthMeter": 85,
-        "price": 33000.0
+        "price": 33000
       }
     ]
   },
@@ -2273,7 +2273,7 @@
         "ply": 1,
         "weightGram": 90,
         "lengthMeter": 215,
-        "price": 2500.0
+        "price": 2500
       }
     ]
   },
@@ -2287,7 +2287,7 @@
         "ply": 1,
         "weightGram": 250,
         "lengthMeter": 100,
-        "price": 15000.0
+        "price": 15000
       }
     ]
   },
@@ -2301,7 +2301,7 @@
         "ply": 1,
         "weightGram": 25,
         "lengthMeter": 200,
-        "price": 20000.0
+        "price": 20000
       }
     ]
   },
@@ -2315,7 +2315,7 @@
         "ply": 1,
         "weightGram": 75,
         "lengthMeter": 0,
-        "price": 5500.0
+        "price": 5500
       }
     ]
   },
@@ -2329,7 +2329,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 300,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -2343,7 +2343,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 255,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -2357,7 +2357,7 @@
         "ply": 1,
         "weightGram": 400,
         "lengthMeter": 800,
-        "price": 34000.0
+        "price": 34000
       }
     ]
   },
@@ -2371,7 +2371,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 121,
-        "price": 6000.0
+        "price": 6000
       }
     ]
   },
@@ -2385,7 +2385,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 198,
-        "price": 5000.0
+        "price": 5000
       }
     ]
   },
@@ -2399,7 +2399,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 90,
-        "price": 8000.0
+        "price": 8000
       }
     ]
   },
@@ -2413,7 +2413,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 78,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -2427,7 +2427,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 146,
-        "price": 9500.0
+        "price": 9500
       }
     ]
   },
@@ -2441,7 +2441,7 @@
         "ply": 1,
         "weightGram": 50,
         "lengthMeter": 130,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -2455,7 +2455,7 @@
         "ply": 1,
         "weightGram": 75,
         "lengthMeter": 50,
-        "price": 4900.0
+        "price": 4900
       }
     ]
   },
@@ -2469,7 +2469,7 @@
         "ply": 1,
         "weightGram": 25,
         "lengthMeter": 88,
-        "price": 8000.0
+        "price": 8000
       }
     ]
   },
@@ -2483,7 +2483,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 750,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -2491,7 +2491,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 375,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -2499,7 +2499,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -2513,7 +2513,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 440,
-        "price": 8000.0
+        "price": 8000
       },
       {
         "yarnType": "콘사",
@@ -2521,7 +2521,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 220,
-        "price": 8000.0
+        "price": 8000
       },
       {
         "yarnType": "콘사",
@@ -2529,7 +2529,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 146,
-        "price": 8000.0
+        "price": 8000
       },
       {
         "yarnType": "콘사",
@@ -2537,7 +2537,7 @@
         "ply": 4,
         "weightGram": 100,
         "lengthMeter": 110,
-        "price": 8000.0
+        "price": 8000
       }
     ]
   },
@@ -2551,7 +2551,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 500,
-        "price": 9000.0
+        "price": 9000
       },
       {
         "yarnType": "콘사",
@@ -2559,7 +2559,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 9000.0
+        "price": 9000
       },
       {
         "yarnType": "콘사",
@@ -2567,7 +2567,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 166,
-        "price": 9000.0
+        "price": 9000
       }
     ]
   },
@@ -2581,7 +2581,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -2595,7 +2595,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 210,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -2609,7 +2609,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 500,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -2617,7 +2617,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -2625,7 +2625,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 167,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -2639,7 +2639,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 530,
-        "price": 12500.0
+        "price": 12500
       },
       {
         "yarnType": "콘사",
@@ -2647,7 +2647,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 265,
-        "price": 12500.0
+        "price": 12500
       },
       {
         "yarnType": "콘사",
@@ -2655,7 +2655,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 167,
-        "price": 12500.0
+        "price": 12500
       }
     ]
   },
@@ -2669,7 +2669,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 420,
-        "price": 9000.0
+        "price": 9000
       },
       {
         "yarnType": "콘사",
@@ -2677,7 +2677,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 210,
-        "price": 9000.0
+        "price": 9000
       }
     ]
   },
@@ -2691,7 +2691,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 500,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -2699,7 +2699,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 250,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -2707,7 +2707,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 166,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -2721,7 +2721,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 600,
-        "price": 11000.0
+        "price": 11000
       },
       {
         "yarnType": "콘사",
@@ -2729,7 +2729,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 300,
-        "price": 11000.0
+        "price": 11000
       }
     ]
   },
@@ -2743,7 +2743,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 800,
-        "price": 10000.0
+        "price": 10000
       },
       {
         "yarnType": "콘사",
@@ -2751,7 +2751,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 400,
-        "price": 10000.0
+        "price": 10000
       },
       {
         "yarnType": "콘사",
@@ -2759,7 +2759,7 @@
         "ply": 3,
         "weightGram": 100,
         "lengthMeter": 266,
-        "price": 10000.0
+        "price": 10000
       }
     ]
   },
@@ -2773,7 +2773,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 400,
-        "price": 12000.0
+        "price": 12000
       },
       {
         "yarnType": "콘사",
@@ -2781,7 +2781,7 @@
         "ply": 2,
         "weightGram": 100,
         "lengthMeter": 200,
-        "price": 12000.0
+        "price": 12000
       }
     ]
   },
@@ -2795,7 +2795,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 1300,
-        "price": 19000.0
+        "price": 19000
       }
     ]
   },
@@ -2809,7 +2809,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 1250,
-        "price": 14000.0
+        "price": 14000
       }
     ]
   },
@@ -2823,7 +2823,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 340,
-        "price": 6500.0
+        "price": 6500
       }
     ]
   },
@@ -2837,7 +2837,7 @@
         "ply": 1,
         "weightGram": 100,
         "lengthMeter": 350,
-        "price": 7500.0
+        "price": 7500
       }
     ]
   }
