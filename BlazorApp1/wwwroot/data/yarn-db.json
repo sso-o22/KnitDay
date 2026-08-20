@@ -1184,5 +1184,1661 @@
         "price": 15000.0
       }
     ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "꼬들콘튼",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "hanji 35%, combed cotton 65%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 264,
+        "price": 7500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "셀린라이트",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 70%, tencel 20%, linen 10%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 588,
+        "price": 15000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "셀린튜브",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cotton 70%, tencel 20%, linen 10%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 392,
+        "price": 15000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "레더필1.5",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "polyester 100%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 140,
+        "price": 20000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "은하수메리노",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "extrafine merino wool 98%, japanese glass beads 2%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 370,
+        "price": 13000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "콤드코튼",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "combed cotton 100%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 270,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "티스푼모헤어",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "mohair 30%, wool 30%, nylon 40%",
+        "ply": 1,
+        "weightGram": 110,
+        "lengthMeter": 1430,
+        "price": 18000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "브러쉬드 알파카 페루",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "FS Alpaca 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 100,
+        "price": 16000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "크렘캐시울",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "cashmere 5%, extra superfine merino wool 95%",
+        "ply": 1,
+        "weightGram": 260,
+        "lengthMeter": 650,
+        "price": 32000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "더캐시울",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Cashmere 10%, Wool 40%, Acrylic 30%, Nylon 20%",
+        "ply": 1,
+        "weightGram": 260,
+        "lengthMeter": 800,
+        "price": 29000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "세븐이지",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "merino wool 60%, acrylic 40%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 131,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "디어린넨",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "rayon 70%, nylon 13%, linen 17%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 111,
+        "price": 8000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "버디버디",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "acrylic 65%, wool 25%, nylon 10%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 50,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "터프티",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "polyester 100%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 80,
+        "price": 22000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "포레스트아란",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "wool 35%, acrylic 20%, polyamide 20%, viscose 25%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 300,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "풋시",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "acrylic 93%, PBT 7%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 430,
+        "price": 13500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "네프인모헤어",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "wool 24%, acrylic 39%, poly 19%, nylon 17%, span 1%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 97,
+        "price": 3900.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "포크울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "australia wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 103,
+        "price": 5900.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "베이비코튼",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "cotton 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 107,
+        "price": 5000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "테디울30",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "acrylic 70%, wool 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 100,
+        "price": 7500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "큐프로 라피아 260",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "cupro 100%",
+        "ply": 1,
+        "weightGram": 260,
+        "lengthMeter": 585,
+        "price": 52000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "브레이드500",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "cotton 60%, polyester 40%",
+        "ply": 1,
+        "weightGram": 500,
+        "lengthMeter": 51,
+        "price": 20000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "맥시",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "cotton 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 565,
+        "price": 15000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "빈티지울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "RWS wool 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 225,
+        "price": 4200.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "카타니아",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "cotton 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 125,
+        "price": 4200.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "큐프로 라피아",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "cupro 100%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 90,
+        "price": 9000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "로바울튜브",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Mercerized Wool 75%, Nylon 25%",
+        "ply": 1,
+        "weightGram": 360,
+        "lengthMeter": 1440,
+        "price": 45000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "페블울코튼",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Superfine Merion Wool 55%, Cotton 20%, Nylon 25%",
+        "ply": 1,
+        "weightGram": 260,
+        "lengthMeter": 305,
+        "price": 24000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "코튼테이프",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Cotton 100%",
+        "ply": 1,
+        "weightGram": 250,
+        "lengthMeter": 105,
+        "price": 15000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "가단",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Polyester 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 150,
+        "price": 9000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "린넨데일",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "otton 57%, Viscose 30%, Linen 13%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 120,
+        "price": 7300.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "리갈울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Superfine Wool 80%, Polyamide 20%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 190,
+        "price": 15000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "핑고 브러쉬 모헤어",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Acrylic 55%, Mohair 17%, Wool 17%, Polyester 11%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 90,
+        "price": 11500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "해리",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Nylon 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 42,
+        "price": 7000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "포미",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Poly 100%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 87,
+        "price": 15000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "노블캐시미어",
+    "entries": [
+      {
+        "yarnType": "타래실",
+        "material": "Cashmere 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 200,
+        "price": 110000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "울알코",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Wool 62%, Alpaca 21%, Cotton 17%",
+        "ply": 1,
+        "weightGram": 360,
+        "lengthMeter": 396,
+        "price": 60000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "모헤어트렌디",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Mohair 50%, Acrylic 50%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 220,
+        "price": 11500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "알파인알파카",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Alpaca 20%, Wool 20%, Acrylic 60%",
+        "ply": 1,
+        "weightGram": 150,
+        "lengthMeter": 120,
+        "price": 10500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "코튼3",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "코튼 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 121,
+        "price": 7000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "필 펠린",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Wool 48%, Mohair 26%, Polyamide 24%, Elastane 2%",
+        "ply": 1,
+        "weightGram": 25,
+        "lengthMeter": 187,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "필 로맨티코",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Alpaca 46%, Merinos 20%, , Polyester 34%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 110,
+        "price": 19000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "필 쿠튀르",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Alpaca 35%, Polyamide 25%, Merinos Extra fine 15%, Polyester 25%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 300,
+        "price": 17000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "토스티",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Polyester 100%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 100,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "심플리데님",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Antipilling Acrylic 50%, Cotton 50%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 280,
+        "price": 9500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "메탈코어",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Poly metal 100%",
+        "ply": 1,
+        "weightGram": 70,
+        "lengthMeter": 250,
+        "price": 5000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "뉴코튼네프코드",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Cotton 95%, Poly 5%",
+        "ply": 1,
+        "weightGram": 250,
+        "lengthMeter": 180,
+        "price": 15000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "피그먼트울",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Fine wool 60%, Nylon 35%, Acrylic 5%",
+        "ply": 1,
+        "weightGram": 260,
+        "lengthMeter": 600,
+        "price": 19000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "아크린넨",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Linen 20%, Acrylic 80%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 285,
+        "price": 8500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "초한지",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 50%, 한지 50%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 185,
+        "price": 23000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "뉴하이소프트 4ply",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Cotton 60%, Acrylic 40%",
+        "ply": 1,
+        "weightGram": 30,
+        "lengthMeter": 120,
+        "price": 2500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "뉴하이소프트",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Cotton 60%, Acrylic 40%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 130,
+        "price": 4500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "애들레이드",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "65% Acrylic, 28% Wool, 6% Polyaide, 1% Elastam",
+        "ply": 1,
+        "weightGram": 260,
+        "lengthMeter": 1020,
+        "price": 35000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "아임울4",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Merino Wool 100%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 145,
+        "price": 14000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "하일랜드 알파카 부클",
+    "entries": [
+      {
+        "yarnType": "타래실",
+        "material": "Highland Wool 70%, FS Alpaca 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 80,
+        "price": 22000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "리티",
+    "entries": [
+      {
+        "yarnType": "타래실",
+        "material": "Patagonian wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 200,
+        "price": 26500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "몽실이",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Polyester 100%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 0,
+        "price": 4000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "메리노블렌드 DK 트위드",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Pure New Wool 96%, Viscose 4%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 104,
+        "price": 8000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "울 아란",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Superwash Wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 180,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "도톰부클",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Wool 50%, Acrylic 25%, Nylon 25%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 90,
+        "price": 8000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "익스플로러 슈퍼 청키",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Premium Acrylic 80%, Wool 20%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 80,
+        "price": 10500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "베지터블",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Combed Cotton 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 320,
+        "price": 8000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "도화지",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "COMA Cotton 60%, Poly 40%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 100,
+        "price": 2700.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "코튼 슬라브",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Cotton 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 230,
+        "price": 9500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "모아나",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Poly 100%",
+        "ply": 1,
+        "weightGram": 45,
+        "lengthMeter": 100,
+        "price": 5000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "필 비너스",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Wool 33%, Alpaca 15%, Polyamide 52%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 200,
+        "price": 14000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "메리노블렌드",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Pure New Superwash Wool 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 180,
+        "price": 8000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "홈스펀",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Fine Merino Superwash 22%, Alpaca 22%, Polyamide 23%, Acrylic 23%, Viscose 10%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 175,
+        "price": 8500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "슬로우스텝",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Wool 75%, Nylon 25%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 196,
+        "price": 8000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "멀버리 실크 모헤어",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Kid Mohair 72%, Mulberry Silk 28%",
+        "ply": 1,
+        "weightGram": 25,
+        "lengthMeter": 210,
+        "price": 15000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "아임낫레더",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Polyester 100%",
+        "ply": 1,
+        "weightGram": 250,
+        "lengthMeter": 110,
+        "price": 20000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "에어리코튼",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Cotton 60%, Polyester 40%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 540,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "새틴 메리노 울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Extrafine Merino Wool 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 180,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "새틴 메리노 울 플러스",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Extrafine Merino Wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 154,
+        "price": 16000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "버터6",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Supersoft Acrylic 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 130,
+        "price": 5000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "새틴 알파카 모헤어",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Superkid Mohair 35%,  Baby Alpaca 35%, Polyamide 30%",
+        "ply": 1,
+        "weightGram": 20,
+        "lengthMeter": 195,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "솔로 캐시미어",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "캐시미어 100%",
+        "ply": 1,
+        "weightGram": 25,
+        "lengthMeter": 85,
+        "price": 33000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "하이버블",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리 100%",
+        "ply": 1,
+        "weightGram": 90,
+        "lengthMeter": 215,
+        "price": 2500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "코튼10",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "코마코튼 100%",
+        "ply": 1,
+        "weightGram": 250,
+        "lengthMeter": 100,
+        "price": 15000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "필 모헤어 수아 럭스",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Superkid Mohair 70%  Silk 26%  Polyester 4%",
+        "ply": 1,
+        "weightGram": 25,
+        "lengthMeter": 200,
+        "price": 20000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "자연",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "코마면 100%",
+        "ply": 1,
+        "weightGram": 75,
+        "lengthMeter": 0,
+        "price": 5500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "서틀 드리프터",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "프리미엄 아크릭 69%, 코튼 25%, 울 6%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 300,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "비치스 DK",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "프리미엄 아크릭 70%, 폴리 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 255,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "패션아란",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "프리미엄 아크릭 70%, 울 30%",
+        "ply": 1,
+        "weightGram": 400,
+        "lengthMeter": 800,
+        "price": 34000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "마제스틱",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "프리미엄 아크릭 30%, 울 50%, 폴리 20%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 121,
+        "price": 6000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "까사리아",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "아크릴 50%, 폴리 50%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 198,
+        "price": 5000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "돌핀 솔리드",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리에스테르 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 90,
+        "price": 8000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "필 메리노스 6",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "메리노울 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 78,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "필 카레스",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "프리미엄 아크릴 51%, 폴리아미드 49%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 146,
+        "price": 9500.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "필 메리노스 3.5",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "메리노울 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 130,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "클라우드",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "acrylic 40%, cotton 50%, nylon 10%",
+        "ply": 1,
+        "weightGram": 75,
+        "lengthMeter": 50,
+        "price": 4900.0
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "필 소프트+",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "63% WOOL, 27% ALPACA, 10% POLYAMIDE",
+        "ply": 1,
+        "weightGram": 25,
+        "lengthMeter": 88,
+        "price": 8000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "코지",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Geelong Wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 750,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Geelong Wool 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 375,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Geelong Wool 100%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "비스킷",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Austrailian Merino Wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 440,
+        "price": 8000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Austrailian Merino Wool 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 220,
+        "price": 8000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Austrailian Merino Wool 100%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 146,
+        "price": 8000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Austrailian Merino Wool 100%",
+        "ply": 4,
+        "weightGram": 100,
+        "lengthMeter": 110,
+        "price": 8000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "스모어",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Cashmere 5%, Super Fine Wool 80%, Cash Nylon 15%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 500,
+        "price": 9000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Cashmere 5%, Super Fine Wool 80%, Cash Nylon 15%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 9000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Cashmere 5%, Super Fine Wool 80%, Cash Nylon 15%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 166,
+        "price": 9000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "멜로우",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Super Extra Fine Merino Wool 95%, Cashmere 5%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "마들렌",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Cashmere 10%, Extra Fine Wool 65%, Nylon 25%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 210,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "바미",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Super Fine Merino Wool 90%, Cashmere 10%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 500,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Super Fine Merino Wool 90%, Cashmere 10%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Super Fine Merino Wool 90%, Cashmere 10%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 167,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "스너그",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Super Fine Merino Wool 41%, Polyamide 24%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 530,
+        "price": 12500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Super Fine Merino Wool 41%, Polyamide 24%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 265,
+        "price": 12500.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Super Fine Merino Wool 41%, Polyamide 24%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 167,
+        "price": 12500.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "헤이지",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Baby Alpaca 30%, Super Fine Merino Wool 30%, Cash Nylon 40%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 420,
+        "price": 9000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Baby Alpaca 30%, Super Fine Merino Wool 30%, Cash Nylon 40%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 210,
+        "price": 9000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "스콘",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Baby Alpaca 21%, Raccoon 17%, Super Fine Merino Wool 45%, Nylon 17%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 500,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Baby Alpaca 21%, Raccoon 17%, Super Fine Merino Wool 45%, Nylon 17%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Baby Alpaca 21%, Raccoon 17%, Super Fine Merino Wool 45%, Nylon 17%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 166,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "콜리",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Baby Alpaca 30%, Super Fine Merino Wool 46%, Nylon 24%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 600,
+        "price": 11000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Baby Alpaca 30%, Super Fine Merino Wool 46%, Nylon 24%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 300,
+        "price": 11000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "팔레트",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Baby Alpaca 15%, Super Fine Merino Wool 78%, Nylon 7%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 800,
+        "price": 10000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Baby Alpaca 15%, Super Fine Merino Wool 78%, Nylon 7%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 400,
+        "price": 10000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Baby Alpaca 15%, Super Fine Merino Wool 78%, Nylon 7%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 266,
+        "price": 10000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "샌디",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Raccoon 35%, Super Fine Wool 30%, Soft Polyamide 35%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 400,
+        "price": 12000.0
+      },
+      {
+        "yarnType": "콘사",
+        "material": "Raccoon 35%, Super Fine Wool 30%, Soft Polyamide 35%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 200,
+        "price": 12000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "퍼즈",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Super Kid Mohair 55%, Wool 15%, Nylon 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 1300,
+        "price": 19000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "크리미",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Kid Mohair 30%, Wool 30%, Nylon 40%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 1250,
+        "price": 14000.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "슬러시",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Cotton 60%, Acrylic 40%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 340,
+        "price": 6500.0
+      }
+    ]
+  },
+  {
+    "brand": "스우니팅하우스",
+    "name": "브리즈",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Acrylic 57%, Tencel 27%, Linen 16%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 350,
+        "price": 7500.0
+      }
+    ]
   }
 ]
