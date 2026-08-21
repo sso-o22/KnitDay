@@ -31,12 +31,9 @@ else
 
         <!-- 탭 네비게이션 -->
         <div style="display:flex;gap:6px;padding:4px;background:var(--ivory-dark);border-radius:12px;">
-            <button class="btn btn-sm" style="flex:1;border:none;border-radius:9px;padding:9px 0;font-weight:600;background:@(_activeTab=="stats" ? "var(--white)" : "transparent");color:@(_activeTab=="stats" ? "var(--text-dark)" : "var(--text-light)");box-shadow:@(_activeTab=="stats" ? "0 1px 4px rgba(0,0,0,0.08)" : "none");"
-                    @onclick="SetTabStats">통계</button>
-            <button class="btn btn-sm" style="flex:1;border:none;border-radius:9px;padding:9px 0;font-weight:600;background:@(_activeTab=="accounts" ? "var(--white)" : "transparent");color:@(_activeTab=="accounts" ? "var(--text-dark)" : "var(--text-light)");box-shadow:@(_activeTab=="accounts" ? "0 1px 4px rgba(0,0,0,0.08)" : "none");"
-                    @onclick="SetTabAccounts">계정</button>
-            <button class="btn btn-sm" style="flex:1;border:none;border-radius:9px;padding:9px 0;font-weight:600;background:@(_activeTab=="yarn" ? "var(--white)" : "transparent");color:@(_activeTab=="yarn" ? "var(--text-dark)" : "var(--text-light)");box-shadow:@(_activeTab=="yarn" ? "0 1px 4px rgba(0,0,0,0.08)" : "none");"
-                    @onclick="SetTabYarn">실</button>
+            <button class="btn btn-sm" style="@StatsTabStyle" @onclick="SetTabStats">통계</button>
+            <button class="btn btn-sm" style="@AccountsTabStyle" @onclick="SetTabAccounts">계정</button>
+            <button class="btn btn-sm" style="@YarnTabStyle" @onclick="SetTabYarn">실</button>
         </div>
 
         @if (_activeTab == "stats")
@@ -236,7 +233,6 @@ else
             }
         </div>
 
-    </div>
         }
 
     @* 이용권 변경 팝업 *@
@@ -406,6 +402,8 @@ else
     </div>
     }
 
+    </div>
+
     @* 승인 목록 전체 삭제 확인 팝업 *@
     @if (_confirmClearApproved)
     {
@@ -463,6 +461,13 @@ else
     void SetTabStats() => _activeTab = "stats";
     void SetTabAccounts() => _activeTab = "accounts";
     void SetTabYarn() => _activeTab = "yarn";
+
+    const string TabBtnBase = "flex:1;border:none;border-radius:9px;padding:9px 0;font-weight:600;";
+    const string TabBtnActive = "background:var(--white);color:var(--text-dark);box-shadow:0 1px 4px rgba(0,0,0,.08);";
+    const string TabBtnInactive = "background:transparent;color:var(--text-light);";
+    string StatsTabStyle => TabBtnBase + (_activeTab == "stats" ? TabBtnActive : TabBtnInactive);
+    string AccountsTabStyle => TabBtnBase + (_activeTab == "accounts" ? TabBtnActive : TabBtnInactive);
+    string YarnTabStyle => TabBtnBase + (_activeTab == "yarn" ? TabBtnActive : TabBtnInactive);
 
     // ── 실 정보 제보 관리 ──
     class YarnReportEntry
