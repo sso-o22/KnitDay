@@ -441,13 +441,14 @@ else
                 </div>
             }
 
-            @if (_editingYarn.Id == Guid.Empty && !string.IsNullOrWhiteSpace(_editingYarn.Brand) && !string.IsNullOrWhiteSpace(_editingYarn.Name)
-                 && !_yarnDbAll.Any(p => p.Brand.Trim() == _editingYarn.Brand.Trim() && p.Name.Trim() == _editingYarn.Name.Trim()))
+            @if (!string.IsNullOrWhiteSpace(_editingYarn.Brand) && !string.IsNullOrWhiteSpace(_editingYarn.Name)
+                 && !_yarnDbAll.Any(p => p.Brand.Trim() == _editingYarn.Brand.Trim() && p.Name.Trim() == _editingYarn.Name.Trim()
+                                          && p.Entries.Any(e => e.Ply == _editingYarn.Ply)))
             {
                 <label style="display:flex; align-items:flex-start; gap:8px; margin:4px 0 10px; padding:10px 12px; background:var(--mint-pale); border:1px solid var(--mint-light); border-radius:8px; cursor:pointer;">
                     <input type="checkbox" @bind="_reportOnSave" style="margin-top:2px; flex-shrink:0;" />
                     <span style="font-size:0.8rem; color:var(--text-mid); line-height:1.5;">
-                        지금 입력한 실 정보를 DB에도 제보할게요 — 위에 입력하신 브랜드·소재·무게·길이·가격이 그대로 전달되고,
+                        지금 입력한 실 정보를 DB에도 제보할게요 — 위에 입력하신 브랜드·소재·합수·무게·길이·가격이 그대로 전달되고,
                         승인되면 다른 사용자들 자동완성에도 도움이 돼요. (로그인 여부와 무관)
                     </span>
                 </label>
