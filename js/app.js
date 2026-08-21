@@ -1003,3 +1003,16 @@ window.dragScrollLock = {
         this._handler = null;
     }
 };
+
+// ── 텍스트 내용을 파일로 다운로드 (관리자 JSON 내보내기 등에 사용) ──────
+window.downloadTextFile = (filename, content, mimeType) => {
+    const blob = new Blob([content], { type: mimeType || 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+};
