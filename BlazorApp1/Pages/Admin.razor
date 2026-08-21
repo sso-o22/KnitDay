@@ -32,11 +32,11 @@ else
         <!-- 탭 네비게이션 -->
         <div style="display:flex;gap:6px;padding:4px;background:var(--ivory-dark);border-radius:12px;">
             <button class="btn btn-sm" style="flex:1;border:none;border-radius:9px;padding:9px 0;font-weight:600;background:@(_activeTab=="stats" ? "var(--white)" : "transparent");color:@(_activeTab=="stats" ? "var(--text-dark)" : "var(--text-light)");box-shadow:@(_activeTab=="stats" ? "0 1px 4px rgba(0,0,0,0.08)" : "none");"
-                    @onclick='() => _activeTab = "stats"'>통계</button>
+                    @onclick="SetTabStats">통계</button>
             <button class="btn btn-sm" style="flex:1;border:none;border-radius:9px;padding:9px 0;font-weight:600;background:@(_activeTab=="accounts" ? "var(--white)" : "transparent");color:@(_activeTab=="accounts" ? "var(--text-dark)" : "var(--text-light)");box-shadow:@(_activeTab=="accounts" ? "0 1px 4px rgba(0,0,0,0.08)" : "none");"
-                    @onclick='() => _activeTab = "accounts"'>계정</button>
+                    @onclick="SetTabAccounts">계정</button>
             <button class="btn btn-sm" style="flex:1;border:none;border-radius:9px;padding:9px 0;font-weight:600;background:@(_activeTab=="yarn" ? "var(--white)" : "transparent");color:@(_activeTab=="yarn" ? "var(--text-dark)" : "var(--text-light)");box-shadow:@(_activeTab=="yarn" ? "0 1px 4px rgba(0,0,0,0.08)" : "none");"
-                    @onclick='() => _activeTab = "yarn"'>실</button>
+                    @onclick="SetTabYarn">실</button>
         </div>
 
         @if (_activeTab == "stats")
@@ -460,6 +460,9 @@ else
 @code {
     const string AdminUid = "xAz2xO8kulWUgoHnaaxCkzZV2nG2";
     string _activeTab = "accounts";
+    void SetTabStats() => _activeTab = "stats";
+    void SetTabAccounts() => _activeTab = "accounts";
+    void SetTabYarn() => _activeTab = "yarn";
 
     // ── 실 정보 제보 관리 ──
     class YarnReportEntry
