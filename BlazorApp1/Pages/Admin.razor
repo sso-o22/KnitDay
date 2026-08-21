@@ -287,6 +287,60 @@ else
         </div>
     }
 
+    @* ── 실 정보 제보 관리 ── *@
+    <div class="card">
+        <div class="card-title" style="margin-bottom:12px;display:flex;align-items:center;gap:6px;">
+            <img src="icons/yarn.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />
+            실 정보 제보
+            @if (_yarnReports != null)
+            {
+                <span style="margin-left:auto;font-size:0.78rem;font-weight:400;color:var(--text-light);">@(_yarnReports.Count)건 대기중</span>
+            }
+            <button class="btn btn-ghost btn-sm" style="padding:2px 8px;font-size:0.75rem;" @onclick="LoadYarnReports">↺</button>
+        </div>
+
+        @if (_loadingYarnReports)
+        {
+            <div style="font-size:0.85rem;color:var(--text-light);padding:8px 0;">불러오는 중...</div>
+        }
+        else if (_yarnReports == null || _yarnReports.Count == 0)
+        {
+            <div style="font-size:0.85rem;color:var(--text-light);padding:8px 0;">대기중인 제보가 없어요.</div>
+        }
+        else
+        {
+            <div style="display:flex;flex-direction:column;gap:10px;">
+                @foreach (var r in _yarnReports)
+                {
+                    <div style="border:1px solid var(--border);border-radius:12px;padding:14px;">
+                        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
+                            <span style="font-weight:700;color:var(--text-dark);">@r.Name</span>
+                            <span style="font-size:0.8rem;color:var(--text-light);">@r.Brand</span>
+                        </div>
+                        <div style="font-size:0.8rem;color:var(--text-mid);line-height:1.6;">
+                            @r.YarnType · @r.Material<br />
+                            @(r.Ply)합 · @(r.WeightGram)g / @(r.LengthMeter)m · @(r.Price)원
+                            @if (!string.IsNullOrWhiteSpace(r.Memo))
+                            {
+                                <br />
+                                <span style="color:var(--text-light);">메모: @r.Memo</span>
+                            }
+                        </div>
+                        <div style="font-size:0.72rem;color:var(--text-light);margin-top:6px;">
+                            @r.SubmittedAt @(string.IsNullOrEmpty(r.SubmittedByUid) ? "· 비로그인 제보" : "")
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:10px;">
+                            <button class="btn btn-primary btn-sm" disabled="@(_processingReportId == r.Id)" @onclick="() => AcceptYarnReport(r)">
+                                @(_processingReportId == r.Id ? "처리 중..." : "수락")
+                            </button>
+                            <button class="btn btn-ghost btn-sm" disabled="@(_processingReportId == r.Id)" @onclick="() => RejectYarnReport(r)">거절</button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
     @* 삭제 확인 팝업 *@
     @if (_confirmDeleteUser != null)
     {
@@ -321,6 +375,102 @@ else
 
 @code {
     const string AdminUid = "xAz2xO8kulWUgoHnaaxCkzZV2nG2";
+
+    // ── 실 정보 제보 관리 ──
+    class YarnReportEntry
+    {
+        public string Id { get; set; } = "";
+        public string Brand { get; set; } = "";
+        public string Name { get; set; } = "";
+        public string YarnType { get; set; } = "";
+        public string Material { get; set; } = "";
+        public int Ply { get; set; }
+        public int WeightGram { get; set; }
+        public int LengthMeter { get; set; }
+        public decimal Price { get; set; }
+        public string? Memo { get; set; }
+        public string? SubmittedByUid { get; set; }
+        public string? SubmittedAt { get; set; }
+    }
+
+    List<YarnReportEntry>? _yarnReports;
+    bool _loadingYarnReports = false;
+    string? _processingReportId = null;
+
+    async Task LoadYarnReports()
+    {
+        _loadingYarnReports = true;
+        StateHasChanged();
+        try
+        {
+            var json = await JS.InvokeAsync<string?>("firebaseStore.getCollection", "yarnSubmissions");
+            if (string.IsNullOrWhiteSpace(json)) { _yarnReports = new(); }
+            else
+            {
+                var all = System.Text.Json.JsonSerializer.Deserialize<List<YarnReportEntry>>(json,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                _yarnReports = all.OrderByDescending(r => r.SubmittedAt).ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JS.InvokeVoidAsync("showToast", $"제보 목록 로드 실패: {ex.Message}", "error");
+            _yarnReports = new();
+        }
+        _loadingYarnReports = false;
+        StateHasChanged();
+    }
+
+    async Task AcceptYarnReport(YarnReportEntry r)
+    {
+        _processingReportId = r.Id;
+        StateHasChanged();
+        try
+        {
+            // 승인된 항목을 yarnDbApproved 컬렉션에 기록 → 실 창고 자동완성이 즉시 읽어감
+            var approvedDoc = new
+            {
+                brand = r.Brand,
+                name = r.Name,
+                yarnType = r.YarnType,
+                material = r.Material,
+                ply = r.Ply,
+                weightGram = r.WeightGram,
+                lengthMeter = r.LengthMeter,
+                price = r.Price,
+                approvedAt = DateTime.UtcNow.ToString("o")
+            };
+            var json = System.Text.Json.JsonSerializer.Serialize(approvedDoc);
+            var ok = await JS.InvokeAsync<bool>("firebaseStore.setDocument", $"yarnDbApproved/{r.Id}", json);
+            if (ok)
+            {
+                await JS.InvokeAsync<bool>("firebaseStore.deleteDocument", $"yarnSubmissions/{r.Id}");
+                _yarnReports?.RemoveAll(x => x.Id == r.Id);
+                await JS.InvokeVoidAsync("showToast", "제보를 수락해서 실 DB에 반영했어요.", "success");
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("showToast", "수락 처리에 실패했어요.", "error");
+            }
+        }
+        catch (Exception ex) { await JS.InvokeVoidAsync("showToast", $"오류: {ex.Message}", "error"); }
+        _processingReportId = null;
+        StateHasChanged();
+    }
+
+    async Task RejectYarnReport(YarnReportEntry r)
+    {
+        _processingReportId = r.Id;
+        StateHasChanged();
+        try
+        {
+            await JS.InvokeAsync<bool>("firebaseStore.deleteDocument", $"yarnSubmissions/{r.Id}");
+            _yarnReports?.RemoveAll(x => x.Id == r.Id);
+        }
+        catch (Exception ex) { await JS.InvokeVoidAsync("showToast", $"오류: {ex.Message}", "error"); }
+        _processingReportId = null;
+        StateHasChanged();
+    }
 
     record UserEntry(string Email, string? Uid, string? ExpiresAt = null, string? LicenseType = null, string? LastActiveAt = null, string? RegisteredAt = null);
 
@@ -397,6 +547,7 @@ else
         {
             await LoadUsers();
             await LoadMetrics();
+            await LoadYarnReports();
         }
     }
 
@@ -406,6 +557,7 @@ else
         {
             await LoadUsers();
             await LoadMetrics();
+            await LoadYarnReports();
         }
         await InvokeAsync(StateHasChanged);
     }

@@ -8,6 +8,7 @@
 @inject IJSRuntime JS
 @inject NavigationManager Nav
 @inject HttpClient Http
+@inject AuthService Auth
 
 <div class="page-header">
     <div>
@@ -440,6 +441,18 @@ else
                 </div>
             }
 
+            @if (_editingYarn.Id == Guid.Empty && !string.IsNullOrWhiteSpace(_editingYarn.Brand) && !string.IsNullOrWhiteSpace(_editingYarn.Name)
+                 && !_yarnDbAll.Any(p => p.Brand.Trim() == _editingYarn.Brand.Trim() && p.Name.Trim() == _editingYarn.Name.Trim()))
+            {
+                <label style="display:flex; align-items:flex-start; gap:8px; margin:4px 0 10px; padding:10px 12px; background:var(--mint-pale); border:1px solid var(--mint-light); border-radius:8px; cursor:pointer;">
+                    <input type="checkbox" @bind="_reportOnSave" style="margin-top:2px; flex-shrink:0;" />
+                    <span style="font-size:0.8rem; color:var(--text-mid); line-height:1.5;">
+                        지금 입력한 실 정보를 DB에도 제보할게요 — 위에 입력하신 브랜드·소재·무게·길이·가격이 그대로 전달되고,
+                        승인되면 다른 사용자들 자동완성에도 도움이 돼요. (로그인 여부와 무관)
+                    </span>
+                </label>
+            }
+
             <div class="modal-footer">
                 <button class="btn btn-ghost" @onclick="CloseModal">취소</button>
                 <button class="btn btn-primary" @onclick="SaveYarn" disabled="@_saving">@(_saving ? "저장 중..." : "저장")</button>
@@ -489,8 +502,89 @@ else
 
     async Task LoadYarnDbAsync()
     {
-        try { _yarnDbAll = await Http.GetFromJsonAsync<List<YarnDbProduct>>("data/yarn-db.json") ?? new(); }
-        catch { _yarnDbAll = new(); }
+        List<YarnDbProduct> staticDb = new();
+        try { staticDb = await Http.GetFromJsonAsync<List<YarnDbProduct>>("data/yarn-db.json") ?? new(); }
+        catch { staticDb = new(); }
+
+        // 관리자가 승인한 제보 항목(Firestore yarnDbApproved 컬렉션)을 정적 DB와 병합.
+        // 로그인 여부와 무관하게 누구나 읽을 수 있는 공개 컬렉션이라 실패해도 조용히 무시.
+        try
+        {
+            var json = await JS.InvokeAsync<string?>("firebaseStore.getCollection", "yarnDbApproved");
+            if (!string.IsNullOrWhiteSpace(json))
+            {
+                var approved = System.Text.Json.JsonSerializer.Deserialize<List<YarnDbApprovedDoc>>(json,
+                    new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new();
+                foreach (var a in approved)
+                {
+                    if (string.IsNullOrWhiteSpace(a.Brand) || string.IsNullOrWhiteSpace(a.Name)) continue;
+                    var existing = staticDb.FirstOrDefault(p => p.Brand == a.Brand && p.Name == a.Name);
+                    var entry = new YarnDbEntry
+                    {
+                        YarnType = a.YarnType ?? "",
+                        Material = a.Material ?? "",
+                        Ply = a.Ply,
+                        WeightGram = a.WeightGram,
+                        LengthMeter = a.LengthMeter,
+                        Price = a.Price
+                    };
+                    if (existing != null) existing.Entries.Add(entry);
+                    else staticDb.Add(new YarnDbProduct { Brand = a.Brand!, Name = a.Name!, Entries = new() { entry } });
+                }
+            }
+        }
+        catch (Exception ex) { Console.Error.WriteLine($"승인된 제보 병합 실패: {ex.Message}"); }
+
+        _yarnDbAll = staticDb;
+    }
+
+    // Firestore yarnDbApproved 문서 매핑용
+    class YarnDbApprovedDoc
+    {
+        public string? Brand { get; set; }
+        public string? Name { get; set; }
+        public string? YarnType { get; set; }
+        public string? Material { get; set; }
+        public int Ply { get; set; }
+        public int WeightGram { get; set; }
+        public int LengthMeter { get; set; }
+        public decimal Price { get; set; }
+    }
+
+    // ── 실 정보 제보 (로그인 여부 무관, Firestore yarnSubmissions에 저장) ──
+    // 별도 입력폼 없이, "실 추가" 폼에서 이미 입력한 _editingYarn 값을 그대로 재사용해요.
+    bool _reportOnSave = false;
+
+    async Task SubmitYarnReportIfChecked(Yarn yarn)
+    {
+        if (!_reportOnSave) return;
+        _reportOnSave = false; // 다음 실 추가 때 체크 상태가 이어지지 않도록 초기화
+        try
+        {
+            var payload = new
+            {
+                brand = yarn.Brand?.Trim() ?? "",
+                name = yarn.Name.Trim(),
+                yarnType = yarn.YarnType.ToString(),
+                material = yarn.Material?.Trim() ?? "",
+                ply = yarn.Ply,
+                weightGram = yarn.WeightGram,
+                lengthMeter = yarn.LengthMeter,
+                price = yarn.Price,
+                memo = "",
+                status = "pending",
+                submittedByUid = Auth.IsLoggedIn ? Auth.CurrentUser!.Uid : null,
+                submittedAt = DateTime.UtcNow.ToString("o")
+            };
+            var json = System.Text.Json.JsonSerializer.Serialize(payload);
+            var ok = await JS.InvokeAsync<bool>("firebaseStore.addDocument", "yarnSubmissions", json);
+            if (ok) await JS.InvokeVoidAsync("showToast", "실 정보도 함께 제보됐어요. 감사해요!");
+        }
+        catch (Exception ex)
+        {
+            // 제보 실패는 실 저장 자체를 막을 이유가 없으므로 조용히 로그만 남김
+            Console.Error.WriteLine($"실 정보 제보 실패: {ex.Message}");
+        }
     }
 
     void FilterYarnSuggestions(string q)
@@ -712,7 +806,7 @@ else
             Memo = source.Memo,
         };
         _editingProjectAmounts = new();
-        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null;
+        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null; _reportOnSave = false;
         _showModal = true;
         _scrollModalTop = true;
         await JS.InvokeVoidAsync("lockBodyScroll");
@@ -721,7 +815,7 @@ else
     {
         _editingYarn = new Yarn { Id = Guid.Empty, YarnType = YarnType.콘사 };
         _editingProjectAmounts = new();
-        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null;
+        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null; _reportOnSave = false;
         _showModal = true; _scrollModalTop = true;
         await JS.InvokeVoidAsync("lockBodyScroll");
     }
@@ -732,7 +826,7 @@ else
         _editingYarn = System.Text.Json.JsonSerializer.Deserialize<Yarn>(json)!;
         _editingProjectAmounts = GetConnectedProjects(yarn.Id)
             .ToDictionary(p => p.Id, p => p.YarnUsages.FirstOrDefault(u => u.YarnId == yarn.Id)?.BallsUsed ?? 1);
-        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null;
+        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null; _reportOnSave = false;
         _showModal = true;
         _scrollModalTop = true;
         await JS.InvokeVoidAsync("lockBodyScroll");
@@ -740,7 +834,7 @@ else
     async Task CloseModal()
     {
         _showModal = false; _editingYarn = null; _editingProjectAmounts = new();
-        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null;
+        _yarnSuggestions = new(); _showYarnSuggestions = false; _plyPickerProduct = null; _reportOnSave = false;
         await JS.InvokeVoidAsync("unlockBodyScroll");
     }
 
@@ -794,6 +888,7 @@ else
         _yarns = await Storage.GetYarnsAsync();
         _projects = await Storage.GetProjectsAsync();
         _CalcUsed();
+        await SubmitYarnReportIfChecked(_editingYarn);
         await CloseModal();
         _saving = false;
         await JS.InvokeVoidAsync("showToast", "저장됐어요");
