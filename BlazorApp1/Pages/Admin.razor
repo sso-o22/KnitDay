@@ -462,7 +462,7 @@ else
     void SetTabAccounts() => _activeTab = "accounts";
     void SetTabYarn() => _activeTab = "yarn";
 
-    const string TabBtnBase = "flex:1;border:none;border-radius:9px;padding:9px 0;font-weight:600;";
+    const string TabBtnBase = "flex:1;border:none;border-radius:9px;padding:9px 0;font-weight:600;justify-content:center;text-align:center;";
     const string TabBtnActive = "background:var(--white);color:var(--text-dark);box-shadow:0 1px 4px rgba(0,0,0,.08);";
     const string TabBtnInactive = "background:transparent;color:var(--text-light);";
     string StatsTabStyle => TabBtnBase + (_activeTab == "stats" ? TabBtnActive : TabBtnInactive);
