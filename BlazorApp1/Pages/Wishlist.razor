@@ -94,23 +94,23 @@ else
                     }
 
                     <div style="flex:1; min-width:0;">
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
-                            <span style="font-weight:700; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@proj.PatternName</span>
+                        <div style="font-weight:700; font-size:0.95rem; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; line-height:1.3; margin-bottom:2px;">@proj.PatternName</div>
+                        <div style="font-size:0.78rem; color:var(--text-mid); display:flex; align-items:center; gap:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
                             @if (proj.NeedleType.HasValue)
                             {
-                                <span class="badge badge-cable" style="flex-shrink:0;">@proj.NeedleType</span>
+                                <span class="badge @(proj.NeedleType == NeedleType.대바늘 ? "badge-cable" : "badge-done")" style="flex-shrink:0;">@proj.NeedleType</span>
                             }
-                        </div>
-                        <div style="font-size:0.78rem; color:var(--text-mid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                            @proj.Category
-                            @if (!string.IsNullOrEmpty(proj.PatternSource)) { <span> · @proj.PatternSource</span> }
+                            <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                @proj.Category
+                                @if (!string.IsNullOrEmpty(proj.PatternSource)) { <span> · @proj.PatternSource</span> }
+                            </span>
                         </div>
                     </div>
 
-                    <div style="display:flex; gap:6px; flex-shrink:0;" @onclick:stopPropagation="true">
-                        <button class="btn btn-primary btn-sm" @onclick="() => StartProject(proj.Id)" title="시작하기"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /></button>
-                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenYarnCalc(proj)" title="소요량 계산기"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;" /></button>
-                        <button class="btn btn-danger btn-sm" @onclick='() => Confirm("위시리스트에서 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'>
+                    <div style="display:flex; gap:4px; flex-shrink:0;" @onclick:stopPropagation="true">
+                        <button class="btn btn-primary btn-sm" style="padding:6px 9px;" @onclick="() => StartProject(proj.Id)" title="시작하기"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /></button>
+                        <button class="btn btn-secondary btn-sm" style="padding:6px 9px;" @onclick="() => OpenYarnCalc(proj)" title="소요량 계산기"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;" /></button>
+                        <button class="btn btn-danger btn-sm" style="padding:6px 9px;" @onclick='() => Confirm("위시리스트에서 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'>
                             <img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;" />
                         </button>
                     </div>
@@ -136,7 +136,7 @@ else
                     <div style="display:flex; gap:4px; flex-shrink:0;">
                         @if (proj.NeedleType.HasValue)
                         {
-                            <span class="badge badge-cable">@proj.NeedleType</span>
+                            <span class="badge @(proj.NeedleType == NeedleType.대바늘 ? "badge-cable" : "badge-done")">@proj.NeedleType</span>
                         }
                         <span class="badge badge-wish">@proj.Category</span>
                     </div>
