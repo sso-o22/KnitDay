@@ -31,17 +31,29 @@ else if (_yarns.Count == 0)
 }
 else
 {
-    <!-- 검색 -->
-    <div style="display:flex; align-items:center; gap:8px; max-width:320px; margin-bottom:12px; position:relative;">
-        <img src="icons/magnifying-glass.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;opacity:0.45;" />
-        <input class="form-control" @bind-value="_searchText" @bind-value:event="oninput"
-               placeholder="실 이름, 브랜드, 색상으로 검색..." style="flex:1;" />
-        @if (!string.IsNullOrEmpty(_searchText))
-        {
-            <button @onclick="ClearSearch" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:2px; display:flex; align-items:center; color:var(--text-light);">
-                <img src="icons/x.svg" class="icon-line" style="width:13px;height:13px;" />
+    <!-- 검색 + 뷰 전환 -->
+    <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px; position:relative; flex:1; min-width:140px; max-width:320px;">
+            <img src="icons/magnifying-glass.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;opacity:0.45;" />
+            <input class="form-control" @bind-value="_searchText" @bind-value:event="oninput"
+                   placeholder="실 이름, 브랜드, 색상으로 검색..." style="flex:1; min-width:0;" />
+            @if (!string.IsNullOrEmpty(_searchText))
+            {
+                <button @onclick="ClearSearch" style="position:absolute; right:8px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer; padding:2px; display:flex; align-items:center; color:var(--text-light);">
+                    <img src="icons/x.svg" class="icon-line" style="width:13px;height:13px;" />
+                </button>
+            }
+        </div>
+        <div style="display:flex; gap:6px; flex-shrink:0; margin-left:auto;">
+            <button class="btn btn-sm @(_isListView ? "btn-ghost" : "btn-sage")" style="flex-shrink:0;"
+                    @onclick='async () => { _isListView = false; await JS.InvokeVoidAsync("localStorage.setItem", "yarn_listview", "false"); }' title="카드형">
+                <img src="icons/squares-four.svg" class="icon-line" style="width:16px;height:16px;" />
             </button>
-        }
+            <button class="btn btn-sm @(_isListView ? "btn-sage" : "btn-ghost")" style="flex-shrink:0;"
+                    @onclick='async () => { _isListView = true; await JS.InvokeVoidAsync("localStorage.setItem", "yarn_listview", "true"); }' title="리스트형">
+                <img src="icons/list.svg" class="icon-line" style="width:16px;height:16px;" />
+            </button>
+        </div>
     </div>
 
     <!-- 필터 + 정렬 (태블릿 이상: 한 줄) -->
@@ -71,6 +83,46 @@ else
         </div>
     </div>
 
+    @if (_isListView)
+    {
+        <!-- 리스트형 -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            @foreach (var yarn in FilteredYarns)
+            {
+                <div class="card" style="cursor:pointer; display:flex; align-items:center; gap:14px; padding:12px 16px;"
+                     @onclick="() => OpenEditModal(yarn)">
+                    @if (!string.IsNullOrEmpty(yarn.ColorCode))
+                    {
+                        <span style="width:36px; height:36px; border-radius:50%; background:@yarn.ColorCode; border:1px solid var(--border); flex-shrink:0;"></span>
+                    }
+                    else
+                    {
+                        <div style="width:36px; height:36px; background:var(--ivory-dark); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><img src="icons/yarn.svg" class="icon-line" style="width:18px;height:18px;" /></div>
+                    }
+
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+                            <span style="font-weight:700; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@yarn.Name</span>
+                            <span style="font-size:0.78rem; color:var(--text-light); flex-shrink:0;">@yarn.Brand</span>
+                        </div>
+                        <div style="font-size:0.78rem; color:var(--text-mid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            @GetYarnRemainingLabel(yarn)
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:6px; flex-shrink:0;" @onclick:stopPropagation="true">
+                        <button class="btn btn-secondary btn-sm" @onclick="() => DuplicateYarn(yarn)" title="복제"><img src="icons/copy.svg" class="icon-line" style="width:14px;height:14px;" /></button>
+                        <button class="btn btn-danger btn-sm"
+                                @onclick='() => Confirm($"\"{yarn.Name}\" 실을 삭제하면 복구할 수 없어요.", async () => await DeleteYarn(yarn.Id))'>
+                            <img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;" />
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
     <div class="grid-3">
         @foreach (var yarn in FilteredYarns)
         {
@@ -215,6 +267,7 @@ else
             </div>
         }
     </div>
+    }
 }
 
 <!-- 추가/수정 모달 -->
@@ -679,6 +732,7 @@ else
     void ClearSearch() { _searchText = ""; }
     string _filter = "all";
     string _yarnSort = "created_desc";
+    bool _isListView = false;
     List<Yarn> _yarns = new();
     Yarn? _editingYarn;
     Dictionary<Guid, decimal> _editingProjectAmounts = new(); // 프로젝트ID → 소요량(원시 BallsUsed 단위)
@@ -740,6 +794,8 @@ else
         _CalcUsed();
         _filter    = await JS.InvokeAsync<string?>("localStorage.getItem", "yarn_filter") ?? "all";
         _yarnSort  = await JS.InvokeAsync<string?>("localStorage.getItem", "yarn_sort")   ?? "created_desc";
+        var listview = await JS.InvokeAsync<string?>("localStorage.getItem", "yarn_listview");
+        if (!string.IsNullOrEmpty(listview)) _isListView = listview == "true";
         await LoadYarnDbAsync();
         _loading = false;
     }
@@ -786,6 +842,29 @@ else
         if (remain <= 0) return "badge-pause";
         if (qty > 0 && remain / qty < 0.5m) return "badge-progress";
         return "badge-done";
+    }
+
+    string GetYarnRemainingLabel(Yarn yarn)
+    {
+        decimal used = _usedQty.TryGetValue(yarn.Id, out var u) ? u : 0;
+        decimal remain = yarn.Quantity - used;
+        string qtyUnit = yarn.YarnType == YarnType.콘사 ? "콘" : "볼";
+        if (yarn.Quantity <= 0) return yarn.Color;
+
+        string qtyLabel;
+        if (yarn.YarnType == YarnType.콘사 && yarn.WeightGram > 0)
+        {
+            qtyLabel = used > 0
+                ? $"{(yarn.WeightGram * remain):0}g / {(yarn.WeightGram * yarn.Quantity):0}g"
+                : $"{(yarn.WeightGram * yarn.Quantity):0}g";
+        }
+        else
+        {
+            qtyLabel = used > 0
+                ? $"{remain:0.##} / {yarn.Quantity:0.##} {qtyUnit}"
+                : $"x {yarn.Quantity:0.##} {qtyUnit}";
+        }
+        return string.IsNullOrEmpty(yarn.Color) ? qtyLabel : $"{yarn.Color} · {qtyLabel}";
     }
 
     async Task DuplicateYarn(Yarn source)

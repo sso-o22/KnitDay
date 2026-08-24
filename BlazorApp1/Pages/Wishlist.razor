@@ -30,20 +30,32 @@ else if (_projects.Count == 0)
 else
 {
     <div class="filter-sort-bar" style="margin-bottom:16px;">
-        <div class="filter-sort-group swatch-needle-wrapper">
-            <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
-            <select class="form-control swatch-needle-select" style="flex-shrink:0;" @bind="_wishCategory" @bind:after="SetWishCategory">
-                <option value="all">전체 카테고리</option>
-                @foreach (var cat in Enum.GetValues<ProjectCategory>())
-                {
-                    <option value="@cat.ToString()">@cat</option>
-                }
-            </select>
-            <select class="form-control swatch-needle-select" style="flex-shrink:0;" @bind="_wishNeedle" @bind:after="SetWishNeedle">
-                <option value="all">바늘 전체</option>
-                <option value="대바늘">대바늘</option>
-                <option value="코바늘">코바늘</option>
-            </select>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <div class="filter-sort-group swatch-needle-wrapper" style="flex:1; min-width:0;">
+                <img src="icons/funnel.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:0.45;" />
+                <select class="form-control swatch-needle-select" style="flex-shrink:0;" @bind="_wishCategory" @bind:after="SetWishCategory">
+                    <option value="all">전체 카테고리</option>
+                    @foreach (var cat in Enum.GetValues<ProjectCategory>())
+                    {
+                        <option value="@cat.ToString()">@cat</option>
+                    }
+                </select>
+                <select class="form-control swatch-needle-select" style="flex-shrink:0;" @bind="_wishNeedle" @bind:after="SetWishNeedle">
+                    <option value="all">바늘 전체</option>
+                    <option value="대바늘">대바늘</option>
+                    <option value="코바늘">코바늘</option>
+                </select>
+            </div>
+            <div style="display:flex; gap:6px; flex-shrink:0; margin-left:auto;">
+                <button class="btn btn-sm @(_isListView ? "btn-ghost" : "btn-sage")" style="flex-shrink:0;"
+                        @onclick='async () => { _isListView = false; await JS.InvokeVoidAsync("localStorage.setItem", "wish_listview", "false"); }' title="카드형">
+                    <img src="icons/squares-four.svg" class="icon-line" style="width:16px;height:16px;" />
+                </button>
+                <button class="btn btn-sm @(_isListView ? "btn-sage" : "btn-ghost")" style="flex-shrink:0;"
+                        @onclick='async () => { _isListView = true; await JS.InvokeVoidAsync("localStorage.setItem", "wish_listview", "true"); }' title="리스트형">
+                    <img src="icons/list.svg" class="icon-line" style="width:16px;height:16px;" />
+                </button>
+            </div>
         </div>
         <div class="filter-sort-divider"></div>
         <div class="filter-sort-group">
@@ -61,6 +73,53 @@ else
             }
         </div>
     </div>
+
+    @if (_isListView)
+    {
+        <!-- 리스트형 -->
+        <div style="display:flex; flex-direction:column; gap:8px;">
+            @foreach (var proj in SortedWishes)
+            {
+                @{ var wishThumbList = WishThumbUrl(proj); }
+                <div class="card" style="cursor:pointer; display:flex; align-items:center; gap:14px; padding:12px 16px;"
+                     @onclick="() => OpenEditModal(proj)">
+                    @if (wishThumbList != null)
+                    {
+                        <img src="@wishThumbList" alt="@proj.PatternName"
+                             style="width:52px; height:52px; object-fit:cover; border-radius:var(--radius-sm); border:1px solid var(--border); flex-shrink:0;" />
+                    }
+                    else
+                    {
+                        <div style="width:52px; height:52px; background:var(--ivory-dark); border-radius:var(--radius-sm); display:flex; align-items:center; justify-content:center; flex-shrink:0;"><img src="icons/shooting-star.svg" class="icon-line" style="width:24px;height:24px;" /></div>
+                    }
+
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:2px;">
+                            <span style="font-weight:700; font-size:0.95rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@proj.PatternName</span>
+                            @if (proj.NeedleType.HasValue)
+                            {
+                                <span class="badge badge-cable" style="flex-shrink:0;">@proj.NeedleType</span>
+                            }
+                        </div>
+                        <div style="font-size:0.78rem; color:var(--text-mid); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                            @proj.Category
+                            @if (!string.IsNullOrEmpty(proj.PatternSource)) { <span> · @proj.PatternSource</span> }
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:6px; flex-shrink:0;" @onclick:stopPropagation="true">
+                        <button class="btn btn-primary btn-sm" @onclick="() => StartProject(proj.Id)" title="시작하기"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;" /></button>
+                        <button class="btn btn-secondary btn-sm" @onclick="() => OpenYarnCalc(proj)" title="소요량 계산기"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;" /></button>
+                        <button class="btn btn-danger btn-sm" @onclick='() => Confirm("위시리스트에서 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))'>
+                            <img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;" />
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
     <div class="grid-3">
         @foreach (var proj in SortedWishes)
         {
@@ -118,6 +177,7 @@ else
             </div>
         }
     </div>
+    }
 }
 
 <!-- 추가/수정 모달 -->
@@ -405,6 +465,7 @@ else
     string _wishSort = "created_desc";
     string _wishCategory = "all";
     string _wishNeedle = "all";
+    bool _isListView = false;
     IEnumerable<KnitProject> FilteredWishes => _projects
         .Where(p => _wishCategory == "all" || p.Category.ToString() == _wishCategory)
         .Where(p => _wishNeedle == "all" || p.NeedleType?.ToString() == _wishNeedle);
@@ -431,6 +492,8 @@ else
         _wishSort = await JS.InvokeAsync<string?>("localStorage.getItem", "wish_sort") ?? "created_desc";
         _wishCategory = await JS.InvokeAsync<string?>("localStorage.getItem", "wish_category") ?? "all";
         _wishNeedle = await JS.InvokeAsync<string?>("localStorage.getItem", "wish_needle") ?? "all";
+        var listview = await JS.InvokeAsync<string?>("localStorage.getItem", "wish_listview");
+        if (!string.IsNullOrEmpty(listview)) _isListView = listview == "true";
         _loading = false;
     }
 
