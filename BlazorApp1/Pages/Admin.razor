@@ -327,25 +327,75 @@ else
                 @foreach (var r in _yarnReports)
                 {
                     <div style="border:1px solid var(--border);border-radius:12px;padding:14px;">
-                        <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
-                            <span style="font-weight:700;color:var(--text-dark);">@r.Name</span>
-                            <span style="font-size:0.8rem;color:var(--text-light);">@r.Brand</span>
-                        </div>
-                        <div style="font-size:0.8rem;color:var(--text-mid);line-height:1.6;">
-                            @r.YarnType · @r.Material<br />
-                            @(r.Ply)합 · @(r.WeightGram)g / @(r.LengthMeter)m · @(r.Price)원
-                            @if (!string.IsNullOrWhiteSpace(r.Memo))
-                            {
-                                <br />
-                                <span style="color:var(--text-light);">메모: @r.Memo</span>
-                            }
-                        </div>
+                        @if (_editingReportIds.Contains(r.Id))
+                        {
+                            <div class="form-row">
+                                <div class="form-group" style="margin-bottom:8px;">
+                                    <label class="form-label" style="font-size:0.74rem;">브랜드</label>
+                                    <input class="form-control" @bind="r.Brand" style="font-size:0.85rem;padding:6px 10px;" />
+                                </div>
+                                <div class="form-group" style="margin-bottom:8px;">
+                                    <label class="form-label" style="font-size:0.74rem;">실 이름</label>
+                                    <input class="form-control" @bind="r.Name" style="font-size:0.85rem;padding:6px 10px;" />
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-bottom:8px;">
+                                <label class="form-label" style="font-size:0.74rem;">소재</label>
+                                <input class="form-control" @bind="r.Material" style="font-size:0.85rem;padding:6px 10px;" />
+                            </div>
+                            <div class="form-row-3">
+                                <div class="form-group" style="margin-bottom:8px;">
+                                    <label class="form-label" style="font-size:0.74rem;">실 종류</label>
+                                    <select class="form-control" @bind="r.YarnType" style="font-size:0.85rem;padding:6px 10px;">
+                                        @foreach (var t in Enum.GetValues<YarnType>())
+                                        { <option value="@t">@t</option> }
+                                    </select>
+                                </div>
+                                <div class="form-group" style="margin-bottom:8px;">
+                                    <label class="form-label" style="font-size:0.74rem;">합수</label>
+                                    <input type="number" class="form-control" @bind="r.Ply" style="font-size:0.85rem;padding:6px 10px;" />
+                                </div>
+                                <div class="form-group" style="margin-bottom:8px;">
+                                    <label class="form-label" style="font-size:0.74rem;">가격(원)</label>
+                                    <input type="number" class="form-control" @bind="r.Price" style="font-size:0.85rem;padding:6px 10px;" />
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group" style="margin-bottom:4px;">
+                                    <label class="form-label" style="font-size:0.74rem;">무게(g)</label>
+                                    <input type="number" class="form-control" @bind="r.WeightGram" style="font-size:0.85rem;padding:6px 10px;" />
+                                </div>
+                                <div class="form-group" style="margin-bottom:4px;">
+                                    <label class="form-label" style="font-size:0.74rem;">길이(m)</label>
+                                    <input type="number" class="form-control" @bind="r.LengthMeter" style="font-size:0.85rem;padding:6px 10px;" />
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px;">
+                                <span style="font-weight:700;color:var(--text-dark);">@r.Name</span>
+                                <span style="font-size:0.8rem;color:var(--text-light);">@r.Brand</span>
+                            </div>
+                            <div style="font-size:0.8rem;color:var(--text-mid);line-height:1.6;">
+                                @r.YarnType · @r.Material<br />
+                                @(r.Ply)합 · @(r.WeightGram)g / @(r.LengthMeter)m · @(r.Price)원
+                                @if (!string.IsNullOrWhiteSpace(r.Memo))
+                                {
+                                    <br />
+                                    <span style="color:var(--text-light);">메모: @r.Memo</span>
+                                }
+                            </div>
+                        }
                         <div style="font-size:0.72rem;color:var(--text-light);margin-top:6px;">
                             @r.SubmittedAt @(string.IsNullOrEmpty(r.SubmittedByUid) ? "· 비로그인 제보" : "")
                         </div>
                         <div style="display:flex;gap:8px;margin-top:10px;">
                             <button class="btn btn-primary btn-sm" disabled="@(_processingReportId == r.Id)" @onclick="() => AcceptYarnReport(r)">
                                 @(_processingReportId == r.Id ? "처리 중..." : "수락")
+                            </button>
+                            <button class="btn btn-secondary btn-sm" disabled="@(_processingReportId == r.Id)" @onclick="() => ToggleEditReport(r.Id)">
+                                @(_editingReportIds.Contains(r.Id) ? "수정 완료" : "수정")
                             </button>
                             <button class="btn btn-ghost btn-sm" disabled="@(_processingReportId == r.Id)" @onclick="() => RejectYarnReport(r)">거절</button>
                         </div>
@@ -489,6 +539,41 @@ else
     List<YarnReportEntry>? _yarnReports;
     bool _loadingYarnReports = false;
     string? _processingReportId = null;
+    HashSet<string> _editingReportIds = new();
+
+    async Task ToggleEditReport(string id)
+    {
+        if (_editingReportIds.Contains(id))
+        {
+            // 수정 완료: 고친 내용을 Firestore 제보 문서에도 저장해둠 (수락 전에 새로고침해도 안 날아가게)
+            _editingReportIds.Remove(id);
+            var r = _yarnReports?.FirstOrDefault(x => x.Id == id);
+            if (r != null)
+            {
+                try
+                {
+                    var payload = new
+                    {
+                        brand = r.Brand,
+                        name = r.Name,
+                        yarnType = r.YarnType,
+                        material = r.Material,
+                        ply = r.Ply,
+                        weightGram = r.WeightGram,
+                        lengthMeter = r.LengthMeter,
+                        price = r.Price
+                    };
+                    var json = System.Text.Json.JsonSerializer.Serialize(payload);
+                    await JS.InvokeAsync<bool>("firebaseStore.setDocument", $"yarnSubmissions/{id}", json);
+                }
+                catch (Exception ex) { await JS.InvokeVoidAsync("showToast", $"수정 내용 저장 실패: {ex.Message}", "error"); }
+            }
+        }
+        else
+        {
+            _editingReportIds.Add(id);
+        }
+    }
 
     async Task LoadYarnReports()
     {

@@ -1566,6 +1566,11 @@ else
                                                @onchange="e => { if (TimeSpan.TryParse(e.Value?.ToString(), out var t)) _editSessionEnd = _editSessionEnd.Date + t; }" />
                                     </div>
                                 </div>
+                                <div>
+                                    <label style="font-size:0.72rem;color:var(--text-light);display:block;margin-bottom:2px;">메모</label>
+                                    <input type="text" class="form-control" style="width:100%; font-size:0.8rem; padding:6px 8px;"
+                                           @bind="_editSessionMemo" placeholder="예: 카페에서 뜨기" />
+                                </div>
                                 <div style="display:flex; gap:6px; justify-content:flex-end;">
                                     <button class="btn btn-ghost btn-sm" @onclick="CancelEditSession">취소</button>
                                     <button class="btn btn-primary btn-sm" @onclick="() => SaveEditSession(session)">저장</button>
@@ -1816,12 +1821,14 @@ else
     Guid? _editingSessionId = null;
     DateTime _editSessionStart;
     DateTime _editSessionEnd;
+    string _editSessionMemo = "";
 
     void StartEditSession(KnitSession s)
     {
         _editingSessionId = s.Id;
         _editSessionStart = s.StartTime;
         _editSessionEnd = s.EndTime ?? DateTime.Now;
+        _editSessionMemo = s.Memo;
     }
 
     void CancelEditSession() => _editingSessionId = null;
@@ -1835,6 +1842,7 @@ else
         }
         s.StartTime = _editSessionStart;
         s.EndTime = _editSessionEnd;
+        s.Memo = _editSessionMemo.Trim();
         _editingSessionId = null;
         await Save();
     }
