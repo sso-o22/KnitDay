@@ -495,6 +495,7 @@ else
             }
 
             @if (!string.IsNullOrWhiteSpace(_editingYarn.Brand) && !string.IsNullOrWhiteSpace(_editingYarn.Name)
+                 && _editingYarn.Ply > 0
                  && !_yarnDbAll.Any(p => p.Brand.Trim() == _editingYarn.Brand.Trim() && p.Name.Trim() == _editingYarn.Name.Trim()
                                           && p.Entries.Any(e => e.Ply == _editingYarn.Ply)))
             {
