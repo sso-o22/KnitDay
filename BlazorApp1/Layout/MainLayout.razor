@@ -536,6 +536,8 @@
             var lastSeen = await JS.InvokeAsync<string?>("localStorage.getItem", "knitday_last_version");
             var info = await Http.GetFromJsonAsync<VersionInfo>("version.json");
             if (info == null) return;
+            // errorLogs에 기록되는 appVersion 필드가 이 값을 읽어감 (firebase.js: window.__knitdayVersion)
+            try { await JS.InvokeVoidAsync("setAppVersion", info.Version); } catch { }
             // 처음 실행이거나 버전이 달라졌으면 토스트 표시
             if (!string.IsNullOrEmpty(lastSeen) && lastSeen != info.Version)
             {

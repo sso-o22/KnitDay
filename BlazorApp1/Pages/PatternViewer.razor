@@ -2260,11 +2260,14 @@
         _saveCts?.Cancel();
         _saveCts?.Dispose();
         StopRefreshTimer();
-        _dotNetRef?.Dispose();
         // 세션이 없는 경우에도 뷰어 진입 시 획득한 WakeLock 해제
         // (세션 활성 중엔 EndSession에서도 해제하지만 중복 해제는 무해)
         try { await JS.InvokeVoidAsync("releaseWakeLock"); } catch { }
+        // 반드시 JS 쪽(dotNetRef = null)을 먼저 정리한 뒤에 C# 쪽을 Dispose해야 함.
+        // 순서가 바뀌면, 그 사이(위 await 구간 등)에 JS의 지연된 콜백(renderPdf 등)이
+        // 끼어들 경우 "이미 disposed된 DotNetObjectReference" 오류가 날 수 있는 좁은 틈이 생김.
         try { await JS.InvokeVoidAsync("patternViewer.dispose"); } catch { }
+        _dotNetRef?.Dispose();
     }
 
     // 다른 기기 동기화가 배경에서 완료됐을 때, 화면에 보여주고 있는 타이머/세션
