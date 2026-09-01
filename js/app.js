@@ -1016,3 +1016,6 @@ window.downloadTextFile = (filename, content, mimeType) => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 };
+
+// ── 앱 버전을 전역변수로 노출 (errorLogs의 appVersion 필드가 이 값을 읽어감) ──
+window.setAppVersion = (v) => { window.__knitdayVersion = v; };

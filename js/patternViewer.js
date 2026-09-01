@@ -111,7 +111,7 @@ let basePaths = []; // 저장된 필기 (박제)
                 const cy = ev.touches ? ev.touches[0].clientY : ev.clientY;
                 const canvasY = getCanvasY(cy);
                 el.style.top = canvasY + 'px';
-                dotNetRef.invokeMethodAsync(callbackName, canvasY);
+                if (dotNetRef) dotNetRef.invokeMethodAsync(callbackName, canvasY);
             }
             function onUp(ev) {
                 window.removeEventListener('mousemove', onMove);
@@ -881,6 +881,10 @@ let basePaths = []; // 저장된 필기 (박제)
             Object.values(_renderTasks).forEach(t => { try { if(t) t.cancel(); } catch(_){} });
             _renderTasks={}; _renderedPages=new Set(); _pageSizes={}; _pageLinks={}; pdfDoc=null; paths=[]; basePaths=[];
             isDrawing=false; currentPath=null; _isPinching=false; _isZooming=false;
+            // dotNetRef를 비워야 함: C# 쪽에서 DotNetObjectReference.Dispose()로 먼저 끊어놓기 때문에,
+            // 이후 지연된 콜백(스크롤 애니메이션, 드래그 이벤트 등)이 dotNetRef를 계속 들고 있으면
+            // 이미 disposed된 컴포넌트를 다시 호출하려다 "tracked object" 에러가 남
+            dotNetRef = null;
         },
 
         scrollToPage(pageNum) {
@@ -1283,7 +1287,7 @@ let basePaths = []; // 저장된 필기 (박제)
                 ev.preventDefault();
                 if (!_hasMoved && Math.abs(ev.clientY - _startClientY) > DRAG_THRESHOLD) {
                     _hasMoved = true;
-                    if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag', markerId); }
+                    if (!_dragStarted) { _dragStarted = true; if (dotNetRef) dotNetRef.invokeMethodAsync('StartMarkerDrag', markerId); }
                 }
                 if (!_hasMoved) return; // 임계값 이내에서는 위치 변경 없음 → 순수 클릭(선택)으로 처리
                 const y = clampY(getCanvasY(ev.clientY));
@@ -1296,14 +1300,14 @@ let basePaths = []; // 저장된 필기 (박제)
                     const y = clampY(getCanvasY(ev.clientY));
                     el.style.top = y + 'px';
                     // zoom=0 sentinel: Blazor에서 현재 _zoom을 직접 사용 (JS snapshot 사용 안 함)
-                    dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, 0, true);
+                    if (dotNetRef) dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, 0, true);
                 }
                 // 움직이지 않았으면 서버에 아무 것도 보내지 않음 — 곧바로 발생하는 click 이벤트(@onclick=SelectMarker)만 처리됨
             }
             function onTouchMove(ev) {
                 if (!_hasMoved && Math.abs(ev.touches[0].clientY - _startClientY) > DRAG_THRESHOLD) {
                     _hasMoved = true;
-                    if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag', markerId); }
+                    if (!_dragStarted) { _dragStarted = true; if (dotNetRef) dotNetRef.invokeMethodAsync('StartMarkerDrag', markerId); }
                 }
                 if (!_hasMoved) return;
                 ev.preventDefault(); // 드래그 확정 후에만 스크롤 억제
@@ -1317,7 +1321,7 @@ let basePaths = []; // 저장된 필기 (박제)
                     const changedTouch = ev.changedTouches[0];
                     const y = clampY(getCanvasY(changedTouch.clientY));
                     // zoom=0 sentinel: Blazor에서 현재 _zoom을 직접 사용 (JS snapshot 사용 안 함)
-                    dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, 0, true);
+                    if (dotNetRef) dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, 0, true);
                 }
                 // 움직이지 않았으면 서버 호출 없이 종료 — 뒤따르는 click 이벤트가 선택을 처리
             }
@@ -1353,7 +1357,7 @@ let basePaths = []; // 저장된 필기 (박제)
                 function onPointerMove(ev2) {
                     if (!_hasMoved && Math.abs(ev2.clientY - _startClientY) > DRAG_THRESHOLD) {
                         _hasMoved = true;
-                        if (!_dragStarted) { _dragStarted = true; dotNetRef.invokeMethodAsync('StartMarkerDrag', markerId); }
+                        if (!_dragStarted) { _dragStarted = true; if (dotNetRef) dotNetRef.invokeMethodAsync('StartMarkerDrag', markerId); }
                     }
                     if (!_hasMoved) return;
                     const y = clampY(getCanvasY(ev2.clientY));
@@ -1365,7 +1369,7 @@ let basePaths = []; // 저장된 필기 (박제)
                     if (_hasMoved) {
                         const y = clampY(getCanvasY(ev2.clientY));
                         el.style.top = y + 'px';
-                        dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, 0, true);
+                        if (dotNetRef) dotNetRef.invokeMethodAsync('EndMarkerDrag', markerId, y, 0, true);
                     } else {
                         // Pencil pointerup 후 click이 안 오는 경우가 있어서 직접 dispatch
                         _pencilClickPending = true;
