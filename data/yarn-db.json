@@ -6762,5 +6762,1399 @@
         "price": 8600
       }
     ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "이지피피",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리프로필렌 100%",
+        "ply": 1,
+        "weightGram": 140,
+        "lengthMeter": 240,
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "돌리",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리에스테르 100%",
+        "ply": 1,
+        "weightGram": 25,
+        "lengthMeter": 50,
+        "price": 4000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "보들얀",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Polyester 65%, Rayon 35%",
+        "ply": 1,
+        "weightGram": 300,
+        "lengthMeter": 0,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "촉촉 수세미 나염",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "polyester 100%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 0,
+        "price": 2500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "코튼 헬릭스 N9",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 100%",
+        "ply": 1,
+        "weightGram": 250,
+        "lengthMeter": 180,
+        "price": 15000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "코튼 헬릭스 N6",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 100%",
+        "ply": 1,
+        "weightGram": 150,
+        "lengthMeter": 180,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "코튼 헬릭스 N4",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 180,
+        "price": 6000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "브릭얀",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Polyester 65%, Rayon 35%",
+        "ply": 1,
+        "weightGram": 300,
+        "lengthMeter": 100,
+        "price": 9000
+      },
+      {
+        "yarnType": "볼실",
+        "material": "Polyester 65%, Rayon 35%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 16,
+        "price": 2000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "솜이",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 38%, 폴리 25%, 나일론 37%",
+        "ply": 1,
+        "weightGram": 65,
+        "lengthMeter": 75,
+        "price": 5500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "디스코 수세미",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리에스테르 100%",
+        "ply": 1,
+        "weightGram": 60,
+        "lengthMeter": 340,
+        "price": 1000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "팔레트 울 7ply",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "울 50%, 아클릴 50%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 0,
+        "price": 4000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "로니로니",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리 에스테르 100%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 0,
+        "price": 5000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "보니보니",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리 에스테르 100%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 0,
+        "price": 5000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "매직 행주실",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "초극세사100%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 92,
+        "price": 1000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "딸리아",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리 65%, 레이욘 35%",
+        "ply": 1,
+        "weightGram": 220,
+        "lengthMeter": 100,
+        "price": 13000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "은하수",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리 택탤 100%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 0,
+        "price": 4000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "코튼 필",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "코마면 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 230,
+        "price": 5000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "코튼 클래식",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "코마 면 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 190,
+        "price": 5000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "젬마",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "아크릴 60%, 나일론 25%, 폴리아미드 15%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 90,
+        "price": 3500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "코튼 누들",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "코마면 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 160,
+        "price": 4000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "줄리엣",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 60%, 아크릴 40%",
+        "ply": 1,
+        "weightGram": 30,
+        "lengthMeter": 120,
+        "price": 3000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "실크인견사",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "레이온 50%, 실크 아크릴 50%",
+        "ply": 1,
+        "weightGram": 65,
+        "lengthMeter": 325,
+        "price": 4500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "로미오",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 60%, 아크릴 40%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 120,
+        "price": 4000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "촉촉 수세미",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리에스테르 100%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 170,
+        "price": 2500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "다올한지",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "한지 28%, 면 70%, 스파크 NY 7%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 0,
+        "price": 5000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "파빠르",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리 65%, 레이욘 35%",
+        "ply": 1,
+        "weightGram": 500,
+        "lengthMeter": 95,
+        "price": 17000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "린넨 로프트",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "코튼 53%, 비스코스 33%, 린넨 14%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 120,
+        "price": 8000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "쿨 브리즈 콘사",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "아크릴 100%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 660,
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "소피아레",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "아크릴 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 260,
+        "price": 6000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "수아베 콘사",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "미쉘 베이비 알파카 30%, 파인 울 30%, 캐시 나일론 40%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 860,
+        "price": 26000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "오리진울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "메리노 울 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 100,
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "플러피 알파카",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "슈퍼파인 알파카 52%, 울 23%, 나일론 25%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 110,
+        "price": 13000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "미스티",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "메리노 울 33%, 폴리아마이드 67%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 100,
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "넥스트 레더",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Polyester 100%",
+        "ply": 1,
+        "weightGram": 130,
+        "lengthMeter": 70,
+        "price": 13000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "하비울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Wool 15%, Premium Acrylic 85%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 140,
+        "price": 7000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "메탈실 메탈얀",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Poly 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 0,
+        "price": 6500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "라이티얀",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Poly 100%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 72,
+        "price": 8000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "바캉스 얀",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Paper 100%",
+        "ply": 1,
+        "weightGram": 150,
+        "lengthMeter": 250,
+        "price": 12000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "글로우 레더",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Polyester 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 37,
+        "price": 7000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "슬림코튼",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Cotton 70%, Polyester 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 150,
+        "price": 5000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "필 트위스트 마크라메 리본코튼",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Cotton 80%, Polyester 20%",
+        "ply": 1,
+        "weightGram": 250,
+        "lengthMeter": 130,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "밀라노 키드 모헤어",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "키드 모헤어 54%, 폴리아미드 46%",
+        "ply": 1,
+        "weightGram": 20,
+        "lengthMeter": 200,
+        "price": 7000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "실크 키드 모헤어",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "슈퍼 키드 모헤어 66%, 멀버리 실크 30%, 파인 메리노 울 4%",
+        "ply": 1,
+        "weightGram": 25,
+        "lengthMeter": 200,
+        "price": 14000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "버니",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Micro Polyester 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 100,
+        "price": 7500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "셜리",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Micro Polyester 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 100,
+        "price": 7500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "컬리 알파카",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Alpaca 5%, Wool 10%, Viscose 5%, Acrylic 60%, PES 20%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 85,
+        "price": 6000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "피렌체",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Cotton 70%, Polyamidic 30%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 190,
+        "price": 8000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "셔닐벨벳",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Polyester 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 160,
+        "price": 7000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "베이비 알파카 실크모헤어",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "베이비 알파카 75%, 멀버리 실크 25%",
+        "ply": 1,
+        "weightGram": 25,
+        "lengthMeter": 207,
+        "price": 11000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "빅울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "슈퍼워시 메리노울 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 80,
+        "price": 16000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "울 플러스",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "아크릴 70%, 울 30%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 100,
+        "price": 6000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "필 트위스트 마크라메 코튼",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 100%",
+        "ply": 1,
+        "weightGram": 250,
+        "lengthMeter": 1000,
+        "price": 13000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "캔디",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 100%",
+        "ply": 1,
+        "weightGram": 47,
+        "lengthMeter": 390,
+        "price": 4400
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "루피 마카롱 대용량",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "지정외섬유(종이) 100%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 500,
+        "price": 36000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "필 트위스트 청키 마크라메",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면70%, 폴리에스터 30%",
+        "ply": 1,
+        "weightGram": 250,
+        "lengthMeter": 65,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "씨씨 바이오",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "antibacterial everfresh acrylic(향균 아크릴) 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 7000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "쏠레일",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 50%, 아크릴 50%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 800,
+        "price": 30000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "메리노 코튼 핸드다이드",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "메리노울 30%, 면70%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 110,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "베이비 알파카 코튼",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "베이비알파카 11%, 울 17%, 코튼 72%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 215,
+        "price": 12000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "피마 메란지 룩스",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "피마코튼 100%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 160,
+        "price": 6000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "인견튜브사",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리에스테르 100%",
+        "ply": 1,
+        "weightGram": 65,
+        "lengthMeter": 80,
+        "price": 4000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "폴리 왁스실",
+    "entries": [
+      {
+        "yarnType": "기타",
+        "material": "폴리 100%",
+        "ply": 1,
+        "weightGram": 9,
+        "lengthMeter": 22,
+        "price": 2900
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "헴프코드 0.7mm",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "헴프(대마) 100%",
+        "ply": 1,
+        "weightGram": 18,
+        "lengthMeter": 50,
+        "price": 3900
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "루피 대용량",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "지정외섬유(종이) 100%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 500,
+        "price": 42000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "마크라메 코드",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Cotton 100%",
+        "ply": 1,
+        "weightGram": 330,
+        "lengthMeter": 100,
+        "price": 15000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "마크라메 로프",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Cotton 100%",
+        "ply": 1,
+        "weightGram": 450,
+        "lengthMeter": 100,
+        "price": 16000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "보타니울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "엑스트라 파인 메리노울100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 90,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "보타니울 파인",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "메리노울100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 125,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "메리노 코튼",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "메리노울 30%, 면 70%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 120,
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "오가닉코튼",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "유기농면 100%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 265,
+        "price": 8000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "유기농면",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "유기농면 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 320,
+        "price": 8000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "알로하 대용량",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "폴리레이욘 100%",
+        "ply": 1,
+        "weightGram": 200,
+        "lengthMeter": 400,
+        "price": 36000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "루피 내츄럴",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "지정외섬유(종이) 100%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 85,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "코튼 퀸",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Mercerized Cotton 100%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 125,
+        "price": 6000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "트로이카 날개사",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "흰색 : 폴리 50%, 울 35%, 아크릴 15% / 나머지 : 폴리 50%, 아크릴 50%",
+        "ply": 1,
+        "weightGram": 90,
+        "lengthMeter": 0,
+        "price": 1900
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "핸드다이드 헤븐",
+    "entries": [
+      {
+        "yarnType": "타래실",
+        "material": "나일론 100%",
+        "ply": 1,
+        "weightGram": 70,
+        "lengthMeter": 160,
+        "price": 8000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "만다라 케이크",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "아크릴 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 245,
+        "price": 5000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "트위드 에코",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Extra Fine Wool 80%, Poly 20%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 90,
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "알로하",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Polynosic Rayon 100%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 80,
+        "price": 8500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "필 트위스트 마크라메 케이크",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 80%, 폴리에스터 20%",
+        "ply": 1,
+        "weightGram": 250,
+        "lengthMeter": 250,
+        "price": 13000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "필 트위스트 마크라메",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 80%, 폴리에스터 20%",
+        "ply": 1,
+        "weightGram": 250,
+        "lengthMeter": 250,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "오메가",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Mercerized Cotton 100%",
+        "ply": 1,
+        "weightGram": 75,
+        "lengthMeter": 235,
+        "price": 7500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "네오",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 30%, 비스코스 50%, 폴리에스테르 15%, 폴리아마드 5%",
+        "ply": 1,
+        "weightGram": 65,
+        "lengthMeter": 441,
+        "price": 6000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "포엠스 마라톤",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "버진울 75%, 폴리아미드 25%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 420,
+        "price": 13000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "울 매니아",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "아크릴 100%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 106,
+        "price": 3000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "메리노카인드",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "메리노울 100%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 100,
+        "price": 8000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "젤라또",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "면 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 230,
+        "price": 12000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "린넨 VIP",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "마(린넨) 80%, 면 20%",
+        "ply": 1,
+        "weightGram": 65,
+        "lengthMeter": 105,
+        "price": 6000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "메리노 실크",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "실크 25% 메리노 울 75%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 300,
+        "price": 4000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "파피루스",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "지정외섬유(종이) 100%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 100,
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "루피",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "지정외섬유(종이) 100%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 100,
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "루피 나염",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "지정외섬유(종이) 100%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 100,
+        "price": 7500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "프리미어울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "프리미엄 아크릴 95%, 울 5%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 75,
+        "price": 6000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "블룸즈버리 알파카",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "알파카 10%, 아크릴 90%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 100,
+        "price": 4000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "디어마이베이비",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "프리미엄 안티 필링 아크릴 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 235,
+        "price": 5000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "프리덤 울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "울 22%, 프리미엄 아크릴 78%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 150,
+        "price": 5000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "키스",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "나일론 22%, 폴리에스터 78%",
+        "ply": 1,
+        "weightGram": 80,
+        "lengthMeter": 0,
+        "price": 2500
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "파파야바틱",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "프리미엄아크릴 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 360,
+        "price": 6000
+      }
+    ]
+  },
+  {
+    "brand": "쎄비",
+    "name": "아모레",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "울 60%, 면 40%",
+        "ply": 1,
+        "weightGram": 40,
+        "lengthMeter": 180,
+        "price": 8000
+      }
+    ]
   }
 ]
