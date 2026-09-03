@@ -226,6 +226,81 @@
                     </div>
                 }
 
+                <!-- 스와치 -->
+                @if (AllSwatches.Any(s => s.ProjectId == Project.Id))
+                {
+                    <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                        <div class="form-label" style="margin-bottom:6px; display:flex;align-items:center;gap:5px;"><img src="icons/ruler.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />스와치</div>
+                        <div style="display:flex; flex-direction:column; gap:10px;">
+                            @foreach (var s in AllSwatches.Where(s => s.ProjectId == Project.Id))
+                            {
+                                var vwRate = CalcRate(s.PreWashStitches, s.PostWashStitches, s.PreWashWidthCm, s.PostWashWidthCm);
+                                var vhRate = CalcRate(s.PreWashRows, s.PostWashRows, s.PreWashHeightCm, s.PostWashHeightCm);
+                                <div style="padding:10px 12px; border-radius:var(--radius-sm); background:var(--ivory-mid); border:1px solid var(--border);">
+                                    <div style="font-size:0.88rem; font-weight:600; color:var(--text-dark); margin-bottom:8px;">
+                                        @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
+                                    </div>
+                                    <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+                                        @if (s.NeedleSizeMm > 0)
+                                        {
+                                            <span class="badge badge-cable">@s.NeedleSizeMm mm</span>
+                                        }
+                                        <span class="badge badge-wish">@s.Stitch</span>
+                                    </div>
+                                    <div style="background:var(--white); border-radius:var(--radius-sm); padding:10px; font-size:0.78rem;">
+                                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:6px;">
+                                            <div></div>
+                                            <div style="color:var(--text-mid); font-weight:600;">세탁 전</div>
+                                            <div style="color:var(--text-mid); font-weight:600;">세탁 후</div>
+                                        </div>
+                                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:4px;">
+                                            <div style="color:var(--text-light); text-align:left;">코수</div>
+                                            <div>@s.PreWashStitches</div>
+                                            <div>@s.PostWashStitches</div>
+                                        </div>
+                                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:4px;">
+                                            <div style="color:var(--text-light); text-align:left;">단수</div>
+                                            <div>@s.PreWashRows</div>
+                                            <div>@s.PostWashRows</div>
+                                        </div>
+                                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:4px;">
+                                            <div style="color:var(--text-light); text-align:left;">가로</div>
+                                            <div>@s.PreWashWidthCm cm</div>
+                                            <div>@s.PostWashWidthCm cm</div>
+                                        </div>
+                                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center;">
+                                            <div style="color:var(--text-light); text-align:left;">세로</div>
+                                            <div>@s.PreWashHeightCm cm</div>
+                                            <div>@s.PostWashHeightCm cm</div>
+                                        </div>
+                                    </div>
+                                    @if (vwRate.HasValue || vhRate.HasValue)
+                                    {
+                                        <div style="display:flex; gap:6px; margin-top:8px;">
+                                            @if (vwRate.HasValue)
+                                            {
+                                                var vwColor = vwRate.Value < 0 ? "#c0392b" : "#267848";
+                                                <div style="flex:1; background:var(--white); border-radius:var(--radius-sm); padding:6px; text-align:center;">
+                                                    <div style="font-size:0.7rem; color:var(--text-light);">가로 변화율</div>
+                                                    <div style="font-size:0.95rem; font-weight:700; color:@vwColor;">@(vwRate.Value > 0 ? "+" : "")@vwRate.Value%</div>
+                                                </div>
+                                            }
+                                            @if (vhRate.HasValue)
+                                            {
+                                                var vhColor = vhRate.Value < 0 ? "#c0392b" : "#267848";
+                                                <div style="flex:1; background:var(--white); border-radius:var(--radius-sm); padding:6px; text-align:center;">
+                                                    <div style="font-size:0.7rem; color:var(--text-light);">세로 변화율</div>
+                                                    <div style="font-size:0.95rem; font-weight:700; color:@vhColor;">@(vhRate.Value > 0 ? "+" : "")@vhRate.Value%</div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
                 <!-- 메모 -->
                 @if (!string.IsNullOrEmpty(Project.Memo))
                 {
@@ -482,7 +557,11 @@
                         @foreach (var s in AllSwatches.Where(s => s.ProjectId == null || s.ProjectId == Guid.Empty || s.ProjectId == Project.Id))
                         {
                             var isLinked = s.ProjectId == Project.Id;
-                            <option value="@s.Id" disabled="@isLinked">@(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)</option>
+                            var scSyFirst = s.YarnIds.Select(id => Yarns.Find(y => y.Id == id)).FirstOrDefault(y => y != null);
+                            <option value="@s.Id" disabled="@isLinked">
+                                @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
+                                @(scSyFirst != null ? SwatchYarnLabel(scSyFirst.Brand, scSyFirst.Name, s.YarnIds.Count) : "")
+                            </option>
                         }
                     </select>
                     @if (AllSwatches.Any(s => s.ProjectId == Project.Id))
@@ -564,7 +643,7 @@
                 }
 
                 <!-- 카테고리 + 색상 -->
-                <div class="form-group" style="margin-bottom:16px;">
+                <div class="form-group" style="margin-top:16px; margin-bottom:16px;">
                     <label class="form-label">카테고리</label>
                     <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
                         @foreach (var cat in Enum.GetValues<ProjectCategory>().Where(c => c != ProjectCategory.미분류))
@@ -929,6 +1008,9 @@
     {
         s.ProjectId = null;
     }
+
+    string SwatchYarnLabel(string brand, string name, int count)
+        => count > 1 ? $" ({brand} {name} 외)" : $" ({brand} {name})";
 
     // 변화율 계산 (Swatches.razor와 동일한 로직)
     // - 코/단 기준: 같은 크기에서 코수 감소 = 편물 커짐(+) → 부호 반전
