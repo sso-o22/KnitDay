@@ -520,7 +520,7 @@
                 }
                 else if (Yarns.Any())
                 {
-                    <select class="form-control" style="margin-bottom:8px;" @onchange="OnPopupAddYarn">
+                    <select class="form-control" style="margin-bottom:8px;" @key="_yarnSelectKey" @onchange="OnPopupAddYarn">
                         <option value="">+ 실 추가</option>
                         @foreach (var y in YarnActive)
                         {
@@ -1074,6 +1074,7 @@
             await Storage.DeletePhotoAsync(Project.Id.ToString(), photo.Id.ToString(), photo.FileSizeBytes);
     }
 
+    int _yarnSelectKey = 0;
     void OnPopupAddYarn(ChangeEventArgs e)
     {
         if (Project == null) return;
@@ -1082,6 +1083,7 @@
         if (!Guid.TryParse(val, out var yarnId)) return;
         if (!Project.YarnUsages.Any(u => u.YarnId == yarnId))
             Project.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = 1 });
+        _yarnSelectKey++;
     }
 
     void SetPopupThumbnail(Guid photoId)

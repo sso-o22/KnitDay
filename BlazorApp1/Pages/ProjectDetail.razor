@@ -720,7 +720,7 @@ else
             </div>
             @if (_yarnEditMode)
             {
-                <select class="form-control" style="margin-bottom:8px;" @onchange="OnEditAddYarn">
+                <select class="form-control" style="margin-bottom:8px;" @key="_yarnSelectKey" @onchange="OnEditAddYarn">
                     <option value="">+ 실 추가</option>
                     @foreach (var y in YarnActive)
                     {
@@ -1315,7 +1315,7 @@ else
             @* ── 사용 실 ── *@
             <div class="form-group">
                 <label class="form-label">사용 실</label>
-                <select class="form-control" style="margin-bottom:8px;" @onchange="OnEditAddYarn">
+                <select class="form-control" style="margin-bottom:8px;" @key="_yarnSelectKey" @onchange="OnEditAddYarn">
                     <option value="">+ 실 추가</option>
                     @foreach (var y in YarnActive)
                     {
@@ -2609,6 +2609,7 @@ else
         await Save();
     }
 
+    int _yarnSelectKey = 0;
     void OnEditAddYarn(ChangeEventArgs e)
     {
         if (_project == null) return;
@@ -2617,6 +2618,7 @@ else
         var yarnId = Guid.Parse(val);
         if (!_project.YarnUsages.Any(u => u.YarnId == yarnId))
             _project.YarnUsages.Add(new ProjectYarnUsage { YarnId = yarnId, BallsUsed = 1 });
+        _yarnSelectKey++;
     }
 
     // ── 상세 페이지 "연결된 실" 카드 인라인 수정 ──
