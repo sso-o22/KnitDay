@@ -90,7 +90,7 @@ else
 
 <!-- 상세 팝업 (CompletedPopup 컴포넌트) -->
 <CompletedPopup Show="_showDetail" Project="_selectedProject"
-    Yarns="_allYarns" Tools="_allTools"
+    Yarns="_allYarns" Tools="_allTools" AllSwatches="_allSwatches"
     StartInEditMode="_addingCompleted"
     OnClose="CloseDetail" OnSaved="OnPopupSaved"
     OnDelete="DeleteFromPopup" OnMoveBack="MoveBackFromPopup"
@@ -118,6 +118,7 @@ else
     bool _addingCompleted = false;
     List<Yarn> _allYarns = new();
     List<KnitTool> _allTools = new();
+    List<Swatch> _allSwatches = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -146,6 +147,7 @@ else
                        .ToList();
         _allYarns = await Storage.GetYarnsAsync();
         _allTools = await Storage.GetToolsAsync();
+        _allSwatches = await Storage.GetSwatchesAsync();
     }
 
     void OpenDetail(KnitProject proj)

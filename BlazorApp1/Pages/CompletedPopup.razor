@@ -487,15 +487,76 @@
                     </select>
                     @if (AllSwatches.Any(s => s.ProjectId == Project.Id))
                     {
-                        <div style="margin-bottom:16px;">
+                        <div style="margin-bottom:16px; display:flex; flex-direction:column; gap:10px;">
                             @foreach (var s in AllSwatches.Where(s => s.ProjectId == Project.Id))
                             {
-                                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:8px 12px;
-                                            border-radius:var(--radius-sm); background:var(--ivory-mid); border:1px solid var(--border);">
-                                    <div style="flex:1; min-width:0; font-size:0.88rem; font-weight:600; color:var(--text-dark);">
-                                        @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
+                                var wRate = CalcRate(s.PreWashStitches, s.PostWashStitches, s.PreWashWidthCm, s.PostWashWidthCm);
+                                var hRate = CalcRate(s.PreWashRows, s.PostWashRows, s.PreWashHeightCm, s.PostWashHeightCm);
+                                <div style="padding:10px 12px; border-radius:var(--radius-sm); background:var(--ivory-mid); border:1px solid var(--border);">
+                                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                                        <div style="flex:1; min-width:0; font-size:0.88rem; font-weight:600; color:var(--text-dark);">
+                                            @(string.IsNullOrEmpty(s.Name) ? "이름 없는 스와치" : s.Name)
+                                        </div>
+                                        <button class="btn btn-danger btn-sm" style="padding:2px 8px; flex-shrink:0;" @onclick="() => UnlinkPopupSwatch(s)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                                     </div>
-                                    <button class="btn btn-danger btn-sm" style="padding:2px 8px; flex-shrink:0;" @onclick="() => UnlinkPopupSwatch(s)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+
+                                    <div style="display:flex; gap:6px; margin-bottom:8px; flex-wrap:wrap;">
+                                        @if (s.NeedleSizeMm > 0)
+                                        {
+                                            <span class="badge badge-cable">@s.NeedleSizeMm mm</span>
+                                        }
+                                        <span class="badge badge-wish">@s.Stitch</span>
+                                    </div>
+
+                                    <div style="background:var(--white); border-radius:var(--radius-sm); padding:10px; font-size:0.78rem;">
+                                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:6px;">
+                                            <div></div>
+                                            <div style="color:var(--text-mid); font-weight:600;">세탁 전</div>
+                                            <div style="color:var(--text-mid); font-weight:600;">세탁 후</div>
+                                        </div>
+                                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:4px;">
+                                            <div style="color:var(--text-light); text-align:left;">코수</div>
+                                            <div>@s.PreWashStitches</div>
+                                            <div>@s.PostWashStitches</div>
+                                        </div>
+                                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:4px;">
+                                            <div style="color:var(--text-light); text-align:left;">단수</div>
+                                            <div>@s.PreWashRows</div>
+                                            <div>@s.PostWashRows</div>
+                                        </div>
+                                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center; margin-bottom:4px;">
+                                            <div style="color:var(--text-light); text-align:left;">가로</div>
+                                            <div>@s.PreWashWidthCm cm</div>
+                                            <div>@s.PostWashWidthCm cm</div>
+                                        </div>
+                                        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:4px; text-align:center;">
+                                            <div style="color:var(--text-light); text-align:left;">세로</div>
+                                            <div>@s.PreWashHeightCm cm</div>
+                                            <div>@s.PostWashHeightCm cm</div>
+                                        </div>
+                                    </div>
+
+                                    @if (wRate.HasValue || hRate.HasValue)
+                                    {
+                                        <div style="display:flex; gap:6px; margin-top:8px;">
+                                            @if (wRate.HasValue)
+                                            {
+                                                var wColor = wRate.Value < 0 ? "#c0392b" : "#267848";
+                                                <div style="flex:1; background:var(--white); border-radius:var(--radius-sm); padding:6px; text-align:center;">
+                                                    <div style="font-size:0.7rem; color:var(--text-light);">가로 변화율</div>
+                                                    <div style="font-size:0.95rem; font-weight:700; color:@wColor;">@(wRate.Value > 0 ? "+" : "")@wRate.Value%</div>
+                                                </div>
+                                            }
+                                            @if (hRate.HasValue)
+                                            {
+                                                var hColor = hRate.Value < 0 ? "#c0392b" : "#267848";
+                                                <div style="flex:1; background:var(--white); border-radius:var(--radius-sm); padding:6px; text-align:center;">
+                                                    <div style="font-size:0.7rem; color:var(--text-light);">세로 변화율</div>
+                                                    <div style="font-size:0.95rem; font-weight:700; color:@hColor;">@(hRate.Value > 0 ? "+" : "")@hRate.Value%</div>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
                                 </div>
                             }
                         </div>
@@ -867,6 +928,18 @@
     void UnlinkPopupSwatch(Swatch s)
     {
         s.ProjectId = null;
+    }
+
+    // 변화율 계산 (Swatches.razor와 동일한 로직)
+    // - 코/단 기준: 같은 크기에서 코수 감소 = 편물 커짐(+) → 부호 반전
+    // - 길이 기준: 길이 증가 = 편물 커짐(+) → 그대로
+    double? CalcRate(double preStitch, double postStitch, double preCm, double postCm)
+    {
+        if (preStitch > 0 && postStitch > 0 && preStitch != postStitch)
+            return Math.Round(-(postStitch - preStitch) / preStitch * 100, 1);
+        if (preCm > 0 && postCm > 0 && preCm != postCm)
+            return Math.Round((postCm - preCm) / preCm * 100, 1);
+        return null;
     }
 
     async Task TriggerPopupPhotoInput()
