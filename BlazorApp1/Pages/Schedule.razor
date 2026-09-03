@@ -316,50 +316,64 @@ else
 
                 @* ── 사용 실 ── *@
                 <div class="form-group">
-                    <label class="form-label">사용 실</label>
-                    <select class="form-control" style="margin-bottom:8px;" @onchange="OnAddYarn">
-                        <option value="">+ 실 추가</option>
-                        @foreach (var y in YarnActive)
-                        {
-                            <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
-                        }
-                        @if (YarnEmpty.Any())
-                        {
-                            <optgroup label="── 소진 ──">
-                                @foreach (var y in YarnEmpty)
-                                {
-                                    <option value="@y.Id">@y.Brand @y.Name (@y.Color) [소진]</option>
-                                }
-                            </optgroup>
-                        }
-                    </select>
-                    @foreach (var usage in _editingProject.YarnUsages)
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                        <label class="form-label" style="margin-bottom:0;">사용 실</label>
+                        <label style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:var(--text-mid); cursor:pointer;">
+                            <input type="checkbox" @bind="_editingProject.UseYarnFreeText" />
+                            직접 입력
+                        </label>
+                    </div>
+                    @if (_editingProject.UseYarnFreeText)
                     {
-                        var yarn = _yarns.Find(y => y.Id == usage.YarnId);
-                        bool isCone = yarn?.YarnType == YarnType.콘사;
-                        bool hasConeWeight = isCone && yarn?.WeightGram > 0;
-                        string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
-                        decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
-                        // 다른 프로젝트에서 이미 사용 중인 양을 빼고, 이 프로젝트에서 더 쓸 수 있는 잔여량 계산
-                        decimal usedElsewhere = yarn == null ? 0 : _projects.Where(p => p.Id != _editingProject!.Id)
-                                                                             .SelectMany(p => p.YarnUsages)
-                                                                             .Where(u => u.YarnId == yarn.Id)
-                                                                             .Sum(u => u.BallsUsed);
-                        decimal remainRaw = yarn == null ? 0 : yarn.Quantity - usedElsewhere;
-                        decimal remainQty = yarn == null ? 0 : (hasConeWeight ? remainRaw * yarn.WeightGram : remainRaw);
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
-                                    border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
-                            @if (yarn != null)
+                        <input class="form-control" placeholder="예: 자투리실 약간" @bind="_editingProject.YarnFreeText" @bind:event="oninput" />
+                        <div style="font-size:0.74rem; color:var(--text-light); margin-top:4px;">직접 입력한 실은 실 창고 재고에는 반영되지 않아요.</div>
+                    }
+                    else
+                    {
+                        <select class="form-control" style="margin-bottom:8px;" @onchange="OnAddYarn">
+                            <option value="">+ 실 추가</option>
+                            @foreach (var y in YarnActive)
                             {
-                                <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
-                                <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
+                                <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
                             }
-                            <input class="form-control" type="number" min="1" style="width:80px;"
-                                   value='@displayVal.ToString(hasConeWeight ? "0" : "0.##")'
-                                   @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) usage.BallsUsed = Math.Round(hasConeWeight ? n / yarn!.WeightGram : n, 6); }" />
-                            <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel (잔여 @(remainQty.ToString(hasConeWeight ? "0" : "0.##"))@unitLabel)</span>
-                            <button class="btn btn-danger btn-sm" @onclick="() => _editingProject.YarnUsages.Remove(usage)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
-                        </div>
+                            @if (YarnEmpty.Any())
+                            {
+                                <optgroup label="── 소진 ──">
+                                    @foreach (var y in YarnEmpty)
+                                    {
+                                        <option value="@y.Id">@y.Brand @y.Name (@y.Color) [소진]</option>
+                                    }
+                                </optgroup>
+                            }
+                        </select>
+                        @foreach (var usage in _editingProject.YarnUsages)
+                        {
+                            var yarn = _yarns.Find(y => y.Id == usage.YarnId);
+                            bool isCone = yarn?.YarnType == YarnType.콘사;
+                            bool hasConeWeight = isCone && yarn?.WeightGram > 0;
+                            string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
+                            decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
+                            // 다른 프로젝트에서 이미 사용 중인 양을 빼고, 이 프로젝트에서 더 쓸 수 있는 잔여량 계산
+                            decimal usedElsewhere = yarn == null ? 0 : _projects.Where(p => p.Id != _editingProject!.Id)
+                                                                                 .SelectMany(p => p.YarnUsages)
+                                                                                 .Where(u => u.YarnId == yarn.Id)
+                                                                                 .Sum(u => u.BallsUsed);
+                            decimal remainRaw = yarn == null ? 0 : yarn.Quantity - usedElsewhere;
+                            decimal remainQty = yarn == null ? 0 : (hasConeWeight ? remainRaw * yarn.WeightGram : remainRaw);
+                            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
+                                        border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
+                                @if (yarn != null)
+                                {
+                                    <span class="color-dot" style="background:@yarn.ColorCode; flex-shrink:0;"></span>
+                                    <span style="flex:1; font-size:0.88rem;">@yarn.Brand @yarn.Name (@yarn.Color)</span>
+                                }
+                                <input class="form-control" type="number" min="1" style="width:80px;"
+                                       value='@displayVal.ToString(hasConeWeight ? "0" : "0.##")'
+                                       @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var n)) usage.BallsUsed = Math.Round(hasConeWeight ? n / yarn!.WeightGram : n, 6); }" />
+                                <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel (잔여 @(remainQty.ToString(hasConeWeight ? "0" : "0.##"))@unitLabel)</span>
+                                <button class="btn btn-danger btn-sm" @onclick="() => _editingProject.YarnUsages.Remove(usage)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
+                            </div>
+                        }
                     }
                 </div>
 
