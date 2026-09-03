@@ -865,8 +865,14 @@
 
     decimal RemainingQty(Yarn y)
     {
-        decimal used = AllProjects.SelectMany(p => p.YarnUsages).Where(u => u.YarnId == y.Id).Sum(u => u.BallsUsed);
-        return y.Quantity - used;
+        // AllProjects에는 편집 중인 Project의 "저장 전" 옛 데이터가 남아있으므로,
+        // 그 프로젝트는 저장된 값 대신 지금 화면에서 편집 중인 실시간 값을 반영해야 함
+        decimal usedElsewhere = AllProjects.Where(p => p.Id != Project?.Id)
+                                            .SelectMany(p => p.YarnUsages)
+                                            .Where(u => u.YarnId == y.Id)
+                                            .Sum(u => u.BallsUsed);
+        decimal usedHere = Project?.YarnUsages.Where(u => u.YarnId == y.Id).Sum(u => u.BallsUsed) ?? 0;
+        return y.Quantity - usedElsewhere - usedHere;
     }
     IEnumerable<Yarn> YarnActive => Yarns.Where(y => RemainingQty(y) > 0);
     IEnumerable<Yarn> YarnEmpty  => Yarns.Where(y => RemainingQty(y) <= 0);
