@@ -638,6 +638,7 @@ else
 
         try
         {
+            await JS.InvokeVoidAsync("showToast", "사진 업로드 중...");
             using var stream = file.OpenReadStream(maxFileSize);
             using var ms = new System.IO.MemoryStream();
             await stream.CopyToAsync(ms);
@@ -671,6 +672,7 @@ else
 
             _editingProject.Photos.Clear(); // 위시 사진은 1장만
             _editingProject.Photos.Add(photo);
+            await JS.InvokeVoidAsync("hideToast");
         }
         catch (Exception ex)
         {

@@ -168,7 +168,17 @@
                 }
 
                 <!-- 사용 실 -->
-                @if (Yarns.Any())
+                @if (Project.UseYarnFreeText)
+                {
+                    @if (!string.IsNullOrEmpty(Project.YarnFreeText))
+                    {
+                        <div style="margin-bottom:12px; padding-top:12px; border-top:1px solid var(--border);">
+                            <div class="form-label" style="margin-bottom:6px; display:flex;align-items:center;gap:5px;"><img src="icons/yarn.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />사용 실</div>
+                            <div style="font-size:0.88rem; color:var(--text-mid);">@Project.YarnFreeText</div>
+                        </div>
+                    }
+                }
+                else if (Yarns.Any())
                 {
                     var popYarns = Project.YarnUsages
                         .Select(u => (u, Yarns.Find(y => y.Id == u.YarnId)))
@@ -497,8 +507,18 @@
                 </div>
 
                 <!-- 사용 실 -->
-                <div class="form-label" style="margin-bottom:6px;">사용 실</div>
-                @if (Yarns.Any())
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+                    <div class="form-label" style="margin-bottom:0;">사용 실</div>
+                    <label style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:var(--text-mid); cursor:pointer;">
+                        <input type="checkbox" @bind="Project.UseYarnFreeText" />
+                        직접 입력
+                    </label>
+                </div>
+                @if (Project.UseYarnFreeText)
+                {
+                    <input class="form-control" style="margin-bottom:16px;" placeholder="예: 미확인 자투리실 약간" @bind="Project.YarnFreeText" @bind:event="oninput" />
+                }
+                else if (Yarns.Any())
                 {
                     <select class="form-control" style="margin-bottom:8px;" @onchange="OnPopupAddYarn">
                         <option value="">+ 실 추가</option>
@@ -655,7 +675,7 @@
                             </button>
                         }
                     </div>
-                    <label class="form-label" style="margin-top:8px; display:block;">캘린더 색상</label>
+                    <label class="form-label" style="margin-top:20px; display:block;">캘린더 색상</label>
                     <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
                         @foreach (var hex in _popupColorOptions)
                         {
@@ -1151,5 +1171,6 @@
             }
         }
         StateHasChanged();
+        await JS.InvokeVoidAsync("hideToast");
     }
 }

@@ -153,6 +153,8 @@ namespace KnitLog.Models
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;  // 기기간 동기화 충돌 해결용
         public List<ProjectYarnUsage> YarnUsages { get; set; } = new();
+        public bool UseYarnFreeText { get; set; } = false;   // true면 실 정보를 목록 대신 직접 입력 텍스트로 사용
+        public string YarnFreeText { get; set; } = "";       // 실 직접 입력 (예: 미확인 자투리실 약간)
         public List<Guid> ToolIds { get; set; } = new();
         public NeedleType? NeedleType { get; set; }          // 대바늘/코바늘 선택
         public string NeedleNote { get; set; } = "";        // 바늘 직접 입력 (예: 4mm 대바늘 80cm)

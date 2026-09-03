@@ -582,6 +582,17 @@ window.showToast = function(message, type = 'success') {
         setTimeout(() => toast.remove(), 300);
     }, type === 'error' ? 4000 : type === 'info' ? 3000 : 1800);
 };
+
+// showToast로 띄운 토스트를 타이머와 무관하게 즉시 닫음 (예: 업로드 진행 토스트를 작업 완료 시점에 바로 닫을 때)
+window.hideToast = function(type = 'success') {
+    const toastId = (type === 'error' || type === 'info') ? 'kd-toast-alert' : 'kd-toast';
+    const toast = document.getElementById(toastId);
+    if (!toast) return;
+    const isAlert = type === 'error' || type === 'info';
+    toast.style.opacity = '0';
+    toast.style.transform = `translateX(-50%) translateY(${isAlert ? '-8px' : '8px'})`;
+    setTimeout(() => toast.remove(), 300);
+};
 // ── Debounce 유틸 (자동저장용) ───────────────────────────────────
 window._debounceTimers = {};
 window.debounce = (key, fn, delayMs) => {
@@ -1016,6 +1027,3 @@ window.downloadTextFile = (filename, content, mimeType) => {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
 };
-
-// ── 앱 버전을 전역변수로 노출 (errorLogs의 appVersion 필드가 이 값을 읽어감) ──
-window.setAppVersion = (v) => { window.__knitdayVersion = v; };
