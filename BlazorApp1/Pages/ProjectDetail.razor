@@ -726,15 +726,6 @@ else
                     {
                         <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
                     }
-                    @if (YarnEmpty.Any())
-                    {
-                        <optgroup label="── 소진 ──">
-                            @foreach (var y in YarnEmpty)
-                            {
-                                <option value="@y.Id">@y.Brand @y.Name (@y.Color) [소진]</option>
-                            }
-                        </optgroup>
-                    }
                 </select>
                 @if (_project.YarnUsages.Count == 0)
                 {
@@ -1329,15 +1320,6 @@ else
                     @foreach (var y in YarnActive)
                     {
                         <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
-                    }
-                    @if (YarnEmpty.Any())
-                    {
-                        <optgroup label="── 소진 ──">
-                            @foreach (var y in YarnEmpty)
-                            {
-                                <option value="@y.Id">@y.Brand @y.Name (@y.Color) [소진]</option>
-                            }
-                        </optgroup>
                     }
                 </select>
                 @foreach (var usage in _project.YarnUsages)
@@ -1958,11 +1940,16 @@ else
     List<Swatch> _allSwatches = new();
     List<Yarn> _yarns = new();
     List<KnitProject> _allProjects = new(); // 다른 프로젝트의 실 사용량 계산용
-    IEnumerable<Yarn> YarnActive => _yarns.Where(y => y.Quantity > 0);
+    decimal RemainingQty(Yarn y)
+    {
+        decimal used = _allProjects.SelectMany(p => p.YarnUsages).Where(u => u.YarnId == y.Id).Sum(u => u.BallsUsed);
+        return y.Quantity - used;
+    }
+    IEnumerable<Yarn> YarnActive => _yarns.Where(y => RemainingQty(y) > 0);
     List<ProjectPhoto> ValidPhotos => _project?.Photos
         .Where(p => !string.IsNullOrEmpty(p.Base64Data) || !string.IsNullOrEmpty(p.StorageUrl))
         .ToList() ?? new();
-    IEnumerable<Yarn> YarnEmpty  => _yarns.Where(y => y.Quantity <= 0);
+    IEnumerable<Yarn> YarnEmpty  => _yarns.Where(y => RemainingQty(y) <= 0);
     List<KnitTool> _allTools = new();
 
     protected override async Task OnParametersSetAsync()

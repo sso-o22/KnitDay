@@ -516,13 +516,13 @@
                 </div>
                 @if (Project.UseYarnFreeText)
                 {
-                    <input class="form-control" style="margin-bottom:16px;" placeholder="예: 자투리실 약간" @bind="Project.YarnFreeText" @bind:event="oninput" />
+                    <input class="form-control" style="margin-bottom:16px;" placeholder="예: 미확인 자투리실 약간" @bind="Project.YarnFreeText" @bind:event="oninput" />
                 }
                 else if (Yarns.Any())
                 {
                     <select class="form-control" style="margin-bottom:8px;" @onchange="OnPopupAddYarn">
                         <option value="">+ 실 추가</option>
-                        @foreach (var y in Yarns)
+                        @foreach (var y in YarnActive)
                         {
                             <option value="@y.Id">@y.Brand @y.Name (@y.Color)</option>
                         }
@@ -534,6 +534,13 @@
                         bool hasConeWeight = isCone && yarn?.WeightGram > 0;
                         string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
                         decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
+                        // 다른 프로젝트에서 이미 사용 중인 양을 빼고, 이 프로젝트에서 더 쓸 수 있는 잔여량 계산
+                        decimal usedElsewhere = yarn == null ? 0 : AllProjects.Where(p => p.Id != Project.Id)
+                                                                               .SelectMany(p => p.YarnUsages)
+                                                                               .Where(u => u.YarnId == yarn.Id)
+                                                                               .Sum(u => u.BallsUsed);
+                        decimal remainRaw = yarn == null ? 0 : yarn.Quantity - usedElsewhere;
+                        decimal remainQty = yarn == null ? 0 : (hasConeWeight ? remainRaw * yarn.WeightGram : remainRaw);
                         <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px; padding:6px 10px;
                                     border-radius:9px; background:#f8f8f8; border:1px solid var(--border);">
                             @if (yarn != null)
@@ -544,7 +551,7 @@
                             <input class="form-control" type="number" min="1" style="width:80px;"
                                    value='@displayVal.ToString(hasConeWeight ? "0" : "0.##")'
                                    @onchange="e => { if (decimal.TryParse(e.Value?.ToString(), out var n)) usage.BallsUsed = Math.Round(hasConeWeight ? n / yarn!.WeightGram : n, 6); }" />
-                            <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel</span>
+                            <span style="font-size:0.82rem; color:var(--text-mid); flex-shrink:0;">@unitLabel (잔여 @(remainQty.ToString(hasConeWeight ? "0" : "0.##"))@unitLabel)</span>
                             <button class="btn btn-danger btn-sm" @onclick="() => Project.YarnUsages.Remove(usage)"><img src="icons/x.svg" class="icon-line" style="width:12px;height:12px;" /></button>
                         </div>
                     }
@@ -844,6 +851,7 @@
     [Parameter] public List<Yarn> Yarns { get; set; } = new();
     [Parameter] public List<KnitTool> Tools { get; set; } = new();
     [Parameter] public List<Swatch> AllSwatches { get; set; } = new();
+    [Parameter] public List<KnitProject> AllProjects { get; set; } = new(); // 실 잔여량 계산용 (다른 프로젝트 사용량 포함)
     [Parameter] public bool ReadOnly { get; set; } = false;
     [Parameter] public bool ShowDeletePdfInViewMode { get; set; } = false; // 읽기 모드에서도 도안 삭제 토글 표시 (문어발 완료 시)
     [Parameter] public bool StartInEditMode { get; set; } = false; // 완성작 신규 등록처럼, 처음부터 수정 모드로 열어야 할 때
@@ -854,6 +862,14 @@
     [Parameter] public EventCallback OnDeletePdf { get; set; }
 
     bool _deletePdf = false;
+
+    decimal RemainingQty(Yarn y)
+    {
+        decimal used = AllProjects.SelectMany(p => p.YarnUsages).Where(u => u.YarnId == y.Id).Sum(u => u.BallsUsed);
+        return y.Quantity - used;
+    }
+    IEnumerable<Yarn> YarnActive => Yarns.Where(y => RemainingQty(y) > 0);
+    IEnumerable<Yarn> YarnEmpty  => Yarns.Where(y => RemainingQty(y) <= 0);
 
     class MeasureItem
     {
