@@ -194,7 +194,7 @@ else
 
 <!-- 완성작 미리보기 팝업 -->
 <CompletedPopup Show="_showCompletedPopup" Project="_completedPreview"
-    Yarns="_yarns" Tools="_tools" AllSwatches="_allSwatches" AllProjects="_projects"
+    Yarns="_yarns" Tools="_tools" AllSwatches="_allSwatches" AllProjects="_allProjectsForYarnCalc"
     ShowDeletePdfInViewMode="true"
     OnClose="CloseCompletedPopup" OnSaved="LoadData"
     OnDelete="DeleteCompletedFromPopup" OnMoveBack="MoveBackFromPopup"
@@ -345,7 +345,8 @@ else
                             string unitLabel = hasConeWeight ? "g" : isCone ? "콘" : "볼";
                             decimal displayVal = hasConeWeight ? usage.BallsUsed * yarn!.WeightGram : usage.BallsUsed;
                             // 다른 프로젝트에서 이미 사용 중인 양을 빼고, 이 프로젝트에서 더 쓸 수 있는 잔여량 계산
-                            decimal usedElsewhere = yarn == null ? 0 : _projects.Where(p => p.Id != _editingProject!.Id)
+                            // (완성작 등 모든 상태의 프로젝트 사용량을 다 포함해야 하므로 _allProjectsForYarnCalc 사용)
+                            decimal usedElsewhere = yarn == null ? 0 : _allProjectsForYarnCalc.Where(p => p.Id != _editingProject!.Id)
                                                                                  .SelectMany(p => p.YarnUsages)
                                                                                  .Where(u => u.YarnId == yarn.Id)
                                                                                  .Sum(u => u.BallsUsed);
@@ -566,6 +567,7 @@ else
     bool _sortAsc = false;          // false = 내림차순(기본), true = 오름차순
     string _statusFilter = "all";   // "all" | "진행중" | "일시중단"
     List<KnitProject> _projects = new();
+    List<KnitProject> _allProjectsForYarnCalc = new(); // 실 잔여량 계산용 (완성작 등 모든 상태 포함)
 
     // 컬러피커 프리셋
     static readonly string[] _colorOptions = new[]
@@ -611,9 +613,10 @@ else
     List<Yarn> _yarns = new();
     decimal RemainingQty(Yarn y)
     {
-        // 저장된 목록(_projects)에는 편집 중인 프로젝트의 "저장 전" 옛 데이터가 남아있으므로,
-        // 그 프로젝트는 저장된 값 대신 지금 화면에서 편집 중인 실시간 값을 반영해야 함
-        decimal usedElsewhere = _projects.Where(p => p.Id != _editingProject?.Id)
+        // 저장된 목록에는 편집 중인 프로젝트의 "저장 전" 옛 데이터가 남아있으므로,
+        // 그 프로젝트는 저장된 값 대신 지금 화면에서 편집 중인 실시간 값을 반영해야 함.
+        // 잔여량 계산은 완성작 등 모든 상태의 프로젝트 사용량을 다 포함해야 하므로 _allProjectsForYarnCalc 사용.
+        decimal usedElsewhere = _allProjectsForYarnCalc.Where(p => p.Id != _editingProject?.Id)
                                           .SelectMany(p => p.YarnUsages)
                                           .Where(u => u.YarnId == y.Id)
                                           .Sum(u => u.BallsUsed);
@@ -671,6 +674,7 @@ else
     {
         var all = await Storage.GetProjectsAsync();
         _projects = all.Where(p => p.Status == ProjectStatus.진행중 || p.Status == ProjectStatus.일시중단).ToList();
+        _allProjectsForYarnCalc = all; // 실 잔여량 계산은 완성작 등 모든 상태의 사용량을 다 포함해야 함
         _yarns = await Storage.GetYarnsAsync();
         _tools = await Storage.GetToolsAsync();
         _allSwatches = await Storage.GetSwatchesAsync();

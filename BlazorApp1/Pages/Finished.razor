@@ -90,7 +90,7 @@ else
 
 <!-- 상세 팝업 (CompletedPopup 컴포넌트) -->
 <CompletedPopup Show="_showDetail" Project="_selectedProject"
-    Yarns="_allYarns" Tools="_allTools" AllSwatches="_allSwatches" AllProjects="_projects"
+    Yarns="_allYarns" Tools="_allTools" AllSwatches="_allSwatches" AllProjects="_allProjectsForYarnCalc"
     StartInEditMode="_addingCompleted"
     OnClose="CloseDetail" OnSaved="OnPopupSaved"
     OnDelete="DeleteFromPopup" OnMoveBack="MoveBackFromPopup"
@@ -101,6 +101,7 @@ else
     bool _loading = true;
     bool _showDetail = false;
     List<KnitProject> _projects = new();
+    List<KnitProject> _allProjectsForYarnCalc = new(); // 실 잔여량 계산용 (완료 외 모든 상태 포함)
     string _finSort = "end_desc";
     string _finCategory = "all";
     IEnumerable<KnitProject> FilteredProjects =>
@@ -145,6 +146,7 @@ else
         _projects = all.Where(p => p.Status == ProjectStatus.완료)
                        .OrderByDescending(p => p.EndDate)
                        .ToList();
+        _allProjectsForYarnCalc = all; // 실 잔여량 계산은 완료 외 모든 상태의 사용량을 다 포함해야 함
         _allYarns = await Storage.GetYarnsAsync();
         _allTools = await Storage.GetToolsAsync();
         _allSwatches = await Storage.GetSwatchesAsync();
