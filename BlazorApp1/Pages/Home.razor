@@ -34,7 +34,7 @@
                 </p>
                 <a href="https://www.instagram.com/knitday.app" target="_blank" rel="noopener"
                    class="btn btn-primary" style="display:flex;align-items:center;justify-content:center;gap:6px;width:100%;text-decoration:none;"
-                   @onclick="CloseEventPopup">
+                   @onclick="GoToInstagramFromEvent">
                     <img src="icons/instagram-logo.svg" class="icon-line" style="width:16px;height:16px;filter:invert(1);" />
                     인스타그램에서 자세히 보기
                 </a>
@@ -785,6 +785,12 @@ else
         _showEventPopup = false;
         if (_dontShowEventAgain)
             await JS.InvokeVoidAsync("localStorage.setItem", EventPopupKey, "true");
+    }
+
+    async Task GoToInstagramFromEvent()
+    {
+        await JS.InvokeVoidAsync("knitAnalytics.log", "event_popup_instagram_click", (string?)null);
+        await CloseEventPopup();
     }
 
     // 데이터 로딩 로직을 별도 메서드로 분리
