@@ -688,7 +688,7 @@ else
             // 합수마다 무게/길이/가격은 다르지만 실종류·소재는 공통이므로 먼저 채워두고,
             // 합수 선택은 합수 입력란 아래 칩에서 하도록 대기 상태로 전환
             var first = p.Entries[0];
-            if (first.YarnType == "콘사") _editingYarn.YarnType = YarnType.콘사;
+            if (Enum.TryParse<YarnType>(first.YarnType, out var firstYt)) _editingYarn.YarnType = firstYt;
             _editingYarn.Material = first.Material;
             _plyPickerProduct = p;
         }
@@ -698,7 +698,7 @@ else
     {
         _editingYarn!.Name = p.Name;
         _editingYarn.Brand = p.Brand;
-        if (entry.YarnType == "콘사") _editingYarn.YarnType = YarnType.콘사;
+        if (Enum.TryParse<YarnType>(entry.YarnType, out var entryYt)) _editingYarn.YarnType = entryYt;
         _editingYarn.Material = entry.Material;
         _editingYarn.Ply = entry.Ply;
         _editingYarn.WeightGram = entry.WeightGram;
