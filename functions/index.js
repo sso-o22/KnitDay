@@ -1,5 +1,6 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
+const { onDocumentCreated } = require("firebase-functions/v2/firestore");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const crypto = require("crypto");
 const { initializeApp } = require("firebase-admin/app");
@@ -9,6 +10,9 @@ const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 setGlobalOptions({ region: "asia-northeast3" }); // 서울 리전
 
 initializeApp();
+
+// 관리자 전용 푸시 알림 등에서 공통으로 사용하는 관리자 UID
+const ADMIN_UID = process.env.ADMIN_UID ?? "xAz2xO8kulWUgoHnaaxCkzZV2nG2";
 
 /**
  * Cloudinary 파일 삭제 Cloud Function
@@ -391,6 +395,154 @@ exports.unregisterPushSubscription = onCall(async (request) => {
     await db.collection("pushSubscriptions").doc(deviceId).delete();
     return { success: true };
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// 관리자 전용 푸시 알림
+// (실 정보 제보 도착 / 이용권 만료 임박 — 관리자 계정(ADMIN_UID)에게만 발송)
+// 위의 기기 단위 익명 구독(pushSubscriptions)과는 별개로, 관리자 로그인
+// 계정에서 등록한 구독만 모아두는 adminPushSubscriptions 컬렉션을 사용함
+// (기기 여러 개에서 등록할 수 있어 deviceId로 문서를 구분함)
+// ═══════════════════════════════════════════════════════════════════
+
+/**
+ * 관리자 푸시 구독 등록 — 관리자 계정(ADMIN_UID)만 호출 가능
+ */
+exports.registerAdminPushSubscription = onCall(async (request) => {
+    if (!request.auth || request.auth.uid !== ADMIN_UID) {
+        throw new HttpsError("permission-denied", "관리자만 등록할 수 있습니다.");
+    }
+    const { deviceId, subscription } = request.data || {};
+    if (!deviceId || typeof deviceId !== "string") {
+        throw new HttpsError("invalid-argument", "deviceId가 필요합니다.");
+    }
+    if (!subscription || !subscription.endpoint) {
+        throw new HttpsError("invalid-argument", "subscription이 필요합니다.");
+    }
+    const db = getFirestore();
+    await db.collection("adminPushSubscriptions").doc(deviceId).set({
+        subscription,
+        updatedAt: new Date().toISOString(),
+    }, { merge: true });
+    return { success: true };
+});
+
+/**
+ * 관리자 푸시 구독 해제 — 관리자 계정(ADMIN_UID)만 호출 가능
+ */
+exports.unregisterAdminPushSubscription = onCall(async (request) => {
+    if (!request.auth || request.auth.uid !== ADMIN_UID) {
+        throw new HttpsError("permission-denied", "관리자만 해제할 수 있습니다.");
+    }
+    const { deviceId } = request.data || {};
+    if (!deviceId || typeof deviceId !== "string") {
+        throw new HttpsError("invalid-argument", "deviceId가 필요합니다.");
+    }
+    const db = getFirestore();
+    await db.collection("adminPushSubscriptions").doc(deviceId).delete();
+    return { success: true };
+});
+
+// 등록된 모든 관리자 구독에 푸시 발송 (만료된 구독은 자동 정리)
+async function sendAdminPush(title, body, url = "/admin") {
+    if (!configureWebPush()) {
+        console.error("sendAdminPush: VAPID 키가 설정되어 있지 않아 건너뜀");
+        return;
+    }
+    const db = getFirestore();
+    const snap = await db.collection("adminPushSubscriptions").get();
+    if (snap.empty) {
+        console.log("sendAdminPush: 등록된 관리자 구독이 없어 건너뜀");
+        return;
+    }
+    for (const docSnap of snap.docs) {
+        const data = docSnap.data();
+        try {
+            await webpush.sendNotification(data.subscription, JSON.stringify({
+                title,
+                body,
+                url,
+                tag: "knitday-admin-alert",
+            }));
+        } catch (e) {
+            if (e.statusCode === 410 || e.statusCode === 404) {
+                await docSnap.ref.delete();
+                console.log(`sendAdminPush: ${docSnap.id} 구독 만료로 삭제`);
+            } else {
+                console.error(`sendAdminPush 실패 (${docSnap.id}):`, e.message);
+            }
+        }
+    }
+}
+
+/**
+ * 실 정보 제보(yarnSubmissions) 도착 시 관리자에게 즉시 푸시 알림
+ */
+exports.notifyAdminOnYarnSubmission = onDocumentCreated(
+    "yarnSubmissions/{submissionId}",
+    async (event) => {
+        const data = event.data?.data();
+        if (!data) return;
+        const brand = data.brand || "브랜드 미상";
+        const name = data.name || "이름 미상";
+        await sendAdminPush(
+            "실 정보 제보 도착",
+            `${brand} · ${name} 제보가 들어왔어요. 확인해주세요!`,
+            "/admin"
+        );
+    }
+);
+
+// 만료 며칠 전부터 관리자에게 미리 알릴지
+const LICENSE_EXPIRY_WARNING_DAYS = 7;
+
+/**
+ * 매일, 이용권 만료가 임박한(N일 이내) 유저를 모아 관리자에게 푸시 알림
+ * - 평생권(lifetime)은 제외
+ * - 같은 만료일에 대해 중복 발송 방지: allowedUsers 문서에
+ *   licenseExpiryAlertSentFor(그때 기준 expiresAt 값)를 남겨두고, 이후
+ *   expiresAt이 바뀌면(갱신) 다음 임박 시점에 다시 알림이 가도록 함
+ */
+exports.sendLicenseExpiryAdminAlerts = onSchedule(
+    { schedule: "0 9 * * *", timeZone: "Asia/Seoul" }, // 매일 오전 9시
+    async () => {
+        const db = getFirestore();
+        const now = new Date();
+        const threshold = new Date(now);
+        threshold.setDate(threshold.getDate() + LICENSE_EXPIRY_WARNING_DAYS);
+
+        const snapshot = await db.collection("allowedUsers").get();
+        const upcoming = [];
+
+        for (const docSnap of snapshot.docs) {
+            const data = docSnap.data();
+            const expiresAt = data?.expiresAt;
+            if (!expiresAt || expiresAt === "lifetime") continue;
+            if (data?.licenseExpiryAlertSentFor === expiresAt) continue; // 이미 이 만료일로 알림 보냄
+
+            const expiryDate = new Date(expiresAt);
+            if (isNaN(expiryDate.getTime())) continue; // 형식 이상 → 안전하게 건너뜀
+            if (expiryDate < now || expiryDate > threshold) continue; // 임박 구간 밖
+
+            upcoming.push({ ref: docSnap.ref, email: docSnap.id, expiresAt });
+        }
+
+        if (upcoming.length === 0) return;
+
+        const preview = upcoming.slice(0, 5).map((u) => `${u.email}(${u.expiresAt})`).join(", ");
+        const more = upcoming.length > 5 ? ` 외 ${upcoming.length - 5}건` : "";
+        await sendAdminPush(
+            "이용권 만료 임박",
+            `${LICENSE_EXPIRY_WARNING_DAYS}일 내 만료 예정 ${upcoming.length}건: ${preview}${more}`,
+            "/admin"
+        );
+
+        for (const u of upcoming) {
+            await u.ref.set({ licenseExpiryAlertSentFor: u.expiresAt }, { merge: true });
+        }
+
+        console.log(`sendLicenseExpiryAdminAlerts: ${upcoming.length}건 관리자 알림 발송`);
+    }
+);
 
 // 얼마나 안 켰을 때 알림을 보낼지 — iOS Safari의 약 7일 삭제 정책보다
 // 여유 있게 미리 경고하기 위해 5일로 설정

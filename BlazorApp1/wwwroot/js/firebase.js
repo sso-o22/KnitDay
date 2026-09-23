@@ -452,6 +452,70 @@ window.knitPush = {
         }
     }
 };
+
+// ── 관리자 전용 푸시 알림 (실 정보 제보 / 이용권 만료 임박) ──────────
+// 위 knitPush(익명 기기 단위)와 별개로, 관리자 로그인 계정에서만 켤 수 있는
+// 구독. 호출하는 Cloud Function이 로그인 + ADMIN_UID 검사를 하므로
+// 관리자가 아닌 사용자가 켜려고 하면 서버에서 거부됨.
+function getOrCreateAdminDeviceId() {
+    let id = localStorage.getItem('knitday_admin_push_device_id');
+    if (!id) {
+        id = 'admdev_' + crypto.randomUUID().replace(/-/g, '');
+        localStorage.setItem('knitday_admin_push_device_id', id);
+    }
+    return id;
+}
+
+window.knitAdminPush = {
+    isSupported() {
+        return window.knitPush.isSupported();
+    },
+
+    async getStatus() {
+        // 구독 자체는 브라우저에 하나뿐이라 knitPush와 동일한 API를 보지만,
+        // 서버에 등록된 게 "관리자용"인지는 별도 deviceId로 구분함
+        return window.knitPush.getStatus();
+    },
+
+    async subscribe() {
+        if (!this.isSupported()) return { success: false, error: '이 기기에서는 지원되지 않아요.' };
+        try {
+            const permission = await Notification.requestPermission();
+            if (permission !== 'granted') return { success: false, error: '알림 권한이 거부됐어요.' };
+
+            const reg = await navigator.serviceWorker.ready;
+            let sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+                sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+                });
+            }
+            const deviceId = getOrCreateAdminDeviceId();
+            const fn = httpsCallable(functions, 'registerAdminPushSubscription');
+            await fn({ deviceId, subscription: sub.toJSON() });
+            return { success: true };
+        } catch (e) {
+            console.error('knitAdminPush.subscribe:', e);
+            return { success: false, error: e.message };
+        }
+    },
+
+    async unsubscribe() {
+        try {
+            const deviceId = localStorage.getItem('knitday_admin_push_device_id');
+            if (deviceId) {
+                const fn = httpsCallable(functions, 'unregisterAdminPushSubscription');
+                await fn({ deviceId });
+                localStorage.removeItem('knitday_admin_push_device_id');
+            }
+            return { success: true };
+        } catch (e) {
+            console.error('knitAdminPush.unsubscribe:', e);
+            return { success: false, error: e.message };
+        }
+    }
+};
 // ── 전역 오류 로깅 (사용자가 신고 안 해도 알 수 있게) ─────────────────
 // Firestore의 errorLogs 컬렉션에 조용히 기록. 스팸 방지를 위해 세션당
 // 최대 개수 제한 + 같은 메시지 중복 방지.

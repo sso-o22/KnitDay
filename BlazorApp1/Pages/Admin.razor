@@ -36,6 +36,48 @@ else
             <button class="btn btn-sm" style="@YarnTabStyle" @onclick="SetTabYarn">실</button>
         </div>
 
+        <!-- 관리자 알림 (실 제보 도착 / 이용권 만료 임박) -->
+        <div class="card">
+            <div class="card-title" style="margin-bottom:4px; display:flex; align-items:center; gap:6px;">
+                <img src="icons/warning.svg" class="icon-line" style="width:20px;height:20px;flex-shrink:0;" />관리자 알림
+            </div>
+            <p style="font-size:0.82rem;color:var(--text-mid);margin-bottom:12px;">
+                실 정보 제보가 들어오거나, 이용권 만료가 @LicenseExpiryWarningDays 일 이내로 임박한 유저가 있으면 이 기기로 푸시 알림을 보내드려요.
+            </p>
+            @if (_adminPushStatus == "unsupported")
+            {
+                <p style="font-size:0.78rem;color:var(--text-light);">
+                    이 기능은 <b>홈 화면에 추가</b>한 상태에서만 사용할 수 있어요. 먼저 홈 화면에 추가해 주세요.
+                </p>
+            }
+            else if (_adminPushStatus == "denied")
+            {
+                <p style="font-size:0.78rem;color:var(--text-light);">
+                    알림 권한이 거부돼 있어요. 기기의 알림 설정에서 KnitDay 알림을 허용한 뒤 다시 시도해 주세요.
+                </p>
+            }
+            else if (_adminPushStatus == "subscribed")
+            {
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span style="font-size:0.82rem;color:#267848;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                        <img src="icons/check-circle.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />이 기기로 관리자 알림이 켜져 있어요
+                    </span>
+                    <button class="btn btn-ghost btn-sm" @onclick="DisableAdminPush" disabled="@_adminPushBusy">끄기</button>
+                </div>
+            }
+            else
+            {
+                <button class="btn btn-secondary" style="display:inline-flex;align-items:center;gap:6px;" @onclick="EnableAdminPush" disabled="@_adminPushBusy">
+                    <img src="icons/warning.svg" class="icon-line" style="width:15px;height:15px;flex-shrink:0;" />
+                    @(_adminPushBusy ? "처리 중..." : "이 기기로 알림 받기")
+                </button>
+            }
+            @if (!string.IsNullOrEmpty(_adminPushError))
+            {
+                <p style="font-size:0.78rem;color:#c03030;margin-top:8px;">@_adminPushError</p>
+            }
+        </div>
+
         @if (_activeTab == "stats")
         {
         <!-- 관리 통계 -->
@@ -838,6 +880,7 @@ else
             await LoadMetrics();
             await LoadYarnReports();
             await LoadYarnApproved();
+            await RefreshAdminPushStatusAsync();
         }
     }
 
@@ -849,8 +892,47 @@ else
             await LoadMetrics();
             await LoadYarnReports();
             await LoadYarnApproved();
+            await RefreshAdminPushStatusAsync();
         }
         await InvokeAsync(StateHasChanged);
+    }
+
+    // ── 관리자 알림 (실 제보 도착 / 이용권 만료 임박, 관리자 계정 전용 푸시 구독) ──
+    const int LicenseExpiryWarningDays = 7; // Cloud Function의 LICENSE_EXPIRY_WARNING_DAYS와 맞춰서 표시용
+    string _adminPushStatus = "checking"; // unsupported | denied | subscribed | not-subscribed | checking
+    bool _adminPushBusy = false;
+    string _adminPushError = "";
+
+    async Task RefreshAdminPushStatusAsync()
+    {
+        try { _adminPushStatus = await JS.InvokeAsync<string>("knitAdminPush.getStatus"); }
+        catch { _adminPushStatus = "unsupported"; }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task EnableAdminPush()
+    {
+        _adminPushBusy = true; _adminPushError = ""; StateHasChanged();
+        try
+        {
+            var result = await JS.InvokeAsync<System.Text.Json.JsonElement>("knitAdminPush.subscribe");
+            var success = result.TryGetProperty("success", out var s) && s.GetBoolean();
+            if (!success)
+                _adminPushError = result.TryGetProperty("error", out var e) ? (e.GetString() ?? "알림을 켜지 못했어요.") : "알림을 켜지 못했어요.";
+        }
+        catch (Exception ex) { _adminPushError = $"오류: {ex.Message}"; }
+        await RefreshAdminPushStatusAsync();
+        _adminPushBusy = false;
+        StateHasChanged();
+    }
+
+    async Task DisableAdminPush()
+    {
+        _adminPushBusy = true; StateHasChanged();
+        try { await JS.InvokeVoidAsync("knitAdminPush.unsubscribe"); } catch { }
+        await RefreshAdminPushStatusAsync();
+        _adminPushBusy = false;
+        StateHasChanged();
     }
 
     class MetricsSnapshot
