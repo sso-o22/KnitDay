@@ -423,7 +423,10 @@ window.knitPush = {
             const sub = await reg.pushManager.getSubscription();
             const deviceId = localStorage.getItem('knitday_push_device_id');
             if (!sub && !deviceId) return { success: true }; // 정리할 게 아예 없음 — 조용히 종료
-            if (sub) await sub.unsubscribe();
+            // 이 기기가 관리자 알림에도 등록돼 있으면 브라우저 구독은 하나뿐이라 함께 쓰는 중 —
+            // 구독 자체는 유지하고, 익명(유실방지) 서버 기록만 정리함
+            const keepBrowserSub = !!localStorage.getItem('knitday_admin_push_device_id');
+            if (sub && !keepBrowserSub) await sub.unsubscribe();
             if (deviceId) {
                 const fn = httpsCallable(functions, 'unregisterPushSubscription');
                 await fn({ deviceId });
@@ -472,9 +475,11 @@ window.knitAdminPush = {
     },
 
     async getStatus() {
-        // 구독 자체는 브라우저에 하나뿐이라 knitPush와 동일한 API를 보지만,
-        // 서버에 등록된 게 "관리자용"인지는 별도 deviceId로 구분함
-        return window.knitPush.getStatus();
+        // 브라우저 구독은 하나뿐이라 knitPush와 같은 API로 먼저 확인하고,
+        // "관리자용으로 등록했는지"는 별도 deviceId 유무로 구분함
+        const base = await window.knitPush.getStatus();
+        if (base !== 'subscribed') return base;
+        return localStorage.getItem('knitday_admin_push_device_id') ? 'subscribed' : 'not-subscribed';
     },
 
     async subscribe() {
