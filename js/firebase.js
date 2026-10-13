@@ -29,6 +29,30 @@ const auth     = getAuth(app);
 const db       = getFirestore(app);
 const functions = getFunctions(app, 'asia-northeast3');
 const provider = new GoogleAuthProvider();
+
+// ── saveCollection 쓰기 절감용 변경 감지 캐시 ─────────────────────
+// 저장할 때마다 목록 전체를 setDoc 하면 항목 수만큼 쓰기가 발생해 요금이 늘어남.
+// 이 페이지가 열려 있는 동안 "문서 경로 → 마지막으로 쓴 내용의 해시"를 기억해 두고,
+// 내용이 같은 항목은 setDoc을 건너뜀. (메모리에만 보관 — 새로고침하면 처음 저장 때 한 번 전체를 씀)
+// 디스크에 보관하지 않는 이유: 클라우드 데이터가 서버 쪽에서 지워진 경우(클라우드 데이터 삭제,
+// 만료 정리 등) 캐시가 "이미 올라가 있음"이라고 착각해 재업로드를 막는 일을 피하기 위함.
+const _writeCache = new Map();
+
+// 문자열 해시 (cyrb53) — 큰 문자열(사진 Base64 등)도 빠르게, 충돌 가능성은 사실상 없음
+function _hashString(str) {
+    let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+    for (let i = 0; i < str.length; i++) {
+        const ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36) + ':' + str.length;
+}
+
+// 서버 쪽 상태가 우리가 기억하는 것과 달라질 수 있는 순간(로그아웃, 클라우드 삭제 등)에 호출
+function _clearWriteCache() { _writeCache.clear(); }
 // 로그인 여부와 무관하게 접속하는 모든 사용자를 집계 (익명 방문자 포함) —
 // measurementId가 비어있으면(치환 실패) 조용히 무시하도록 try/catch로 감쌈
 let _analytics = null;
@@ -133,6 +157,7 @@ window.firebaseAuth = {
     },
 
     async signOut() {
+        _clearWriteCache();
         try { await signOut(auth); return true; }
         catch (e) { return false; }
     },
@@ -178,6 +203,7 @@ window.firebaseAuth = {
                 const info = { uid: user.uid, displayName: user.displayName, email: user.email, photoURL: user.photoURL };
                 dotNetRef.invokeMethodAsync('OnAuthStateChanged', info);
             } else {
+                _clearWriteCache(); // 로그아웃·세션 만료 시 이전 계정 기준 캐시는 버림
                 dotNetRef.invokeMethodAsync('OnAuthStateChanged', null);
             }
         });
@@ -243,6 +269,8 @@ window.firebaseStore = {
 
     async setDocument(path, jsonData) {
         try {
+            // 이 문서가 따로 쓰이면(삭제 표시 등) saveCollection의 "마지막으로 쓴 내용" 기억은 더 이상 유효하지 않음
+            _writeCache.delete(path);
             await setDoc(doc(db, ...path.split('/')), JSON.parse(jsonData), { merge: true });
             return true;
         } catch (e) {
@@ -266,6 +294,7 @@ window.firebaseStore = {
     // tombstone 전용: merge 없이 덮어써서 기존 필드 제거 (_deleted:true만 남김)
     async setTombstone(path, jsonData) {
         try {
+            _writeCache.delete(path); // 같은 Id가 나중에 다시 생겨도 새로 쓰이도록
             await setDoc(doc(db, ...path.split('/')), JSON.parse(jsonData));
             return true;
         } catch (e) {
@@ -291,6 +320,7 @@ window.firebaseStore = {
 
     async deleteDocument(path) {
         try {
+            _writeCache.delete(path);
             await deleteDoc(doc(db, ...path.split('/')));
             return true;
         } catch (e) {
@@ -298,7 +328,10 @@ window.firebaseStore = {
         }
     },
 
+    // 목록을 저장하되, 마지막으로 쓴 내용과 같은 항목은 setDoc을 생략함 (쓰기 요금 절감)
     async saveCollection(basePath, jsonArray, idField) {
+        let pendingKey = null; // 쓰는 중인 항목의 캐시 키 (실패하면 되돌림)
+        let written = 0, skipped = 0;
         try {
             const items = JSON.parse(jsonArray);
             const parts = basePath.split('/');
@@ -308,10 +341,23 @@ window.firebaseStore = {
                 // tombstone(_deleted:true)은 saveCollection으로 덮어쓰지 않음
                 // (TombstoneFirebaseDocBackground가 이미 setDocument로 기록)
                 if (item._deleted === true) continue;
+
+                const key = `${basePath}/${id}`;
+                const hash = _hashString(JSON.stringify(item));
+                // 마지막으로 쓴 내용과 같으면 건너뜀
+                if (_writeCache.get(key) === hash) { skipped++; continue; }
+                // 쓰기가 끝나기 전에 저장이 또 호출돼도 같은 내용을 중복으로 쓰지 않도록 먼저 기록하고,
+                // 실패하면 아래 catch에서 되돌려 다음 저장 때 다시 시도되게 함
+                _writeCache.set(key, hash);
+                pendingKey = key;
                 await setDoc(doc(db, ...parts, String(id)), item, { merge: true });
+                pendingKey = null;
+                written++;
             }
+            console.debug(`saveCollection ${basePath}: 쓰기 ${written}건, 변경 없음 ${skipped}건`);
             return true;
         } catch (e) {
+            if (pendingKey) _writeCache.delete(pendingKey);
             console.error('saveCollection:', basePath, e);
             return false;
         }
@@ -327,6 +373,8 @@ window.deleteKnitDayAccount = async () => {
     } catch (e) {
         console.error('deleteAccount:', e);
         return JSON.stringify({ success: false, error: e.message });
+    } finally {
+        _clearWriteCache(); // 서버 데이터가 지워졌을 수 있으므로 성공/실패와 무관하게 비움
     }
 };
 
@@ -339,6 +387,9 @@ window.deleteKnitDayCloudDataOnly = async () => {
     } catch (e) {
         console.error('deleteCloudDataOnly:', e);
         return JSON.stringify({ success: false, error: e.message });
+    } finally {
+        // 로컬 데이터는 그대로 남아 있어서, 이후 다시 올릴 때 "이미 올라가 있음"으로 건너뛰면 안 됨
+        _clearWriteCache();
     }
 };
 
