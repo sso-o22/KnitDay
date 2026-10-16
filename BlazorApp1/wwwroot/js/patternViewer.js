@@ -782,9 +782,10 @@ let basePaths = []; // 저장된 필기 (박제)
             if (window.pdfjsLib) { res(); return; }
             const base = (document.querySelector('base')?.href || location.origin+'/').replace(/\/$/,'');
             const cb = '_pdfjs_'+Date.now();
-            window[cb] = lib => { window.pdfjsLib = lib; lib.GlobalWorkerOptions.workerSrc = base+'/pdfjs/build/pdf.worker.mjs'; delete window[cb]; res(); };
+            window[cb] = lib => { window.pdfjsLib = lib; lib.GlobalWorkerOptions.workerSrc = base+'/pdfjs/build/pdf.worker.compat.mjs'; delete window[cb]; res(); };
             const s = document.createElement('script'); s.type='module';
-            s.textContent = 'import * as L from "'+base+'/pdfjs/build/pdf.mjs";window["'+cb+'"](L);';
+            // compat-polyfills를 먼저 불러 구형 브라우저(갤럭시 등)에서도 PDF.js 5.x가 폰트를 정상 처리하도록 함
+            s.textContent = 'import "'+base+'/pdfjs/build/compat-polyfills.mjs";import * as L from "'+base+'/pdfjs/build/pdf.mjs";window["'+cb+'"](L);';
             s.onerror = e => { delete window[cb]; rej(e); };
             document.head.appendChild(s);
         });
