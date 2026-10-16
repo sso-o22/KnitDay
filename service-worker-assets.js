@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "rjHF/i/9",
+  "version": "seDXoEgm",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-v3DNhQlTJtboL17cwlQ5U97QCrYOTof7qZGxlPjwJ50=",
+      "hash": "sha256-czsRuzqgECPxwMwCAx7/zyzbz6bSHhbQkz4tmgq+CEs=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-qy8itdoXhcW+gZlN7JvLZn9kCEYQMsyrY0EmQKsxsF8=",
+      "hash": "sha256-yBrTwJZp9+f97GpjGcYZFa0sxB6+/TMxYDEL6XIEYFI=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -958,12 +958,16 @@ self.assetsManifest = {
       "url": "js/firebase.js"
     },
     {
-      "hash": "sha256-JxZpp96HjDqtLnppD4/HG+X3rODvi0Sr2I0oiDaUvj0=",
+      "hash": "sha256-qDHqH4hQR+ELeZ7Z/V1z5HnoSVOFUPFtFgnSKXeRtMc=",
       "url": "js/patternViewer.js"
     },
     {
       "hash": "sha256-MOqD3ETFXIdCyzXfTHR2zXtJqcTMUmvacpi84KQ670I=",
       "url": "manifest.webmanifest"
+    },
+    {
+      "hash": "sha256-LO3rjR8FgTVSJJGymQpYFXNls2l36RmwYF4iwPNvyNE=",
+      "url": "pdfjs/build/compat-polyfills.mjs"
     },
     {
       "hash": "sha256-82gFqlJVNfloud9myZJbsUEPcbdvFoIqeD3SssVMFO4=",
@@ -980,6 +984,10 @@ self.assetsManifest = {
     {
       "hash": "sha256-O9IQpVb+h1WOhDKM5Kip1NlC2eJ57QeStiIWwUqpyBQ=",
       "url": "pdfjs/build/pdf.sandbox.mjs.map"
+    },
+    {
+      "hash": "sha256-LR7CcUYcj/ASjg+uftNRLlIKVS5qayeE+XXJp4K3xbU=",
+      "url": "pdfjs/build/pdf.worker.compat.mjs"
     },
     {
       "hash": "sha256-U1MEty6KQ1RIApIHD/wFdL4RBvVxpsOUl2i9RvOSOvY=",
@@ -2598,7 +2606,7 @@ self.assetsManifest = {
       "url": "sitemap.xml"
     },
     {
-      "hash": "sha256-NeREGcvybh5ePphui+PV3U3haGsTlTEyIABzHQgxsgg=",
+      "hash": "sha256-/PYfvQgYB8oUBCprHkzCTc/9dpl0o2l0W3BjxFHeWzk=",
       "url": "version.json"
     }
   ]
