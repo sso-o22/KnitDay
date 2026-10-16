@@ -1555,4 +1555,4 @@ namespace KnitLog.Services
         public string CurrentLabel { get; set; } = "";
         public int Percent => Total > 0 ? (int)((Done + Failed) * 100.0 / Total) : 0;
     }
-}
+}

@@ -168,7 +168,7 @@
     @* ── 2번 상단바: 타이머(좌) / 행 마커 정보(우) ── *@
     <div class="top-bar-sub">
         <div class="tb-left" style="flex:1;">
-            @if (_rowMarkers.Any(m => m.IsCurrent))
+            @if (!IsWish && _rowMarkers.Any(m => m.IsCurrent))
             {
                 <img src="icons/row-detect.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
                 @if (GetSelectedMarkerIndex() is int idx)
@@ -182,7 +182,7 @@
             }
         </div>
         <div class="tb-right">
-            @if (_project is not null)
+            @if (_project is not null && !IsWish)
             {
                 <span style="opacity:0.4;"><img src="icons/clock.svg" class="icon-invert-dark" style="width:14px;height:14px;" /></span>
                 <span class="tb-txt" style="font-variant-numeric:tabular-nums;letter-spacing:0.3px;">@_timerDisplay</span>
@@ -199,7 +199,8 @@
     </div>
 
     <!-- ── 필기 도구 플로팅 위젯 (좌측 상단, 툴바 아래) ── -->
-    <div class="draw-wrap">
+    @* 위시리스트 도안은 보기 전용 — 필기 도구는 DOM은 유지하고 숨김 처리 *@
+    <div class="draw-wrap" style="@(IsWish ? "display:none;" : "")">
         <button class="draw-fab" id="draw-fab-btn" @onclick="ToggleDrawMode" title="필기 모드">
             <img src="@(_drawMode ? "icons/pencil-simple.svg" : "icons/pencil-simple-slash.svg")" style="width:22px;height:22px;" />
         </button>
@@ -349,7 +350,7 @@
     </div>
 
     <!-- ── 카운터 플로팅 위젯 (드래그 가능) ── -->
-    @if (_project is not null)
+    @if (_project is not null && !IsWish)
     {
         @if (_showCounterWidget)
         {
@@ -1041,6 +1042,8 @@
 
     // ── 타이머 ──
     KnitSession? _activeSession => _project?.Sessions.FirstOrDefault(s=>s.IsActive);
+    // 위시리스트 항목의 도안은 보기 전용(필기/행 마커/타이머/카운터 숨김). 시작하면 Status가 바뀌어 도구가 나타남
+    bool IsWish => _project?.Status == ProjectStatus.위시리스트;
     string _timerDisplay="00:00:00";
     PeriodicTimer? _refreshTimer;
     void StartRefreshTimer(){StopRefreshTimer();_refreshTimer=new PeriodicTimer(TimeSpan.FromSeconds(1));_=RefreshUIAsync();}
@@ -2221,7 +2224,7 @@
     {
         // 로컬 저장만 즉시 하고 페이지 이동 (Firebase는 백그라운드)
         await ForceSaveViewerStateAsync();
-        Nav.NavigateTo("projects/" + ProjectId);
+        Nav.NavigateTo(IsWish ? "wishlist" : "projects/" + ProjectId);
     }
 
     async Task ForceSaveViewerStateAsync()
