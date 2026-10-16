@@ -457,6 +457,20 @@ namespace KnitLog.Services
             // 끝나길 기다리면 다른 기기에서 바뀐 내용이 한참 뒤에야 보임. 마지막(finally)에도 한 번 더 알림.
             try { OnSyncCompleted?.Invoke(); } catch { }
 
+            // 사진/도안 업로드 확인은 기다리지 않고 백그라운드로 (동기화 아이콘이 불필요하게 오래 도는 것 방지)
+            _ = MigrateMediaIfNeededAsync();
+            }
+            finally
+            {
+            IsSyncing = false;
+            _isSyncingLogin = false;
+            OnSyncCompleted?.Invoke();
+            }
+        }
+
+        // 사진/도안 업로드 확인·재업로드 — 동기화 아이콘/화면 갱신을 붙잡지 않도록 병합 완료 후 백그라운드로 실행
+        private async Task MigrateMediaIfNeededAsync()
+        {
             // 로그인 전 비로그인 상태로 쌓인 사진/도안(Base64, 로컬 전용)을 Cloudinary로 옮겨
             // IDB·Firestore 용량 부담을 줄임 — 아래 조건 중 하나라도 해당하면 실행:
             //   1) 마이그레이션 완료 플래그가 없는 경우 (최초 1회)
@@ -497,13 +511,6 @@ namespace KnitLog.Services
                 }
             }
             catch { }
-            }
-            finally
-            {
-            IsSyncing = false;
-            _isSyncingLogin = false;
-            OnSyncCompleted?.Invoke();
-            }
         }
 
         // ── 로컬(Base64) 사진/도안을 Cloudinary로 마이그레이션 ─────────────
@@ -533,6 +540,13 @@ namespace KnitLog.Services
             var changed = false;
             var quotaReached = false;
             const int MaxRetry = 3;
+
+            // 업로드가 오래 걸리는 동안 사용자가 프로젝트를 수정/추가할 수 있으므로,
+            // 시작 시점 상태를 기억해 두었다가 마지막에 "내가 바꾼 필드만" 최신 목록에 반영한다.
+            var origState = projects.ToDictionary(
+                p => p.Id,
+                p => (p.HasSavedPattern, p.PatternCloudUrl, p.PatternFileName, p.PatternFileSizeBytes,
+                      Photos: p.Photos.Select(ph => ph.Id).ToHashSet()));
 
             foreach (var proj in projects)
             {
@@ -708,7 +722,44 @@ namespace KnitLog.Services
             }
 
             if (changed)
-                await SaveAsync(KEY_PROJECTS, "projects", "Id", projects);
+            {
+                var latestProjects = await GetProjectsAsync();
+                var patched = false;
+                foreach (var proj in projects)
+                {
+                    if (!origState.TryGetValue(proj.Id, out var o)) continue;
+                    var cur = latestProjects.FirstOrDefault(x => x.Id == proj.Id);
+                    if (cur == null) continue; // 그 사이 삭제된 프로젝트
+
+                    // 도안 필드: 이 작업에서 바뀐 경우만 반영
+                    if (proj.HasSavedPattern != o.HasSavedPattern || proj.PatternCloudUrl != o.PatternCloudUrl
+                        || proj.PatternFileName != o.PatternFileName || proj.PatternFileSizeBytes != o.PatternFileSizeBytes)
+                    {
+                        cur.HasSavedPattern = proj.HasSavedPattern;
+                        cur.PatternCloudUrl = proj.PatternCloudUrl;
+                        cur.PatternFileName = proj.PatternFileName;
+                        cur.PatternFileSizeBytes = proj.PatternFileSizeBytes;
+                        patched = true;
+                    }
+
+                    // 사진: 서버에서 이미 삭제된 것은 제거, 업로드된 것은 URL만 반영
+                    var nowIds = proj.Photos.Select(ph => ph.Id).ToHashSet();
+                    foreach (var removedId in o.Photos.Where(id => !nowIds.Contains(id)).ToList())
+                        if (cur.Photos.RemoveAll(ph => ph.Id == removedId) > 0) patched = true;
+                    foreach (var ph in proj.Photos.Where(ph => !string.IsNullOrEmpty(ph.StorageUrl)))
+                    {
+                        var target = cur.Photos.FirstOrDefault(x => x.Id == ph.Id);
+                        if (target != null && string.IsNullOrEmpty(target.StorageUrl) && !string.IsNullOrEmpty(target.Base64Data))
+                        {
+                            target.StorageUrl = ph.StorageUrl;
+                            target.Base64Data = "";
+                            patched = true;
+                        }
+                    }
+                }
+                if (patched)
+                    await SaveAsync(KEY_PROJECTS, "projects", "Id", latestProjects);
+            }
 
             // 스와치 사진 (기기에만 저장된 Base64 → Cloudinary)
             if (!quotaReached)
