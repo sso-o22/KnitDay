@@ -798,7 +798,7 @@ let basePaths = []; // 저장된 필기 (박제)
         await ensurePdfJs();
         const base = getPdfjsBase();
         _lastPdfBytes = bytes.slice(0);
-        pdfDoc = await window.pdfjsLib.getDocument({ data: bytes, cMapUrl: base+'/pdfjs/web/cmaps/', cMapPacked: true, standardFontDataUrl: base+'/pdfjs/web/standard_fonts/' }).promise;
+        pdfDoc = await window.pdfjsLib.getDocument({ data: bytes, cMapUrl: base+'/pdfjs/web/cmaps/', cMapPacked: true, standardFontDataUrl: base+'/pdfjs/web/standard_fonts/', wasmUrl: base+'/pdfjs/web/wasm/' }).promise;
         totalPages = pdfDoc.numPages;
         abortAllPageHandlers(); _renderedPages = new Set(); _pageSizes = {}; _pageLinks = {}; paths = [];
         const p1 = await pdfDoc.getPage(1), vp1 = p1.getViewport({ scale: 1.0 });
@@ -991,7 +991,7 @@ let basePaths = []; // 저장된 필기 (박제)
                 if (!r?.bytes) return 0;
                 await ensurePdfJs();
                 const base = getPdfjsBase();
-                pdfDoc = await window.pdfjsLib.getDocument({ data: r.bytes, cMapUrl: base+'/pdfjs/web/cmaps/', cMapPacked: true, standardFontDataUrl: base+'/pdfjs/web/standard_fonts/' }).promise;
+                pdfDoc = await window.pdfjsLib.getDocument({ data: r.bytes, cMapUrl: base+'/pdfjs/web/cmaps/', cMapPacked: true, standardFontDataUrl: base+'/pdfjs/web/standard_fonts/', wasmUrl: base+'/pdfjs/web/wasm/' }).promise;
                 totalPages = pdfDoc.numPages; abortAllPageHandlers(); _renderedPages=new Set(); _pageSizes={}; _pageLinks={}; _lastPdfBytes=r.bytes;
                 const p1 = await pdfDoc.getPage(1), vp1 = p1.getViewport({scale:1.0});
                 for (let i=1;i<=totalPages;i++) _pageSizes[i]={w:vp1.width,h:vp1.height};
