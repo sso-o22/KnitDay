@@ -1,5 +1,5 @@
 self.assetsManifest = {
-  "version": "b6MNZFEK",
+  "version": "mYIgQzBP",
   "assets": [
     {
       "hash": "sha256-OEk/nNAi+lNWDSdgVJwDvTQrWaeYfQWlQYdE+m/8wG8=",
@@ -10,7 +10,7 @@ self.assetsManifest = {
       "url": "BlazorApp1.styles.css"
     },
     {
-      "hash": "sha256-epMEBO4I43dyTQq/UFC3nWGHiVkfubk0luxFky4pN2I=",
+      "hash": "sha256-EZ+B2CnhKBghFuAk8pZL6Z8RWVR8I43aRiF8zuqs3Vc=",
       "url": "_framework/BlazorApp1.wasm"
     },
     {
@@ -82,7 +82,7 @@ self.assetsManifest = {
       "url": "_framework/System.Collections.Specialized.wasm"
     },
     {
-      "hash": "sha256-VR+sLKHeRgqQBIKkEyHqPiJSdGX0CMfrEnTe0yygnsA=",
+      "hash": "sha256-SfHwAZOhBAd+A0/d2Ci+q4wkkNccZYQR8F5vrcRWEGM=",
       "url": "_framework/System.Collections.wasm"
     },
     {
@@ -130,7 +130,7 @@ self.assetsManifest = {
       "url": "_framework/System.ObjectModel.wasm"
     },
     {
-      "hash": "sha256-0lySDfCu6VsOvoAzMoakKBGPBgKZHxGebKytE9zXKGc=",
+      "hash": "sha256-PB69Sn7zPbXG1rq3cf0bh4/aB1gFuV3armij3feJdXQ=",
       "url": "_framework/System.Private.CoreLib.wasm"
     },
     {
@@ -158,7 +158,7 @@ self.assetsManifest = {
       "url": "_framework/System.Text.RegularExpressions.wasm"
     },
     {
-      "hash": "sha256-zGIIRANtbTqRuKifP0Qc8DJ6hRIOrZrCZMz2V7Ft448=",
+      "hash": "sha256-k9DwGCAb2xLsImSUJ5+/Yj5oSpf7zHRiANH00+JaqVs=",
       "url": "_framework/System.Threading.wasm"
     },
     {
@@ -166,7 +166,7 @@ self.assetsManifest = {
       "url": "_framework/System.wasm"
     },
     {
-      "hash": "sha256-BWLWzxfH0vfUrhKi3/r4qWuFFmzc6R1+KlMYe9kf2aY=",
+      "hash": "sha256-7/mlqJZcA/ENTfVy7K7H0XeoiwVHkIkKqCF5m0LlWn8=",
       "url": "_framework/blazor.boot.json"
     },
     {
@@ -954,7 +954,7 @@ self.assetsManifest = {
       "url": "js/app.js"
     },
     {
-      "hash": "sha256-glxZ2mH1Or8y+e1RaDPIMthchHXCbPK1XuvRE/iq/qo=",
+      "hash": "sha256-Wanfo+FzSss5d5Db0gOgUhWQHjlbWumd6DtXPqWB+Rg=",
       "url": "js/firebase.js"
     },
     {
@@ -2598,7 +2598,7 @@ self.assetsManifest = {
       "url": "sitemap.xml"
     },
     {
-      "hash": "sha256-qZURyVB14Hbjui7U/Tese3/sdSZf8++WQ7k/eC7Ey5A=",
+      "hash": "sha256-NeREGcvybh5ePphui+PV3U3haGsTlTEyIABzHQgxsgg=",
       "url": "version.json"
     }
   ]
