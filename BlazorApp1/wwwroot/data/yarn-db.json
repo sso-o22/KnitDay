@@ -8156,5 +8156,359 @@
         "price": 8000
       }
     ]
+  },
+  {
+    "brand": "파인아트얀",
+    "name": "아임파인질롱울",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "울 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 750,
+        "price": 12500
+      },
+      {
+        "yarnType": "콘사",
+        "material": "울 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 375,
+        "price": 12500
+      },
+      {
+        "yarnType": "콘사",
+        "material": "울 100%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 12500
+      },
+      {
+        "yarnType": "콘사",
+        "material": "울 100%",
+        "ply": 4,
+        "weightGram": 100,
+        "lengthMeter": 187,
+        "price": 12500
+      },
+      {
+        "yarnType": "콘사",
+        "material": "울 100%",
+        "ply": 5,
+        "weightGram": 100,
+        "lengthMeter": 150,
+        "price": 12500
+      }
+    ]
+  },
+  {
+    "brand": "파인아트얀",
+    "name": "dk연사 아임파인질롱울",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "울 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 12800
+      }
+    ]
+  },
+  {
+    "brand": "파인아트얀",
+    "name": "오브",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "18.5마이크론 엑스트라파인 울 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 800,
+        "price": 11000
+      },
+      {
+        "yarnType": "콘사",
+        "material": "18.5마이크론 엑스트라파인 울 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 400,
+        "price": 11000
+      },
+      {
+        "yarnType": "콘사",
+        "material": "18.5마이크론 엑스트라파인 울 100%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 266,
+        "price": 11000
+      },
+      {
+        "yarnType": "콘사",
+        "material": "18.5마이크론 엑스트라파인 울 100%",
+        "ply": 4,
+        "weightGram": 100,
+        "lengthMeter": 200,
+        "price": 11000
+      },
+      {
+        "yarnType": "콘사",
+        "material": "18.5마이크론 엑스트라파인 울 100%",
+        "ply": 5,
+        "weightGram": 100,
+        "lengthMeter": 160,
+        "price": 11000
+      }
+    ]
+  },
+  {
+    "brand": "파인아트얀",
+    "name": "비쥬",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "엑스트라 파인 메리노 울 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 350,
+        "price": 12000
+      }
+    ]
+  },
+  {
+    "brand": "파인아트얀",
+    "name": "소프트울통사",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "뮬싱프리 엑스트라 파인 울 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 350,
+        "price": 12000
+      },
+      {
+        "yarnType": "콘사",
+        "material": "뮬싱프리 엑스트라 파인 울 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 175,
+        "price": 12000
+      }
+    ]
+  },
+  {
+    "brand": "파인아트얀",
+    "name": "바스크아란",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "볼드울 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 198,
+        "price": 8000
+      }
+    ]
+  },
+  {
+    "brand": "파인아트얀",
+    "name": "셀티울",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "셔틀랜드 울 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 450,
+        "price": 10000
+      },
+      {
+        "yarnType": "콘사",
+        "material": "셔틀랜드 울 100%",
+        "ply": 2,
+        "weightGram": 100,
+        "lengthMeter": 225,
+        "price": 10000
+      },
+      {
+        "yarnType": "콘사",
+        "material": "셔틀랜드 울 100%",
+        "ply": 3,
+        "weightGram": 100,
+        "lengthMeter": 150,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "파인아트얀",
+    "name": "뮤즐리",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "울 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 450,
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "brand": "파인아트얀",
+    "name": "테디부클",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "슈퍼 파인 메리노 울 83%, 나일론 15%, 스판 2%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 660,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "파인아트얀",
+    "name": "베이글",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "울 75%, 나일론 25%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 200,
+        "price": 9000
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "머핀",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "merino wool 50%, nylon 50%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 8000
+      }
+    ]
+  },
+  {
+    "brand": "솜솜뜨개",
+    "name": "젤리빈",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "polyester 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 75,
+        "price": 8500
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "안데스",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Alpaca 60%, Patagonian wool 40%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 150,
+        "price": 14000
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "쿠마",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Fine Merino wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 120,
+        "price": 27000
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "메리노울 10ply 프린트",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Superwash Australian Wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 138,
+        "price": 10000
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "레더필1.0",
+    "entries": [
+      {
+        "yarnType": "콘사",
+        "material": "Polyester 100%",
+        "ply": 1,
+        "weightGram": 150,
+        "lengthMeter": 176,
+        "price": 20000
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "닷닷대시",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Anti-Pill Acrylic 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 250,
+        "price": 8000
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "리틀램 DK",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Extra Fine Merino Superwash Wool 60%, Cashmere Effect Polyamide 40%",
+        "ply": 1,
+        "weightGram": 50,
+        "lengthMeter": 120,
+        "price": 9500
+      }
+    ]
+  },
+  {
+    "brand": "바늘이야기",
+    "name": "노르웨이지안 울",
+    "entries": [
+      {
+        "yarnType": "볼실",
+        "material": "Norway Wool 100%",
+        "ply": 1,
+        "weightGram": 100,
+        "lengthMeter": 170,
+        "price": 18000
+      }
+    ]
   }
 ]
