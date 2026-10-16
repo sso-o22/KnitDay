@@ -657,7 +657,7 @@ else
                 {
                     var photo = ValidPhotos[idx];
                     <div style="position:relative; aspect-ratio:1; cursor:pointer;" @onclick="() => OpenPhoto(photo)">
-                        <img src="@(!string.IsNullOrEmpty(photo.StorageUrl) ? photo.StorageUrl : photo.Base64Data)"
+                        <img src="@Storage.PhotoSrc(photo)"
                              style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm);"
                              class="@(idx == 0 ? "photo-slot-thumb photo-slot-active" : "photo-slot-thumb")"
                              alt="과정 사진" />
@@ -1190,7 +1190,7 @@ else
                 <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
             </span>
         </button>
-        <img src="@(!string.IsNullOrEmpty(_selectedPhoto.StorageUrl) ? _selectedPhoto.StorageUrl : _selectedPhoto.Base64Data)"
+        <img src="@Storage.PhotoSrc(_selectedPhoto)"
              style="max-width:95vw;max-height:calc(100vh - 60px);object-fit:contain;border-radius:8px;"
              @onclick:stopPropagation="true" />
         @if (!string.IsNullOrEmpty(_selectedPhoto.Caption))
@@ -1687,13 +1687,13 @@ else
         _showGaugeCalc = false;
         // 팝업 닫을 때 현재 입력값 자동 저장
         if (_project != null)
-            await Storage.SaveProjectAsync(_project);
+            await PersistProjectAsync();
     }
 
     async Task SaveGaugeCalc()
     {
         if (_project != null)
-            await Storage.SaveProjectAsync(_project);
+            await PersistProjectAsync();
         _showGaugeCalc = false;
         await JS.InvokeVoidAsync("showToast", "저장됐어요");
     }
@@ -1969,7 +1969,9 @@ else
     // 이 화면이 들고 있는 _project가 낡은 상태로 남아있으면 나중에 페이지를 벗어날 때
     // DisposeAsync가 그 낡은 상태를 다시 저장해버려서 방금 동기화된 내용을 덮어씀 →
     // 세션/상태만 최신으로 살짝 갱신해서 이 문제를 막음 (다른 화면 상태는 안 건드림)
-    async void OnSyncCompletedHandler()
+    async void OnSyncCompletedHandler() => await ApplyFreshSessionsAsync();
+
+    async Task ApplyFreshSessionsAsync()
     {
         if (_project == null || _showEditModal) return;
         try
@@ -1977,8 +1979,14 @@ else
             var all = await Storage.GetProjectsAsync();
             var fresh = all.FirstOrDefault(p => p.Id == _project.Id);
             if (fresh == null) return;
+            // 이 화면에서 저장 안 한 변경이 없을 때만 "기준"도 같이 갱신 (변경이 있으면 나갈 때 그 변경을 저장해야 하므로)
+            bool wasClean = !IsProjectDirty();
             _project.Sessions = fresh.Sessions;
             _project.Status = fresh.Status;
+            if (wasClean) MarkClean();
+            // 다른 기기에서 타이머가 시작/종료됐으면 이 화면의 시간 표시도 맞춤
+            if (_project.Sessions.Any(s => s.IsActive)) { if (_refreshTimer is null) StartRefreshTimer(); }
+            else StopRefreshTimer();
             await InvokeAsync(StateHasChanged);
         }
         catch { }
@@ -2016,7 +2024,7 @@ else
                 if (!_project.Links.Any(l => l.Url == url))
                     _project.Links.Add(new VideoLink { Url = url });
             _project.VideoLinks.Clear();
-            await Storage.SaveProjectAsync(_project);
+            await PersistProjectAsync();
         }
         _yarns = await Storage.GetYarnsAsync();
         _allTools = await Storage.GetToolsAsync();
@@ -2037,9 +2045,13 @@ else
         catch { }
 
         _loading = false;
+        MarkClean(); // 지금 상태가 "저장된 기준" — 이후 바뀐 게 있을 때만 화면을 나갈 때 저장함
 
         if (_project?.Sessions.Any(s => s.IsActive) == true)
             StartRefreshTimer();
+
+        // 다른 기기에서 바뀐 타이머/상태를 뒤에서 확인 (낡은 로컬 상태로 화면이 열린 경우 대비)
+        _ = RefreshFromCloudInBackgroundAsync();
     }
 
     // 유튜브 링크를 임베드용으로 변환하는 함수
@@ -2119,7 +2131,7 @@ else
         {
             await Task.Delay(1200, token);
             if (!token.IsCancellationRequested && _project != null)
-                await Storage.SaveProjectAsync(_project);
+                await PersistProjectAsync();
         }
         catch (TaskCanceledException) { }
     }
@@ -2246,8 +2258,10 @@ else
             files = files.Except(invalidType).ToList();
             if (!files.Any()) return;
         }
-        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...");
-        StateHasChanged();
+        // 업로드가 끝날 때까지 계속 떠 있는 토스트 (자동으로 사라지면 사용자는 진행 중인지 모름)
+        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...", "success", true);
+        try { StateHasChanged(); } catch { } // 화면을 벗어난 뒤여도 아래 저장이 끊기지 않도록
+        int localOnlyCount = 0; // 로그인 상태인데 클라우드 업로드에 실패해 이 기기에만 저장된 사진 수
         foreach (var file in files)
         {
             try
@@ -2269,6 +2283,7 @@ else
                     var (url, err, fileBytes) = await Storage.UploadPhotoAsync(_project.Id.ToString(), photo.Id.ToString(), compressed);
                     if (err == "quota")
                     {
+                        await JS.InvokeVoidAsync("hideToast");
                         await JS.InvokeVoidAsync("showToast", "저장공간 300MB 한도를 초과했어요. 사진을 삭제하고 다시 시도해 주세요.", "error");
                         return;
                     }
@@ -2276,9 +2291,14 @@ else
                     {
                         photo.StorageUrl = url;
                         photo.FileSizeBytes = fileBytes;
+                        // 슬롯에 클라우드 이미지가 뜰 때까지 빈칸으로 보이지 않도록, 방금 압축한 사진을 바로 보여줌
+                        Storage.RememberPhotoPreview(photo.Id, compressed);
                     }
                     else
-                        photo.Base64Data = compressed; // 업로드 실패 시 로컬 fallback
+                    {
+                        photo.Base64Data = compressed; // 업로드 실패 시 로컬 fallback (다음 동기화 때 자동으로 다시 올라감)
+                        localOnlyCount++;
+                    }
                 }
                 else
                 {
@@ -2290,16 +2310,23 @@ else
             }
             catch (Exception ex)
             {
+                await JS.InvokeVoidAsync("hideToast");
                 await JS.InvokeVoidAsync("showToast", $"사진 첨부 실패: {ex.Message}", "error");
                 return;
             }
         }
         try
         {
-            _saving = true; StateHasChanged();
-            await Storage.SaveProjectAsync(_project);
+            _saving = true;
+            try { StateHasChanged(); } catch { }
+            await PersistProjectAsync();
             _saving = false;
-            await JS.InvokeVoidAsync("showToast", "사진 저장됐어요");
+            await JS.InvokeVoidAsync("hideToast");
+            if (localOnlyCount > 0)
+                await JS.InvokeVoidAsync("showToast",
+                    $"사진 {localOnlyCount}장은 클라우드에 올리지 못해 이 기기에만 저장했어요. 연결되면 자동으로 올라가요.", "info");
+            else
+                await JS.InvokeVoidAsync("showToast", "사진 저장됐어요");
         }
         catch (Exception ex)
         {
@@ -2310,8 +2337,9 @@ else
             foreach (var p in failed)
                 if (!string.IsNullOrEmpty(p.StorageUrl))
                     await Storage.DeletePhotoAsync(_project.Id.ToString(), p.Id.ToString(), p.FileSizeBytes);
+            await JS.InvokeVoidAsync("hideToast");
             await JS.InvokeVoidAsync("showToast", $"저장 실패 (용량 초과일 수 있어요): {ex.Message}", "error");
-            StateHasChanged();
+            try { StateHasChanged(); } catch { }
         }
     }
 
@@ -2378,7 +2406,7 @@ else
         {
             foreach (var s in conflict.Sessions.Where(s => s.IsActive))
                 s.EndTime = DateTime.Now;
-            await Storage.SaveProjectAsync(conflict);
+            await Storage.SaveProjectAndWaitAsync(conflict);
         }
         _conflictProject = null;
 
@@ -2401,7 +2429,7 @@ else
         // 새 세션 시작
         _project.Sessions.Add(new KnitSession { StartTime = DateTime.Now });
         _sessionMemo = "";
-        await Save();
+        await SaveSessionAsync();
         StartRefreshTimer();
     }
 
@@ -2418,7 +2446,7 @@ else
         }
         
         _sessionMemo = "";
-        await Save();
+        await SaveSessionAsync();
         StopRefreshTimer();
     }
 
@@ -2479,9 +2507,11 @@ else
     {
         Storage.OnSyncCompleted -= OnSyncCompletedHandler;
         StopRefreshTimer();
-        _counterSaveCts?.Cancel(); // 대기 중인 카운터 디바운스 저장 취소 (아래에서 어차피 한 번 더 저장함)
-        // 페이지 이동 시 진행 중인 세션 상태 IDB에 확실히 저장
-        if (_project != null)
+        _counterSaveCts?.Cancel(); // 대기 중인 카운터 디바운스 저장 취소 (아래에서 필요하면 한 번 더 저장함)
+        // 이 화면에서 실제로 바뀐 게 있을 때만 저장 (예: 대기 중이던 카운터 값).
+        // 바뀐 게 없는데 저장하면 내용은 낡았는데 저장 시각(UpdatedAt)만 최신이 돼서,
+        // 다른 기기에서 방금 멈춘 타이머 같은 최신 내용을 낡은 상태로 덮어쓰는 원인이 됨.
+        if (_project != null && IsProjectDirty())
             try { await Storage.SaveProjectAsync(_project); } catch { }
         _dragRef?.Dispose();
         await JS.InvokeVoidAsync("cleanupCardDrag");
@@ -2539,7 +2569,7 @@ else
         if (_project == null) return;
         _project.Status = ProjectStatus.위시리스트;
         // 저장 완료 후 이동 (저장 전 네비게이션 시 저장 누락 방지)
-        await Storage.SaveProjectAsync(_project);
+        await PersistProjectAsync();
         _editSnapshot = null; // 스냅샷 복원 스킵하고 모달 닫기
         _showEditModal = false;
         Nav.NavigateTo("projects");
@@ -2645,7 +2675,7 @@ else
     {
         _yarnEditMode = false;
         if (_project != null)
-            await Storage.SaveProjectAsync(_project);
+            await PersistProjectAsync();
     }
 
     // ── 상세 페이지 "연결된 스와치" 카드 인라인 수정 ──
@@ -2721,8 +2751,48 @@ else
         if (_project == null) return;
         _saving = true;
         StateHasChanged();
-        await Storage.SaveProjectAsync(_project);
+        await PersistProjectAsync();
         _saving = false;
         await JS.InvokeVoidAsync("showToast", "저장됐어요");
+    }
+
+    // 타이머 시작/종료 전용 저장: 클라우드 업로드가 끝날 때까지(최대 5초) 기다림.
+    // 종료 직후 앱을 닫거나 화면을 꺼도 다른 기기에 종료 기록이 전달되도록 하기 위함.
+    async Task SaveSessionAsync()
+    {
+        if (_project == null) return;
+        _saving = true;
+        StateHasChanged();
+        await Storage.SaveProjectAndWaitAsync(_project);
+        MarkClean();
+        _saving = false;
+        await JS.InvokeVoidAsync("showToast", "저장됐어요");
+    }
+
+    // ── 변경 감지 ────────────────────────────────────────
+    // 이 화면이 마지막으로 저장/동기화한 시점의 프로젝트 내용 해시. 화면을 나갈 때 이 값과 달라진 경우에만 저장함.
+    int _baselineHash;
+    int CurrentProjectHash() => _project == null ? 0 : System.Text.Json.JsonSerializer.Serialize(_project).GetHashCode();
+    void MarkClean() => _baselineHash = CurrentProjectHash();
+    bool IsProjectDirty() => _project != null && CurrentProjectHash() != _baselineHash;
+
+    async Task PersistProjectAsync()
+    {
+        if (_project == null) return;
+        await Storage.SaveProjectAsync(_project);
+        MarkClean();
+    }
+
+    // 프로젝트를 연 직후 클라우드의 최신 상태를 뒤에서 받아와 반영 (화면은 기다리지 않고 바로 열림)
+    async Task RefreshFromCloudInBackgroundAsync()
+    {
+        try
+        {
+            var id = ProjectId;
+            await Storage.RefreshProjectFromCloudAsync(id);
+            if (_project?.Id == id)
+                await ApplyFreshSessionsAsync();
+        }
+        catch { }
     }
 }

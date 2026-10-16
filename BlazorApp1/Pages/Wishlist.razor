@@ -604,7 +604,7 @@ else
     {
         var photo = proj?.Photos.FirstOrDefault(p => !string.IsNullOrEmpty(p.StorageUrl) || !string.IsNullOrEmpty(p.Base64Data));
         if (photo == null) return null;
-        return !string.IsNullOrEmpty(photo.StorageUrl) ? photo.StorageUrl : photo.Base64Data;
+        return Storage.PhotoSrc(photo); // 방금 올린 사진이면 기기에 있는 압축본을 바로 보여줌
     }
 
     bool _wishPhotoUploadInFlight = false;
@@ -638,7 +638,8 @@ else
 
         try
         {
-            await JS.InvokeVoidAsync("showToast", "사진 업로드 중...");
+            // 업로드가 끝날 때까지 계속 떠 있는 토스트 (자동으로 사라지면 사용자는 진행 중인지 모름)
+            await JS.InvokeVoidAsync("showToast", "사진 업로드 중...", "success", true);
             using var stream = file.OpenReadStream(maxFileSize);
             using var ms = new System.IO.MemoryStream();
             await stream.CopyToAsync(ms);
@@ -648,12 +649,14 @@ else
             catch { compressed = rawBase64; }
 
             var photo = new ProjectPhoto { FileName = file.Name, TakenAt = DateTime.Now };
+            bool localOnly = false; // 로그인 상태인데 클라우드 업로드에 실패해 이 기기에만 저장됨
 
             if (Storage.IsLoggedIn)
             {
                 var (url, err, fileBytes) = await Storage.UploadPhotoAsync(_editingProject.Id.ToString(), photo.Id.ToString(), compressed);
                 if (err == "quota")
                 {
+                    await JS.InvokeVoidAsync("hideToast");
                     await JS.InvokeVoidAsync("showToast", "저장공간 300MB 한도를 초과했어요. 사진을 정리하고 다시 시도해 주세요.", "error");
                     return;
                 }
@@ -661,9 +664,14 @@ else
                 {
                     photo.StorageUrl = url;
                     photo.FileSizeBytes = fileBytes;
+                    // 클라우드 이미지가 뜰 때까지 빈칸으로 보이지 않도록, 방금 압축한 사진을 바로 보여줌
+                    Storage.RememberPhotoPreview(photo.Id, compressed);
                 }
                 else
-                    photo.Base64Data = compressed; // 업로드 실패 시 로컬 fallback
+                {
+                    photo.Base64Data = compressed; // 업로드 실패 시 로컬 fallback (다음 동기화 때 자동으로 다시 올라감)
+                    localOnly = true;
+                }
             }
             else
             {
@@ -673,9 +681,12 @@ else
             _editingProject.Photos.Clear(); // 위시 사진은 1장만
             _editingProject.Photos.Add(photo);
             await JS.InvokeVoidAsync("hideToast");
+            if (localOnly)
+                await JS.InvokeVoidAsync("showToast", "클라우드에 올리지 못해 이 기기에만 저장했어요. 연결되면 자동으로 올라가요.", "info");
         }
         catch (Exception ex)
         {
+            await JS.InvokeVoidAsync("hideToast");
             await JS.InvokeVoidAsync("showToast", $"사진 첨부 실패: {ex.Message}", "error");
         }
     }

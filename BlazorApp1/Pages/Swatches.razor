@@ -874,6 +874,7 @@ else
         var original = _swatches.FirstOrDefault(s => s.Id == _editing.Id);
 
         // 사진 처리
+        bool photoLocalOnly = false; // 로그인 상태인데 클라우드 업로드에 실패해 이 기기에만 저장됨
         if (Storage.IsLoggedIn)
         {
             // 사진이 지워진 경우 → 클라우드 삭제
@@ -897,6 +898,10 @@ else
                     _editing.PhotoFileSizeBytes = fileBytes;
                     _editing.PhotoBase64 = ""; // 클라우드에 올렸으니 Base64 제거
                 }
+                else
+                {
+                    photoLocalOnly = true; // 업로드 실패 → Base64는 그대로 남아 기기에 저장됨 (연결되면 자동 재업로드)
+                }
             }
         }
 
@@ -904,7 +909,10 @@ else
         _swatches = await Storage.GetSwatchesAsync();
         _showModal = false;
         _saving = false;
-        await JS.InvokeVoidAsync("showToast", "저장됐어요");
+        if (photoLocalOnly)
+            await JS.InvokeVoidAsync("showToast", "저장했어요. 사진은 클라우드에 올리지 못해 이 기기에만 저장됐어요. 연결되면 자동으로 올라가요.", "info");
+        else
+            await JS.InvokeVoidAsync("showToast", "저장됐어요");
     }
 
     async Task DeleteSwatch(Guid id)

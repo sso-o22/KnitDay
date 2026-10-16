@@ -28,6 +28,8 @@ namespace KnitLog.Services
         // 동기화 완료 이벤트 (Home 등 화면에서 재로딩 트리거)
         public event Action? OnSyncCompleted;
         public event Action? OnSyncStarted;
+        // 프로젝트 목록이 로컬에 저장될 때마다 발생 (사이드바 통계처럼 화면 밖에서 프로젝트를 참고하는 곳이 다시 읽도록)
+        public event Action? OnProjectsChanged;
         public bool IsSyncing { get; private set; }
 
         // 마이그레이션 진행 이벤트
@@ -47,6 +49,10 @@ namespace KnitLog.Services
         {
             var json = JsonSerializer.Serialize(list, _jsonOpts);
             await _js.InvokeVoidAsync("knitDB.setData", key, json);
+            if (key == KEY_PROJECTS)
+            {
+                try { OnProjectsChanged?.Invoke(); } catch { }
+            }
         }
 
         private async Task<List<T>> LoadLocalAsync<T>(string key)
@@ -124,19 +130,50 @@ namespace KnitLog.Services
         private static bool NeedsPatternUpload(KnitProject p) =>
             p.HasSavedPattern && (string.IsNullOrEmpty(p.PatternCloudUrl) || p.PatternCloudUrl == PatternCloudUrlLocalOnly);
 
+        // 클라우드에 못 올라가고 기기에만(Base64) 남아 있는 스와치 사진인지
+        private static bool NeedsSwatchPhotoUpload(Swatch s) =>
+            !string.IsNullOrEmpty(s.PhotoBase64) && !s.PhotoBase64.StartsWith("http") && string.IsNullOrEmpty(s.PhotoStorageUrl);
+
         public async Task<(string? url, string? error, long bytes)> UploadPhotoAsync(string projectId, string photoId, string base64DataUrl)
         {
             try
             {
-                var (used, _) = await GetCloudUsageAsync();
+                // 용량 한도 확인은 사진마다 서버에서 다시 읽지 않고, 잠시 보관한 값을 씀 (여러 장 업로드 시 왕복 절감)
+                var (used, _) = await GetCloudUsageCachedAsync();
                 if (used >= PerUserLimitBytes)
                     return (null, "quota", 0);
                 var publicId = $"{Uid ?? "anon"}/projects/{projectId}/{photoId}";
                 var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64DataUrl, publicId, "image");
-                var (url, bytes) = await ParseCloudinaryResult(json, "photo");
+                // 사용량 기록은 업로드 결과를 기다리지 않고 뒤에서 처리 (사진이 슬롯에 뜨기까지의 대기 단축)
+                var (url, bytes) = await ParseCloudinaryResult(json, "photo", awaitUsage: false);
                 return (url, null, bytes);
             }
             catch { return (null, "error", 0); }
+        }
+
+        // ── 방금 올린 사진의 미리보기 ─────────────────────────────────
+        // 업로드가 끝나도 슬롯의 이미지는 Cloudinary에서 다시 내려받아야 해서 한동안 빈칸으로 보임.
+        // 방금 올린 사진은 기기에 이미 압축본이 있으므로 그걸 바로 보여줌.
+        // 메모리에만 보관하고(저장하지 않음), 개수를 제한해서 메모리를 아낌. 앱을 다시 열면 평소처럼 URL로 표시됨.
+        private readonly Dictionary<Guid, string> _photoPreviews = new();
+        private readonly Queue<Guid> _photoPreviewOrder = new();
+        private const int MaxPhotoPreviews = 12;
+
+        public void RememberPhotoPreview(Guid photoId, string? dataUrl)
+        {
+            if (string.IsNullOrEmpty(dataUrl) || !dataUrl.StartsWith("data:")) return;
+            if (!_photoPreviews.ContainsKey(photoId)) _photoPreviewOrder.Enqueue(photoId);
+            _photoPreviews[photoId] = dataUrl;
+            while (_photoPreviewOrder.Count > MaxPhotoPreviews)
+                _photoPreviews.Remove(_photoPreviewOrder.Dequeue());
+        }
+
+        /// <summary>화면에 표시할 사진 주소: 방금 올린 사진이면 미리보기, 아니면 클라우드 URL, 없으면 기기에 저장된 Base64.</summary>
+        public string PhotoSrc(ProjectPhoto photo)
+        {
+            if (!string.IsNullOrEmpty(photo.StorageUrl))
+                return _photoPreviews.TryGetValue(photo.Id, out var preview) ? preview : photo.StorageUrl;
+            return photo.Base64Data;
         }
 
         public async Task<(string? url, string? error, long bytes)> UploadPdfAsync(string projectId, byte[] bytes)
@@ -178,6 +215,7 @@ namespace KnitLog.Services
         public async Task SubtractCloudUsageAsync(string type, long bytes)
         {
             if (string.IsNullOrEmpty(Uid) || bytes <= 0) return;
+            _usageCache = null; // 용량이 줄었으니 다음 확인 때 서버에서 다시 읽음
             try
             {
                 var path = $"users/{Uid}/meta/usage";
@@ -197,7 +235,8 @@ namespace KnitLog.Services
             catch { }
         }
 
-        private async Task<(string? url, long bytes)> ParseCloudinaryResult(string? json, string type)
+        // awaitUsage=false: 사용량 기록(서버 읽기+쓰기)을 기다리지 않고 뒤에서 처리 — 사진 업로드처럼 사용자가 결과를 기다리는 경우용
+        private async Task<(string? url, long bytes)> ParseCloudinaryResult(string? json, string type, bool awaitUsage = true)
         {
             if (string.IsNullOrEmpty(json)) return (null, 0);
             try
@@ -206,16 +245,42 @@ namespace KnitLog.Services
                 var url   = doc.RootElement.GetProperty("url").GetString();
                 var bytes = doc.RootElement.TryGetProperty("bytes", out var b) ? b.GetInt64() : 0;
                 if (!string.IsNullOrEmpty(url) && bytes > 0 && !string.IsNullOrEmpty(Uid))
-                    await AddCloudUsageAsync(type, bytes);
+                {
+                    if (awaitUsage) await AddCloudUsageAsync(type, bytes);
+                    else            _ = AddCloudUsageAsync(type, bytes); // 내부에서 예외를 모두 처리함
+                }
                 return (url, bytes);
             }
             catch { return (null, 0); }
         }
 
         // ── 용량 사용량 Firestore 누적 ────────────────────────
+        // 읽고→더해서→쓰는 방식이라, 여러 건이 동시에 돌면 한쪽 증가분이 사라질 수 있어 한 번에 하나씩만 실행
+        private readonly SemaphoreSlim _usageLock = new(1, 1);
+
+        // 용량 한도 확인용 임시 보관값 (30초). 업로드/삭제 때 함께 갱신·무효화됨.
+        private (long photo, long pdf)? _usageCache;
+        private DateTime _usageCacheAt = DateTime.MinValue;
+        private string? _usageCacheUid;
+
+        private async Task<(long photoBytes, long pdfBytes)> GetCloudUsageCachedAsync(int maxAgeSeconds = 30)
+        {
+            if (_usageCache is { } c && _usageCacheUid == Uid && (DateTime.UtcNow - _usageCacheAt).TotalSeconds < maxAgeSeconds)
+                return c;
+            var u = await GetCloudUsageAsync();
+            _usageCache = u;
+            _usageCacheAt = DateTime.UtcNow;
+            _usageCacheUid = Uid;
+            return u;
+        }
+
         private async Task AddCloudUsageAsync(string type, long bytes)
         {
             if (string.IsNullOrEmpty(Uid)) return;
+            // 보관 중인 값에 먼저 반영 (다음 사진의 용량 확인에 바로 쓰이도록)
+            if (_usageCache is { } c && _usageCacheUid == Uid)
+                _usageCache = type == "photo" ? (c.photo + bytes, c.pdf) : (c.photo, c.pdf + bytes);
+            await _usageLock.WaitAsync();
             try
             {
                 var path = $"users/{Uid}/meta/usage";
@@ -233,6 +298,7 @@ namespace KnitLog.Services
                 await _js.InvokeAsync<bool>("firebaseStore.setDocument", path, payload);
             }
             catch { }
+            finally { _usageLock.Release(); }
         }
 
         public async Task<(long photoBytes, long pdfBytes)> GetCloudUsageAsync()
@@ -277,12 +343,12 @@ namespace KnitLog.Services
         {
             try
             {
-                var (used, _) = await GetCloudUsageAsync();
+                var (used, _) = await GetCloudUsageCachedAsync();
                 if (used >= PerUserLimitBytes)
                     return (null, "quota", 0);
                 var publicId = $"{Uid ?? "anon"}/swatches/{swatchId}";
                 var json = await _js.InvokeAsync<string?>("uploadToCloudinary", base64DataUrl, publicId, "image");
-                var (url, bytes) = await ParseCloudinaryResult(json, "photo");
+                var (url, bytes) = await ParseCloudinaryResult(json, "photo", awaitUsage: false);
                 return (url, null, bytes);
             }
             catch { return (null, "error", 0); }
@@ -323,6 +389,9 @@ namespace KnitLog.Services
         }
 
         private bool _isSyncingLogin = false;
+        // 이번 실행(앱을 연 뒤)에 클라우드와 병합을 마친 사용자 Id. 병합 전에는 로컬이 낡았을 수 있어서
+        // 로컬 전체를 그대로 클라우드에 올리면 다른 기기의 최신 내용을 덮어쓸 수 있음.
+        private string? _mergedUid;
         public async Task SyncOnLoginAsync()
         {
             if (!IsLoggedIn) return;
@@ -374,12 +443,19 @@ namespace KnitLog.Services
             }
             catch { }
 
-            await MergeCollectionAsync<KnitProject>(KEY_PROJECTS, "projects");
-            await MergeCollectionAsync<Yarn>(KEY_YARNS, "yarns");
-            await MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools");
-            await MergeCollectionAsync<Swatch>(KEY_SWATCHES, "swatches");
+            // 4개 컬렉션은 서로 독립(저장 키·클라우드 경로가 모두 다름)이라 동시에 처리 — 대기 시간이 합산되지 않음
+            await Task.WhenAll(
+                MergeCollectionAsync<KnitProject>(KEY_PROJECTS, "projects"),
+                MergeCollectionAsync<Yarn>(KEY_YARNS, "yarns"),
+                MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools"),
+                MergeCollectionAsync<Swatch>(KEY_SWATCHES, "swatches"));
+            _mergedUid = Uid; // 이번 실행에서 클라우드와 병합을 마쳤음 (PushLocalToFirebaseAsync가 참고)
             await SyncTodosAsync();
             await SyncHomeCountersAsync();
+
+            // 병합이 끝난 시점에 화면을 먼저 갱신 — 아래 사진/도안 마이그레이션 확인(서버 왕복, 경우에 따라 업로드)이
+            // 끝나길 기다리면 다른 기기에서 바뀐 내용이 한참 뒤에야 보임. 마지막(finally)에도 한 번 더 알림.
+            try { OnSyncCompleted?.Invoke(); } catch { }
 
             // 로그인 전 비로그인 상태로 쌓인 사진/도안(Base64, 로컬 전용)을 Cloudinary로 옮겨
             // IDB·Firestore 용량 부담을 줄임 — 아래 조건 중 하나라도 해당하면 실행:
@@ -399,7 +475,8 @@ namespace KnitLog.Services
                     var projectsForCheck = await GetProjectsAsync();
                     hasPending = projectsForCheck.Any(p =>
                         NeedsPatternUpload(p) ||
-                        p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
+                        p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)))
+                        || (await GetSwatchesAsync()).Any(NeedsSwatchPhotoUpload);
                 }
 
                 if (string.IsNullOrEmpty(alreadyMigrated) || hasPending)
@@ -409,7 +486,8 @@ namespace KnitLog.Services
                     var projectsAfter = await GetProjectsAsync();
                     bool allDone = !projectsAfter.Any(p =>
                         NeedsPatternUpload(p) ||
-                        p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
+                        p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)))
+                        && !(await GetSwatchesAsync()).Any(NeedsSwatchPhotoUpload);
                     if (allDone)
                     {
                         await _js.InvokeAsync<bool>(
@@ -444,6 +522,7 @@ namespace KnitLog.Services
                 total += p.Photos.Count(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl));
                 if (NeedsPatternUpload(p)) total++;
             }
+            total += (await GetSwatchesAsync()).Count(NeedsSwatchPhotoUpload);
 
             if (total == 0) return;
 
@@ -631,6 +710,52 @@ namespace KnitLog.Services
             if (changed)
                 await SaveAsync(KEY_PROJECTS, "projects", "Id", projects);
 
+            // 스와치 사진 (기기에만 저장된 Base64 → Cloudinary)
+            if (!quotaReached)
+            {
+                var swatchTargets = (await GetSwatchesAsync()).Where(NeedsSwatchPhotoUpload).ToList();
+                foreach (var target in swatchTargets)
+                {
+                    string? sUrl = null;
+                    long sBytes = 0;
+                    for (int attempt = 1; attempt <= MaxRetry; attempt++)
+                    {
+                        try
+                        {
+                            var (u, err, bytes) = await UploadSwatchPhotoAsync(target.Id.ToString(), target.PhotoBase64);
+                            if (err == "quota") { quotaReached = true; break; }
+                            if (!string.IsNullOrEmpty(u)) { sUrl = u; sBytes = bytes; break; }
+                        }
+                        catch { }
+                        if (attempt < MaxRetry)
+                            await Task.Delay(1500 * attempt);
+                    }
+
+                    if (quotaReached) break;
+
+                    if (!string.IsNullOrEmpty(sUrl))
+                    {
+                        // 업로드 중 사용자가 스와치를 수정/삭제했을 수 있으므로 최신 목록에서 해당 항목만 패치
+                        var latest = await GetSwatchesAsync();
+                        var cur = latest.FirstOrDefault(s => s.Id == target.Id);
+                        if (cur != null && NeedsSwatchPhotoUpload(cur))
+                        {
+                            cur.PhotoStorageUrl = sUrl;
+                            cur.PhotoFileSizeBytes = sBytes;
+                            cur.PhotoBase64 = "";
+                            await SaveAsync(KEY_SWATCHES, "swatches", "Id", latest);
+                        }
+                        progress.Done++;
+                    }
+                    else
+                    {
+                        progress.Failed++;
+                    }
+                    progress.CurrentLabel = $"{target.Name} 스와치 사진";
+                    OnMigrationProgress?.Invoke(progress);
+                }
+            }
+
             progress.IsRunning = false;
             progress.QuotaReached = quotaReached;
             CurrentMigration = progress;
@@ -767,6 +892,10 @@ namespace KnitLog.Services
 
             // Id 기준으로 merge
             var merged = new Dictionary<string, JsonElement>();
+            // 클라우드에 이미 있는 항목(삭제 표시 제외) — 클라우드와 같은 내용은 다시 올리지 않기 위한 기준
+            var cloudById = new Dictionary<string, JsonElement>();
+            // 클라우드에 올려야 하는 항목 Id (로컬에만 있거나, 로컬이 더 최신이거나, 세션 병합으로 내용이 달라진 것)
+            var uploadIds = new HashSet<string>();
 
             // 로컬 먼저 추가 (_deleted tombstone 제외)
             foreach (var item in localList)
@@ -786,6 +915,7 @@ namespace KnitLog.Services
                     merged.Remove(id);
                     continue;
                 }
+                cloudById[id] = item;
                 if (!merged.ContainsKey(id))
                 {
                     merged[id] = item;
@@ -801,13 +931,21 @@ namespace KnitLog.Services
                         var winner = cloudUpdated >= localUpdated ? item : merged[id];
                         var loser  = cloudUpdated >= localUpdated ? merged[id] : item;
                         merged[id] = MergeProjectSessions(winner, loser, _jsonOpts);
+                        // 로컬이 더 최신이거나, 로컬에만 있던 세션이 합쳐져 클라우드와 달라졌으면 올림
+                        if (cloudUpdated < localUpdated || SessionsDiffer(merged[id], item))
+                            uploadIds.Add(id);
                     }
                     else
                     {
                         if (cloudUpdated >= localUpdated) merged[id] = item;
+                        else uploadIds.Add(id); // 로컬이 더 최신 → 클라우드에 반영
                     }
                 }
             }
+
+            // 클라우드에 없는 항목(로컬에서만 만든 것, 오프라인 중 추가한 것)은 올림
+            foreach (var id in merged.Keys)
+                if (!cloudById.ContainsKey(id)) uploadIds.Add(id);
 
             var mergedList = merged.Values.ToList();
             var mergedJson = JsonSerializer.Serialize(mergedList, _jsonOpts);
@@ -815,9 +953,56 @@ namespace KnitLog.Services
             // 로컬 저장
             await _js.InvokeVoidAsync("knitDB.setData", localKey, mergedJson);
 
-            // Cloud 업데이트 (로컬에만 있던 것도 올리기)
-            await _js.InvokeAsync<bool>("firebaseStore.saveCollection",
-                $"users/{Uid}/{collectionName}", mergedJson, "Id");
+            // Cloud 업데이트: 클라우드와 이미 같은 항목은 건너뛰고 달라진 것만 올림
+            // (예전에는 전체를 한 건씩 다시 써서 앱을 열 때마다 느리고 쓰기 요금도 나갔음)
+            var path = $"users/{Uid}/{collectionName}";
+            bool uploadOk = true;
+            if (uploadIds.Count > 0)
+            {
+                var uploadList = merged.Where(kv => uploadIds.Contains(kv.Key)).Select(kv => kv.Value).ToList();
+                uploadOk = await _js.InvokeAsync<bool>("firebaseStore.saveCollection",
+                    path, JsonSerializer.Serialize(uploadList, _jsonOpts), "Id");
+            }
+
+            // 클라우드와 같다고 확인된 항목은 "이미 올라간 내용"으로 기억시켜,
+            // 이후 첫 저장에서 변경 없는 항목까지 전부 다시 쓰는 일을 막음 (실패해도 동작엔 영향 없음)
+            try
+            {
+                var syncedIds = merged.Keys.Where(id => uploadOk || !uploadIds.Contains(id)).ToList();
+                if (syncedIds.Count > 0)
+                {
+                    var typed = JsonSerializer.Deserialize<List<T>>(mergedJson, _jsonOpts) ?? new();
+                    await _js.InvokeAsync<bool>("firebaseStore.markSynced",
+                        path, JsonSerializer.Serialize(typed, _jsonOpts), "Id", JsonSerializer.Serialize(syncedIds));
+                }
+            }
+            catch { }
+        }
+
+        // 두 프로젝트의 세션 목록(Id → 종료 여부/시각)이 다른지 비교
+        private static bool SessionsDiffer(JsonElement a, JsonElement b)
+        {
+            static Dictionary<string, string> Map(JsonElement el)
+            {
+                var m = new Dictionary<string, string>();
+                if (el.TryGetProperty("Sessions", out var arr) && arr.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var s in arr.EnumerateArray())
+                    {
+                        if (!s.TryGetProperty("Id", out var sid)) continue;
+                        var end = s.TryGetProperty("EndTime", out var et) && et.ValueKind != JsonValueKind.Null
+                            ? et.ToString() : "";
+                        m[sid.ToString()] = end;
+                    }
+                }
+                return m;
+            }
+            var ma = Map(a);
+            var mb = Map(b);
+            if (ma.Count != mb.Count) return true;
+            foreach (var kv in ma)
+                if (!mb.TryGetValue(kv.Key, out var v) || v != kv.Value) return true;
+            return false;
         }
 
         private static string? GetId(JsonElement el)
@@ -905,14 +1090,31 @@ namespace KnitLog.Services
                 var projectsToCheck = await GetProjectsAsync();
                 bool hasPendingMedia = projectsToCheck.Any(p =>
                     NeedsPatternUpload(p) ||
-                    p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)));
+                    p.Photos.Any(ph => !string.IsNullOrEmpty(ph.Base64Data) && string.IsNullOrEmpty(ph.StorageUrl)))
+                    || (await GetSwatchesAsync()).Any(NeedsSwatchPhotoUpload);
                 if (hasPendingMedia)
                     await MigrateLocalMediaToCloudAsync();
 
-                await SaveFirebaseAsync("projects", await GetProjectsAsync(), "Id");
-                await SaveFirebaseAsync("yarns",    await GetYarnsAsync(),    "Id");
-                await SaveFirebaseAsync("tools",    await GetToolsAsync(),    "Id");
-                await SaveFirebaseAsync("swatches", await GetSwatchesAsync(), "Id");
+                if (_mergedUid == Uid)
+                {
+                    // 이번 실행에서 이미 클라우드와 병합했으므로, 그 뒤 로컬에서 바뀐 항목만 올라감
+                    // (병합 직후 클라우드와 같다고 확인된 항목은 saveCollection이 건너뜀)
+                    await SaveFirebaseAsync("projects", await GetProjectsAsync(), "Id");
+                    await SaveFirebaseAsync("yarns",    await GetYarnsAsync(),    "Id");
+                    await SaveFirebaseAsync("tools",    await GetToolsAsync(),    "Id");
+                    await SaveFirebaseAsync("swatches", await GetSwatchesAsync(), "Id");
+                }
+                else
+                {
+                    // 아직 클라우드와 병합한 적이 없으면 로컬이 낡았을 수 있음 → 그대로 올리면 다른 기기의
+                    // 최신 내용(예: 패드에서 멈춘 타이머)을 낡은 내용으로 덮어쓰므로, 비교·병합 후 올림
+                    await Task.WhenAll(
+                        MergeCollectionAsync<KnitProject>(KEY_PROJECTS, "projects"),
+                        MergeCollectionAsync<Yarn>(KEY_YARNS, "yarns"),
+                        MergeCollectionAsync<KnitTool>(KEY_TOOLS, "tools"),
+                        MergeCollectionAsync<Swatch>(KEY_SWATCHES, "swatches"));
+                    _mergedUid = Uid;
+                }
 
                 // todos push
                 var todosJson = await _js.InvokeAsync<string?>("knitDB.getData", KEY_TODOS);
@@ -1040,6 +1242,24 @@ namespace KnitLog.Services
         }
 
         /// <summary>
+        /// 저장하되 클라우드 업로드가 끝날 때까지(최대 timeoutMs) 기다림.
+        /// 타이머 시작/종료처럼 다른 기기에 꼭 전달돼야 하는 변경용 — 일반 저장은 업로드를 기다리지 않아서
+        /// 종료 직후 앱을 닫거나 화면을 끄면 업로드가 중간에 끊겨 다른 기기에서 타이머가 계속 도는 것처럼 보일 수 있음.
+        /// 시간 안에 끝나지 않으면 기다리지 않고 넘어감(업로드는 계속 진행되고, 실패해도 다음 동기화 때 다시 올라감).
+        /// </summary>
+        public async Task SaveProjectAndWaitAsync(KnitProject project, int timeoutMs = 5000)
+        {
+            project.UpdatedAt = DateTime.Now;
+            var list = await GetProjectsAsync();
+            var idx  = list.FindIndex(p => p.Id == project.Id);
+            if (idx >= 0) list[idx] = project; else list.Add(project);
+            await SaveLocalAsync(KEY_PROJECTS, list);
+            if (!IsLoggedIn) return;
+            var upload = SaveFirebaseAsync("projects", list, "Id"); // 내부에서 예외를 처리함
+            await Task.WhenAny(upload, Task.Delay(timeoutMs));
+        }
+
+        /// <summary>
         /// 프로젝트 하나만 클라우드에서 다시 읽어와 로컬보다 최신이면 병합해서 반영.
         /// 동기화는 로그인 시점에만 도는 구조라, 다른 기기에서 방금 멈춘 타이머 같은 변경사항을
         /// 재로그인 없이도 놓치지 않도록 프로젝트 상세를 열 때 호출하는 용도.
@@ -1065,7 +1285,23 @@ namespace KnitLog.Services
                     await SaveLocalAsync(KEY_PROJECTS, list);
                     return cloud;
                 }
-                if (cloud.UpdatedAt <= local.UpdatedAt) return local; // 로컬이 이미 최신이면 그대로 유지
+                if (cloud.UpdatedAt <= local.UpdatedAt)
+                {
+                    // 로컬이 더 최신이어도, 클라우드에 "종료 기록"이 있는 세션이 로컬엔 아직 진행 중이면 종료 기록을 반영.
+                    // (화면만 열었다 닫아도 저장 시각이 갱신되던 예전 동작 때문에, 낡은 로컬이 더 최신처럼 보일 수 있음)
+                    bool endedApplied = false;
+                    foreach (var cs in cloud.Sessions)
+                    {
+                        if (cs.EndTime == null) continue;
+                        var ls = local.Sessions.FirstOrDefault(x => x.Id == cs.Id);
+                        if (ls == null || ls.EndTime != null) continue;
+                        ls.EndTime = cs.EndTime;
+                        if (string.IsNullOrEmpty(ls.Memo) && !string.IsNullOrEmpty(cs.Memo)) ls.Memo = cs.Memo;
+                        endedApplied = true;
+                    }
+                    if (endedApplied) await SaveLocalAsync(KEY_PROJECTS, list);
+                    return local; // 그 외에는 로컬 그대로 유지
+                }
 
                 var mergedSessions = new Dictionary<Guid, KnitSession>();
                 foreach (var s in local.Sessions) mergedSessions[s.Id] = s;

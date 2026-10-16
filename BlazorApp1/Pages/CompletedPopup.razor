@@ -44,7 +44,7 @@
                             {
                                 var vp = PopupValidPhotos[vIdx];
                                 <div style="position:relative; aspect-ratio:1; cursor:pointer;" @onclick="() => OpenPhotoLightbox(vp)">
-                                    <img src="@(!string.IsNullOrEmpty(vp.StorageUrl) ? vp.StorageUrl : vp.Base64Data)"
+                                    <img src="@Storage.PhotoSrc(vp)"
                                          style="width:100%; height:100%; object-fit:cover; border-radius:var(--radius-sm);"
                                          alt="사진" />
                                     @if (vIdx == 0)
@@ -334,7 +334,7 @@
                         {
                             var ep = PopupValidPhotos[eIdx];
                             <div style="position:relative; aspect-ratio:1; overflow:hidden; border-radius:var(--radius-sm);">
-                                <img src="@(!string.IsNullOrEmpty(ep.StorageUrl) ? ep.StorageUrl : ep.Base64Data)"
+                                <img src="@Storage.PhotoSrc(ep)"
                                      style="width:100%; height:100%; object-fit:cover;"
                                      class="@(eIdx==0 ? "photo-slot-thumb photo-slot-active" : "photo-slot-thumb")"
                                      alt="사진" />
@@ -783,7 +783,7 @@
                 <img src="icons/x.svg" style="width:16px;height:16px;filter:invert(1);" />
             </span>
         </button>
-        <img src="@(!string.IsNullOrEmpty(_lightboxPhoto.StorageUrl) ? _lightboxPhoto.StorageUrl : _lightboxPhoto.Base64Data)"
+        <img src="@Storage.PhotoSrc(_lightboxPhoto)"
              style="max-width:95vw;max-height:calc(100vh - 60px);object-fit:contain;border-radius:8px;"
              @onclick:stopPropagation="true" />
     </div>
@@ -1152,8 +1152,10 @@
             files = files.Except(invalidType).ToList();
             if (!files.Any()) return;
         }
-        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...");
-        StateHasChanged();
+        // 업로드가 끝날 때까지 계속 떠 있는 토스트 (자동으로 사라지면 사용자는 진행 중인지 모름)
+        await JS.InvokeVoidAsync("showToast", "사진 업로드 중...", "success", true);
+        try { StateHasChanged(); } catch { }
+        int localOnlyCount = 0; // 로그인 상태인데 클라우드 업로드에 실패해 이 기기에만 저장된 사진 수
         foreach (var file in files)
         {
             try
@@ -1171,6 +1173,7 @@
                     var (url, err, fileBytes) = await Storage.UploadPhotoAsync(Project.Id.ToString(), photo.Id.ToString(), base64);
                     if (err == "quota")
                     {
+                        await JS.InvokeVoidAsync("hideToast");
                         await JS.InvokeVoidAsync("showToast", "저장공간 300MB 한도를 초과했어요. 사진을 삭제하고 다시 시도해 주세요.", "error");
                         return;
                     }
@@ -1178,9 +1181,14 @@
                     {
                         photo.StorageUrl = url;
                         photo.FileSizeBytes = fileBytes;
+                        // 슬롯에 클라우드 이미지가 뜰 때까지 빈칸으로 보이지 않도록, 방금 압축한 사진을 바로 보여줌
+                        Storage.RememberPhotoPreview(photo.Id, base64);
                     }
                     else
-                        photo.Base64Data = base64;
+                    {
+                        photo.Base64Data = base64; // 업로드 실패 시 로컬 fallback (다음 동기화 때 자동으로 다시 올라감)
+                        localOnlyCount++;
+                    }
                 }
                 else
                 {
@@ -1190,11 +1198,15 @@
             }
             catch (Exception ex)
             {
+                await JS.InvokeVoidAsync("hideToast");
                 await JS.InvokeVoidAsync("showToast", $"사진 첨부 실패: {ex.Message}", "error");
                 return;
             }
         }
-        StateHasChanged();
+        try { StateHasChanged(); } catch { }
         await JS.InvokeVoidAsync("hideToast");
+        if (localOnlyCount > 0)
+            await JS.InvokeVoidAsync("showToast",
+                $"사진 {localOnlyCount}장은 클라우드에 올리지 못해 이 기기에만 저장했어요. 연결되면 자동으로 올라가요.", "info");
     }
 }

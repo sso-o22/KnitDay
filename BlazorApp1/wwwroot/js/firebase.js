@@ -37,6 +37,10 @@ const provider = new GoogleAuthProvider();
 // 디스크에 보관하지 않는 이유: 클라우드 데이터가 서버 쪽에서 지워진 경우(클라우드 데이터 삭제,
 // 만료 정리 등) 캐시가 "이미 올라가 있음"이라고 착각해 재업로드를 막는 일을 피하기 위함.
 const _writeCache = new Map();
+// saveCollection에서 동시에 보낼 쓰기 개수 (너무 크면 모바일 네트워크에서 오히려 불안정)
+const SAVE_CONCURRENCY = 8;
+// 동기화 직후에는 markSynced로, "방금 클라우드에서 읽어 확인한 내용"만 기억시켜서 첫 저장의 전체 쓰기를 피함
+// (클라우드에서 직접 읽은 내용이라 서버 쪽 삭제와 어긋날 위험이 없음)
 
 // 문자열 해시 (cyrb53) — 큰 문자열(사진 Base64 등)도 빠르게, 충돌 가능성은 사실상 없음
 function _hashString(str) {
@@ -330,11 +334,13 @@ window.firebaseStore = {
 
     // 목록을 저장하되, 마지막으로 쓴 내용과 같은 항목은 setDoc을 생략함 (쓰기 요금 절감)
     async saveCollection(basePath, jsonArray, idField) {
-        let pendingKey = null; // 쓰는 중인 항목의 캐시 키 (실패하면 되돌림)
-        let written = 0, skipped = 0;
+        let written = 0, skipped = 0, failed = 0;
         try {
             const items = JSON.parse(jsonArray);
             const parts = basePath.split('/');
+
+            // 1) 쓸 항목 고르기 (마지막으로 쓴 내용과 같으면 건너뜀)
+            const todo = [];
             for (const item of items) {
                 const id = item[idField] ?? item[idField.toLowerCase()];
                 if (!id) continue;
@@ -344,21 +350,54 @@ window.firebaseStore = {
 
                 const key = `${basePath}/${id}`;
                 const hash = _hashString(JSON.stringify(item));
-                // 마지막으로 쓴 내용과 같으면 건너뜀
                 if (_writeCache.get(key) === hash) { skipped++; continue; }
-                // 쓰기가 끝나기 전에 저장이 또 호출돼도 같은 내용을 중복으로 쓰지 않도록 먼저 기록하고,
-                // 실패하면 아래 catch에서 되돌려 다음 저장 때 다시 시도되게 함
-                _writeCache.set(key, hash);
-                pendingKey = key;
-                await setDoc(doc(db, ...parts, String(id)), item, { merge: true });
-                pendingKey = null;
-                written++;
+                todo.push({ key, hash, id, item });
             }
-            console.debug(`saveCollection ${basePath}: 쓰기 ${written}건, 변경 없음 ${skipped}건`);
+
+            // 2) 여러 건을 동시에 쓰기 (한 건씩 서버 응답을 기다리면 항목 수만큼 왕복이 쌓여 느림)
+            //    쓰기가 끝나기 전에 저장이 또 호출돼도 같은 내용을 중복으로 쓰지 않도록 먼저 기록하고,
+            //    실패한 항목만 되돌려 다음 저장 때 다시 시도되게 함
+            let next = 0;
+            const worker = async () => {
+                while (next < todo.length) {
+                    const t = todo[next++];
+                    _writeCache.set(t.key, t.hash);
+                    try {
+                        await setDoc(doc(db, ...parts, String(t.id)), t.item, { merge: true });
+                        written++;
+                    } catch (e) {
+                        _writeCache.delete(t.key);
+                        failed++;
+                        console.error('saveCollection:', t.key, e);
+                    }
+                }
+            };
+            const workerCount = Math.min(SAVE_CONCURRENCY, todo.length);
+            await Promise.all(Array.from({ length: workerCount }, worker));
+
+            console.debug(`saveCollection ${basePath}: 쓰기 ${written}건, 변경 없음 ${skipped}건, 실패 ${failed}건`);
+            return failed === 0;
+        } catch (e) {
+            console.error('saveCollection:', basePath, e);
+            return false;
+        }
+    },
+
+    // 방금 동기화로 클라우드와 같다고 확인된 항목들을 "마지막으로 쓴 내용"으로 기억시킴.
+    // (앱을 새로 열면 기억이 비어 있어서, 첫 저장 때 변경 없는 항목까지 전부 다시 쓰게 되는 것을 막음)
+    markSynced(basePath, jsonArray, idField, idsJson) {
+        try {
+            const items = JSON.parse(jsonArray);
+            const ids = new Set(JSON.parse(idsJson).map(x => String(x).toLowerCase()));
+            for (const item of items) {
+                const id = item[idField] ?? item[idField.toLowerCase()];
+                if (!id || item._deleted === true) continue;
+                if (!ids.has(String(id).toLowerCase())) continue;
+                _writeCache.set(`${basePath}/${id}`, _hashString(JSON.stringify(item)));
+            }
             return true;
         } catch (e) {
-            if (pendingKey) _writeCache.delete(pendingKey);
-            console.error('saveCollection:', basePath, e);
+            console.error('markSynced:', basePath, e);
             return false;
         }
     }

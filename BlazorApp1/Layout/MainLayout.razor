@@ -261,6 +261,16 @@
         StartPollTimer();
         Auth.OnAuthChanged += OnAuthChanged;
         Storage.OnMigrationProgress += OnMigrationProgress;
+        Storage.OnProjectsChanged += OnProjectsChangedHandler;
+    }
+
+    // 어느 화면에서든 프로젝트가 저장되면(타이머 시작/종료 등) 사이드바 통계를 바로 다시 읽음
+    void OnProjectsChangedHandler()
+    {
+        InvokeAsync(async () =>
+        {
+            try { await RefreshStats(); StateHasChanged(); } catch { }
+        });
     }
 
     void OnAuthChanged()
@@ -289,9 +299,21 @@
         StateHasChanged();
     }
 
+    // 사이드바 통계용으로 읽어 둔 프로젝트 목록. 로컬 DB에서 전체 목록을 읽고 해석하는 비용이 커서
+    // 1초마다 다시 읽지 않고, 저장/동기화가 있을 때(그리고 15초마다 한 번 안전장치로)만 다시 읽음.
+    List<KnitProject> _statsProjects = new();
+    int _statsTick;
+
     async Task RefreshStats()
     {
-        var projects = await Storage.GetProjectsAsync();
+        _statsProjects = await Storage.GetProjectsAsync();
+        RecomputeStats();
+    }
+
+    // 이미 읽어 둔 목록으로 계산만 다시 함 — 진행 중인 세션 시간이 흐르는 것을 매초 반영
+    void RecomputeStats()
+    {
+        var projects = _statsProjects;
         _finished = projects.Count(p => p.Status == ProjectStatus.완료);
 
         // 완료된 세션 + 현재 진행 중인 세션(실시간) 합산
@@ -374,7 +396,9 @@
         {
             while (_sidebarTimer is not null && await _sidebarTimer.WaitForNextTickAsync())
             {
-                await RefreshStats();
+                _statsTick++;
+                if (_statsTick % 15 == 0) await RefreshStats(); // 15초마다 안전장치로 한 번 다시 읽음
+                else RecomputeStats();
                 StateHasChanged();
             }
         }
@@ -601,6 +625,7 @@
         _syncDoneCts?.Dispose();
         Auth.OnAuthChanged -= OnAuthChanged;
         Storage.OnMigrationProgress -= OnMigrationProgress;
+        Storage.OnProjectsChanged -= OnProjectsChangedHandler;
         _visibilityRef?.Dispose();
         _visibilityRef = null;
         try { await JS.InvokeVoidAsync("unregisterOnlineSync"); } catch { }
