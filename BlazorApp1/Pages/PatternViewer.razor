@@ -19,7 +19,7 @@
 
     <!-- PDF 스크롤 영역 (꽉 차게) -->
     <div id="scroll-container" class="pv-scroll">
-        <div id="pdf-wrapper" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:66px 0 8px;" @onclick="DeselectMarker">
+        <div id="pdf-wrapper" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:66px 0 calc(env(safe-area-inset-bottom, 0px) + 72px);" @onclick="DeselectMarker">
             @if (_pdfLoaded)
             {
                 @for (int pg = 1; pg <= _totalPages; pg++)
