@@ -169,12 +169,12 @@ else
                     <div style="font-size:0.78rem; color:var(--text-light); margin-bottom:10px; display:flex; align-items:flex-start; gap:4px; min-width:0;"><img src="icons/link-simple.svg" class="icon-line" style="width:13px;height:13px;flex-shrink:0;margin-top:2px;" /><span style="word-break:break-all; overflow-wrap:break-word;">@proj.PatternSource</span></div>
                 }
 
-                <div class="flex gap-1" style="flex-wrap:wrap;">
-                    <button class="btn btn-sm btn-primary" @onclick="() => StartProject(proj.Id)" style="display:inline-flex;align-items:center;gap:4px;" title="시작하기"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />시작</button>
-                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenPatternViewer(proj.Id)" style="display:inline-flex;align-items:center;" title="@(proj.HasSavedPattern ? "도안 보기" : "도안 등록")"><img src="icons/file-pdf.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:@(proj.HasSavedPattern ? "1" : "0.4");" /></button>
-                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenYarnCalc(proj)" style="display:inline-flex;align-items:center;" title="소요량 계산기"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
-                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)" style="display:inline-flex;align-items:center;"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
-                    <button class="btn btn-danger btn-sm" @onclick='() => Confirm("위시리스트에서 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))' style="display:inline-flex;align-items:center;"><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
+                <div class="flex gap-1" style="flex-wrap:nowrap;align-items:center;">
+                    <button class="btn btn-sm btn-primary" @onclick="() => StartProject(proj.Id)" style="display:inline-flex;align-items:center;gap:4px;padding:6px 10px;white-space:nowrap;flex-shrink:0;" title="시작하기"><img src="icons/play.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" />시작</button>
+                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenPatternViewer(proj.Id)" style="display:inline-flex;align-items:center;padding:6px 9px;flex-shrink:0;" title="@(proj.HasSavedPattern ? "도안 보기" : "도안 등록")"><img src="icons/file-pdf.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;opacity:@(proj.HasSavedPattern ? "1" : "0.4");" /></button>
+                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenYarnCalc(proj)" style="display:inline-flex;align-items:center;padding:6px 9px;flex-shrink:0;" title="소요량 계산기"><img src="icons/calculator.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
+                    <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditModal(proj)" style="display:inline-flex;align-items:center;padding:6px 9px;flex-shrink:0;"><img src="icons/pencil.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
+                    <button class="btn btn-danger btn-sm" @onclick='() => Confirm("위시리스트에서 삭제하면 복구할 수 없어요.", async () => await DeleteProject(proj.Id))' style="display:inline-flex;align-items:center;padding:6px 9px;flex-shrink:0;"><img src="icons/trash.svg" class="icon-line" style="width:14px;height:14px;flex-shrink:0;" /></button>
                 </div>
             </div>
         }
