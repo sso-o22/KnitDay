@@ -629,6 +629,17 @@ let basePaths = []; // 저장된 필기 (박제)
                 if (!entry.isIntersecting) return;
                 const p = parseInt(entry.target.id.replace('page-container-',''), 10);
                 if (!isNaN(p) && !_renderedPages.has(p)) renderOnePage(p, currentZoom);
+                // 스크롤로 화면에서 멀어진 페이지는 캔버스를 비워 메모리 해제
+                // (빠르게 스크롤할 때 전 페이지가 쌓여 iOS가 앱을 재시작시키는 것 방지)
+                // 화면 높이 기준 위아래 1.5배 이상 떨어진 페이지만 해제 → 보이는 페이지는 절대 안 건드림
+                const vr = scrollEl.getBoundingClientRect();
+                const keep = vr.height * 1.5;
+                for (const k of Array.from(_renderedPages)) {
+                    const el = document.getElementById('page-container-' + k);
+                    if (!el) continue;
+                    const r = el.getBoundingClientRect();
+                    if (r.bottom < vr.top - keep || r.top > vr.bottom + keep) unloadPage(k);
+                }
             });
         }, { root: scrollEl, rootMargin: '300px 0px 300px 0px', threshold: 0 });
         for (let i = 1; i <= totalPages; i++) { const el = document.getElementById('page-container-'+i); if (el) _intersectionObserver.observe(el); }
