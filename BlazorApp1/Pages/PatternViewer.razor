@@ -99,7 +99,7 @@
                                         width:100%;height:@(markerH)px;
                                         background:rgba(@rgb,@alpha);
                                         @boxShadow
-                                        @(isSelected ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
+                                        @((isSelected || (_selectAllOnPage && pageNum == _currentPage)) ? "outline:2px dashed #2979ff;outline-offset:1px;" : "")
                                         pointer-events:@(isInteractive ? "all" : "none");z-index:@(isSelected ? 17 : (marker.IsCurrent ? 16 : 15));cursor:@(isDraggable ? "ns-resize" : (isInteractive ? "pointer" : "default"));">
                                 @if (marker.IsCurrent)
                                 {
@@ -168,7 +168,7 @@
     @* ── 2번 상단바: 타이머(좌) / 행 마커 정보(우) ── *@
     <div class="top-bar-sub">
         <div class="tb-left" style="flex:1;">
-            @if (!IsWish && _rowMarkers.Any(m => m.IsCurrent))
+            @if (_rowMarkers.Any(m => m.IsCurrent))
             {
                 <img src="icons/row-detect.svg" class="icon-invert-dark" style="width:13px;height:13px;opacity:0.6;flex-shrink:0;" />
                 @if (GetSelectedMarkerIndex() is int idx)
@@ -200,7 +200,7 @@
 
     <!-- ── 필기 도구 플로팅 위젯 (좌측 상단, 툴바 아래) ── -->
     @* 위시리스트 도안은 보기 전용 — 필기 도구는 DOM은 유지하고 숨김 처리 *@
-    <div class="draw-wrap" style="@(IsWish ? "display:none;" : "")">
+    <div class="draw-wrap">
         <button class="draw-fab" id="draw-fab-btn" @onclick="ToggleDrawMode" title="필기 모드">
             <img src="@(_drawMode ? "icons/pencil-simple.svg" : "icons/pencil-simple-slash.svg")" style="width:22px;height:22px;" />
         </button>
@@ -293,10 +293,16 @@
                     @if (_rowMarkers.Any())
                     {
                         <div class="dp-sep"></div>
-                        <div class="dp-row" style="justify-content:center;">
-                            <button class="dp-btn" title="@(_selectedMarkerId != null ? "선택한 행 삭제" : "지울 행을 먼저 선택하세요")"
-                                    disabled="@(_selectedMarkerId == null)"
-                                    @onclick="DeleteSelectedMarker" style="width:28px;height:28px; opacity:@(_selectedMarkerId == null ? "0.4" : "1");">
+                        var canDelete = _selectedMarkerId != null || _selectAllOnPage;
+                        <div class="dp-row" style="justify-content:center;gap:4px;">
+                            @if (_selectAllOnPage || _rowMarkers.Any(m => m.Page == _currentPage))
+                            {
+                                <button class="dp-btn" title="이 페이지 마커 전체 선택" @onclick="ToggleSelectAllOnPage"
+                                        style="width:auto;min-width:40px;height:28px;padding:0 6px;font-size:11px;font-weight:700;white-space:nowrap;@(_selectAllOnPage ? "background:#2979ff;color:#fff;" : "")">@(_selectAllOnPage ? "☑" : "☐") 전체</button>
+                            }
+                            <button class="dp-btn" title="@(_selectAllOnPage ? "이 페이지 마커 모두 삭제" : (_selectedMarkerId != null ? "선택한 행 삭제" : "지울 행을 먼저 선택하세요"))"
+                                    disabled="@(!canDelete)"
+                                    @onclick="DeleteSelectedMarker" style="width:28px;height:28px; opacity:@(canDelete ? "1" : "0.4");">
                                 <img src="icons/trash.svg" style="width:20px;height:20px;" />
                             </button>
                         </div>
@@ -1699,6 +1705,7 @@
     {
         bool toolChanged = _tool != t;
         _tool = t;
+        if (toolChanged) _selectAllOnPage = false;
         // 툴이 바뀔 때만 팝오버 닫기 (같은 툴 재적용 시 유지)
         if (toolChanged)
         {
@@ -2158,6 +2165,7 @@
     void SelectMarker(Guid markerId)
     {
         // 같은 마커 다시 클릭하면 선택 해제
+        _selectAllOnPage = false;
         _selectedMarkerId = _selectedMarkerId == markerId ? null : markerId;
         StateHasChanged();
     }
@@ -2171,8 +2179,33 @@
         StateHasChanged();
     }
 
+    // "전체" 체크: 켜면 지금 보는 페이지의 모든 마커가 선택된 것으로 취급 → 휴지통으로 한 번에 삭제
+    bool _selectAllOnPage = false;
+    void ToggleSelectAllOnPage()
+    {
+        _selectAllOnPage = !_selectAllOnPage;
+        if (_selectAllOnPage) _selectedMarkerId = null; // 개별 선택과 동시에 쓰지 않음
+        StateHasChanged();
+    }
+
+    async Task ClearPageMarkers(int page)
+    {
+        _selectAllOnPage = false;
+        var removedIds = _rowMarkers.Where(m => m.Page == page).Select(m => m.Id).ToHashSet();
+        if (removedIds.Count == 0) { StateHasChanged(); return; }
+
+        _rowMarkers.RemoveAll(m => removedIds.Contains(m.Id));
+        if (_selectedMarkerId != null && removedIds.Contains(_selectedMarkerId.Value)) _selectedMarkerId = null;
+        // 삭제된 마커에 대한 히스토리 항목 제거 (되돌리기가 없는 마커를 찾지 않도록)
+        _rowMarkerHistory.RemoveAll(h => removedIds.Contains(h.MarkerId));
+
+        await SaveRowMarkersAsync();
+        StateHasChanged();
+    }
+
     async Task DeleteSelectedMarker()
     {
+        if (_selectAllOnPage) { await ClearPageMarkers(_currentPage); return; }
         if (_selectedMarkerId == null) return;
         var marker = _rowMarkers.FirstOrDefault(m => m.Id == _selectedMarkerId);
         if (marker == null) { _selectedMarkerId = null; return; }
