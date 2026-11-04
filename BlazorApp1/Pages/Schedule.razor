@@ -245,7 +245,7 @@ else
                     <div class="form-row">
                         <div class="form-group">
                             <label class="form-label" style="font-size:0.78rem;">원작 실</label>
-                            <input class="form-control" @bind="_editingProject.OriginalYarn" placeholder="예: 솜솜뜨개 러스크 2합" />
+                            <OriginalYarnInput Project="_editingProject" OnChanged="StateHasChanged" />
                         </div>
                         <div class="form-group">
                             <label class="form-label" style="font-size:0.78rem;">원작실 규격 (소요량 계산기용)</label>

@@ -1,0 +1,104 @@
+@* =====================================================================
+   Pages/OriginalYarnInput.razor  —  원작 실 입력칸 (실 DB 자동완성)
+   이름/브랜드를 치면 아래에 후보가 뜨고, 고르면 "브랜드 이름 N합"이 들어가며
+   원작실 규격(g / m)도 자동으로 채워져요. DB에 없는 실은 그냥 직접 입력하면 돼요.
+   ===================================================================== *@
+@inject YarnDbService YarnDb
+
+<div style="position:relative;">
+    <input class="form-control" autocomplete="off" value="@Project.OriginalYarn"
+           @oninput="OnInput" @onblur="OnBlur" placeholder="예: 솜솜뜨개 러스크 2합" />
+    @if (_show && _results.Count > 0)
+    {
+        <div style="position:absolute; top:100%; left:0; right:0; z-index:30; margin-top:2px; background:var(--white); border:1px solid var(--border); border-radius:8px; box-shadow:0 4px 14px rgba(0,0,0,0.14); max-height:220px; overflow-y:auto;">
+            @foreach (var p in _results)
+            {
+                <div style="padding:8px 12px; cursor:pointer; font-size:0.85rem; border-bottom:1px solid var(--border);"
+                     @onmousedown="() => SelectProduct(p)" @onmousedown:preventDefault="true">
+                    <span style="font-weight:600; color:var(--text-dark);">@p.Name</span>
+                    <span style="color:var(--text-light); margin-left:6px; font-size:0.78rem;">@p.Brand</span>
+                </div>
+            }
+        </div>
+    }
+    @if (_picker != null)
+    {
+        <div style="margin-top:6px; padding:8px 10px; background:var(--mint-pale); border:1px solid var(--mint-light); border-radius:8px;">
+            <div style="font-size:0.76rem; color:var(--text-mid); margin-bottom:6px;">합수를 선택하면 실 이름과 규격(g / m)이 자동입력돼요</div>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+                @foreach (var entry in _picker.Entries)
+                {
+                    <button type="button" class="btn btn-secondary btn-sm" @onclick="() => ApplyEntry(_picker, entry)">@(entry.Ply)합 · @(entry.WeightGram)g · @(entry.LengthMeter)m</button>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public KnitProject Project { get; set; } = default!;
+    // 규격(g / m) 값이 바뀌었을 때 부모 화면을 다시 그리도록 알리는 콜백
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    List<YarnCatalogProduct> _results = new();
+    bool _show = false;
+    YarnCatalogProduct? _picker = null;
+
+    async Task OnInput(ChangeEventArgs e)
+    {
+        var val = e.Value?.ToString() ?? "";
+        Project.OriginalYarn = val;
+        _picker = null;
+
+        var tokens = val.Split(' ', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (tokens.Length == 0) { _results = new(); _show = false; return; }
+
+        var all = await YarnDb.GetAllAsync();
+        // 띄어쓰기로 나눈 단어가 모두 "브랜드 이름" 안에 들어 있는 제품만 (예: "솜솜뜨개 러스크")
+        _results = all
+            .Where(p => tokens.All(t => (p.Brand + " " + p.Name).Contains(t, StringComparison.OrdinalIgnoreCase)))
+            .OrderByDescending(p => p.Name.StartsWith(tokens[0], StringComparison.OrdinalIgnoreCase))
+            .Take(6).ToList();
+        _show = _results.Count > 0;
+    }
+
+    async Task OnBlur()
+    {
+        await Task.Delay(150);
+        _show = false;
+        StateHasChanged();
+    }
+
+    async Task SelectProduct(YarnCatalogProduct p)
+    {
+        _show = false;
+        _results = new();
+        if (p.Entries.Count == 1)
+        {
+            await ApplyEntry(p, p.Entries[0]);
+        }
+        else
+        {
+            // 합수가 여러 개면 이름만 먼저 넣고, 합수 칩을 눌러 규격까지 확정
+            Project.OriginalYarn = YarnLabel(p, null);
+            _picker = p;
+            await OnChanged.InvokeAsync();
+        }
+    }
+
+    async Task ApplyEntry(YarnCatalogProduct p, YarnCatalogEntry entry)
+    {
+        Project.OriginalYarn = YarnLabel(p, entry);
+        Project.OriginalYarnWeightG = entry.WeightGram;
+        Project.OriginalYarnLengthM = entry.LengthMeter;
+        _picker = null;
+        _show = false;
+        await OnChanged.InvokeAsync();
+    }
+
+    static string YarnLabel(YarnCatalogProduct p, YarnCatalogEntry? entry)
+    {
+        var name = string.IsNullOrWhiteSpace(p.Brand) ? p.Name : p.Brand + " " + p.Name;
+        return entry != null && entry.Ply > 0 ? name + " " + entry.Ply + "합" : name;
+    }
+}

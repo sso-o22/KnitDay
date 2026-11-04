@@ -18,6 +18,7 @@ builder.Services.AddScoped(sp => new HttpClient
 // 서비스 등록
 builder.Services.AddSingleton<AuthService>();
 builder.Services.AddSingleton<StorageService>();
+builder.Services.AddScoped<YarnDbService>();
 
 var host = builder.Build();
 
