@@ -1,7 +1,7 @@
 {
   "mainAssemblyName": "BlazorApp1",
   "resources": {
-    "hash": "sha256-yUZqghQl9p0zgTRJ6/SxyjjyixfWPBe+IO6h8pJTaAo=",
+    "hash": "sha256-3sdeYI9P2V2yuPegmZMMW2LSRkQeO4NdYLaDYheOt2A=",
     "jsModuleNative": {
       "dotnet.native.js": "sha256-1DK+nm58uZjvv7U2c/UlUp1zFjeBZnqXHFHBX/W1igo="
     },
@@ -25,7 +25,7 @@
       "Microsoft.Extensions.Configuration.Abstractions.wasm": "sha256-XR+WUfg8LtnrwdXFBnV+qO3ROyp6cYCfl1AZajIAheM=",
       "Microsoft.Extensions.Configuration.Json.wasm": "sha256-3UBRwvCkKtraRUarsIBDS05tA2rRm1leCB6EDfyVjeA=",
       "Microsoft.Extensions.DependencyInjection.wasm": "sha256-mw/Sy1n9J6R0bUD0GI5MtB/zP+wyzOPiVsOTA/1C4NA=",
-      "Microsoft.Extensions.DependencyInjection.Abstractions.wasm": "sha256-ChivLe7SrJDCDJ1peRj6DU1QYnPM/+MnXcM7Staf1fI=",
+      "Microsoft.Extensions.DependencyInjection.Abstractions.wasm": "sha256-twZYuYVHoge2WdgowxbtgROC4FlOhh5JUgxxfyj09J4=",
       "Microsoft.Extensions.Logging.wasm": "sha256-lronxO5RVywLbFhme/ExIuzFePlP8EosZyZteUaMAwE=",
       "Microsoft.Extensions.Logging.Abstractions.wasm": "sha256-7Zu9mf5A66dSbrtfWeqyG3c+7z4wLPxz6mRfvZWMXy8=",
       "Microsoft.Extensions.Options.wasm": "sha256-jU67Fez8pypOqHShO/C6RHAZmEFgoq4RZGZtcWXOF08=",
@@ -56,7 +56,7 @@
       "System.Threading.wasm": "sha256-ht0XL7V3iCXnmreP55blmdnIqCG1tmvWQcRbTu0GXf4=",
       "System.wasm": "sha256-Qn4+fnaxYta+ZDrPpGuLEzp1NrXF8cdG2BVS4LK0OIc=",
       "System.Private.CoreLib.wasm": "sha256-+4z3DOXWoiWHHlriPECH4bHY+l7Y6tlvPGeAzCkb++k=",
-      "BlazorApp1.wasm": "sha256-IApTVgjiLHdduDZ33PrN771ovF8mcwi+Ik3E5Gdi2Gs="
+      "BlazorApp1.wasm": "sha256-Ja+6Xb/q5PLMlfVVqCeHaQB8b9TX1MRFt8gIxWcCsyc="
     }
   },
   "cacheBootResources": true,
